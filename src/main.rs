@@ -29,6 +29,7 @@ pub struct Server {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InterInstance {
+    pub iid: String,
     pub synclist: Vec<String>,
     pub ignorelist: Vec<String>,
     pub polling: Polling,
@@ -52,8 +53,6 @@ pub struct Database {
 pub struct SQLite {
     pub file: String,
 }
-
-
 
 #[actix_web::main]
 async fn main() {
@@ -80,11 +79,16 @@ port = 8085
 adress = "0.0.0.0"
 
 [interinstance]
+# Instance ID, equals, the domain name this instance is open on.
+iid = "example.com"
 # Specifies instances to send sync requests to. Note that these are only answered if both servers have each other listed. If not, the admin's will get a request to add them, but don't necessarily have to.
-synclist = []
+synclist = [
+    #    Of course, by default, the home domain is included, however! You can just remove it if you want to!
+    "peonies.xyz"
+]
 # Ignored instances are no longer allowed to send requests to join this instance's synclist.
 ignorelist = [
-"example.com"
+    "example.com"
 ]
 [interinstance.polling]
 # Specifies the interval between polls. Minimum is 30.
