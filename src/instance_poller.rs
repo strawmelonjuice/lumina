@@ -6,7 +6,9 @@ use crate::log::info;
 
 pub(crate) async fn main(mut i: u64) {
     let mut o = 0;
-    if i < 30 { i = 120 };
+    if i < 30 {
+        i = 120
+    };
     loop {
         o += 1;
         info(format!(
