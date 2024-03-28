@@ -4,12 +4,19 @@ use std::{fs, path::Path, process};
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 
-use log::error;
-
-use crate::log::info;
-
 mod instance_poller;
-mod log;
+mod tell;
+
+#[macro_use]
+extern crate log;
+extern crate simplelog;
+
+use simplelog::*;
+
+use std::fs::File;
+use std::path::PathBuf;
+use colored::Colorize;
+use LevelFilter;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +24,28 @@ pub struct Config {
     pub server: Server,
     pub interinstance: InterInstance,
     pub database: Database,
+    pub logging: Option<Logging>,
+}
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Logging {
+    #[serde(alias = "file-loglevel")]
+    #[serde(alias = "file-log-level")]
+    pub file_loglevel: Option<u8>,
+    #[serde(alias = "term-loglevel")]
+    #[serde(alias = "term-log-level")]
+    #[serde(alias = "console-loglevel")]
+    #[serde(alias = "console-log-level")]
+    pub term_loglevel: Option<u8>,
+
+    #[serde(alias = "file")]
+    #[serde(alias = "filename")]
+    pub logfile: Option<String>,
+}
+pub struct LogSets {
+    pub file_loglevel: LevelFilter,
+    pub term_loglevel: LevelFilter,
+    pub logfile: PathBuf,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -45,7 +74,7 @@ pub struct Polling {
 #[serde(rename_all = "camelCase")]
 pub struct Database {
     pub method: String,
-    pub sqlite: SQLite,
+    pub sqlite: Option<SQLite>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -59,13 +88,13 @@ async fn main() {
     let config: Config = (|| {
         let confp = Path::new("./env.toml");
         if (!confp.is_file()) || (!confp.exists()) {
-            let mut output = match fs::File::create(confp) {
+            let mut output = match File::create(confp) {
                 Ok(p) => p,
                 Err(a) => {
-                    error(format!(
+                    error!(
                         "Could not create blank config file. The system returned: {}",
                         a
-                    ));
+                    );
                     process::exit(1);
                 }
             };
@@ -100,14 +129,19 @@ method = "sqlite"
 [database.sqlite]
 # The database file to use for sqlite.
 file = "instance-db.sqlite"
+
+[logging]
+file-loglevel = 3
+console-loglevel = 2
+file = "instance-logging.log"
 "#
             ) {
                 Ok(p) => p,
                 Err(a) => {
-                    error(format!(
+                    error!(
                         "Could not create blank config file. The system returned: {}",
                         a
-                    ));
+                    );
                     process::exit(1);
                 }
             };
@@ -116,30 +150,97 @@ file = "instance-db.sqlite"
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => p,
                 Err(_e) => {
-                    error(format!(
+                    error!(
                         "Could not interpret server configuration at `{}`!",
                         confp
                             .canonicalize()
                             .unwrap_or(confp.to_path_buf())
                             .to_string_lossy()
                             .replace("\\\\?\\", "")
-                    ));
+                    );
                     process::exit(1);
                 }
             },
             Err(_) => {
-                error(format!(
+                error!(
                     "Could not interpret server configuration at `{}`!",
                     confp
                         .canonicalize()
                         .unwrap_or(confp.to_path_buf())
                         .to_string_lossy()
                         .replace("\\\\?\\", "")
-                ));
+                );
                 process::exit(1);
             }
         };
     })();
+    let logsets: LogSets = (|config: &Config| {
+        // How DRY of me.
+        fn asddg (o: u8) -> LevelFilter {
+            return match o {
+                0 => LevelFilter::Off,
+                1 => LevelFilter::Error,
+                2 => LevelFilter::Warn,
+                3 => LevelFilter::Info,
+                4 => LevelFilter::Debug,
+                5 => LevelFilter::Trace,
+                _ => {
+                    eprintln!(
+                        "{} Could not set loglevel `{}`! Ranges are 0-5 (quiet to verbose)",
+                        "error:".red(), o
+                    );
+                    process::exit(1);
+                }
+            }
+        }
+        return match config.clone().logging {
+            None => {
+                return LogSets {
+                    file_loglevel: LevelFilter::Info,
+                    term_loglevel: LevelFilter::Warn,
+                    logfile: PathBuf::from("./instance.log"),
+                };
+            }
+            Some(d) => LogSets {
+                file_loglevel: match d.file_loglevel {
+                    Some(l) => asddg(l),
+                    None => LevelFilter::Info,
+                },
+                term_loglevel: match d.term_loglevel {
+                    Some(l) => asddg(l),
+                    None => LevelFilter::Warn,
+                },
+                logfile: match d.logfile {
+                    Some(s) => PathBuf::from(s.as_str()),
+                    None => PathBuf::from("./instance.log"),
+                },
+            },
+        };
+    })(&config);
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            logsets.term_loglevel,
+            simplelog::Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            logsets.file_loglevel,
+            simplelog::Config::default(),
+            File::create(&logsets.logfile).unwrap(),
+        ),
+    ])
+    .unwrap();
+    let tell = tellgen(config.clone().logging);
+    tell(format!(
+        "Logging to {}",
+        logsets
+            .logfile
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .replace("\\\\?\\", "")
+    ));
     let main_server = match HttpServer::new(|| {
         App::new()
             .service(api)
@@ -149,21 +250,22 @@ file = "instance-db.sqlite"
     .bind((config.server.adress.clone(), config.server.port))
     {
         Ok(o) => {
-            info(format!(
+            tell(format!(
                 "Running on http://{0}:{1}/",
                 config.server.adress, config.server.port
             ));
             o
         }
         Err(s) => {
-            error(format!(
+            error!(
                 "Could not bind to {}:{}, error message: {}",
                 config.server.adress, config.server.port, s
-            ));
+            );
             process::exit(1);
         }
     }
     .run();
+    use std::borrow::Borrow;
     let _ = test(config.clone());
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall),
@@ -172,6 +274,7 @@ file = "instance-db.sqlite"
 }
 
 use rusqlite::{Connection, Result};
+use tell::tellgen;
 
 #[derive(Debug)]
 struct Person {
@@ -182,7 +285,7 @@ struct Person {
 
 // Using the sqlite example to remind myself how to use it. (I normally go with mysql, can you imagine?)
 fn test(config: Config) -> Result<()> {
-    let conn = Connection::open(config.database.sqlite.file)?;
+    let conn = Connection::open(config.clone().database.sqlite.unwrap().file)?;
 
     conn.execute(
         "CREATE TABLE person (
