@@ -265,7 +265,7 @@ file = "instance-logging.log"
         }
     }
     .run();
-    use std::borrow::Borrow;
+    
     let _ = test(config.clone());
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall),
