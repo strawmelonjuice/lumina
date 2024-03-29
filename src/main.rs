@@ -1,10 +1,11 @@
+use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{fs, path::Path, process};
 
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-use serde::{Deserialize, Serialize};
 
 mod instance_poller;
+mod storage;
 mod tell;
 
 #[macro_use]
@@ -13,9 +14,10 @@ extern crate simplelog;
 
 use simplelog::*;
 
+use serde_json;
+use colored::Colorize;
 use std::fs::File;
 use std::path::PathBuf;
-use colored::Colorize;
 use LevelFilter;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -124,7 +126,7 @@ ignorelist = [
 pollintervall = 120
 
 [database]
-# What kind of database to use, currently only supporting "sqlite". 
+# What kind of database to use, currently only supporting "sqlite".
 method = "sqlite"
 [database.sqlite]
 # The database file to use for sqlite.
@@ -176,7 +178,7 @@ file = "instance-logging.log"
     })();
     let logsets: LogSets = (|config: &Config| {
         // How DRY of me.
-        fn asddg (o: u8) -> LevelFilter {
+        fn asddg(o: u8) -> LevelFilter {
             return match o {
                 0 => LevelFilter::Off,
                 1 => LevelFilter::Error,
@@ -187,11 +189,12 @@ file = "instance-logging.log"
                 _ => {
                     eprintln!(
                         "{} Could not set loglevel `{}`! Ranges are 0-5 (quiet to verbose)",
-                        "error:".red(), o
+                        "error:".red(),
+                        o
                     );
                     process::exit(1);
                 }
-            }
+            };
         }
         return match config.clone().logging {
             None => {
@@ -265,7 +268,8 @@ file = "instance-logging.log"
         }
     }
     .run();
-    
+
+    println!("{}", storage::fetch(&config.clone(), "users".to_string(), "password".to_string(), "password".to_string()).unwrap().unwrap());
     let _ = test(config.clone());
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall),
