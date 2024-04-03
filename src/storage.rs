@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ */
+
 use rusqlite::{Connection};
 use std::fs;
 use std::fs::File;
@@ -6,7 +12,7 @@ use std::io::Write;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 
 use crate::Config;
 
@@ -22,7 +28,7 @@ pub fn fetch(
     table: String,
     searchr: String,
     searchv: String,
-) -> Result<Option<String>, std::io::Error> {
+) -> Result<Option<String>, Error> {
     match table.as_str() {
         "users" => {
             let mut userlist: Vec<TableUsers> = Vec::new();
@@ -35,6 +41,7 @@ pub fn fetch(
                             std::process::exit(1);
                         }
                     };
+                    match
                     conn.execute(
                         "
 CREATE TABLE if not exists Users (
@@ -45,7 +52,14 @@ CREATE TABLE if not exists Users (
 ",
                         (), // empty list of parameters.
                     )
-                    .unwrap();
+                    {
+                        Ok(_) => {}
+                        Err(_e) => {
+                            error!("Could not configure the database correctly!");
+                            std::process::exit(1);
+                        }
+                    };
+                    // todo: Give these their own match error handling; They're uncompatible with the std error handling, and are therefor just unwrapped now. This is not preffered. 
                     let mut stmt = conn.prepare("SELECT id, username, password FROM users").unwrap();
                     let user_iter = stmt.query_map([], |row| {
                         Ok(TableUsers {
@@ -110,7 +124,7 @@ CREATE TABLE if not exists Users (
                 }
             }
         }
-        _ => return Err(Error::new(ErrorKind::InvalidData, ("Unknown table!"))),
+        _ => return Err(Error::new(ErrorKind::InvalidData, "Unknown table!")),
     };
     Ok(None)
 }

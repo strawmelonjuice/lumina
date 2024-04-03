@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ */
+
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{fs, path::Path, process};
@@ -179,7 +185,7 @@ file = "instance-logging.log"
     let logsets: LogSets = (|config: &Config| {
         // How DRY of me.
         fn asddg(o: u8) -> LevelFilter {
-            return match o {
+            match o {
                 0 => LevelFilter::Off,
                 1 => LevelFilter::Error,
                 2 => LevelFilter::Warn,
@@ -194,7 +200,7 @@ file = "instance-logging.log"
                     );
                     process::exit(1);
                 }
-            };
+            }
         }
         return match config.clone().logging {
             None => {
@@ -284,13 +290,6 @@ file = "instance-logging.log"
         instance_poller::main(config.interinstance.polling.pollintervall),
         main_server
     );
-}
-
-#[derive(Debug)]
-struct Person {
-    id: i32,
-    name: String,
-    data: Option<Vec<u8>>,
 }
 
 #[post("/api")]
