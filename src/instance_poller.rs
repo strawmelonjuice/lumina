@@ -8,9 +8,7 @@ pub(crate) async fn main(mut i: u64) {
     };
     loop {
         o += 1;
-        info!(
-            "Polling from listed instances, round {o}. Pollings are done every {i} seconds."
-        );
+        info!("Polling from listed instances, round {o}. Pollings are done every {i} seconds.");
         // Here.
         task::sleep(Duration::from_secs(i)).await;
     }

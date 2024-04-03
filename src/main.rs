@@ -7,6 +7,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 mod instance_poller;
 mod storage;
 mod tell;
+use tell::tellgen;
 
 #[macro_use]
 extern crate log;
@@ -14,11 +15,10 @@ extern crate simplelog;
 
 use simplelog::*;
 
-use serde_json;
 use colored::Colorize;
+
 use std::fs::File;
 use std::path::PathBuf;
-use LevelFilter;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -126,7 +126,7 @@ ignorelist = [
 pollintervall = 120
 
 [database]
-# What kind of database to use, currently only supporting "sqlite".
+# What kind of database to use, currently only supporting "sqlite" (recommended), and "csv" (advised against).
 method = "sqlite"
 [database.sqlite]
 # The database file to use for sqlite.
@@ -268,17 +268,23 @@ file = "instance-logging.log"
         }
     }
     .run();
-
-    println!("{}", storage::fetch(&config.clone(), "users".to_string(), "password".to_string(), "password".to_string()).unwrap().unwrap());
-    let _ = test(config.clone());
+    // testing
+    println!(
+        "{}",
+        storage::fetch(
+            &config.clone(),
+            "users".to_string(),
+            "password".to_string(),
+            "password".to_string()
+        )
+        .unwrap()
+        .unwrap_or("no such user".parse().unwrap())
+    );
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall),
         main_server
     );
 }
-
-use rusqlite::{Connection, Result};
-use tell::tellgen;
 
 #[derive(Debug)]
 struct Person {
@@ -287,42 +293,6 @@ struct Person {
     data: Option<Vec<u8>>,
 }
 
-// Using the sqlite example to remind myself how to use it. (I normally go with mysql, can you imagine?)
-fn test(config: Config) -> Result<()> {
-    let conn = Connection::open(config.clone().database.sqlite.unwrap().file)?;
-
-    conn.execute(
-        "CREATE TABLE person (
-            id    INTEGER PRIMARY KEY,
-            name  TEXT NOT NULL,
-            data  BLOB
-        )",
-        (), // empty list of parameters.
-    )?;
-    let me = Person {
-        id: 0,
-        name: "Steven".to_string(),
-        data: None,
-    };
-    conn.execute(
-        "INSERT INTO person (name, data) VALUES (?1, ?2)",
-        (&me.name, &me.data),
-    )?;
-
-    let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-    let person_iter = stmt.query_map([], |row| {
-        Ok(Person {
-            id: row.get(0)?,
-            name: row.get(1)?,
-            data: row.get(2)?,
-        })
-    })?;
-
-    for person in person_iter {
-        println!("Found person {:?}", person.unwrap());
-    }
-    Ok(())
-}
 #[post("/api")]
 async fn api(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
