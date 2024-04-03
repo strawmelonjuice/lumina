@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ */
+
 const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
 use crate::Logging;
 use colored::Colorize;
@@ -11,9 +17,8 @@ pub(crate) fn tellgen(a: Option<Logging>) -> fn(msg: String) {
         let times = dt1.format(&dt_fmt).unwrap();
         println!("{} {} {}", times, "[LOG]".magenta(), msg);
         info!("{}", msg);
-        return;
     }
-    return match a {
+    match a {
         Some(a) => {
             match a.term_loglevel {
                 None => po,
@@ -30,5 +35,5 @@ pub(crate) fn tellgen(a: Option<Logging>) -> fn(msg: String) {
             }
         }
         None => po,
-    };
+    }
 }

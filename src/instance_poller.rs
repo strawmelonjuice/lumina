@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ */
+
 use std::time::Duration;
 
 use async_std::task;
