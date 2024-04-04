@@ -1,4 +1,4 @@
 /target
 /env.toml
 instance-db.sqlite
-/instance-logging.log
+*.log
