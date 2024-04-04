@@ -1,18 +1,17 @@
 /*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
- * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-use rusqlite::{Connection};
+use rusqlite::Connection;
 use std::fs;
 use std::fs::File;
-use std::io::{Error,ErrorKind};
 use std::io::Write;
+use std::io::{Error, ErrorKind};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-
 
 use crate::Config;
 
@@ -34,15 +33,15 @@ pub fn fetch(
             let mut userlist: Vec<TableUsers> = Vec::new();
             match config.database.method.as_str() {
                 "sqlite" => {
-                    let conn = match Connection::open(config.clone().database.sqlite.unwrap().file) {
+                    let conn = match Connection::open(config.clone().database.sqlite.unwrap().file)
+                    {
                         Ok(d) => d,
                         Err(_e) => {
                             error!("Could not create a database connection!");
                             std::process::exit(1);
                         }
                     };
-                    match
-                    conn.execute(
+                    match conn.execute(
                         "
 CREATE TABLE if not exists Users (
     id    INTEGER PRIMARY KEY,
@@ -51,23 +50,26 @@ CREATE TABLE if not exists Users (
 )
 ",
                         (), // empty list of parameters.
-                    )
-                    {
+                    ) {
                         Ok(_) => {}
                         Err(_e) => {
                             error!("Could not configure the database correctly!");
                             std::process::exit(1);
                         }
                     };
-                    // todo: Give these their own match error handling; They're uncompatible with the std error handling, and are therefor just unwrapped now. This is not preffered. 
-                    let mut stmt = conn.prepare("SELECT id, username, password FROM users").unwrap();
-                    let user_iter = stmt.query_map([], |row| {
-                        Ok(TableUsers {
-                            id: row.get(0)?,
-                            username: row.get(1)?,
-                            password: row.get(2)?,
+                    // todo: Give these their own match error handling; They're uncompatible with the std error handling, and are therefor just unwrapped now. This is not preffered.
+                    let mut stmt = conn
+                        .prepare("SELECT id, username, password FROM users")
+                        .unwrap();
+                    let user_iter = stmt
+                        .query_map([], |row| {
+                            Ok(TableUsers {
+                                id: row.get(0)?,
+                                username: row.get(1)?,
+                                password: row.get(2)?,
+                            })
                         })
-                    }).unwrap();
+                        .unwrap();
                     for user in user_iter {
                         userlist.push(user.unwrap());
                     }
@@ -102,25 +104,20 @@ CREATE TABLE if not exists Users (
                 match searchr.as_str() {
                     "username" => {
                         if user.username == searchv {
-                            return Ok(Some(serde_json::to_string(&user)?))
+                            return Ok(Some(serde_json::to_string(&user)?));
                         }
                     }
                     "password" => {
                         if user.password == searchv {
-                            return Ok(Some(serde_json::to_string(&user)?))
+                            return Ok(Some(serde_json::to_string(&user)?));
                         }
                     }
                     "id" => {
                         if user.id.to_string() == searchv {
-                            return Ok(Some(serde_json::to_string(&user)?))
+                            return Ok(Some(serde_json::to_string(&user)?));
                         }
                     }
-                    _ => {
-                        return Err(Error::new(
-                            ErrorKind::InvalidData,
-                            "Unknown search method!",
-                        ))
-                    }
+                    _ => return Err(Error::new(ErrorKind::InvalidData, "Unknown search method!")),
                 }
             }
         }

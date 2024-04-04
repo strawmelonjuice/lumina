@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
- * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
 const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
