@@ -14,8 +14,9 @@ pub(crate) async fn main(mut i: u64) {
     };
     loop {
         o += 1;
-        info!("Polling from listed instances, round {o}. Pollings are done every {i} seconds.");
+        info!("Poller: Polling from listed instances, round {o}. Pollings are done every {i} seconds.");
         // Here.
+        info!("Poller: Poll done.");
         task::sleep(Duration::from_secs(i)).await;
     }
 }
