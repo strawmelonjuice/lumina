@@ -1,18 +1,22 @@
 /*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
- * Licenced under the BSD 3-Clause License. See the LICENCE file for more info.
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{fs, path::Path, process};
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-
+use axum::{
+    routing::{get, post},
+    Json, Router,
+};
+mod assets;
 mod instance_poller;
 mod storage;
 mod tell;
+
 use tell::tellgen;
 
 #[macro_use]
@@ -23,8 +27,11 @@ use simplelog::*;
 
 use colored::Colorize;
 
+use axum::response::Html;
+use axum::serve::Serve;
 use std::fs::File;
 use std::path::PathBuf;
+use crate::assets::STR_ASSETS_INDEX_HTML;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -91,7 +98,7 @@ pub struct SQLite {
     pub file: String,
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() {
     let config: Config = (|| {
         let confp = Path::new("./env.toml");
@@ -250,13 +257,14 @@ file = "instance-logging.log"
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    let main_server = match HttpServer::new(|| {
-        App::new()
-            .service(api)
-            .service(echo)
-            .route("/", web::get().to(root))
-    })
-    .bind((config.server.adress.clone(), config.server.port))
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/api/", post(api));
+    let listener = match tokio::net::TcpListener::bind(format!(
+        "{0}:{1}",
+        config.server.adress, config.server.port
+    ))
+    .await
     {
         Ok(o) => {
             tell(format!(
@@ -272,8 +280,8 @@ file = "instance-logging.log"
             );
             process::exit(1);
         }
-    }
-    .run();
+    };
+    let main_server = axum::serve(listener, app);
     // testing
     println!(
         "{}",
@@ -286,22 +294,21 @@ file = "instance-logging.log"
         .unwrap()
         .unwrap_or("no such user".parse().unwrap())
     );
+
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall),
-        main_server
+        returnmainserver(main_server)
     );
 }
-
-#[post("/api")]
-async fn api(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+async fn returnmainserver(server: Serve<Router, Router>) {
+    server.await.unwrap()
 }
 
-#[get("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+async fn api(Json(payload): Json<String>) -> &'static str {
+    let _ = payload;
+    "Hi?"
 }
 
-async fn root() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
+async fn root() -> Html<&'static str> {
+    Html::from(STR_ASSETS_INDEX_HTML)
 }
