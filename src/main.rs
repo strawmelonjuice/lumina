@@ -110,7 +110,7 @@ async fn main() {
             match write!(
                 output,
                 r#"[server]
-# What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necesarily default.)
+# What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
 port = 8085
 # What adress to bind to? Usually, this is 127.0.0.1 for dev, and 0.0.0.0 for prod.
 adress = "0.0.0.0"
