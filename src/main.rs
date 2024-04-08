@@ -296,7 +296,7 @@ file = "instance-logging.log"
     );
 
     let _ = futures::join!(
-        instance_poller::main(config.interinstance.polling.pollintervall),
+        instance_poller::main(config.interinstance.polling.pollintervall, tell),
         returnmainserver(main_server)
     );
 }
