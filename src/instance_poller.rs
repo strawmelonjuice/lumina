@@ -7,16 +7,16 @@
 use std::time::Duration;
 
 use async_std::task;
-pub(crate) async fn main(mut i: u64) {
+pub(crate) async fn main(mut i: u64, tell: fn(String)) {
     let mut o = 0;
     if i < 30 {
         i = 120
     };
     loop {
         o += 1;
-        info!("Poller: Polling from listed instances, round {o}. Pollings are done every {i} seconds.");
+        tell(format!("Poller: Polling from listed instances, round {o}. Pollings are done every {i} seconds."));
         // Here.
-        info!("Poller: Poll done.");
+        tell(String::from("Poller: Poll done."));
         task::sleep(Duration::from_secs(i)).await;
     }
 }
