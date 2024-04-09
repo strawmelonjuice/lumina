@@ -22,58 +22,72 @@ struct TableUsers {
     password: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct PostInfo {
+    pid: i64,
+    // Might not be necessary on local posts. Hence being Option<>;
+    instance: Option<String>,
+    author_id: i64,
+    timestamp: i64,
+    content_type: String,
+    content: String,
+}
+
 pub fn fetch(
     config: &Config,
     table: String,
-    searchr: String,
+    searchr: &str,
     searchv: String,
 ) -> Result<Option<String>, Error> {
+    if config.database.method.as_str() == "sqlite" {
+        let conn = match Connection::open(config.clone().database.sqlite.unwrap().file) {
+            Ok(d) => d,
+            Err(_e) => {
+                error!("Could not create a database connection!");
+                std::process::exit(1);
+            }
+        };
+        dbconf(&conn);
+        let mut stmt = conn
+            .prepare(format!("SELECT * FROM `{table}` WHERE `{searchr}` IS `{searchv}`").as_str())
+            .unwrap();
+        let mut res = stmt.query_map([], |row| {
+            Ok(match table.as_str() {
+                "users" => {
+                    serde_json::to_string(&TableUsers {
+                        id: row.get(0)?,
+                        username: row.get(1)?,
+                        password: row.get(2)?,
+                    }).unwrap()
+                },
+                "postinfo" => {
+                    serde_json::to_string(&PostInfo {
+                        pid: row.get(0)?,
+                        instance: row.get(1)?,
+                        author_id: row.get(2)?,
+                        timestamp: row.get(3)?,
+                        content_type: row.get(4)?,
+                        content: row.get(5)?,
+                    }).unwrap()
+                },
+                _ => {
+                    error!("Unknown table requisted!");
+                    panic!("Unknown table requisted!");
+                }
+            })
+        }).unwrap();
+        return match res.next() {
+            None => Ok(None),
+            Some(r) => match r {
+                Ok(s) => Ok(Some(s)),
+                _ => Err(Error::new(ErrorKind::Other, "Unparseable data.")),
+            }
+        };
+    }
     match table.as_str() {
         "users" => {
             let mut userlist: Vec<TableUsers> = Vec::new();
             match config.database.method.as_str() {
-                "sqlite" => {
-                    let conn = match Connection::open(config.clone().database.sqlite.unwrap().file)
-                    {
-                        Ok(d) => d,
-                        Err(_e) => {
-                            error!("Could not create a database connection!");
-                            std::process::exit(1);
-                        }
-                    };
-                    match conn.execute(
-                        "
-CREATE TABLE if not exists Users (
-    id    INTEGER PRIMARY KEY,
-    username  TEXT NOT NULL,
-    password  TEXT NOT NULL
-)
-",
-                        (), // empty list of parameters.
-                    ) {
-                        Ok(_) => {}
-                        Err(_e) => {
-                            error!("Could not configure the database correctly!");
-                            std::process::exit(1);
-                        }
-                    };
-                    // todo: Give these their own match error handling; They're uncompatible with the std error handling, and are therefor just unwrapped now. This is not preffered.
-                    let mut stmt = conn
-                        .prepare("SELECT id, username, password FROM users")
-                        .unwrap();
-                    let user_iter = stmt
-                        .query_map([], |row| {
-                            Ok(TableUsers {
-                                id: row.get(0)?,
-                                username: row.get(1)?,
-                                password: row.get(2)?,
-                            })
-                        })
-                        .unwrap();
-                    for user in user_iter {
-                        userlist.push(user.unwrap());
-                    }
-                }
                 "csv" => {
                     if !Path::new("./data").exists() {
                         fs::create_dir_all("./data")?;
@@ -100,8 +114,10 @@ CREATE TABLE if not exists Users (
                     ))
                 }
             };
+            // This can be done better, by calling it in SQL. But I think I might be a little lazy. (plus CSV support!)
+            // Update: SQLITE now returns early.
             for user in userlist {
-                match searchr.as_str() {
+                match searchr {
                     "username" => {
                         if user.username == searchv {
                             return Ok(Some(serde_json::to_string(&user)?));
@@ -124,4 +140,24 @@ CREATE TABLE if not exists Users (
         _ => return Err(Error::new(ErrorKind::InvalidData, "Unknown table!")),
     };
     Ok(None)
+}
+fn dbconf(conn: &Connection) {
+    let emergencyabort = || {
+        error!("Could not configure the database correctly!");
+        std::process::exit(1);
+    };
+
+    match conn.execute(
+        "
+CREATE TABLE if not exists Users (
+    id    INTEGER PRIMARY KEY,
+    username  TEXT NOT NULL,
+    password  TEXT NOT NULL
+)
+",
+        (), // empty list of parameters.
+    ) {
+        Ok(_) => {}
+        Err(_e) => emergencyabort(),
+    }
 }
