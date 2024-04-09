@@ -11,11 +11,11 @@ If not, it'll add the instance to it's waiting list, meaning an administrator sh
 %% 
 Earlier, an authentication method was also added, but timelines are in fact supposed to be public, and so, this shouldn't be the default.
 
-In case this'll ever become necessary or preferred again, these are the outlines around that.
+In case this'll ever become necessary or preferred again, this is a part of those 'deleted ideas'.
 
  Then send a GET request to `instance A`'s `/api/ii/passcode/{id}/{passcode}`. `{id}` being `instance B`'s ID, and `{passcode}` being a one-time-passcode specific to this polling request.  %%
 ## Step 3: Response
 If listed, `[instance B]`'ll send a JSON array of post-ID's (including comments) (referred to as PID's) appearing recently on the timeline or gaining popular interactions (calculated by a threshold based on time between interactions, that'll all be in [interaction handling](./Interaction%20handling.md)) and falling in the top of whatever the `{size}` is to `[instance A]`.
-
+Identification is also used to see comments from `[instance B]` on posts on `[instance A]`, *because why transfer comments IDs of posts that don't exist on the instance*?
 ## Step 4: Organisation
 On `[instance A]`, these PID's, prefixed with their hosting instance (`[instance B]`, in this case) are collected into a database, duplicates are eliminated in the process. The [timeline generator](./Timeline%20generation.md) will use this later on to fetch posts and their comments. Comments and posts themselves are **ALWAYS** stored **ONLY** on the instance they were made on. PID's are the only things stored on other instances than their own.
