@@ -27,11 +27,11 @@ use simplelog::*;
 
 use colored::Colorize;
 
+use crate::assets::STR_ASSETS_INDEX_HTML;
 use axum::response::Html;
 use axum::serve::Serve;
 use std::fs::File;
 use std::path::PathBuf;
-use crate::assets::STR_ASSETS_INDEX_HTML;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -288,7 +288,7 @@ file = "instance-logging.log"
         storage::fetch(
             &config.clone(),
             "users".to_string(),
-            "password".to_string(),
+            "password",
             "password".to_string()
         )
         .unwrap()
