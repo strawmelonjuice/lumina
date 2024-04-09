@@ -7,7 +7,7 @@ This process is best explained in steps.
 ## Step 2: Identification
 The `[instance B]` receives this polling request and checks if the submitted instance ID is on the sync list. 
 
-If not, it'll add the instance to it's waiting list, meaning an administrator should decide if the instance will be allowed manually.
+If not, it'll add the instance to its waiting list, meaning an administrator should decide if the instance will be allowed manually.
 %% 
 Earlier, an authentication method was also added, but timelines are in fact supposed to be public, and so, this shouldn't be the default.
 
