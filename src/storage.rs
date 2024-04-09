@@ -24,12 +24,19 @@ struct TableUsers {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PostInfo {
+    // Local Post ID
+    lpid: i64,
+    // Post ID
     pid: i64,
-    // Might not be necessary on local posts. Hence being Option<>;
+    // Instance ID - Might not be necessary on local posts. Hence being Option<>;
     instance: Option<String>,
+    // Author ID
     author_id: i64,
+    // Timestamp (UNIX)
     timestamp: i64,
+    // Content type
     content_type: String,
+    // Content in JSON, deserialised depending on content_type.
     content: String,
 }
 
@@ -68,6 +75,7 @@ pub fn fetch(
                         timestamp: row.get(3)?,
                         content_type: row.get(4)?,
                         content: row.get(5)?,
+                        lpid: row.get(6)?,
                     }).unwrap()
                 },
                 _ => {
@@ -150,14 +158,31 @@ fn dbconf(conn: &Connection) {
     match conn.execute(
         "
 CREATE TABLE if not exists Users (
-    id    INTEGER PRIMARY KEY,
+    id    INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
     username  TEXT NOT NULL,
     password  TEXT NOT NULL
 )
 ",
         (), // empty list of parameters.
     ) {
-        Ok(_) => {}
+        Ok(_) => {},
+        Err(_e) => emergencyabort(),
+    };
+    match conn.execute(
+        "
+CREATE TABLE if not exists TimeLinePostPool (
+    lpid            INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+    pid             INTEGER,
+    instance        TEXT,
+    author_id      TEXT NOT NULL,
+    timestamp      INTEGER NOT NULL,
+    content_type    TEXT NOT NULL,
+    content        TEXT NOT NULL
+)
+",
+        (), // empty list of parameters.
+    ) {
+        Ok(_) => {},
         Err(_e) => emergencyabort(),
     }
 }
