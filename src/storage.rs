@@ -58,17 +58,16 @@ pub fn fetch(
         let mut stmt = conn
             .prepare(format!("SELECT * FROM `{table}` WHERE `{searchr}` IS `{searchv}`").as_str())
             .unwrap();
-        let mut res = stmt.query_map([], |row| {
-            Ok(match table.as_str() {
-                "users" => {
-                    serde_json::to_string(&TableUsers {
+        let mut res = stmt
+            .query_map([], |row| {
+                Ok(match table.as_str() {
+                    "users" => serde_json::to_string(&TableUsers {
                         id: row.get(0)?,
                         username: row.get(1)?,
                         password: row.get(2)?,
-                    }).unwrap()
-                },
-                "postinfo" => {
-                    serde_json::to_string(&PostInfo {
+                    })
+                    .unwrap(),
+                    "postinfo" => serde_json::to_string(&PostInfo {
                         pid: row.get(0)?,
                         instance: row.get(1)?,
                         author_id: row.get(2)?,
@@ -76,20 +75,21 @@ pub fn fetch(
                         content_type: row.get(4)?,
                         content: row.get(5)?,
                         lpid: row.get(6)?,
-                    }).unwrap()
-                },
-                _ => {
-                    error!("Unknown table requisted!");
-                    panic!("Unknown table requisted!");
-                }
+                    })
+                    .unwrap(),
+                    _ => {
+                        error!("Unknown table requisted!");
+                        panic!("Unknown table requisted!");
+                    }
+                })
             })
-        }).unwrap();
+            .unwrap();
         return match res.next() {
             None => Ok(None),
             Some(r) => match r {
                 Ok(s) => Ok(Some(s)),
                 _ => Err(Error::new(ErrorKind::Other, "Unparseable data.")),
-            }
+            },
         };
     }
     match table.as_str() {
@@ -165,7 +165,7 @@ CREATE TABLE if not exists Users (
 ",
         (), // empty list of parameters.
     ) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_e) => emergencyabort(),
     };
     match conn.execute(
@@ -182,7 +182,7 @@ CREATE TABLE if not exists TimeLinePostPool (
 ",
         (), // empty list of parameters.
     ) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_e) => emergencyabort(),
     }
 }

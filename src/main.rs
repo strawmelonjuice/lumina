@@ -3,7 +3,6 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{fs, path::Path, process};
@@ -27,7 +26,7 @@ use simplelog::*;
 
 use colored::Colorize;
 
-use crate::assets::STR_ASSETS_INDEX_HTML;
+use crate::assets::{STR_ASSETS_INDEX_HTML, STR_CLEAN_CONFIG_TOML};
 use axum::response::Html;
 use axum::serve::Serve;
 use std::fs::File;
@@ -100,8 +99,8 @@ pub struct SQLite {
 
 #[tokio::main]
 async fn main() {
-    let config: Config = (|| {
-        let confp = Path::new("./env.toml");
+    let config: Config = {
+        let confp = Path::new("./config.toml");
         if (!confp.is_file()) || (!confp.exists()) {
             let mut output = match File::create(confp) {
                 Ok(p) => p,
@@ -116,41 +115,7 @@ async fn main() {
 
             match write!(
                 output,
-                r#"[server]
-# What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
-port = 8085
-# What adress to bind to? Usually, this is 127.0.0.1 for dev, and 0.0.0.0 for prod.
-adress = "0.0.0.0"
-
-[interinstance]
-# Instance ID, equals, the domain name this instance is open on.
-iid = "example.com"
-# Specifies instances to send sync requests to. Note that these are only answered if both servers have each other listed. If not, the admin's will get a request to add them, but don't necessarily have to.
-synclist = [
-    #    Of course, by default, the home domain is included, however! You can just remove it if you want to!
-    "peonies.xyz"
-]
-# Ignored instances are no longer allowed to send requests to join this instance's synclist.
-ignorelist = [
-    "example.com"
-]
-[interinstance.polling]
-# Specifies the interval between polls. Minimum is 30.
-pollintervall = 120
-
-[database]
-# What kind of database to use, currently only supporting "sqlite" (recommended), and "csv" (advised against).
-method = "sqlite"
-[database.sqlite]
-# The database file to use for sqlite.
-file = "instance-db.sqlite"
-
-[logging]
-file-loglevel = 3
-console-loglevel = 2
-file = "instance-logging.log"
-"#
-            ) {
+                "{}", STR_CLEAN_CONFIG_TOML) {
                 Ok(p) => p,
                 Err(a) => {
                     error!(
@@ -161,7 +126,7 @@ file = "instance-logging.log"
                 }
             };
         }
-        return match fs::read_to_string(Path::new("./env.toml")) {
+        match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => p,
                 Err(_e) => {
@@ -187,8 +152,8 @@ file = "instance-logging.log"
                 );
                 process::exit(1);
             }
-        };
-    })();
+        }
+    };
     let logsets: LogSets = (|config: &Config| {
         // How DRY of me.
         fn asddg(o: u8) -> LevelFilter {
