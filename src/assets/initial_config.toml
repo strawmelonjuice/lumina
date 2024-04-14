@@ -1,0 +1,33 @@
+[server]
+# What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
+port = 8085
+# What adress to bind to? Usually, this is 127.0.0.1 for dev, and 0.0.0.0 for prod.
+adress = "0.0.0.0"
+
+[interinstance]
+# Instance ID, equals, the domain name this instance is open on.
+iid = "example.com"
+# Specifies instances to send sync requests to. Note that these are only answered if both servers have each other listed. If not, the admin's will get a request to add them, but don't necessarily have to.
+synclist = [
+    #    Of course, by default, the home domain is included, however! You can just remove it if you want to!
+    "peonies.xyz"
+]
+# Ignored instances are no longer allowed to send requests to join this instance's synclist.
+ignorelist = [
+    "example.com"
+]
+[interinstance.polling]
+# Specifies the interval between polls. Minimum is 30.
+pollintervall = 120
+
+[database]
+# What kind of database to use, currently only supporting "sqlite" (recommended), and "csv" (advised against).
+method = "sqlite"
+[database.sqlite]
+# The database file to use for sqlite.
+file = "instance-db.sqlite"
+
+[logging]
+file-loglevel = 3
+console-loglevel = 2
+file = "instance-logging.log"
