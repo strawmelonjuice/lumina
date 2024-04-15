@@ -26,6 +26,6 @@ But more info is always welcome.
 #### ...and unreported there
 Of course, follow the dependencies security policy, but if you got there because of this project, maybe mail me too. 
 #### ...but reported there
-Mail me, so I can wait for a patch to be released and maybe dim my usage of that dependency a bit. Just emailing me a simple mail like `"Dependency {xyz} has a vuln report here: <{github.com/xyz/...}>`  would suffice.
+Mail me, so I can wait for a patch to be released and maybe dim my usage of that dependency a bit. Just emailing me a simple mail like `"Dependency {xyz} has a vuln report here: <{github.com/xyz/...}>"`  would suffice.
 #### ...but fixed there
 Now that saves us a lot of the trouble. You can safely just create a GitHub Issue or a PR to update the dependency and include the patches. After that, if the severity is high enough, maybe mail me to alert me, otherwise just wait for me to come online and accept the patch.
