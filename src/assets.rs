@@ -19,3 +19,9 @@ pub const STR_ASSETS_HOME_HTML: &str = include_str!(".\\assets\\timeline.handleb
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("./assets/initial_config.toml");
 #[cfg(windows)]
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!(".\\assets\\initial_config.toml");
+
+
+#[cfg(not(windows))]
+pub const STR_ASSETS_MAIN_JS: &str = include_str!("./assets/site.js");
+#[cfg(windows)]
+pub const STR_ASSETS_MAIN_JS: &str = include_str!(".\\assets\\site.js");
