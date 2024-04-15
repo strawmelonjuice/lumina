@@ -28,4 +28,5 @@ pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("..\\target\\generated\\js
 #[cfg(not(windows))]
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 #[cfg(windows)]
-pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("..\\target\\generated\\css\\main.min.css");
+pub const STR_GENERATED_MAIN_MIN_CSS: &str =
+    include_str!("..\\target\\generated\\css\\main.min.css");
