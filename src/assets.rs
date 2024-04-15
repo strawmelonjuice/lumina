@@ -21,6 +21,11 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("./assets/initial_config.to
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!(".\\assets\\initial_config.toml");
 
 #[cfg(not(windows))]
-pub const STR_ASSETS_MAIN_JS: &str = include_str!("./assets/site.js");
+pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("../target/generated/js/main.min.js");
 #[cfg(windows)]
-pub const STR_ASSETS_MAIN_JS: &str = include_str!(".\\assets\\site.js");
+pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("..\\target\\generated\\js\\main.min.js");
+
+#[cfg(not(windows))]
+pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
+#[cfg(windows)]
+pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("..\\target\\generated\\css\\main.min.css");

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
@@ -7,7 +6,7 @@
 
 // These variables are passed down from the server.
 
-const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type checking.
+const ephewvar = { config: { interinstance: { iid: "example.com" } } }; // Default config's JSON, to allow editor type chekcking.
 
 // Start of actual site.js
 

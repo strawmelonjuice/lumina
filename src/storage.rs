@@ -5,8 +5,8 @@
  */
 
 use rusqlite::Connection;
-use std::{process};
 use std::io::{Error, ErrorKind};
+use std::process;
 
 use serde::{Deserialize, Serialize};
 
