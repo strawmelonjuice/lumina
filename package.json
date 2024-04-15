@@ -1,0 +1,26 @@
+{
+  "devDependencies": {
+    "tailwindcss": "latest",
+    "autoprefixer": "latest",
+    "postcss": "latest",
+    "terser": "latest",
+    "typescript": "^5.0.0",
+    "postcss-cli": "latest",
+    "@biomejs/biome": "latest",
+    "clean-css-cli": "4"
+  },
+  "scripts": {
+    "build": "npm run build:css && npm run build:jsts && npm run minify && npm run build:rs",
+    "build:css": "postcss -o ./target/generated/css/main.css ./src/assets/main.pcss",
+    "build:jsts": "tsc",
+    "build:rs": "cargo build",
+    "format": "npm run format:rs && npm run format:ts && npm run minify:css",
+    "format:rs": "cargo fmt",
+    "format:ts": "biome format \"./src/assets/ts/main.ts\" --write",
+    "minify": "npm run minify:js && npm run minify:css",
+    "minify:js": "terser --comments all ./target/generated/js/main.js > ./target/generated/js/main.min.js",
+    "minify:css": "cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
+    "prestart": "npm run build",
+    "start": "cargo run"
+  }
+}

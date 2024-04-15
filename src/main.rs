@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 const DEFAULT_JS_JSON: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
-
+const DEFAULT_JS_MIN_JSON: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{fs, path::Path, process};
@@ -29,7 +29,10 @@ use simplelog::*;
 
 use colored::Colorize;
 
-use crate::assets::{STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_JS, STR_CLEAN_CONFIG_TOML};
+use crate::assets::{
+    STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
+    STR_GENERATED_MAIN_MIN_CSS,
+};
 use axum::http::header;
 use axum::response::Html;
 use axum::serve::Serve;
@@ -247,27 +250,35 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    let jssm = STR_ASSETS_MAIN_JS.replace(
-        DEFAULT_JS_JSON,
-        format!(
-            "const ephewvar = {};",
-            serde_json::to_string(&JSClientData {
-                config: JSClientConfig {
-                    interinstance: JSClientConfigInterInstance {
-                        iid: config.interinstance.iid.clone().to_string()
-                    }
-                }
-            })
-            .unwrap()
+    let jsonm = serde_json::to_string(&JSClientData {
+        config: JSClientConfig {
+            interinstance: JSClientConfigInterInstance {
+                iid: config.interinstance.iid.clone().to_string(),
+            },
+        },
+    })
+    .unwrap();
+    let jssm = STR_ASSETS_MAIN_MIN_JS
+        .replace(
+            DEFAULT_JS_JSON,
+            format!("const ephewvar = {};", jsonm.clone()).as_str(),
         )
-        .as_str(),
-    );
+        .replace(DEFAULT_JS_MIN_JSON, jsonm.clone().as_str());
     let app = Router::new()
         .route("/", get(root))
         .route("/api/", post(api))
         .route(
             "/site.js",
             get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], jssm) }),
+        )
+        .route(
+            "/site.css",
+            get(|| async {
+                (
+                    [(header::CONTENT_TYPE, "text/css")],
+                    STR_GENERATED_MAIN_MIN_CSS,
+                )
+            }),
         )
         .route("/home", get(root))
         .layer(Extension(server_p));
@@ -322,10 +333,11 @@ async fn api(Json(payload): Json<String>) -> &'static str {
 async fn root(Extension(server_p): Extension<ServerP>) -> Html<String> {
     // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
     Html::from(
-        (STR_ASSETS_INDEX_HTML.replace(
-            "{{iid}}",
-            &server_p.clone().config.interinstance.iid.clone(),
-        ))
-        .clone(),
+        STR_ASSETS_INDEX_HTML
+            .replace(
+                "{{iid}}",
+                &server_p.clone().config.interinstance.iid.clone(),
+            )
+            .clone(),
     )
 }
