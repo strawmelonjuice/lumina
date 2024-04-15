@@ -30,11 +30,11 @@ use simplelog::*;
 use colored::Colorize;
 
 use crate::assets::{STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_JS, STR_CLEAN_CONFIG_TOML};
+use axum::http::header;
 use axum::response::Html;
 use axum::serve::Serve;
 use std::fs::File;
 use std::path::PathBuf;
-use axum::http::header;
 
 #[derive(Clone)]
 struct ServerP {
@@ -53,7 +53,7 @@ struct JSClientConfig {
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct JSClientConfigInterInstance {
-    iid: String
+    iid: String,
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -247,19 +247,28 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    let jssm = STR_ASSETS_MAIN_JS.replace(DEFAULT_JS_JSON, format!("const ephewvar = {};", serde_json::to_string(&JSClientData {
-        config: JSClientConfig {
-            interinstance: JSClientConfigInterInstance {
-                iid: config.interinstance.iid.clone().to_string()
-            }
-        }
-    }).unwrap()).as_str());
+    let jssm = STR_ASSETS_MAIN_JS.replace(
+        DEFAULT_JS_JSON,
+        format!(
+            "const ephewvar = {};",
+            serde_json::to_string(&JSClientData {
+                config: JSClientConfig {
+                    interinstance: JSClientConfigInterInstance {
+                        iid: config.interinstance.iid.clone().to_string()
+                    }
+                }
+            })
+            .unwrap()
+        )
+        .as_str(),
+    );
     let app = Router::new()
         .route("/", get(root))
         .route("/api/", post(api))
-        .route("/site.js",  get(|| async {
-            ([(header::CONTENT_TYPE, "text/javascript")], jssm)
-        }))
+        .route(
+            "/site.js",
+            get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], jssm) }),
+        )
         .route("/home", get(root))
         .layer(Extension(server_p));
     let listener = match tokio::net::TcpListener::bind(format!(
@@ -299,12 +308,11 @@ async fn main() {
 
     let _ = futures::join!(
         instance_poller::main(config.interinstance.polling.pollintervall, tell),
-        #[allow(clippy::redundant_closure_call)] // This closure is not redundant, as it provides a `Future`, which is needed for `futures::join()`.
-(|server: Serve<Router, Router>| async {
-    server.await.unwrap()})(main_server)
+        #[allow(clippy::redundant_closure_call)]
+        // This closure is not redundant, as it provides a `Future`, which is needed for `futures::join()`.
+        (|server: Serve<Router, Router>| async { server.await.unwrap() })(main_server)
     );
 }
-
 
 async fn api(Json(payload): Json<String>) -> &'static str {
     let _ = payload;
@@ -317,8 +325,7 @@ async fn root(Extension(server_p): Extension<ServerP>) -> Html<String> {
         (STR_ASSETS_INDEX_HTML.replace(
             "{{iid}}",
             &server_p.clone().config.interinstance.iid.clone(),
-        )
-             )
+        ))
         .clone(),
     )
 }
