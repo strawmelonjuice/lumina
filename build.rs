@@ -33,7 +33,7 @@ fn main() {
         Ok(t) => {
             if t.status.code().unwrap() != 0 {
                 panic!(
-                    "Could not install dependencies: {}",
+                    "Could not install dependencies:\n\n{}",
                     std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
                 )
             }
@@ -42,7 +42,7 @@ fn main() {
             Ok(t) => {
                 if t.status.code().unwrap() != 0 {
                     panic!(
-                        "Could not install dependencies: {}",
+                        "Could not install dependencies:\n\n{}",
                         std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
                     )
                 }
@@ -61,7 +61,7 @@ fn main() {
         Ok(t) => {
             if t.status.code().unwrap() != 0 {
                 panic!(
-                    "Could not generate assets: {}",
+                    "Could not generate assets:\n\n{}",
                     std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
                 )
             }
@@ -74,7 +74,7 @@ fn main() {
             Ok(t) => {
                 if t.status.code().unwrap() != 0 {
                     panic!(
-                        "Could not generate assets: {}",
+                        "Could not generate assets:\n\n{}",
                         std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
                     )
                 }
