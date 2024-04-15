@@ -9,8 +9,9 @@ use std::{fs, path::Path, process};
 
 use axum::{
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
+
 mod assets;
 mod instance_poller;
 mod storage;
@@ -32,6 +33,10 @@ use axum::serve::Serve;
 use std::fs::File;
 use std::path::PathBuf;
 
+#[derive(Clone)]
+struct ServerP {
+    config: Config,
+}
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
@@ -113,9 +118,7 @@ async fn main() {
                 }
             };
 
-            match write!(
-                output,
-                "{}", STR_CLEAN_CONFIG_TOML) {
+            match write!(output, "{}", STR_CLEAN_CONFIG_TOML) {
                 Ok(p) => p,
                 Err(a) => {
                     error!(
@@ -213,6 +216,9 @@ async fn main() {
     ])
     .unwrap();
     let tell = tellgen(config.clone().logging);
+    let server_p: ServerP = ServerP {
+        config: config.clone(),
+    };
     tell(format!(
         "Logging to {}",
         logsets
@@ -225,6 +231,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/api/", post(api));
+        .route("/api/", post(api))
+        .layer(Extension(server_p));
     let listener = match tokio::net::TcpListener::bind(format!(
         "{0}:{1}",
         config.server.adress, config.server.port
@@ -265,6 +273,8 @@ async fn main() {
         returnmainserver(main_server)
     );
 }
+
+// Remove me whenever stable async lambdas are possible..
 async fn returnmainserver(server: Serve<Router, Router>) {
     server.await.unwrap()
 }
@@ -274,6 +284,13 @@ async fn api(Json(payload): Json<String>) -> &'static str {
     "Hi?"
 }
 
-async fn root() -> Html<&'static str> {
-    Html::from(STR_ASSETS_INDEX_HTML)
+async fn root(Extension(server_p): Extension<ServerP>) -> Html<String> {
+    // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
+    Html::from(
+        (STR_ASSETS_INDEX_HTML.replace(
+            "{{iid}}",
+            &server_p.clone().config.interinstance.iid.clone(),
+        ))
+        .clone(),
+    )
 }
