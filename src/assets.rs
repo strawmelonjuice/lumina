@@ -20,7 +20,6 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("./assets/initial_config.to
 #[cfg(windows)]
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!(".\\assets\\initial_config.toml");
 
-
 #[cfg(not(windows))]
 pub const STR_ASSETS_MAIN_JS: &str = include_str!("./assets/site.js");
 #[cfg(windows)]
