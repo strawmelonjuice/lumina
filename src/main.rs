@@ -230,8 +230,8 @@ async fn main() {
     ));
     let app = Router::new()
         .route("/", get(root))
-        .route("/api/", post(api));
         .route("/api/", post(api))
+        .route("/home", get(root))
         .layer(Extension(server_p));
     let listener = match tokio::net::TcpListener::bind(format!(
         "{0}:{1}",
