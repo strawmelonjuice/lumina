@@ -21,7 +21,7 @@ ignorelist = [
 pollintervall = 120
 
 [database]
-# What kind of database to use, currently only supporting "sqlite" (recommended), and "csv" (advised against).
+# What kind of database to use, currently only supporting "sqlite".
 method = "sqlite"
 [database.sqlite]
 # The database file to use for sqlite.
