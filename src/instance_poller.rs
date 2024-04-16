@@ -6,17 +6,26 @@
 
 use std::time::Duration;
 
+use crate::Config;
 use async_std::task;
-pub(crate) async fn main(mut i: u64, tell: fn(String)) {
+
+pub(crate) async fn main(j: Config, tell: fn(String)) {
     let mut o = 0;
+    let mut i = j.interinstance.polling.pollintervall;
     if i < 30 {
         i = 120
     };
+    let a = j.interinstance.synclist.len();
+    if a == 0 {
+        tell("Poller: No instances to poll from are listed. Poller will close until further notice to preserve CPU threads.".to_string());
+        return;
+    }
+    let s = if a == 1 { "" } else { "s" };
     loop {
         o += 1;
-        tell(format!("Poller: Polling from listed instances, round {o}. Pollings are done every {i} seconds."));
+        tell(format!("Poller: Polling from {a} listed instance{s}, round {o}. Pollings are done every {i} seconds."));
         // Here.
-        tell(String::from("Poller: Poll done."));
+        tell(String::from("Poller: Polls done."));
         task::sleep(Duration::from_secs(i)).await;
     }
 }

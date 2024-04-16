@@ -318,7 +318,7 @@ async fn main() {
     );
 
     let _ = futures::join!(
-        instance_poller::main(config.interinstance.polling.pollintervall, tell),
+        instance_poller::main(config.clone(), tell),
         #[allow(clippy::redundant_closure_call)]
         // This closure is not redundant, as it provides a `Future`, which is needed for `futures::join()`.
         (|server: Serve<Router, Router>| async { server.await.unwrap() })(main_server)
