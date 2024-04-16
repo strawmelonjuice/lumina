@@ -13,16 +13,13 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::{fs, path::Path, process};
 
-use actix_identity::IdentityMiddleware;
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
 use actix_web::cookie::Key;
 use actix_web::http::StatusCode;
-use actix_web::{
-    get,
-    http::header::ContentType,
-    web::{self, Data},
-    App, HttpRequest, HttpResponse, HttpServer, Responder,
+use actix_web::HttpResponse;
+use actix_web::{web::{self, Data},
+    App, HttpServer, Responder,
 };
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
