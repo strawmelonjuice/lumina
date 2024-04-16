@@ -3,45 +3,51 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-const DEFAULT_JS_JSON: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
-const DEFAULT_JS_MIN_JSON: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
-use serde::{Deserialize, Serialize};
+#[macro_use]
+extern crate log;
+extern crate simplelog;
+
+use std::fmt::Debug;
+use std::fs::File;
 use std::io::Write;
+use std::path::PathBuf;
 use std::{fs, path::Path, process};
 
-use axum::{
-    routing::{get, post},
-    Extension, Json, Router,
+use actix_identity::IdentityMiddleware;
+use actix_session::storage::CookieSessionStore;
+use actix_session::{Session, SessionMiddleware};
+use actix_web::cookie::Key;
+use actix_web::http::StatusCode;
+use actix_web::{
+    get,
+    http::header::ContentType,
+    web::{self, Data},
+    App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
+use colored::Colorize;
+use serde::{Deserialize, Serialize};
+use simplelog::*;
+use tokio::sync::{Mutex, MutexGuard};
+
+use tell::tellgen;
+
+use crate::assets::{
+    STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
+    STR_GENERATED_MAIN_MIN_CSS,
+};
+
+const DEFAULT_JS_JSON: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
+const DEFAULT_JS_MIN_JSON: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
 
 mod assets;
 mod instance_poller;
 mod storage;
 mod tell;
 
-use tell::tellgen;
-
-#[macro_use]
-extern crate log;
-extern crate simplelog;
-
-use simplelog::*;
-
-use colored::Colorize;
-
-use crate::assets::{
-    STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
-    STR_GENERATED_MAIN_MIN_CSS,
-};
-use axum::http::header;
-use axum::response::Html;
-use axum::serve::Serve;
-use std::fs::File;
-use std::path::PathBuf;
-
 #[derive(Clone)]
 struct ServerP {
     config: Config,
+    tell: fn(String) -> (),
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -89,11 +95,13 @@ pub struct LogSets {
     pub logfile: PathBuf,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Server {
     pub port: u16,
     pub adress: String,
+    #[serde(alias = "cookiekey")]
+    pub cookie_key: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -132,8 +140,8 @@ async fn main() {
             let mut output = match File::create(confp) {
                 Ok(p) => p,
                 Err(a) => {
-                    error!(
-                        "Could not create blank config file. The system returned: {}",
+                    eprintln!(
+                        "Error: Could not create blank config file. The system returned: {}",
                         a
                     );
                     process::exit(1);
@@ -143,8 +151,8 @@ async fn main() {
             match write!(output, "{}", STR_CLEAN_CONFIG_TOML) {
                 Ok(p) => p,
                 Err(a) => {
-                    error!(
-                        "Could not create blank config file. The system returned: {}",
+                    eprintln!(
+                        "Error: Could not create blank config file. The system returned: {}",
                         a
                     );
                     process::exit(1);
@@ -155,8 +163,8 @@ async fn main() {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => p,
                 Err(_e) => {
-                    error!(
-                        "Could not interpret server configuration at `{}`!",
+                    eprintln!(
+                        "Error: Could not interpret server configuration at `{}`!",
                         confp
                             .canonicalize()
                             .unwrap_or(confp.to_path_buf())
@@ -167,8 +175,8 @@ async fn main() {
                 }
             },
             Err(_) => {
-                error!(
-                    "Could not interpret server configuration at `{}`!",
+                eprintln!(
+                    "Error: Could not read server configuration at `{}`!",
                     confp
                         .canonicalize()
                         .unwrap_or(confp.to_path_buf())
@@ -240,7 +248,9 @@ async fn main() {
     let tell = tellgen(config.clone().logging);
     let server_p: ServerP = ServerP {
         config: config.clone(),
+        tell: tell.clone(),
     };
+    let server_q: Data<Mutex<ServerP>> = Data::new(Mutex::new(server_p));
     tell(format!(
         "Logging to {}",
         logsets
@@ -250,43 +260,43 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    let jsonm = serde_json::to_string(&JSClientData {
-        config: JSClientConfig {
-            interinstance: JSClientConfigInterInstance {
-                iid: config.interinstance.iid.clone().to_string(),
-            },
-        },
+    // testing
+    println!(
+        "{}",
+        storage::fetch(
+            &config.clone(),
+            "users".to_string(),
+            "password",
+            "password".to_string()
+        )
+        .unwrap()
+        .unwrap_or("no such user".parse().unwrap())
+    );
+    let keydouble = config.server.cookie_key.repeat(2);
+    let keybytes = keydouble.as_bytes();
+    if keybytes.len() < 32 {
+        error!(
+            "Error: Cookie key must be at least 32 (doubled) bytes long. \"{}\" gives us {} bytes.",
+            config.server.cookie_key,
+            keybytes.len()
+        );
+        process::exit(1);
+    }
+    let secret_key: Key = Key::from(keybytes);
+    let main_server = match HttpServer::new(move || {
+        App::new()
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                secret_key.clone(),
+            ))
+            .default_service(web::to(|| HttpResponse::Ok()))
+            .route("/", web::get().to(root))
+            .route("/home", web::get().to(timelines))
+            .route("/site.js", web::get().to(site_js))
+            .route("/site.css", web::get().to(site_css))
+            .app_data(web::Data::clone(&server_q))
     })
-    .unwrap();
-    let jssm = STR_ASSETS_MAIN_MIN_JS
-        .replace(
-            DEFAULT_JS_JSON,
-            format!("const ephewvar = {};", jsonm.clone()).as_str(),
-        )
-        .replace(DEFAULT_JS_MIN_JSON, jsonm.clone().as_str());
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/api/", post(api))
-        .route(
-            "/site.js",
-            get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], jssm) }),
-        )
-        .route(
-            "/site.css",
-            get(|| async {
-                (
-                    [(header::CONTENT_TYPE, "text/css")],
-                    STR_GENERATED_MAIN_MIN_CSS,
-                )
-            }),
-        )
-        .route("/home", get(root))
-        .layer(Extension(server_p));
-    let listener = match tokio::net::TcpListener::bind(format!(
-        "{0}:{1}",
-        config.server.adress, config.server.port
-    ))
-    .await
+    .bind((config.server.adress.clone(), config.server.port.clone()))
     {
         Ok(o) => {
             tell(format!(
@@ -302,42 +312,74 @@ async fn main() {
             );
             process::exit(1);
         }
-    };
-    let main_server = axum::serve(listener, app);
-    // testing
-    println!(
-        "{}",
-        storage::fetch(
-            &config.clone(),
-            "users".to_string(),
-            "password",
-            "password".to_string()
-        )
-        .unwrap()
-        .unwrap_or("no such user".parse().unwrap())
-    );
-
-    let _ = futures::join!(
-        instance_poller::main(config.clone(), tell),
-        #[allow(clippy::redundant_closure_call)]
-        // This closure is not redundant, as it provides a `Future`, which is needed for `futures::join()`.
-        (|server: Serve<Router, Router>| async { server.await.unwrap() })(main_server)
-    );
+    }
+    .run();
+    let _ = futures::join!(instance_poller::main(config.clone(), tell), main_server);
 }
 
-async fn api(Json(payload): Json<String>) -> &'static str {
-    let _ = payload;
-    "Hi?"
+async fn timelines(server_z: Data<Mutex<ServerP>>, _session: Session) -> impl Responder {
+    let server_y = server_z.lock().await;
+    let server_p: ServerP = server_y.clone();
+    drop(server_y);
+    let username_ = _session.get::<String>("username");
+    (server_p.tell)(format!(
+        "Request/200\t\t{} (@{})",
+        "/home".green(),
+        username_
+            .unwrap_or(Option::from(String::from("unknown")))
+            .unwrap_or(String::from("unknown"))
+    ));
+    let cont = "";
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(cont)
 }
 
-async fn root(Extension(server_p): Extension<ServerP>) -> Html<String> {
+async fn root(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y = server_z.lock().await;
+    let server_p: ServerP = server_y.clone();
+    drop(server_y);
+    (server_p.tell)(format!("Request/200\t\t{}", "/".green()));
     // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
-    Html::from(
-        STR_ASSETS_INDEX_HTML
-            .replace(
-                "{{iid}}",
-                &server_p.clone().config.interinstance.iid.clone(),
-            )
-            .clone(),
-    )
+
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(
+            STR_ASSETS_INDEX_HTML
+                .replace(
+                    "{{iid}}",
+                    &server_p.clone().config.interinstance.iid.clone(),
+                )
+                .clone(),
+        )
+}
+
+async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    let config: Config = server_y.clone().config;
+    let jsonm = serde_json::to_string(&JSClientData {
+        config: JSClientConfig {
+            interinstance: JSClientConfigInterInstance {
+                iid: config.interinstance.iid.clone().to_string(),
+            },
+        },
+    })
+    .unwrap();
+
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/javascript; charset=utf-8")
+        .body(
+            STR_ASSETS_MAIN_MIN_JS
+                .replace(
+                    DEFAULT_JS_JSON,
+                    format!("const ephewvar = {};", jsonm.clone()).as_str(),
+                )
+                .replace(DEFAULT_JS_MIN_JSON, jsonm.clone().as_str()),
+        )
+}
+
+async fn site_css() -> HttpResponse {
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/css; charset=utf-8")
+        .body(STR_GENERATED_MAIN_MIN_CSS)
 }
