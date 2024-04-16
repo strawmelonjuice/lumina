@@ -3,6 +3,8 @@
 port = 8085
 # What adress to bind to? Usually, this is 127.0.0.1 for dev, and 0.0.0.0 for prod.
 adress = "0.0.0.0"
+# Secret key for cookie encryption
+cookiekey = "Uneaten email in the washing machines to dry the popcorn"
 
 [interinstance]
 # Instance ID, equals, the domain name this instance is open on.

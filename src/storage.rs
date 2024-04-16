@@ -4,10 +4,10 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-use rusqlite::Connection;
 use std::io::{Error, ErrorKind};
 use std::process;
 
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
 use crate::Config;
@@ -48,7 +48,7 @@ pub fn fetch(
             Ok(d) => d,
             Err(_e) => {
                 error!("Could not create a database connection!");
-                std::process::exit(1);
+                process::exit(1);
             }
         };
         dbconf(&conn);
@@ -96,7 +96,7 @@ pub fn fetch(
 fn dbconf(conn: &Connection) {
     let emergencyabort = || {
         error!("Could not configure the database correctly!");
-        std::process::exit(1);
+        process::exit(1);
     };
 
     match conn.execute(
