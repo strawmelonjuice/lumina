@@ -9,7 +9,8 @@ use crate::Logging;
 use colored::Colorize;
 use std::time::SystemTime;
 use time::{format_description, OffsetDateTime};
-// Generates a function that either prints as an [info] log, or prints as [log], depending on configuration. This because loglevel 3 is a bit too verbose, while loglevel 2 is too quiet.
+
+#[doc = r"Generates a function that either prints as an [info] log, or prints as [log], depending on configuration. This because loglevel 3 is a bit too verbose, while loglevel 2 is too quiet."]
 pub(crate) fn tellgen(a: Option<Logging>) -> fn(msg: String) {
     fn po(msg: String) {
         let dt1: OffsetDateTime = SystemTime::now().into();
