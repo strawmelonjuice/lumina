@@ -4,6 +4,41 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
+@font-face {
+	font-family: "Josefin Sans";
+	src: url(/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf);
+}
+
+@font-face {
+	font-family: "Fira Sans";
+	src: url(/fonts/Fira_Sans/FiraSans-Regular.ttf);
+}
+
+@font-face {
+	font-family: "Gantari";
+	src: url(/fonts/Gantari/Gantari-VariableFont_wght.ttf);
+}
+
+@font-face {
+	font-family: "Syne";
+	src: url(/fonts/Syne/Syne-VariableFont_wght.ttf);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	html {
+		font-family: "Josefin Sans", "Fira Sans", serif;
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	.speciaal {
+		font-family: "Gantari", "Syne", cursive;
+	}
+}

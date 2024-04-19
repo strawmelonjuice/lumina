@@ -17,8 +17,9 @@ use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
 use actix_web::cookie::Key;
 use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
-use actix_web::{web::{self, Data},
+use actix_web::{get, HttpRequest, HttpResponse};
+use actix_web::{
+    web::{self, Data},
     App, HttpServer, Responder,
 };
 use colored::Colorize;
@@ -127,6 +128,53 @@ pub struct Database {
 #[serde(rename_all = "camelCase")]
 pub struct SQLite {
     pub file: String,
+}
+
+#[doc = r"Font file server
+
+# Asset-dependend!
+Just like assets.rs, this function may fail to compile when asset paths aren't adding up.
+"]
+#[get("/fonts/{a:.*}")]
+async fn fntserver(req: HttpRequest) -> HttpResponse {
+    let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
+    let fontbytes: &[u8] = match fnt.as_str() {
+        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => {
+            if cfg!(not(windows)) {
+                include_bytes!("./assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf")
+            } else {
+                include_bytes!(".\\assets\\fonts\\Josefin_Sans\\JosefinSans-VariableFont_wght.ttf")
+            }
+        }
+        "Fira_Sans/FiraSans-Regular.ttf" => {
+            if cfg!(not(windows)) {
+                include_bytes!("./assets/fonts/Fira_Sans/FiraSans-Regular.ttf")
+            } else {
+                include_bytes!(".\\assets\\fonts\\Fira_Sans\\FiraSans-Regular.ttf")
+            }
+        }
+        "Gantari/Gantari-VariableFont_wght.ttf" => {
+            if cfg!(not(windows)) {
+                include_bytes!("./assets/fonts/Gantari/Gantari-VariableFont_wght.ttf")
+            } else {
+                include_bytes!(".\\assets\\fonts\\Gantari\\Gantari-VariableFont_wght.ttf")
+            }
+        }
+        "Syne/Syne-VariableFont_wght.ttf" => {
+            if cfg!(not(windows)) {
+                include_bytes!("./assets/fonts/Syne/Syne-VariableFont_wght.ttf")
+            } else {
+                include_bytes!(".\\assets\\fonts\\Syne\\Syne-VariableFont_wght.ttf")
+            }
+        }
+        _ => {
+            return HttpResponse::NotFound().into();
+        }
+    };
+    HttpResponse::Ok()
+        .append_header(("Accept-Charset", "UTF-8"))
+        .content_type("font/ttf")
+        .body(fontbytes)
 }
 
 #[tokio::main]
@@ -291,6 +339,7 @@ async fn main() {
             .route("/home", web::get().to(timelines))
             .route("/site.js", web::get().to(site_js))
             .route("/site.css", web::get().to(site_css))
+            .service(fntserver)
             .app_data(web::Data::clone(&server_q))
     })
     .bind((config.server.adress.clone(), config.server.port.clone()))
