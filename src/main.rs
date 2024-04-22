@@ -11,7 +11,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::{fs, path::Path, process};
+use std::{env, fs, path::Path, process};
 
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
@@ -30,7 +30,7 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{
-    STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
+    fonts, Fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
     STR_GENERATED_MAIN_MIN_CSS,
 };
 
@@ -64,11 +64,25 @@ struct JSClientConfigInterInstance {
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PreConfig {
+    pub server: Server,
+    pub interinstance: InterInstance,
+    pub database: Database,
+    pub logging: Option<Logging>,
+}
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     pub server: Server,
     pub interinstance: InterInstance,
     pub database: Database,
     pub logging: Option<Logging>,
+    pub session: ESession,
+}
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ESession {
+    pub cd: PathBuf,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -137,36 +151,13 @@ Just like assets.rs, this function may fail to compile when asset paths aren't a
 "]
 #[get("/fonts/{a:.*}")]
 async fn fntserver(req: HttpRequest) -> HttpResponse {
+    let fonts = fonts();
     let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
     let fontbytes: &[u8] = match fnt.as_str() {
-        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => {
-            if cfg!(not(windows)) {
-                include_bytes!("./assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf")
-            } else {
-                include_bytes!(".\\assets\\fonts\\Josefin_Sans\\JosefinSans-VariableFont_wght.ttf")
-            }
-        }
-        "Fira_Sans/FiraSans-Regular.ttf" => {
-            if cfg!(not(windows)) {
-                include_bytes!("./assets/fonts/Fira_Sans/FiraSans-Regular.ttf")
-            } else {
-                include_bytes!(".\\assets\\fonts\\Fira_Sans\\FiraSans-Regular.ttf")
-            }
-        }
-        "Gantari/Gantari-VariableFont_wght.ttf" => {
-            if cfg!(not(windows)) {
-                include_bytes!("./assets/fonts/Gantari/Gantari-VariableFont_wght.ttf")
-            } else {
-                include_bytes!(".\\assets\\fonts\\Gantari\\Gantari-VariableFont_wght.ttf")
-            }
-        }
-        "Syne/Syne-VariableFont_wght.ttf" => {
-            if cfg!(not(windows)) {
-                include_bytes!("./assets/fonts/Syne/Syne-VariableFont_wght.ttf")
-            } else {
-                include_bytes!(".\\assets\\fonts\\Syne\\Syne-VariableFont_wght.ttf")
-            }
-        }
+        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => &fonts.josefin_sans,
+        "Fira_Sans/FiraSans-Regular.ttf" => &fonts.fira_sans,
+        "Gantari/Gantari-VariableFont_wght.ttf" => &fonts.gantari,
+        "Syne/Syne-VariableFont_wght.ttf" => &fonts.syne,
         _ => {
             return HttpResponse::NotFound().into();
         }
@@ -179,8 +170,45 @@ async fn fntserver(req: HttpRequest) -> HttpResponse {
 
 #[tokio::main]
 async fn main() {
+    let v = (|| {
+        if env::args().nth(1).unwrap_or(String::from("")) != String::from("") {
+            return PathBuf::from(env::args().nth(1).unwrap());
+        };
+        match home::home_dir() {
+            Some(path) => path.join(".ephewinstance/"),
+            None => PathBuf::from(Path::new(".")),
+        }
+    })();
+    let vs = format!(
+        "{}",
+        &v.canonicalize()
+            .unwrap_or(v.to_path_buf())
+            .to_string_lossy()
+            .replace("\\\\?\\", "")
+    );
+    if !v.exists() {
+        match fs::create_dir_all(v.clone()) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!(
+                    "Could not write necessary files! Error: {}",
+                    e.to_string().bright_red()
+                );
+                process::exit(1);
+            }
+        }
+    }
+    if !v.is_dir() {
+        eprintln!(
+            "Unable to load or write config! Error: {}",
+            format!("`{}` is not a directory.", vs).bright_red()
+        );
+        process::exit(1);
+    }
     let config: Config = {
-        let confp = Path::new("./config.toml");
+        println!("Loading configuration from {}", vs);
+        let va = v.clone().join("./config.toml");
+        let confp = Path::new(&va);
         if (!confp.is_file()) || (!confp.exists()) {
             let mut output = match File::create(confp) {
                 Ok(p) => p,
@@ -204,9 +232,20 @@ async fn main() {
                 }
             };
         }
+        let o = v.clone();
         match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
-                Ok(p) => p,
+                Ok(p) => {
+                    let p: PreConfig = p;
+                    let a = Config {
+                        server: p.server,
+                        interinstance: p.interinstance,
+                        database: p.database,
+                        logging: p.logging,
+                        session: ESession { cd: o },
+                    };
+                    a
+                }
                 Err(_e) => {
                     eprintln!(
                         "Error: Could not interpret server configuration at `{}`!",
@@ -252,14 +291,12 @@ async fn main() {
                 }
             }
         }
-        return match config.clone().logging {
-            None => {
-                return LogSets {
-                    file_loglevel: LevelFilter::Info,
-                    term_loglevel: LevelFilter::Warn,
-                    logfile: PathBuf::from("./instance.log"),
-                };
-            }
+        match config.clone().logging {
+            None => LogSets {
+                file_loglevel: LevelFilter::Info,
+                term_loglevel: LevelFilter::Warn,
+                logfile: PathBuf::from(config.session.cd.join("./instance.log")),
+            },
             Some(d) => LogSets {
                 file_loglevel: match d.file_loglevel {
                     Some(l) => asddg(l),
@@ -270,11 +307,11 @@ async fn main() {
                     None => LevelFilter::Warn,
                 },
                 logfile: match d.logfile {
-                    Some(s) => PathBuf::from(s.as_str()),
-                    None => PathBuf::from("./instance.log"),
+                    Some(s) => PathBuf::from(config.session.cd.join(s.as_str())),
+                    None => PathBuf::from(config.session.cd.join("./instance.log")),
                 },
             },
-        };
+        }
     })(&config);
     CombinedLogger::init(vec![
         TermLogger::new(
