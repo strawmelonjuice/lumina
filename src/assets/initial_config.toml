@@ -33,3 +33,8 @@ file = "instance-db.sqlite"
 file-loglevel = 3
 console-loglevel = 2
 file = "instance-logging.log"
+
+[web]
+
+[web.style]
+body.background-color= "rgb(255 241 242)"
