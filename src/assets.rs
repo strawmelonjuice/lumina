@@ -5,6 +5,8 @@
  */
 #![allow(dead_code)]
 
+use serde::{Deserialize, Serialize};
+
 #[cfg(not(windows))]
 pub const STR_ASSETS_INDEX_HTML: &str = include_str!("./assets/index.html");
 #[cfg(windows)]
@@ -30,3 +32,33 @@ pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/c
 #[cfg(windows)]
 pub const STR_GENERATED_MAIN_MIN_CSS: &str =
     include_str!("..\\target\\generated\\css\\main.min.css");
+type Fontbytes = &'static [u8];
+#[derive()]
+pub(crate) struct Fonts {
+    pub(crate) josefin_sans: Fontbytes,
+    pub(crate) fira_sans: Fontbytes,
+    pub(crate) gantari: Fontbytes,
+    pub(crate) syne: Fontbytes,
+}
+#[cfg(windows)]
+pub(crate) fn fonts() -> Fonts {
+    Fonts {
+        josefin_sans: (include_bytes!(
+            ".\\assets\\fonts\\Josefin_Sans\\JosefinSans-VariableFont_wght.ttf"
+        )),
+        fira_sans: (include_bytes!(".\\assets\\fonts\\Fira_Sans\\FiraSans-Regular.ttf")),
+        gantari: (include_bytes!(".\\assets\\fonts\\Gantari\\Gantari-VariableFont_wght.ttf")),
+        syne: (include_bytes!(".\\assets\\fonts\\Syne\\Syne-VariableFont_wght.ttf")),
+    }
+}
+#[cfg(not(windows))]
+pub(crate) fn fonts() -> Fonts {
+    Fonts {
+        josefin_sans: (include_bytes!(
+            "./assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf"
+        )),
+        fira_sans: (include_bytes!("./assets/fonts/Fira_Sans/FiraSans-Regular.ttf")),
+        gantari: (include_bytes!("./assets/fonts/Gantari/Gantari-VariableFont_wght.ttf")),
+        syne: (include_bytes!("./assets/fonts/Syne/Syne-VariableFont_wght.ttf")),
+    }
+}
