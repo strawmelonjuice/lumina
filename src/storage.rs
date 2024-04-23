@@ -44,7 +44,7 @@ pub fn fetch(
     searchv: String,
 ) -> Result<Option<String>, Error> {
     if config.database.method.as_str() == "sqlite" {
-        let conn = match Connection::open(config.clone().database.sqlite.unwrap().file) {
+        let conn = match Connection::open(config.clone().session.cd.join(config.clone().database.sqlite.unwrap().file)) {
             Ok(d) => d,
             Err(_e) => {
                 error!("Could not create a database connection!");
