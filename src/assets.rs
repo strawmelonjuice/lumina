@@ -72,3 +72,8 @@ pub(crate) fn fonts() -> Fonts {
 pub const STR_ASSETS_LOGO_SVG: &str = include_str!("./assets/ephewlogo-1.svg");
 #[cfg(windows)]
 pub const STR_ASSETS_LOGO_SVG: &str = include_str!(".\\assets\\ephewlogo-1.svg");
+
+#[cfg(not(windows))]
+pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("./assets/ephewlogo-1.png");
+#[cfg(windows)]
+pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!(".\\assets\\ephewlogo-1.png");
