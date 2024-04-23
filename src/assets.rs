@@ -5,7 +5,6 @@
  */
 #![allow(dead_code)]
 
-use serde::{Deserialize, Serialize};
 
 #[cfg(not(windows))]
 pub const STR_ASSETS_INDEX_HTML: &str = include_str!("./assets/index.html");
