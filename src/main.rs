@@ -22,6 +22,7 @@ use actix_web::{
     web::{self, Data},
     App, HttpServer, Responder,
 };
+use assets::STR_ASSETS_LOGO_SVG;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -30,8 +31,7 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{
-    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
-    STR_GENERATED_MAIN_MIN_CSS,
+    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS, STR_GENERATED_MAIN_MIN_CSS
 };
 
 const DEFAULT_JS_JSON: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
@@ -83,6 +83,7 @@ pub struct Config {
 #[serde(rename_all = "camelCase")]
 pub struct ESession {
     pub cd: PathBuf,
+    customcss: String
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -142,30 +143,6 @@ pub struct Database {
 #[serde(rename_all = "camelCase")]
 pub struct SQLite {
     pub file: String,
-}
-
-#[doc = r"Font file server
-
-# Asset-dependend!
-Just like assets.rs, this function may fail to compile when asset paths aren't adding up.
-"]
-#[get("/fonts/{a:.*}")]
-async fn fntserver(req: HttpRequest) -> HttpResponse {
-    let fonts = fonts();
-    let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
-    let fontbytes: &[u8] = match fnt.as_str() {
-        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => &fonts.josefin_sans,
-        "Fira_Sans/FiraSans-Regular.ttf" => &fonts.fira_sans,
-        "Gantari/Gantari-VariableFont_wght.ttf" => &fonts.gantari,
-        "Syne/Syne-VariableFont_wght.ttf" => &fonts.syne,
-        _ => {
-            return HttpResponse::NotFound().into();
-        }
-    };
-    HttpResponse::Ok()
-        .append_header(("Accept-Charset", "UTF-8"))
-        .content_type("font/ttf")
-        .body(fontbytes)
 }
 
 #[tokio::main]
@@ -232,6 +209,30 @@ async fn main() {
                 }
             };
         }
+        let sty_f = v.clone().join("./custom-styles.css");
+        if (!sty_f.is_file()) || (!sty_f.exists()) {
+            let mut output = match File::create(sty_f.clone()) {
+                Ok(p) => p,
+                Err(a) => {
+                    eprintln!(
+                        "Error: Could not create blank style customisation file. The system returned: {}",
+                        a
+                    );
+                    process::exit(1);
+                }
+            };
+
+            match write!(output, "{}", STR_CLEAN_CUSTOMSTYLES_CSS) {
+                Ok(p) => p,
+                Err(a) => {
+                    eprintln!(
+                        "Error: Could not create blank style customisation file. The system returned: {}",
+                        a
+                    );
+                    process::exit(1);
+                }
+            };
+        }
         let o = v.clone();
         match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
@@ -242,7 +243,8 @@ async fn main() {
                         interinstance: p.interinstance,
                         database: p.database,
                         logging: p.logging,
-                        session: ESession { cd: o },
+                        session: ESession { cd: o,
+                        customcss: fs::read_to_string(sty_f).unwrap_or(String::from(r"/* Failed loading custom css */")) },
                     };
                     a
                 }
@@ -376,6 +378,8 @@ async fn main() {
             .route("/home", web::get().to(timelines))
             .route("/site.js", web::get().to(site_js))
             .route("/site.css", web::get().to(site_css))
+            .route("/custom.css", web::get().to(site_c_css))
+            .route("/logo.svg", web::get().to(logo_svg))
             .service(fntserver)
             .app_data(web::Data::clone(&server_q))
     })
@@ -397,7 +401,11 @@ async fn main() {
         }
     }
     .run();
-    let _ = futures::join!(instance_poller::main(config.clone(), tell), main_server,  close());
+    let _ = futures::join!(
+        instance_poller::main(config.clone(), tell),
+        main_server,
+        close()
+    );
 }
 
 async fn close() {
@@ -415,8 +423,11 @@ async fn close() {
         }
         input = input.replace(['\n', '\r'], "");
         if input.to_lowercase() == *"x" {
+            println!("Bye!");
             process::exit(0);
         }
+        println!("{}", "Type X and then return to exit.".bright_yellow());
+
     }
 }
 
@@ -481,8 +492,42 @@ async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         )
 }
 
+async fn site_c_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    let config: Config = server_y.clone().config;
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/css; charset=utf-8")
+        .body(config.session.customcss)
+}
+
 async fn site_css() -> HttpResponse {
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
         .body(STR_GENERATED_MAIN_MIN_CSS)
+}
+
+async fn logo_svg() -> HttpResponse {
+    HttpResponse::build(StatusCode::OK)
+        .content_type("image/svg+xml; charset=utf-8")
+        .body(STR_ASSETS_LOGO_SVG)
+}
+
+#[doc = r"Font file server"]
+#[get("/fonts/{a:.*}")]
+async fn fntserver(req: HttpRequest) -> HttpResponse {
+    let fonts = fonts();
+    let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
+    let fontbytes: &[u8] = match fnt.as_str() {
+        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => &fonts.josefin_sans,
+        "Fira_Sans/FiraSans-Regular.ttf" => &fonts.fira_sans,
+        "Gantari/Gantari-VariableFont_wght.ttf" => &fonts.gantari,
+        "Syne/Syne-VariableFont_wght.ttf" => &fonts.syne,
+        _ => {
+            return HttpResponse::NotFound().into();
+        }
+    };
+    HttpResponse::Ok()
+        .append_header(("Accept-Charset", "UTF-8"))
+        .content_type("font/ttf")
+        .body(fontbytes)
 }

@@ -21,6 +21,13 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("./assets/initial_config.to
 #[cfg(windows)]
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!(".\\assets\\initial_config.toml");
 
+
+#[cfg(not(windows))]
+pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!("./assets/initial_customstyles.css");
+#[cfg(windows)]
+pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!(".\\assets\\initial_customstyles.css");
+
+
 #[cfg(not(windows))]
 pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("../target/generated/js/main.min.js");
 #[cfg(windows)]
@@ -61,3 +68,7 @@ pub(crate) fn fonts() -> Fonts {
         syne: (include_bytes!("./assets/fonts/Syne/Syne-VariableFont_wght.ttf")),
     }
 }
+#[cfg(not(windows))]
+pub const STR_ASSETS_LOGO_SVG: &str = include_str!("./assets/ephewlogo-1.svg");
+#[cfg(windows)]
+pub const STR_ASSETS_LOGO_SVG: &str = include_str!(".\\assets\\ephewlogo-1.svg");
