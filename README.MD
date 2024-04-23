@@ -3,3 +3,8 @@
 
 # Ephew(/peonies) server
 
+Warning ya -- Ephew stores in `$HOME/.ephewinstance` unless specified as argument. If you'd like to keep it in the workspace, use:
+
+```bash
+cargo run -- ./test
+```

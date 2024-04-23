@@ -1,6 +1,5 @@
 /target
-/config.toml
-instance-db.sqlite
+/test
 *.log
 ObsidianVault/.obsidian/workspace.json
 ObsidianVault/.obsidian/appearance.json
