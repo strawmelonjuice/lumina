@@ -30,7 +30,7 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{
-    fonts, Fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
+    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
     STR_GENERATED_MAIN_MIN_CSS,
 };
 
@@ -397,7 +397,27 @@ async fn main() {
         }
     }
     .run();
-    let _ = futures::join!(instance_poller::main(config.clone(), tell), main_server);
+    let _ = futures::join!(instance_poller::main(config.clone(), tell), main_server,  close());
+}
+
+async fn close() {
+    println!("{}", "Type X and then return to exit.".bright_yellow());
+    let mut input = String::new();
+    let mut waiting = true;
+    while waiting {
+        input.clear();
+        let _ = std::io::stdout().flush();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        if input == *"\r\n" {
+            waiting = false;
+        }
+        input = input.replace(['\n', '\r'], "");
+        if input.to_lowercase() == *"x" {
+            process::exit(0);
+        }
+    }
 }
 
 async fn timelines(server_z: Data<Mutex<ServerP>>, _session: Session) -> impl Responder {
