@@ -22,7 +22,7 @@ use actix_web::{
     web::{self, Data},
     App, HttpServer, Responder,
 };
-use assets::STR_ASSETS_LOGO_SVG;
+use assets::{BYTES_ASSETS_LOGO_PNG, STR_ASSETS_LOGO_SVG, STR_NODE_MOD_AXIOS_MIN_JS};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -31,11 +31,9 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{
-    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS, STR_GENERATED_MAIN_MIN_CSS
+    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
+    STR_CLEAN_CUSTOMSTYLES_CSS, STR_GENERATED_MAIN_MIN_CSS,
 };
-
-const DEFAULT_JS_JSON: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
-const DEFAULT_JS_MIN_JSON: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
 
 mod assets;
 mod instance_poller;
@@ -83,7 +81,7 @@ pub struct Config {
 #[serde(rename_all = "camelCase")]
 pub struct ESession {
     pub cd: PathBuf,
-    customcss: String
+    customcss: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -148,7 +146,7 @@ pub struct SQLite {
 #[tokio::main]
 async fn main() {
     let v = (|| {
-        if env::args().nth(1).unwrap_or(String::from("")) != String::from("") {
+        if env::args().nth(1).unwrap_or(String::from("")) != *"" {
             return PathBuf::from(env::args().nth(1).unwrap());
         };
         match home::home_dir() {
@@ -156,13 +154,12 @@ async fn main() {
             None => PathBuf::from(Path::new(".")),
         }
     })();
-    let vs = format!(
-        "{}",
-        &v.canonicalize()
-            .unwrap_or(v.to_path_buf())
-            .to_string_lossy()
-            .replace("\\\\?\\", "")
-    );
+    let vs = v
+        .canonicalize()
+        .unwrap_or(v.to_path_buf())
+        .to_string_lossy()
+        .replace("\\\\?\\", "")
+        .to_string();
     if !v.exists() {
         match fs::create_dir_all(v.clone()) {
             Ok(_) => {}
@@ -238,15 +235,18 @@ async fn main() {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => {
                     let p: PreConfig = p;
-                    let a = Config {
+
+                    Config {
                         server: p.server,
                         interinstance: p.interinstance,
                         database: p.database,
                         logging: p.logging,
-                        session: ESession { cd: o,
-                        customcss: fs::read_to_string(sty_f).unwrap_or(String::from(r"/* Failed loading custom css */")) },
-                    };
-                    a
+                        session: ESession {
+                            cd: o,
+                            customcss: fs::read_to_string(sty_f)
+                                .unwrap_or(String::from(r"/* Failed loading custom css */")),
+                        },
+                    }
                 }
                 Err(_e) => {
                     eprintln!(
@@ -273,7 +273,7 @@ async fn main() {
             }
         }
     };
-    let logsets: LogSets = (|config: &Config| {
+    let logsets: LogSets = {
         // How DRY of me.
         fn asddg(o: u8) -> LevelFilter {
             match o {
@@ -297,7 +297,7 @@ async fn main() {
             None => LogSets {
                 file_loglevel: LevelFilter::Info,
                 term_loglevel: LevelFilter::Warn,
-                logfile: PathBuf::from(config.session.cd.join("./instance.log")),
+                logfile: config.session.cd.join("./instance.log"),
             },
             Some(d) => LogSets {
                 file_loglevel: match d.file_loglevel {
@@ -309,12 +309,12 @@ async fn main() {
                     None => LevelFilter::Warn,
                 },
                 logfile: match d.logfile {
-                    Some(s) => PathBuf::from(config.session.cd.join(s.as_str())),
-                    None => PathBuf::from(config.session.cd.join("./instance.log")),
+                    Some(s) => config.session.cd.join(s.as_str()),
+                    None => config.session.cd.join("./instance.log"),
                 },
             },
         }
-    })(&config);
+    };
     CombinedLogger::init(vec![
         TermLogger::new(
             logsets.term_loglevel,
@@ -332,7 +332,7 @@ async fn main() {
     let tell = tellgen(config.clone().logging);
     let server_p: ServerP = ServerP {
         config: config.clone(),
-        tell: tell.clone(),
+        tell,
     };
     let server_q: Data<Mutex<ServerP>> = Data::new(Mutex::new(server_p));
     tell(format!(
@@ -346,7 +346,7 @@ async fn main() {
     ));
     // testing
     println!(
-        "{}",
+        "A user with unhashed password being password? {}",
         storage::fetch(
             &config.clone(),
             "users".to_string(),
@@ -354,15 +354,17 @@ async fn main() {
             "password".to_string()
         )
         .unwrap()
-        .unwrap_or("no such user".parse().unwrap())
+        .unwrap_or("No such user.".parse().unwrap())
+        .yellow()
+        .on_bright_green()
     );
     let keydouble = config.server.cookie_key.repeat(2);
     let keybytes = keydouble.as_bytes();
     if keybytes.len() < 32 {
         error!(
-            "Error: Cookie key must be at least 32 (doubled) bytes long. \"{}\" gives us {} bytes.",
-            config.server.cookie_key,
-            keybytes.len()
+            "Error: Cookie key must be at least 32 (doubled) bytes long. \"{}\" yields only {} bytes.",
+            config.server.cookie_key.blue(),
+            format!("{}",keybytes.len()).blue()
         );
         process::exit(1);
     }
@@ -373,21 +375,24 @@ async fn main() {
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
-            .default_service(web::to(|| HttpResponse::Ok()))
+            .default_service(web::to(HttpResponse::Ok))
             .route("/", web::get().to(root))
             .route("/home", web::get().to(timelines))
             .route("/site.js", web::get().to(site_js))
             .route("/site.css", web::get().to(site_css))
             .route("/custom.css", web::get().to(site_c_css))
             .route("/logo.svg", web::get().to(logo_svg))
+            .route("/favicon.ico", web::get().to(logo_png))
+            .route("/logo.png", web::get().to(logo_png))
+            .route("/axios/axios.min.js", web::get().to(node_axios))
             .service(fntserver)
             .app_data(web::Data::clone(&server_q))
     })
-    .bind((config.server.adress.clone(), config.server.port.clone()))
+    .bind((config.server.adress.clone(), config.server.port))
     {
         Ok(o) => {
             tell(format!(
-                "Running on {0}:{1}/ (http://127.0.0.1:{1})",
+                "Running on {0}:{1} (http://127.0.0.1:{1}/)",
                 config.server.adress, config.server.port
             ));
             o
@@ -427,7 +432,6 @@ async fn close() {
             process::exit(0);
         }
         println!("{}", "Type X and then return to exit.".bright_yellow());
-
     }
 }
 
@@ -469,8 +473,11 @@ async fn root(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
 }
 
 async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let default_js_json: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
+    let default_js_min_json: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
     let server_y: MutexGuard<ServerP> = server_z.lock().await;
     let config: Config = server_y.clone().config;
+    (server_y.tell)(format!("Request/200\t\t{}", "/site.js".green()));
     let jsonm = serde_json::to_string(&JSClientData {
         config: JSClientConfig {
             interinstance: JSClientConfigInterInstance {
@@ -485,43 +492,68 @@ async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         .body(
             STR_ASSETS_MAIN_MIN_JS
                 .replace(
-                    DEFAULT_JS_JSON,
+                    default_js_json,
                     format!("const ephewvar = {};", jsonm.clone()).as_str(),
                 )
-                .replace(DEFAULT_JS_MIN_JSON, jsonm.clone().as_str()),
+                .replace(default_js_min_json, jsonm.clone().as_str()),
         )
 }
 
 async fn site_c_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
     let server_y: MutexGuard<ServerP> = server_z.lock().await;
     let config: Config = server_y.clone().config;
+    (server_y.tell)(format!("Request/200\t\t{}", "/custom.css".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
         .body(config.session.customcss)
 }
 
-async fn site_css() -> HttpResponse {
+async fn site_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    (server_y.tell)(format!("Request/200\t\t{}", "/site.css".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
         .body(STR_GENERATED_MAIN_MIN_CSS)
 }
 
-async fn logo_svg() -> HttpResponse {
+async fn logo_svg(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    (server_y.tell)(format!("Request/200\t\t{}", "/logo.svg".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
         .body(STR_ASSETS_LOGO_SVG)
 }
+async fn logo_png(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    (server_y.tell)(format!("Request/200\t\t{}", "/logo.png".green()));
+    HttpResponse::build(StatusCode::OK)
+        .content_type("image/png; charset=utf-8")
+        .body(BYTES_ASSETS_LOGO_PNG)
+}
+
+async fn node_axios(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    (server_y.tell)(format!("Request/200\t\t{}", "/axios/axios.min.js".green()));
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/javascript; charset=utf-8")
+        .body(STR_NODE_MOD_AXIOS_MIN_JS)
+}
 
 #[doc = r"Font file server"]
 #[get("/fonts/{a:.*}")]
-async fn fntserver(req: HttpRequest) -> HttpResponse {
-    let fonts = fonts();
+async fn fntserver(req: HttpRequest, server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerP> = server_z.lock().await;
     let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
+    (server_y.tell)(format!(
+        "Request/200\t\t{}",
+        format!("/fonts/{}", fnt).green()
+    ));
+    let fonts = fonts();
     let fontbytes: &[u8] = match fnt.as_str() {
-        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => &fonts.josefin_sans,
-        "Fira_Sans/FiraSans-Regular.ttf" => &fonts.fira_sans,
-        "Gantari/Gantari-VariableFont_wght.ttf" => &fonts.gantari,
-        "Syne/Syne-VariableFont_wght.ttf" => &fonts.syne,
+        "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => fonts.josefin_sans,
+        "Fira_Sans/FiraSans-Regular.ttf" => fonts.fira_sans,
+        "Gantari/Gantari-VariableFont_wght.ttf" => fonts.gantari,
+        "Syne/Syne-VariableFont_wght.ttf" => fonts.syne,
         _ => {
             return HttpResponse::NotFound().into();
         }

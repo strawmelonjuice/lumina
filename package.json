@@ -5,9 +5,12 @@
     "postcss": "latest",
     "terser": "latest",
     "typescript": "^5.0.0",
-    "postcss-cli": "latest",
+    "postcss-cli": "^11.0.0",
     "@biomejs/biome": "latest",
     "clean-css-cli": "4"
+  },
+  "dependencies": {
+    "axios": "^1.6.7"
   },
   "scripts": {
     "build": "npm run build:deps && npm run build:rs",
@@ -17,10 +20,10 @@
     "build:rs": "cargo build",
     "format": "npm run format:rs && npm run format:ts && npm run minify:css",
     "format:rs": "cargo fmt",
-    "format:ts": "biome format \"./src/assets/ts/main.ts\" --write",
+    "format:ts": "npx biome format \"./src/assets/ts/main.ts\" --write",
     "minify": "npm run minify:js && npm run minify:css",
-    "minify:js": "terser --comments all ./target/generated/js/main.js > ./target/generated/js/main.min.js",
-    "minify:css": "cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
+    "minify:js": "npx terser --comments all ./target/generated/js/main.js > ./target/generated/js/main.min.js",
+    "minify:css": "npx cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
     "start": "cargo run"
   }
 }

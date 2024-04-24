@@ -6,7 +6,8 @@
     ],
     "outDir": "./target/generated/js/",
     "noImplicitAny": true,
-    "module": "CommonJS",
+    "skipLibCheck": true,
+    "module": "UMD",
     "allowJs": true
   },
   "exclude": [
