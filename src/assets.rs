@@ -5,7 +5,6 @@
  */
 #![allow(dead_code)]
 
-
 #[cfg(not(windows))]
 pub const STR_ASSETS_INDEX_HTML: &str = include_str!("./assets/index.html");
 #[cfg(windows)]
@@ -21,12 +20,10 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("./assets/initial_config.to
 #[cfg(windows)]
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!(".\\assets\\initial_config.toml");
 
-
 #[cfg(not(windows))]
 pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!("./assets/initial_customstyles.css");
 #[cfg(windows)]
 pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!(".\\assets\\initial_customstyles.css");
-
 
 #[cfg(not(windows))]
 pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("../target/generated/js/main.min.js");
@@ -77,3 +74,9 @@ pub const STR_ASSETS_LOGO_SVG: &str = include_str!(".\\assets\\ephewlogo-1.svg")
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("./assets/ephewlogo-1.png");
 #[cfg(windows)]
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!(".\\assets\\ephewlogo-1.png");
+
+#[cfg(not(windows))]
+pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/dist/axios.min.js");
+#[cfg(windows)]
+pub const STR_NODE_MOD_AXIOS_MIN_JS: &str =
+    include_str!("..\\node_modules\\axios\\dist\\axios.min.js");
