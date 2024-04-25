@@ -346,7 +346,7 @@ async fn main() {
     ));
     // testing
     println!(
-        "A user with unhashed password being password? {}",
+        "A user with unhashed password being 'password'? {}",
         storage::fetch(
             &config.clone(),
             "users".to_string(),
