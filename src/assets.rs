@@ -46,12 +46,12 @@ pub(crate) struct Fonts {
 #[cfg(windows)]
 pub(crate) fn fonts() -> Fonts {
     Fonts {
-        josefin_sans: (include_bytes!(
+        josefin_sans: include_bytes!(
             ".\\assets\\fonts\\Josefin_Sans\\JosefinSans-VariableFont_wght.ttf"
-        )),
-        fira_sans: (include_bytes!(".\\assets\\fonts\\Fira_Sans\\FiraSans-Regular.ttf")),
-        gantari: (include_bytes!(".\\assets\\fonts\\Gantari\\Gantari-VariableFont_wght.ttf")),
-        syne: (include_bytes!(".\\assets\\fonts\\Syne\\Syne-VariableFont_wght.ttf")),
+        ),
+        fira_sans: include_bytes!(".\\assets\\fonts\\Fira_Sans\\FiraSans-Regular.ttf"),
+        gantari: include_bytes!(".\\assets\\fonts\\Gantari\\Gantari-VariableFont_wght.ttf"),
+        syne: include_bytes!(".\\assets\\fonts\\Syne\\Syne-VariableFont_wght.ttf"),
     }
 }
 #[cfg(not(windows))]
