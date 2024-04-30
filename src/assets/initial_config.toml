@@ -25,6 +25,9 @@ pollintervall = 120
 [database]
 # What kind of database to use, currently only supporting "sqlite".
 method = "sqlite"
+# Encryption key for sensitive data like passwords. Changing it will immediately mark all existing passwords as false.
+cryptkey = "In these parts, passwords are encrypted. Pardners. How do you do?"
+
 [database.sqlite]
 # The database file to use for sqlite.
 file = "instance-db.sqlite"

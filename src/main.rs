@@ -135,6 +135,8 @@ pub struct Polling {
 pub struct Database {
     pub method: String,
     pub sqlite: Option<SQLite>,
+    #[serde(alias = "cryptkey")]
+    pub key: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -334,7 +336,7 @@ async fn main() {
         config: config.clone(),
         tell,
     };
-    let server_q: Data<Mutex<ServerP>> = Data::new(Mutex::new(server_p));
+    let server_q: Data<Mutex<ServerP>> = Data::new(Mutex::new(server_p.clone()));
     tell(format!(
         "Logging to {}",
         logsets
@@ -346,15 +348,18 @@ async fn main() {
     ));
     // testing
     println!(
-        "A user with unhashed password being 'password'? {}",
-        storage::fetch(
-            &config.clone(),
-            "users".to_string(),
-            "password",
-            "password".to_string()
+        "\n\n\n A user named 'gerardway' with password 'password'? {} \n\n\n",
+        match storage::users::auth::check(
+            "gerardway".to_string(),
+            "password".to_string(),
+            &(server_p)
         )
-        .unwrap()
-        .unwrap_or("No such user.".parse().unwrap())
+        .wrap()
+        .unwrap_or(None)
+        {
+            Some(a) => a.to_string(),
+            None => "No such user.".to_string(),
+        }
         .yellow()
         .on_bright_green()
     );
