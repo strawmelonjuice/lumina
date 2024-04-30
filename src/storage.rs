@@ -173,18 +173,16 @@ pub(crate) mod users {
                 if self.success && self.user_exists && self.password_correct {
                     // Password is correct, user exists, return the user_id
                     Ok(Some(self.user_id.unwrap()))
+                } else if !self.success {
+                    // Unknown error, not important here, but there was an error causing an unknown outcome.
+                    Err(Error::new(ErrorKind::Other, "Unknown error."))
                 } else {
-                    if !self.success {
-                        // Unknown error, not important here, but there was an error causing an unknown outcome.
-                        Err(Error::new(ErrorKind::Other, "Unknown error."))
+                    if !self.user_exists {
+                        // User does not exist
+                        Ok(None)
                     } else {
-                        if !self.user_exists {
-                            // User does not exist
-                            Ok(None)
-                        } else {
-                            // Password incorrect
-                            Ok(None)
-                        }
+                        // Password incorrect
+                        Ok(None)
                     }
                 }
             }
@@ -211,7 +209,7 @@ pub(crate) mod users {
             ) {
                 Ok(a) => match a {
                     Some(d) => {
-                        let u: super::super::TableUsers = serde_json::from_str(&*d).unwrap();
+                        let u: super::super::TableUsers = serde_json::from_str(&d).unwrap();
                         if u.password == mcrypt.encrypt_str_to_base64(password) {
                             (server_vars.tell)(format!(
                                 "Auth\t\t\t{}",

@@ -491,17 +491,25 @@ async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         },
     })
     .unwrap();
+    let js = format!(
+        r#"/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
 
+
+ {}"#,
+        STR_ASSETS_MAIN_MIN_JS
+            .replace(
+                default_js_json,
+                format!("const ephewvar = {};", jsonm.clone()).as_str(),
+            )
+            .replace(default_js_min_json, jsonm.clone().as_str())
+    );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
-        .body(
-            STR_ASSETS_MAIN_MIN_JS
-                .replace(
-                    default_js_json,
-                    format!("const ephewvar = {};", jsonm.clone()).as_str(),
-                )
-                .replace(default_js_min_json, jsonm.clone().as_str()),
-        )
+        .body(js)
 }
 
 async fn site_c_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
