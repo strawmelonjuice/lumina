@@ -48,7 +48,7 @@ pub fn fetch(
 ) -> Result<Option<String>, Error> {
     if config.database.method.as_str() == "sqlite" {
         match table.as_str() {
-            "users" | "postinfo" => {},
+            "users" | "postinfo" => {}
             _ => {
                 error!("Unknown table requisted!");
                 panic!("Unknown table requisted!");
