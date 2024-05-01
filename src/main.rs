@@ -41,7 +41,7 @@ mod storage;
 mod tell;
 
 #[derive(Clone)]
-struct ServerP {
+struct ServerVars {
     config: Config,
     tell: fn(String) -> (),
 }
@@ -332,11 +332,11 @@ async fn main() {
     ])
     .unwrap();
     let tell = tellgen(config.clone().logging);
-    let server_p: ServerP = ServerP {
+    let server_p: ServerVars = ServerVars {
         config: config.clone(),
         tell,
     };
-    let server_q: Data<Mutex<ServerP>> = Data::new(Mutex::new(server_p.clone()));
+    let server_q: Data<Mutex<ServerVars>> = Data::new(Mutex::new(server_p.clone()));
     tell(format!(
         "Logging to {}",
         logsets
@@ -346,23 +346,27 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    // testing
-    println!(
-        "\n\n\n A user named 'gerardway' with password 'password'? {} \n\n\n",
-        match storage::users::auth::check(
-            "gerardway".to_string(),
-            "password".to_string(),
-            &(server_p)
-        )
-        .wrap()
-        .unwrap_or(None)
-        {
-            Some(a) => a.to_string(),
-            None => "No such user.".to_string(),
-        }
-        .yellow()
-        .on_bright_green()
-    );
+    // some tests
+    // Ran successfully
+    //         println!("\n\n\n Creating a user named 'davemustaine' with password 'Polarbear':\n{:?}", storage::users::add("davemustaine".to_string(), "Polarbear".to_string(), &config.clone()));
+    //
+    // Ran successfully
+    //         println!(
+    //             " Checking for a user named 'gerardway' with password 'password'? {} \n\n\n",
+    //             match storage::users::auth::check(
+    //                 "gerardway".to_string(),
+    //                 "password".to_string(),
+    //                 &(server_p)
+    //             )
+    //             .wrap()
+    //             .unwrap_or(None)
+    //             {
+    //                 Some(a) => a.to_string(),
+    //                 None => "No such user.".to_string(),
+    //             }
+    //             .yellow()
+    //             .on_bright_green()
+    //         );
     let keydouble = config.server.cookie_key.repeat(2);
     let keybytes = keydouble.as_bytes();
     if keybytes.len() < 32 {
@@ -440,9 +444,9 @@ async fn close() {
     }
 }
 
-async fn timelines(server_z: Data<Mutex<ServerP>>, _session: Session) -> impl Responder {
+async fn timelines(server_z: Data<Mutex<ServerVars>>, _session: Session) -> impl Responder {
     let server_y = server_z.lock().await;
-    let server_p: ServerP = server_y.clone();
+    let server_p: ServerVars = server_y.clone();
     drop(server_y);
     let username_ = _session.get::<String>("username");
     (server_p.tell)(format!(
@@ -458,9 +462,9 @@ async fn timelines(server_z: Data<Mutex<ServerP>>, _session: Session) -> impl Re
         .body(cont)
 }
 
-async fn root(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
     let server_y = server_z.lock().await;
-    let server_p: ServerP = server_y.clone();
+    let server_p: ServerVars = server_y.clone();
     drop(server_y);
     (server_p.tell)(format!("Request/200\t\t{}", "/".green()));
     // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
@@ -477,10 +481,10 @@ async fn root(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         )
 }
 
-async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
+async fn site_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
     let default_js_json: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
     let default_js_min_json: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config: Config = server_y.clone().config;
     (server_y.tell)(format!("Request/200\t\t{}", "/site.js".green()));
     let jsonm = serde_json::to_string(&JSClientData {
@@ -512,8 +516,8 @@ async fn site_js(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         .body(js)
 }
 
-async fn site_c_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn site_c_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config: Config = server_y.clone().config;
     (server_y.tell)(format!("Request/200\t\t{}", "/custom.css".green()));
     HttpResponse::build(StatusCode::OK)
@@ -521,31 +525,31 @@ async fn site_c_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
         .body(config.session.customcss)
 }
 
-async fn site_css(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn site_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!("Request/200\t\t{}", "/site.css".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
         .body(STR_GENERATED_MAIN_MIN_CSS)
 }
 
-async fn logo_svg(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn logo_svg(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!("Request/200\t\t{}", "/logo.svg".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
         .body(STR_ASSETS_LOGO_SVG)
 }
-async fn logo_png(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn logo_png(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!("Request/200\t\t{}", "/logo.png".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/png; charset=utf-8")
         .body(BYTES_ASSETS_LOGO_PNG)
 }
 
-async fn node_axios(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn node_axios(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!("Request/200\t\t{}", "/axios/axios.min.js".green()));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -554,8 +558,8 @@ async fn node_axios(server_z: Data<Mutex<ServerP>>) -> HttpResponse {
 
 #[doc = r"Font file server"]
 #[get("/fonts/{a:.*}")]
-async fn fntserver(req: HttpRequest, server_z: Data<Mutex<ServerP>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerP> = server_z.lock().await;
+async fn fntserver(req: HttpRequest, server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
     (server_y.tell)(format!(
         "Request/200\t\t{}",
