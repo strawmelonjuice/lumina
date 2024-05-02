@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 pub const STR_ASSETS_INDEX_HTML: &str = include_str!("assets/html/index.html");
+pub const STR_ASSETS_LOGIN_HTML: &str = include_str!("assets/html/login.html");
 
 pub const STR_ASSETS_HOME_HTML: &str = include_str!("assets/handlebars/timeline.handlebars");
 
