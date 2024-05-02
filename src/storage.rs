@@ -156,14 +156,31 @@ CREATE TABLE if not exists TimeLinePostPool (
 pub(crate) mod users {
     use std::io::{Error, ErrorKind};
 
+    use magic_crypt::{new_magic_crypt, MagicCryptTrait};
     use serde_json::from_str;
 
-    use super::{create_con, fetch, BasicUserInfo};
     use crate::Config;
-    use magic_crypt::{new_magic_crypt, MagicCryptTrait};
+
+    use super::{create_con, fetch, BasicUserInfo};
+
     /// # `storage::users::add()`
     /// Add data for a new user to the database.
     pub(crate) fn add(username: String, password: String, config: &Config) -> Result<i64, Error> {
+        if username.chars().any(|c| match c {
+            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' => true,
+            _ => false,
+        }) {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Invalid characters in username!",
+            ));
+        }
+        if username.len() < 3 {
+            return Err(Error::new(ErrorKind::Other, "Username is too short."));
+        }
+        if password.len() < 8 {
+            return Err(Error::new(ErrorKind::Other, "Password is too short."));
+        }
         let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
         let conn = create_con(&config.clone());
         let res = fetch(
