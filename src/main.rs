@@ -14,15 +14,15 @@ use std::path::PathBuf;
 use std::{env, fs, path::Path, process};
 
 use actix_session::storage::CookieSessionStore;
-use actix_session::{Session, SessionMiddleware};
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
-use actix_web::http::StatusCode;
+
 use actix_web::{get, HttpRequest, HttpResponse};
 use actix_web::{
     web::{self, Data},
-    App, HttpServer, Responder,
+    App, HttpServer,
 };
-use assets::{BYTES_ASSETS_LOGO_PNG, STR_ASSETS_LOGO_SVG, STR_NODE_MOD_AXIOS_MIN_JS};
+
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -30,10 +30,7 @@ use tokio::sync::{Mutex, MutexGuard};
 
 use tell::tellgen;
 
-use crate::assets::{
-    fonts, STR_ASSETS_INDEX_HTML, STR_ASSETS_MAIN_MIN_JS, STR_CLEAN_CONFIG_TOML,
-    STR_CLEAN_CUSTOMSTYLES_CSS, STR_GENERATED_MAIN_MIN_CSS,
-};
+use crate::assets::{fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS};
 
 mod assets;
 mod instance_poller;
@@ -385,16 +382,17 @@ async fn main() {
                 secret_key.clone(),
             ))
             .default_service(web::to(HttpResponse::Ok))
-            .route("/", web::get().to(root))
-            .route("/home", web::get().to(timelines))
-            .route("/site.js", web::get().to(site_js))
-            .route("/site.css", web::get().to(site_css))
-            .route("/custom.css", web::get().to(site_c_css))
-            .route("/logo.svg", web::get().to(logo_svg))
-            .route("/favicon.ico", web::get().to(logo_png))
-            .route("/logo.png", web::get().to(logo_png))
-            .route("/axios/axios.min.js", web::get().to(node_axios))
-            .service(fntserver)
+            .route("/", web::get().to(serve::root))
+            .route("/home", web::get().to(serve::homepage))
+            .route("/login", web::get().to(serve::login))
+            .route("/site.js", web::get().to(serve::site_js))
+            .route("/site.css", web::get().to(serve::site_css))
+            .route("/custom.css", web::get().to(serve::site_c_css))
+            .route("/logo.svg", web::get().to(serve::logo_svg))
+            .route("/favicon.ico", web::get().to(serve::logo_png))
+            .route("/logo.png", web::get().to(serve::logo_png))
+            .route("/axios/axios.min.js", web::get().to(serve::node_axios))
+            .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
     })
     .bind((config.server.adress.clone(), config.server.port))
@@ -444,59 +442,73 @@ async fn close() {
     }
 }
 
-async fn timelines(server_z: Data<Mutex<ServerVars>>, _session: Session) -> impl Responder {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
-    let username_ = _session.get::<String>("username");
-    (server_p.tell)(format!(
-        "Request/200\t\t{} (@{})",
-        "/home".green(),
-        username_
-            .unwrap_or(Option::from(String::from("unknown")))
-            .unwrap_or(String::from("unknown"))
-    ));
-    let cont = "";
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/html; charset=utf-8")
-        .body(cont)
-}
+mod serve {
+    use crate::assets::{
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGO_SVG,
+        STR_ASSETS_MAIN_MIN_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
+    };
+    use crate::{Config, JSClientConfig, JSClientConfigInterInstance, JSClientData, ServerVars};
+    use actix_session::Session;
+    use actix_web::http::header::LOCATION;
+    use actix_web::http::StatusCode;
+    use actix_web::web::Data;
+    use actix_web::{HttpResponse, Responder};
+    use colored::Colorize;
+    use tokio::sync::{Mutex, MutexGuard};
 
-async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
-    (server_p.tell)(format!("Request/200\t\t{}", "/".green()));
-    // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
+    pub(super) async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        drop(server_y);
+        (server_p.tell)(format!("Request/200\t\t{}", "/".green()));
+        // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
 
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/html; charset=utf-8")
-        .body(
-            STR_ASSETS_INDEX_HTML
-                .replace(
-                    "{{iid}}",
-                    &server_p.clone().config.interinstance.iid.clone(),
-                )
-                .clone(),
-        )
-}
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(
+                STR_ASSETS_INDEX_HTML
+                    .replace(
+                        "{{iid}}",
+                        &server_p.clone().config.interinstance.iid.clone(),
+                    )
+                    .clone(),
+            )
+    }
 
-async fn site_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let default_js_json: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
-    let default_js_min_json: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config: Config = server_y.clone().config;
-    (server_y.tell)(format!("Request/200\t\t{}", "/site.js".green()));
-    let jsonm = serde_json::to_string(&JSClientData {
-        config: JSClientConfig {
-            interinstance: JSClientConfigInterInstance {
-                iid: config.interinstance.iid.clone().to_string(),
+    pub(super) async fn login(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        drop(server_y);
+        (server_p.tell)(format!("Request/200\t\t{}", "/login".green()));
+
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(
+                STR_ASSETS_LOGIN_HTML
+                    .replace(
+                        "{{iid}}",
+                        &server_p.clone().config.interinstance.iid.clone(),
+                    )
+                    .clone(),
+            )
+    }
+
+    pub(super) async fn site_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let default_js_json: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
+        let default_js_min_json: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let config: Config = server_y.clone().config;
+        (server_y.tell)(format!("Request/200\t\t{}", "/site.js".green()));
+        let jsonm = serde_json::to_string(&JSClientData {
+            config: JSClientConfig {
+                interinstance: JSClientConfigInterInstance {
+                    iid: config.interinstance.iid.clone().to_string(),
+                },
             },
-        },
-    })
-    .unwrap();
-    let js = format!(
-        r#"/*
+        })
+        .unwrap();
+        let js = format!(
+            r#"/*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
@@ -504,61 +516,90 @@ async fn site_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
 
 
  {}"#,
-        STR_ASSETS_MAIN_MIN_JS
-            .replace(
-                default_js_json,
-                format!("const ephewvar = {};", jsonm.clone()).as_str(),
-            )
-            .replace(default_js_min_json, jsonm.clone().as_str())
-    );
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(js)
-}
+            STR_ASSETS_MAIN_MIN_JS
+                .replace(
+                    default_js_json,
+                    format!("const ephewvar = {};", jsonm.clone()).as_str(),
+                )
+                .replace(default_js_min_json, jsonm.clone().as_str())
+        );
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(js)
+    }
 
-async fn site_c_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config: Config = server_y.clone().config;
-    (server_y.tell)(format!("Request/200\t\t{}", "/custom.css".green()));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/css; charset=utf-8")
-        .body(config.session.customcss)
-}
+    pub(super) async fn site_c_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let config: Config = server_y.clone().config;
+        (server_y.tell)(format!("Request/200\t\t{}", "/custom.css".green()));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/css; charset=utf-8")
+            .body(config.session.customcss)
+    }
 
-async fn site_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    (server_y.tell)(format!("Request/200\t\t{}", "/site.css".green()));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/css; charset=utf-8")
-        .body(STR_GENERATED_MAIN_MIN_CSS)
-}
+    pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        (server_y.tell)(format!("Request/200\t\t{}", "/site.css".green()));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/css; charset=utf-8")
+            .body(STR_GENERATED_MAIN_MIN_CSS)
+    }
 
-async fn logo_svg(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    (server_y.tell)(format!("Request/200\t\t{}", "/logo.svg".green()));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_LOGO_SVG)
-}
-async fn logo_png(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    (server_y.tell)(format!("Request/200\t\t{}", "/logo.png".green()));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("image/png; charset=utf-8")
-        .body(BYTES_ASSETS_LOGO_PNG)
-}
+    pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        (server_y.tell)(format!("Request/200\t\t{}", "/logo.svg".green()));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("image/svg+xml; charset=utf-8")
+            .body(STR_ASSETS_LOGO_SVG)
+    }
 
-async fn node_axios(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    (server_y.tell)(format!("Request/200\t\t{}", "/axios/axios.min.js".green()));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(STR_NODE_MOD_AXIOS_MIN_JS)
-}
+    pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        (server_y.tell)(format!("Request/200\t\t{}", "/logo.png".green()));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("image/png; charset=utf-8")
+            .body(BYTES_ASSETS_LOGO_PNG)
+    }
 
+    pub(super) async fn node_axios(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        (server_y.tell)(format!("Request/200\t\t{}", "/axios/axios.min.js".green()));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(STR_NODE_MOD_AXIOS_MIN_JS)
+    }
+    pub(super) async fn homepage(
+        server_z: Data<Mutex<ServerVars>>,
+        _session: Session,
+    ) -> impl Responder {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        drop(server_y);
+        let username_ = _session.get::<String>("username");
+        match username_.unwrap_or(None) {
+            Some(username) => {
+                (server_p.tell)(format!(
+                    "Request/200\t\t{} (@{})",
+                    "/home".green(),
+                    username
+                ));
+                let cont = "";
+                HttpResponse::build(StatusCode::OK)
+                    .content_type("text/html; charset=utf-8")
+                    .body(cont)
+            }
+            None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+                .append_header((LOCATION, "/login"))
+                .finish(),
+        }
+    }
+}
 #[doc = r"Font file server"]
 #[get("/fonts/{a:.*}")]
-async fn fntserver(req: HttpRequest, server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+pub(crate) async fn serve_fonts(
+    req: HttpRequest,
+    server_z: Data<Mutex<ServerVars>>,
+) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
     (server_y.tell)(format!(
