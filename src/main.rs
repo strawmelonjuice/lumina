@@ -16,13 +16,11 @@ use std::{env, fs, path::Path, process};
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
-
 use actix_web::{get, HttpRequest, HttpResponse};
 use actix_web::{
     web::{self, Data},
     App, HttpServer,
 };
-
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -416,12 +414,13 @@ async fn main() {
     let _ = futures::join!(
         instance_poller::main(config.clone(), tell),
         main_server,
-        close()
+        close(config.clone())
     );
 }
 
-async fn close() {
-    println!("{}", "Type X and then return to exit.".bright_yellow());
+async fn close(config: Config) {
+    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Ephew server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
+    println!("{}", msg);
     let mut input = String::new();
     let mut waiting = true;
     while waiting {
@@ -434,20 +433,59 @@ async fn close() {
             waiting = false;
         }
         input = input.replace(['\n', '\r'], "");
-        if input.to_lowercase() == *"x" {
-            println!("Bye!");
-            process::exit(0);
+        let split_input = input.as_str().split(" ").collect::<Vec<&str>>();
+        match split_input[0].to_lowercase().as_str() {
+            "c" | "x" | "exit" => {
+                println!("Bye!");
+                process::exit(0);
+            }
+            "au" | "adduser" => {
+                if split_input.len() < 2 {
+                    println!("Usage: adduser <username> <password>");
+                } else {
+                    match storage::users::add(
+                        split_input[1].to_string(),
+                        split_input[2].to_string(),
+                        &config.clone(),
+                    ) {
+                        Ok(o) => println!(
+                            "{}",
+                            format!(
+                                "Added user {} with password {} and ID {}.",
+                                split_input[1].bright_magenta(),
+                                split_input[2].bright_magenta(),
+                                o.to_string().bright_magenta(),
+                            )
+                            .green()
+                        ),
+                        Err(e) => println!(
+                            "{}",
+                            format!(
+                                "Could not add user {} with password {}: {}",
+                                split_input[1].to_string(),
+                                split_input[2].to_string(),
+                                e
+                            )
+                            .red()
+                        ),
+                    }
+                }
+            }
+            "h" | "help" => println!(
+                "\n{}{}{}",
+                "Ephew server runtime command line - Help\n".bright_yellow(),
+                format!("\n\tau | adduser {}{}",
+                        format!("{}{}{}", "<".red(), "username".bright_yellow(), ">".red()),
+                        format!("{}{}{}", "<".red(), "password".bright_yellow(), ">".red())
+                ),
+                        "\n\t\tAdds a new user to the database.\n\th | help\n\t\tDisplays this help message.\n\tc | x | exit\n\t\tShut down the server.".green()
+            ),
+            _ => println!("{}", msg),
         }
-        println!("{}", "Type X and then return to exit.".bright_yellow());
     }
 }
 
 mod serve {
-    use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGO_SVG,
-        STR_ASSETS_MAIN_MIN_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
-    };
-    use crate::{Config, JSClientConfig, JSClientConfigInterInstance, JSClientData, ServerVars};
     use actix_session::Session;
     use actix_web::http::header::LOCATION;
     use actix_web::http::StatusCode;
@@ -455,6 +493,12 @@ mod serve {
     use actix_web::{HttpResponse, Responder};
     use colored::Colorize;
     use tokio::sync::{Mutex, MutexGuard};
+
+    use crate::assets::{
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGO_SVG,
+        STR_ASSETS_MAIN_MIN_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
+    };
+    use crate::{Config, JSClientConfig, JSClientConfigInterInstance, JSClientData, ServerVars};
 
     pub(super) async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
         let server_y = server_z.lock().await;
