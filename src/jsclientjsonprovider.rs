@@ -7,7 +7,7 @@
 use actix_session::Session;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
@@ -48,11 +48,25 @@ struct JSClientUser {
     pub id: i64,
 }
 
-pub(crate) async fn serves(server_z: Data<Mutex<ServerVars>>, _session: Session) -> HttpResponse {
+pub(crate) async fn serves(
+    server_z: Data<Mutex<ServerVars>>,
+    _session: Session,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config: Config = server_y.clone().config;
-    let username_ = _session.get::<String>("username");
-    (server_y.tell)(format!("Request/200\t\t{}", "/api/fe/update".green()));
+    let coninfo = req.connection_info();
+    let ip = coninfo
+        .realip_remote_addr()
+        .clone()
+        .unwrap_or("<unknown IP>");
+    let username_ = _session.get::<String>("username").unwrap_or(None);
+    info!(
+        "{2}\t{:>45.47}\t{}",
+        "/api/fe/update".magenta(),
+        ip.yellow(),
+        "Request/200".bright_green()
+    );
     let json = serde_json::to_string(&JSClientData {
         instance: JSClientInstance {
             config: JSClientConfig {
@@ -63,7 +77,7 @@ pub(crate) async fn serves(server_z: Data<Mutex<ServerVars>>, _session: Session)
             },
         },
         user: JSClientUser {
-            username: match username_.clone().unwrap_or(None) {
+            username: match username_.clone() {
                 Some(username) => username.to_string(),
                 None => "unset".to_string(),
             },
@@ -71,15 +85,15 @@ pub(crate) async fn serves(server_z: Data<Mutex<ServerVars>>, _session: Session)
                 &config.clone(),
                 String::from("Users"),
                 "username",
-                (match username_.unwrap_or(None) {
+                match username_ {
                     Some(username) => username.to_string(),
                     None => "unset".to_string(),
-                }),
+                },
             )
-            .unwrap()
-            .unwrap()
+            .unwrap_or(None)
+            .unwrap_or(String::from("0"))
             .parse()
-            .unwrap(),
+            .unwrap_or(0),
         },
     })
     .unwrap();
