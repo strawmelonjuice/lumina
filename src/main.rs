@@ -14,7 +14,7 @@ use std::path::PathBuf;
 use std::{env, fs, path::Path, process};
 
 use actix_session::storage::CookieSessionStore;
-use actix_session::SessionMiddleware;
+use actix_session::{Session, SessionMiddleware};
 use actix_web::cookie::Key;
 use actix_web::{get, HttpRequest, HttpResponse};
 use actix_web::{
@@ -29,6 +29,7 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS};
+use crate::serve::notfound;
 
 mod assets;
 mod instance_poller;
@@ -380,7 +381,7 @@ async fn main() {
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
-            .default_service(web::to(HttpResponse::Ok))
+            .default_service(web::to(serve::notfound))
             .route("/", web::get().to(serve::root))
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
@@ -495,7 +496,7 @@ mod serve {
     use actix_web::http::header::LOCATION;
     use actix_web::http::StatusCode;
     use actix_web::web::Data;
-    use actix_web::{HttpResponse, Responder};
+    use actix_web::{HttpRequest, HttpResponse, Responder};
     use colored::Colorize;
     use tokio::sync::{Mutex, MutexGuard};
 
@@ -505,12 +506,50 @@ mod serve {
     };
     use crate::{Config, ServerVars};
 
-    pub(super) async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn notfound(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+        session: Session,
+    ) -> HttpResponse {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        let username_ = session.get::<String>("username");
+        let username = username_.unwrap_or(None).unwrap_or(String::from(""));
+        let username_b = if username != String::from("") {
+            format!("/{}", username.green())
+        } else {
+            String::from("")
+        };
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+
+        (server_p.tell)(format!(
+            "{}\t{:>45.47}\t{}{:<26}",
+            "Request/404".bright_red(),
+            req.path().red(),
+            ip.yellow(),
+            username_b
+        ));
+        return HttpResponse::NotFound().body("").into();
+    }
+    pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
         let server_y = server_z.lock().await;
         let server_p: ServerVars = server_y.clone();
         drop(server_y);
-        (server_p.tell)(format!("Request/200\t\t{}", "/".green()));
-        // Contains a simple replacer, not meant for templating. Implemented using Extension, which I am kinda experimenting with.
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_p.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/".bright_magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
 
         HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
@@ -524,11 +563,21 @@ mod serve {
             )
     }
 
-    pub(super) async fn login(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn login(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
         let server_y = server_z.lock().await;
         let server_p: ServerVars = server_y.clone();
         drop(server_y);
-        (server_p.tell)(format!("Request/200\t\t{}", "/login".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_p.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/login".bright_magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
 
         HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
@@ -542,10 +591,22 @@ mod serve {
             )
     }
 
-    pub(super) async fn prefetch_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn prefetch_js(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let config: Config = server_y.clone().config;
-        (server_y.tell)(format!("Request/200\t\t{}", "/prefetch.js".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/prefetch.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         let js = format!(
             r#"/*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
@@ -561,60 +622,133 @@ mod serve {
             .body(js)
     }
 
-    pub(super) async fn site_c_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn site_c_css(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let config: Config = server_y.clone().config;
-        (server_y.tell)(format!("Request/200\t\t{}", "/custom.css".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/custom.css".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         HttpResponse::build(StatusCode::OK)
             .content_type("text/css; charset=utf-8")
             .body(config.session.customcss)
     }
 
-    pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn site_css(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        (server_y.tell)(format!("Request/200\t\t{}", "/site.css".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/site.css".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         HttpResponse::build(StatusCode::OK)
             .content_type("text/css; charset=utf-8")
             .body(STR_GENERATED_MAIN_MIN_CSS)
     }
 
-    pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn logo_svg(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        (server_y.tell)(format!("Request/200\t\t{}", "/logo.svg".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/logo.svg".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         HttpResponse::build(StatusCode::OK)
             .content_type("image/svg+xml; charset=utf-8")
             .body(STR_ASSETS_LOGO_SVG)
     }
 
-    pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn logo_png(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        (server_y.tell)(format!("Request/200\t\t{}", "/logo.png".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/logo.png".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         HttpResponse::build(StatusCode::OK)
             .content_type("image/png; charset=utf-8")
             .body(BYTES_ASSETS_LOGO_PNG)
     }
 
-    pub(super) async fn node_axios(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
+    pub(super) async fn node_axios(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        (server_y.tell)(format!("Request/200\t\t{}", "/axios/axios.min.js".green()));
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t{}",
+            "/axios/axios.min.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
         HttpResponse::build(StatusCode::OK)
             .content_type("text/javascript; charset=utf-8")
             .body(STR_NODE_MOD_AXIOS_MIN_JS)
     }
     pub(super) async fn homepage(
         server_z: Data<Mutex<ServerVars>>,
-        _session: Session,
+        session: Session,
+        req: HttpRequest,
     ) -> impl Responder {
         let server_y = server_z.lock().await;
         let server_p: ServerVars = server_y.clone();
         drop(server_y);
-        let username_ = _session.get::<String>("username");
+        let username_ = session.get::<String>("username");
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
         match username_.unwrap_or(None) {
             Some(username) => {
                 (server_p.tell)(format!(
-                    "Request/200\t\t{} (@{})",
-                    "/home".green(),
-                    username
+                    "{}\t{:>45.47}\t{}/{:<25}",
+                    "Request/200".bright_green(),
+                    "/home".bright_magenta(),
+                    ip.yellow(),
+                    username.green()
                 ));
                 let cont = "";
                 HttpResponse::build(StatusCode::OK)
@@ -632,13 +766,10 @@ mod serve {
 pub(crate) async fn serve_fonts(
     req: HttpRequest,
     server_z: Data<Mutex<ServerVars>>,
+    session: Session,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
-    (server_y.tell)(format!(
-        "Request/200\t\t{}",
-        format!("/fonts/{}", fnt).green()
-    ));
+    // let reqx = req.clone();
+    let fnt: String = (&req).match_info().get("a").unwrap().parse().unwrap();
     let fonts = fonts();
     let fontbytes: &[u8] = match fnt.as_str() {
         "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => fonts.josefin_sans,
@@ -646,9 +777,21 @@ pub(crate) async fn serve_fonts(
         "Gantari/Gantari-VariableFont_wght.ttf" => fonts.gantari,
         "Syne/Syne-VariableFont_wght.ttf" => fonts.syne,
         _ => {
-            return HttpResponse::NotFound().into();
+            return notfound(server_z, req, session).await;
         }
     };
+    let coninfo = req.connection_info();
+    let ip = coninfo
+        .realip_remote_addr()
+        .clone()
+        .unwrap_or("<unknown IP>");
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    (server_y.tell)(format!(
+        "{2}\t{:>45.47}\t{}",
+        format!("/fonts/{}", fnt).magenta(),
+        ip.yellow(),
+        "Request/200".bright_green()
+    ));
     HttpResponse::Ok()
         .append_header(("Accept-Charset", "UTF-8"))
         .content_type("font/ttf")
