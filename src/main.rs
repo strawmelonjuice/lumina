@@ -32,6 +32,7 @@ use crate::assets::{fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS};
 
 mod assets;
 mod instance_poller;
+mod jsclientjsonprovider;
 mod storage;
 mod tell;
 
@@ -383,7 +384,11 @@ async fn main() {
             .route("/", web::get().to(serve::root))
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
-            .route("/site.js", web::get().to(serve::site_js))
+            .route("/prefetch.js", web::get().to(serve::prefetch_js))
+            .route(
+                "/api/fe/update",
+                web::get().to(jsclientjsonprovider::serves),
+            )
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
             .route("/logo.svg", web::get().to(serve::logo_svg))
@@ -496,9 +501,9 @@ mod serve {
 
     use crate::assets::{
         BYTES_ASSETS_LOGO_PNG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGO_SVG,
-        STR_ASSETS_MAIN_MIN_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
+        STR_ASSETS_PREFETCH_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
     };
-    use crate::{Config, JSClientConfig, JSClientConfigInterInstance, JSClientData, ServerVars};
+    use crate::{Config, ServerVars};
 
     pub(super) async fn root(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
         let server_y = server_z.lock().await;
@@ -537,20 +542,10 @@ mod serve {
             )
     }
 
-    pub(super) async fn site_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
-        let default_js_json: &str = r#"const ephewvar = {"config":{"interinstance":{"iid":"example.com"}}}; // Default config's JSON, to allow editor type chekcking."#;
-        let default_js_min_json: &str = r#"{config:{interinstance:{iid:"example.com"}}}"#;
+    pub(super) async fn prefetch_js(server_z: Data<Mutex<ServerVars>>) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let config: Config = server_y.clone().config;
-        (server_y.tell)(format!("Request/200\t\t{}", "/site.js".green()));
-        let jsonm = serde_json::to_string(&JSClientData {
-            config: JSClientConfig {
-                interinstance: JSClientConfigInterInstance {
-                    iid: config.interinstance.iid.clone().to_string(),
-                },
-            },
-        })
-        .unwrap();
+        (server_y.tell)(format!("Request/200\t\t{}", "/prefetch.js".green()));
         let js = format!(
             r#"/*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
@@ -558,14 +553,8 @@ mod serve {
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-
  {}"#,
-            STR_ASSETS_MAIN_MIN_JS
-                .replace(
-                    default_js_json,
-                    format!("const ephewvar = {};", jsonm.clone()).as_str(),
-                )
-                .replace(default_js_min_json, jsonm.clone().as_str())
+            STR_ASSETS_PREFETCH_JS
         );
         HttpResponse::build(StatusCode::OK)
             .content_type("text/javascript; charset=utf-8")

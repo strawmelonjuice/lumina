@@ -14,7 +14,7 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("assets/toml/initial_config
 
 pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!("assets/styles/initial_customstyles.css");
 
-pub const STR_ASSETS_MAIN_MIN_JS: &str = include_str!("../target/generated/js/client.min.js");
+pub const STR_ASSETS_PREFETCH_JS: &str = include_str!("../target/generated/js/prefetch.min.js");
 
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 
