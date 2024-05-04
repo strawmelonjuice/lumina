@@ -16,7 +16,7 @@ pub(crate) fn tellgen(a: Option<Logging>) -> fn(msg: String) {
         let dt1: OffsetDateTime = SystemTime::now().into();
         let dt_fmt = format_description::parse(DATE_FORMAT_STR).unwrap();
         let times = dt1.format(&dt_fmt).unwrap();
-        println!("{} {} {}", times, "[LOG]".magenta(), msg);
+        println!("{} {} {}", times, "[LOG] ".magenta(), msg);
         info!("{}", msg);
     }
     match a {
