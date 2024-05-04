@@ -33,7 +33,7 @@ use crate::serve::notfound;
 
 mod assets;
 mod instance_poller;
-mod jsclientjsonprovider;
+mod api_fe;
 mod storage;
 mod tell;
 
@@ -72,13 +72,14 @@ pub struct Config {
     pub interinstance: InterInstance,
     pub database: Database,
     pub logging: Option<Logging>,
-    pub session: ESession,
+    pub run: ERun,
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ESession {
+pub struct ERun {
     pub cd: PathBuf,
-    customcss: String,
+    pub customcss: String,
+    pub session_valid: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -240,7 +241,7 @@ async fn main() {
                         interinstance: p.interinstance,
                         database: p.database,
                         logging: p.logging,
-                        session: ESession {
+                        run: ERun {
                             cd: o,
                             customcss: fs::read_to_string(sty_f)
                                 .unwrap_or(String::from(r"/* Failed loading custom css */")),
@@ -296,7 +297,7 @@ async fn main() {
             None => LogSets {
                 file_loglevel: LevelFilter::Info,
                 term_loglevel: LevelFilter::Warn,
-                logfile: config.session.cd.join("./instance.log"),
+                logfile: config.run.cd.join("./instance.log"),
             },
             Some(d) => LogSets {
                 file_loglevel: match d.file_loglevel {
@@ -308,8 +309,8 @@ async fn main() {
                     None => LevelFilter::Warn,
                 },
                 logfile: match d.logfile {
-                    Some(s) => config.session.cd.join(s.as_str()),
-                    None => config.session.cd.join("./instance.log"),
+                    Some(s) => config.run.cd.join(s.as_str()),
+                    None => config.run.cd.join("./instance.log"),
                 },
             },
         }
@@ -380,18 +381,25 @@ async fn main() {
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
                 secret_key.clone(),
+        
             ))
             .default_service(web::to(serve::notfound))
             .route("/", web::get().to(serve::root))
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
+            .route("/logout", web::get().to(serve::logout))
             .route("/prefetch.js", web::get().to(serve::prefetch_js))
+            .route("/login.js", web::get().to(serve::login_js))
             .route(
                 "/api/fe/update",
-                web::get().to(jsclientjsonprovider::serves),
+                web::get().to(api_fe::update),
             )
+            .route("/api/fe/auth", web::post().to(api_fe::auth))
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
+            .route("/red-cross.svg", web::get().to(serve::red_cross_svg))
+            .route("/spinner.svg", web::get().to(serve::spinner_svg))
+            .route("/green-check.svg", web::get().to(serve::green_check_svg))
             .route("/logo.svg", web::get().to(serve::logo_svg))
             .route("/favicon.ico", web::get().to(serve::logo_png))
             .route("/logo.png", web::get().to(serve::logo_png))
@@ -501,9 +509,9 @@ mod serve {
     use tokio::sync::{Mutex, MutexGuard};
 
     use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGO_SVG,
-        STR_ASSETS_PREFETCH_JS, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS
     };
+    use crate::storage::BasicUserInfo;
     use crate::{Config, ServerVars};
 
     pub(super) async fn notfound(
@@ -512,7 +520,7 @@ mod serve {
         session: Session,
     ) -> HttpResponse {
         let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
+        let _server_p: ServerVars = server_y.clone();
         let username_ = session.get::<String>("username");
         let username = username_.unwrap_or(None).unwrap_or(String::from(""));
         let username_b = if username != String::from("") {
@@ -526,13 +534,13 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
 
-        (server_p.tell)(format!(
-            "{}\t{:>45.47}\t{}{:<26}",
+        warn!(
+            "{}\t{:>45.47}\t\t{}{:<26}",
             "Request/404".bright_red(),
             req.path().red(),
             ip.yellow(),
             username_b
-        ));
+        );
         return HttpResponse::NotFound().body("").into();
     }
     pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
@@ -545,7 +553,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_p.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/".bright_magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -573,7 +581,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_p.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/login".bright_magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -602,7 +610,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/prefetch.js".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -622,6 +630,37 @@ mod serve {
             .body(js)
     }
 
+    pub(super) async fn login_js(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/login.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        let js = format!(
+            r#"/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
+
+ {}"#,
+            STR_ASSETS_LOGIN_JS
+        );
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(js)
+    }
+
     pub(super) async fn site_c_css(
         server_z: Data<Mutex<ServerVars>>,
         req: HttpRequest,
@@ -634,7 +673,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/custom.css".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -655,7 +694,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/site.css".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -664,7 +703,66 @@ mod serve {
             .content_type("text/css; charset=utf-8")
             .body(STR_GENERATED_MAIN_MIN_CSS)
     }
-
+    pub(super) async fn red_cross_svg(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/red-cross.svg".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("image/svg+xml; charset=utf-8")
+            .body(STR_ASSETS_RED_CROSS_SVG)
+    }
+    pub(super) async fn spinner_svg(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/spinner.svg".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("image/svg+xml; charset=utf-8")
+            .body(STR_ASSETS_SPINNER_SVG)
+    }
+    pub(super) async fn green_check_svg(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/green-check.svg".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("image/svg+xml; charset=utf-8")
+            .body(STR_ASSETS_GREEN_CHECK_SVG)
+    }
     pub(super) async fn logo_svg(
         server_z: Data<Mutex<ServerVars>>,
         req: HttpRequest,
@@ -676,7 +774,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/logo.svg".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -697,7 +795,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/logo.png".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -718,7 +816,7 @@ mod serve {
             .clone()
             .unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t{}",
+            "{2}\t{:>45.47}\t\t{}",
             "/axios/axios.min.js".magenta(),
             ip.yellow(),
             "Request/200".bright_green()
@@ -744,7 +842,7 @@ mod serve {
         match username_.unwrap_or(None) {
             Some(username) => {
                 (server_p.tell)(format!(
-                    "{}\t{:>45.47}\t{}/{:<25}",
+                    "{}\t{:>45.47}\t\t{}/{:<25}",
                     "Request/200".bright_green(),
                     "/home".bright_magenta(),
                     ip.yellow(),
@@ -758,6 +856,57 @@ mod serve {
             None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                 .append_header((LOCATION, "/login"))
                 .finish(),
+        }
+    }
+    pub(super) async fn logout(
+        server_z: Data<Mutex<ServerVars>>,
+        session: Session,
+        req: HttpRequest,
+    ) -> impl Responder {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        drop(server_y);
+        let username_ = session.get::<String>("username");
+        let coninfo = req.connection_info();
+        let ip = coninfo
+            .realip_remote_addr()
+            .clone()
+            .unwrap_or("<unknown IP>");
+        match username_.unwrap_or(None) {
+            Some(username) => {
+                (server_p.tell)(format!(
+                    "{}\t{:>45.47}\t\t{}/{:<25}",
+                    "Request/200".bright_green(),
+                    "/logout".bright_magenta(),
+                    ip.yellow(),
+                    username.green()
+                ));
+                session.purge();
+                HttpResponse::build(StatusCode::OK)
+                    .append_header((LOCATION, "/login"))
+                .finish()
+            },
+            None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+                .append_header((LOCATION, "/login"))
+                .finish(),
+        }
+    }
+    /// # `Fence()`
+    /// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
+    fn fence(session: Session, server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest, next: fn (config: Config, vars: ServerVars, user: BasicUserInfo, req: HttpRequest) -> HttpResponse) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
+        let config = server_y.clone().config;
+        let id_ = session.get::<String>("userid");
+        let id = id_.unwrap_or(None).unwrap_or(String::from(""));
+        let safe = id != String::from("") && session.get::<i64>("validity").unwrap_or(None) == Some(config.clone().run.session_valid);
+        if !safe {
+HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+                .append_header((LOCATION, "/login"))
+                .finish(),
+        } else {
+            let user: BasicUserInfo = serde_json::from_str(fetch(&config, String::from("Users"), "id", id.to_string()).unwrap().unwrap().as_str()).unwrap();
+            
+            next(config, server_y, user, req)
         }
     }
 }
@@ -787,7 +936,7 @@ pub(crate) async fn serve_fonts(
         .unwrap_or("<unknown IP>");
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!(
-        "{2}\t{:>45.47}\t{}",
+        "{2}\t{:>45.47}\t\t{}",
         format!("/fonts/{}", fnt).magenta(),
         ip.yellow(),
         "Request/200".bright_green()

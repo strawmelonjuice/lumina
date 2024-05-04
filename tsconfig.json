@@ -1,19 +1,12 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "DOM",
-      "ES2023"
-    ],
-    "outDir": "./target/generated/js/",
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "module": "UMD",
-    "allowJs": true
-  },
-  "exclude": [
-    "./target/generated/js/"
-  ],
-  "include": [
-    "./src/assets/ts"
-  ]
+	"compilerOptions": {
+		"lib": ["DOM", "ES2023"],
+		"outDir": "./target/generated/js/",
+		"noImplicitAny": true,
+		"skipLibCheck": true,
+		"module": "UMD",
+		"allowJs": true
+	},
+	"exclude": ["./target/generated/js/"],
+	"include": ["./src/assets/ts"]
 }
