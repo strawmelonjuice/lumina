@@ -845,7 +845,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ephew_instance_rust"
+name = "ephewinstance"
 version = "0.1.0"
 dependencies = [
  "actix-identity",

@@ -12,7 +12,8 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
-use crate::storage::fetch;
+use crate::storage::{fetch, BasicUserInfo};
+use crate::storage::users::auth::check;
 use crate::{Config, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -48,9 +49,9 @@ struct JSClientUser {
     pub id: i64,
 }
 
-pub(crate) async fn serves(
+pub(crate) async fn update(
     server_z: Data<Mutex<ServerVars>>,
-    _session: Session,
+    session: Session,
     req: HttpRequest,
 ) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
@@ -60,12 +61,20 @@ pub(crate) async fn serves(
         .realip_remote_addr()
         .clone()
         .unwrap_or("<unknown IP>");
-    let username_ = _session.get::<String>("username").unwrap_or(None);
+    let username_ = session.get::<String>("username").unwrap_or(None);
+    let username_a = session.get::<String>("username");
+    let username_b = username_a.unwrap_or(None).unwrap_or(String::from(""));
+    let username_c = if username_b != String::from("") {
+        format!("/{}", username_b.green())
+    } else {
+        String::from("")
+    };
     info!(
-        "{2}\t{:>45.47}\t{}",
+        "{}\t{:>45.47}\t\t{}{:<26}",
         "/api/fe/update".magenta(),
         ip.yellow(),
-        "Request/200".bright_green()
+        "Request/200".bright_green(),
+        username_c
     );
     let json = serde_json::to_string(&JSClientData {
         instance: JSClientInstance {
@@ -101,3 +110,46 @@ pub(crate) async fn serves(
         .content_type("text/json; charset=utf-8")
         .body(json)
 }
+#[derive(Deserialize)]
+pub(super) struct AuthReqData {
+    username: String,
+    password: String,
+}
+
+pub(crate) async fn auth(
+    server_z: Data<Mutex<ServerVars>>,
+    session: Session,
+    req: HttpRequest,
+    data: actix_web::web::Json<AuthReqData>,
+) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let config = server_y.clone().config;
+    ((server_y.tell)(format!("Auth request received.")));
+    let result = check(
+        data.username.clone(),
+        data.password.clone(),
+        &server_y.clone(),
+    );
+    let coninfo = req.connection_info();
+    let ip = coninfo
+        .realip_remote_addr()
+        .clone()
+        .unwrap_or("<unknown IP>");
+    if result.success && result.user_exists && result.password_correct {
+        let user_id = result.user_id.unwrap();
+        let user: BasicUserInfo = serde_json::from_str(fetch(&config, String::from("Users"), "id", user_id.to_string()).unwrap().unwrap().as_str()).unwrap();
+        let username = user.username;
+        info!("User '{}' logged in succesfully from {}", username, ip);
+        session.insert("userid", user.id).unwrap();
+        session.insert("username", username).unwrap();
+        session.insert("validity", config.clone().run.session_valid).unwrap();
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/json; charset=utf-8")
+            .body(r#"{"Ok": true}"#)
+    } else {
+        HttpResponse::build(StatusCode::UNAUTHORIZED)
+            .content_type("text/json; charset=utf-8")
+            .body(r#"{"Ok": false}"#)
+    }
+}
+

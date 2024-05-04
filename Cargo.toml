@@ -1,5 +1,10 @@
 [package]
-name = "ephew_instance_rust"
+name = "ephewinstance"
+
+authors = ['MLC "Strawmelonjuice" Bloeiman']
+publish = false
+license = "BSD-3-Clause"
+repository = "https://github.com/strawmelonjuice/Peonies-Ephew"
 version = "0.1.0"
 edition = "2021"
 

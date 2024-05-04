@@ -16,10 +16,11 @@ pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!("assets/styles/initial
 
 pub const STR_ASSETS_PREFETCH_JS: &str = include_str!("../target/generated/js/prefetch.min.js");
 
+pub const STR_ASSETS_LOGIN_JS: &str = include_str!("../target/generated/js/login.min.js");
+
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 
 type Fontbytes = &'static [u8];
-#[derive()]
 pub(crate) struct Fonts {
     pub(crate) josefin_sans: Fontbytes,
     pub(crate) fira_sans: Fontbytes,
@@ -37,6 +38,12 @@ pub(crate) fn fonts() -> Fonts {
 }
 
 pub const STR_ASSETS_LOGO_SVG: &str = include_str!("assets/svg/ephewlogo-1.svg");
+
+pub const STR_ASSETS_GREEN_CHECK_SVG: &str = include_str!("assets/svg/green_check.svg");
+
+pub const STR_ASSETS_SPINNER_SVG: &str = include_str!("assets/svg/spinner.svg");
+
+pub const STR_ASSETS_RED_CROSS_SVG: &str = include_str!("assets/svg/red_cross.svg");
 
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("assets/png/ephewlogo-1.png");
 

@@ -233,10 +233,10 @@ pub(crate) mod users {
         /// # AuthResponse
         /// Tells the server what the database knows of a user. If it exists, and if the password provided was correct.
         pub(crate) struct AuthResponse {
-            success: bool,
-            user_exists: bool,
-            password_correct: bool,
-            user_id: Option<i64>,
+            pub(crate) success: bool,
+            pub(crate) user_exists: bool,
+            pub(crate) password_correct: bool,
+            pub(crate) user_id: Option<i64>,
         }
         impl AuthResponse {
             /// Wraps the AuthResponse struct into a Result<Option<i64>, Error>, as originally intended.
