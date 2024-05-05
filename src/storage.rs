@@ -239,6 +239,7 @@ pub(crate) mod users {
             pub(crate) user_id: Option<i64>,
         }
         impl AuthResponse {
+            //noinspection RsExternalLinter
             /// Wraps the AuthResponse struct into a Result<Option<i64>, Error>, as originally intended.
             pub(crate) fn wrap(self) -> Result<Option<i64>, Error> {
                 if self.success && self.user_exists && self.password_correct {
@@ -266,7 +267,7 @@ pub(crate) mod users {
         ) -> AuthResponse {
             let config: crate::Config = server_vars.config.clone();
             let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
-            match super::super::fetch(
+            match super::fetch(
                 &config.clone(),
                 String::from("Users"),
                 "username",
@@ -274,7 +275,7 @@ pub(crate) mod users {
             ) {
                 Ok(a) => match a {
                     Some(d) => {
-                        let u: super::super::BasicUserInfo = from_str(&d).unwrap();
+                        let u: super::BasicUserInfo = from_str(&d).unwrap();
                         if u.password == mcrypt.encrypt_str_to_base64(password) {
                             (server_vars.tell)(format!(
                                 "Auth\t\t\t{}",

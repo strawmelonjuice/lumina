@@ -12,8 +12,8 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
-use crate::storage::{fetch, BasicUserInfo};
 use crate::storage::users::auth::check;
+use crate::storage::{fetch, BasicUserInfo};
 use crate::{Config, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -124,7 +124,7 @@ pub(crate) async fn auth(
 ) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config = server_y.clone().config;
-    ((server_y.tell)(format!("Auth request received.")));
+    (server_y.tell)("Auth request received.".to_string());
     let result = check(
         data.username.clone(),
         data.password.clone(),
@@ -137,12 +137,20 @@ pub(crate) async fn auth(
         .unwrap_or("<unknown IP>");
     if result.success && result.user_exists && result.password_correct {
         let user_id = result.user_id.unwrap();
-        let user: BasicUserInfo = serde_json::from_str(fetch(&config, String::from("Users"), "id", user_id.to_string()).unwrap().unwrap().as_str()).unwrap();
+        let user: BasicUserInfo = serde_json::from_str(
+            fetch(&config, String::from("Users"), "id", user_id.to_string())
+                .unwrap()
+                .unwrap()
+                .as_str(),
+        )
+        .unwrap();
         let username = user.username;
         info!("User '{}' logged in succesfully from {}", username, ip);
         session.insert("userid", user.id).unwrap();
         session.insert("username", username).unwrap();
-        session.insert("validity", config.clone().run.session_valid).unwrap();
+        session
+            .insert("validity", config.clone().run.session_valid)
+            .unwrap();
         HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": true}"#)
@@ -152,4 +160,3 @@ pub(crate) async fn auth(
             .body(r#"{"Ok": false}"#)
     }
 }
-
