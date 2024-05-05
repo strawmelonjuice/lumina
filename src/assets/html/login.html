@@ -7,90 +7,89 @@
 <!DOCTYPE html>
 <!--suppress HtmlUnknownTarget -->
 <html lang="en">
-<head>
-    <link href="/site.css" rel="stylesheet">
-    <link href="/custom.css" rel="stylesheet">
-    <title>Login - Ephew(@{{iid}})</title>
-    <link href="/logo.png" rel="icon" type="image/png" />
-    <script src="/axios/axios.min.js"></script>
-    <script src="/prefetch.js"></script>
-    <script defer src="/login.js"></script>
-</head>
+	<head>
+		<link href="/site.css" rel="stylesheet" />
+		<link href="/custom.css" rel="stylesheet" />
+		<title>Login - Ephew(@{{iid}})</title>
+		<link href="/logo.png" rel="icon" type="image/png" />
+		<script src="/axios/axios.min.js"></script>
+		<script src="/prefetch.js"></script>
+		<script defer src="/login.js"></script>
+	</head>
 
-<body class="bg-stone-300 dark:bg-zinc-800">
-<img
-        class="absolute top-5 right-5 h-20 w-20 border rounded-md border-amber-600 dark:bg-stone-100 bg-opacity-60"
-        src="/logo.svg"
-/>
-<div
-        class="grid h-screen place-items-center ring-offset-rose-950 text-fuchsia-900 leading-snug"
->
-    <form
-            action="javascript:void(0);"
-            class="w-5/12 self-center ring-offset-rose-950 text-fuchsia-900"
-            name="login"
-            onsubmit="authtry()"
-    >
-        <div class="mb-4">
-            <label
-                    class="block text-fuchsia-900 dark:text-violet-200 text-sm font-semibold mb-2"
-                    for="username"
-            >Username</label
-            >
-            <input
-                    class="form-input w-full px-4 py-2 border rounded-lg text-fuchsia-900 focus:ring-blue-500"
-                    id="username"
-                    placeholder="strawberrygrapes233"
-                    required
-                    type="text"
-            />
-        </div>
-        <div class="mb-6">
-            <label
-                    class="block text-fuchsia-900 dark:text-violet-200 text-sm font-semibold mb-2"
-                    for="password"
-            >Password</label
-            >
-            <input
-                    class="form-input w-full px-4 py-2 border rounded-lg text-fuchsia-900 focus:ring-blue-500"
-                    id="password"
-                    placeholder="••••••••••••"
-                    required
-                    type="password"
-            />
-            <div class="form-group">
-                <label for="autologin">
-                    <input id="autologin" type="checkbox" value="1" />
-                    Stay logged in
-                    <small style="font-size: 8px"
-                    >Let cookies do the job for you</small
-                    >
-                </label
-                ><br />
-            </div>
+	<body class="bg-rose-50 dark:bg-red-950">
+		<img
+			class="absolute w-20 h-20 border rounded-md top-5 right-5 border-amber-600 bg-stone-100 bg-opacity-60"
+			src="/logo.svg"
+		/>
+		<div
+			class="grid h-screen leading-snug place-items-center ring-offset-rose-950 text-slate-600"
+		>
+			<form
+				action="javascript:void(0);"
+				class="self-center w-5/12 ring-offset-rose-950 text-slate-600"
+				name="login"
+				onsubmit="authtry()"
+			>
+				<div class="mb-4">
+					<label
+						class="block mb-2 text-sm font-semibold text-slate-600 dark:text-slate-200"
+						for="username"
+						>Username</label
+					>
+					<input
+						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						id="username"
+						placeholder="strawberrygrapes233"
+						required
+						type="text"
+					/>
+				</div>
+				<div class="mb-6">
+					<label
+						class="block mb-2 text-sm font-semibold text-slate-600 dark:text-slate-200"
+						for="password"
+						>Password</label
+					>
+					<input
+						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						id="password"
+						placeholder="••••••••••••"
+						required
+						type="password"
+					/>
+					<div class="form-group">
+						<label for="autologin">
+							<input id="autologin" type="checkbox" value="1" />
+							Stay logged in
+							<small style="font-size: 8px"
+								>Let cookies do the job for you</small
+							> </label
+						><br />
+					</div>
 
-            <p class="text-fuchsia-800 dark:text-violet-100 text-xs mt-1">
-                Log in with a password as set in <code>config.json</code>!
-            </p>
-        </div>
-        <button
-                class="place-items-center grid content-center w-full border-amber-600 border-opacity-100 bg-orange-700 p-4 text-blue-200 ring-rose-300 px-4 py-2 rounded-lg hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-opacity-50"
-                id="submitbutton"
-                type="submit"
-        >
-            Authorize
-        </button>
-        <p
-                class="text-fuchsia-800 dark:text-violet-100 text-xs text-center mt-4"
-        >
-          <span id="Aaa1"
-          >Do you not have an account on this instance yet? </span
-          >
-            <a class="text-blue-500 hover:underline refertohomesite" href="/signup"
-            >Sign up</a
-            >.
-        </p>
-    </form>
-</div>
-</body>
+					<p class="mt-1 text-xs text-slate-600 dark:text-slate-200">
+						Forgot password? There's no way we can help you for now.
+					</p>
+				</div>
+				<button
+					class="grid content-center w-full p-4 px-4 py-2 border-opacity-100 rounded-lg text-slate-600 dark:text-slate-200 place-items-center border-amber-600 bg-sky-400 dark:bg-sky-700 ring-rose-300 hover:bg-sky-600 dark:hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-opacity-50"
+					id="submitbutton"
+					type="submit"
+				>
+					Authorize
+				</button>
+				<p class="mt-4 text-xs text-center text-slate-600 dark:text-slate-200">
+					<span id="Aaa1"
+						>Do you not have an account on this instance yet?
+					</span>
+					<a
+						class="text-blue-500 hover:underline refertohomesite"
+						href="/signup"
+						>Sign up</a
+					>.
+				</p>
+			</form>
+		</div>
+	</body>
 </html>
