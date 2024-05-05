@@ -859,6 +859,7 @@ dependencies = [
  "magic-crypt",
  "password-hash",
  "pbkdf2",
+ "rand",
  "reqwest",
  "rusqlite",
  "serde",

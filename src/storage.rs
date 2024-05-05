@@ -45,7 +45,7 @@ pub(crate) fn create_con(config: &Config) -> Connection {
     return match Connection::open(
         config
             .clone()
-            .session
+            .run
             .cd
             .join(config.clone().database.sqlite.unwrap().file),
     ) {

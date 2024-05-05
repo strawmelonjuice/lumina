@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate log;
 extern crate simplelog;
+use rand::prelude::*;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -31,9 +32,9 @@ use tell::tellgen;
 use crate::assets::{fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS};
 use crate::serve::notfound;
 
+mod api_fe;
 mod assets;
 mod instance_poller;
-mod api_fe;
 mod storage;
 mod tell;
 
@@ -234,8 +235,8 @@ async fn main() {
         match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => {
+                    let mut rng = rand::thread_rng();
                     let p: PreConfig = p;
-
                     Config {
                         server: p.server,
                         interinstance: p.interinstance,
@@ -245,6 +246,7 @@ async fn main() {
                             cd: o,
                             customcss: fs::read_to_string(sty_f)
                                 .unwrap_or(String::from(r"/* Failed loading custom css */")),
+                            session_valid: rng.gen_range(1..=900000),
                         },
                     }
                 }
@@ -381,7 +383,6 @@ async fn main() {
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
                 secret_key.clone(),
-        
             ))
             .default_service(web::to(serve::notfound))
             .route("/", web::get().to(serve::root))
@@ -390,10 +391,7 @@ async fn main() {
             .route("/logout", web::get().to(serve::logout))
             .route("/prefetch.js", web::get().to(serve::prefetch_js))
             .route("/login.js", web::get().to(serve::login_js))
-            .route(
-                "/api/fe/update",
-                web::get().to(api_fe::update),
-            )
+            .route("/api/fe/update", web::get().to(api_fe::update))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
@@ -509,7 +507,10 @@ mod serve {
     use tokio::sync::{Mutex, MutexGuard};
 
     use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_INDEX_HTML, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_INDEX_HTML,
+        STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
+        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS,
+        STR_NODE_MOD_AXIOS_MIN_JS,
     };
     use crate::storage::BasicUserInfo;
     use crate::{Config, ServerVars};
@@ -680,7 +681,7 @@ mod serve {
         ));
         HttpResponse::build(StatusCode::OK)
             .content_type("text/css; charset=utf-8")
-            .body(config.session.customcss)
+            .body(config.run.customcss)
     }
 
     pub(super) async fn site_css(
@@ -829,35 +830,33 @@ mod serve {
         server_z: Data<Mutex<ServerVars>>,
         session: Session,
         req: HttpRequest,
-    ) -> impl Responder {
-        let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
-        drop(server_y);
-        let username_ = session.get::<String>("username");
-        let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
-        match username_.unwrap_or(None) {
-            Some(username) => {
-                (server_p.tell)(format!(
+    ) -> HttpResponse {
+        fence(
+            session,
+            server_z,
+            req,
+            |conf: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
+                let coninfo = request.connection_info();
+                let ip = coninfo
+                    .realip_remote_addr()
+                    .clone()
+                    .unwrap_or("<unknown IP>");
+                (server_vars.tell)(format!(
                     "{}\t{:>45.47}\t\t{}/{:<25}",
                     "Request/200".bright_green(),
                     "/home".bright_magenta(),
                     ip.yellow(),
-                    username.green()
+                    user.username.green()
                 ));
                 let cont = "";
                 HttpResponse::build(StatusCode::OK)
                     .content_type("text/html; charset=utf-8")
                     .body(cont)
-            }
-            None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-                .append_header((LOCATION, "/login"))
-                .finish(),
-        }
+            },
+        )
+        .await
     }
+
     pub(super) async fn logout(
         server_z: Data<Mutex<ServerVars>>,
         session: Session,
@@ -884,8 +883,8 @@ mod serve {
                 session.purge();
                 HttpResponse::build(StatusCode::OK)
                     .append_header((LOCATION, "/login"))
-                .finish()
-            },
+                    .finish()
+            }
             None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                 .append_header((LOCATION, "/login"))
                 .finish(),
@@ -893,20 +892,38 @@ mod serve {
     }
     /// # `Fence()`
     /// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
-    fn fence(session: Session, server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest, next: fn (config: Config, vars: ServerVars, user: BasicUserInfo, req: HttpRequest) -> HttpResponse) -> HttpResponse {
+    pub(crate) async fn fence(
+        session: Session,
+        server_vars_mutex: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+        next: fn(
+            config: Config,
+            vars: ServerVars,
+            user: BasicUserInfo,
+            req: HttpRequest,
+        ) -> HttpResponse,
+    ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
         let config = server_y.clone().config;
         let id_ = session.get::<String>("userid");
         let id = id_.unwrap_or(None).unwrap_or(String::from(""));
-        let safe = id != String::from("") && session.get::<i64>("validity").unwrap_or(None) == Some(config.clone().run.session_valid);
+        let safe = id != String::from("")
+            && session.get::<i64>("validity").unwrap_or(None)
+                == Some(config.clone().run.session_valid);
         if !safe {
-HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
+            HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                 .append_header((LOCATION, "/login"))
-                .finish(),
+                .finish()
         } else {
-            let user: BasicUserInfo = serde_json::from_str(fetch(&config, String::from("Users"), "id", id.to_string()).unwrap().unwrap().as_str()).unwrap();
-            
-            next(config, server_y, user, req)
+            let user: BasicUserInfo = serde_json::from_str(
+                crate::storage::fetch(&config, String::from("Users"), "id", id.to_string())
+                    .unwrap()
+                    .unwrap()
+                    .as_str(),
+            )
+            .unwrap();
+
+            next(config, server_y.clone().to_owned(), user, req)
         }
     }
 }
