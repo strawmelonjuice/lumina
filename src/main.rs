@@ -235,7 +235,7 @@ async fn main() {
         match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => {
-                    let mut rng = rand::thread_rng();
+                    let mut rng = thread_rng();
                     let p: PreConfig = p;
                     Config {
                         server: p.server,
@@ -384,7 +384,7 @@ async fn main() {
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
-            .default_service(web::to(serve::notfound))
+            .default_service(web::to(notfound))
             .route("/", web::get().to(serve::root))
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
@@ -530,10 +530,7 @@ mod serve {
             String::from("")
         };
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
 
         warn!(
             "{}\t{:>45.47}\t\t{}{:<26}",
@@ -549,10 +546,7 @@ mod serve {
         let server_p: ServerVars = server_y.clone();
         drop(server_y);
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_p.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/".bright_magenta(),
@@ -577,10 +571,7 @@ mod serve {
         let server_p: ServerVars = server_y.clone();
         drop(server_y);
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_p.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/login".bright_magenta(),
@@ -606,10 +597,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/prefetch.js".magenta(),
@@ -637,10 +625,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/login.js".magenta(),
@@ -669,10 +654,7 @@ mod serve {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let config: Config = server_y.clone().config;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/custom.css".magenta(),
@@ -690,10 +672,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/site.css".magenta(),
@@ -710,10 +689,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/red-cross.svg".magenta(),
@@ -730,10 +706,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/spinner.svg".magenta(),
@@ -750,10 +723,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/green-check.svg".magenta(),
@@ -770,10 +740,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/logo.svg".magenta(),
@@ -791,10 +758,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/logo.png".magenta(),
@@ -812,10 +776,7 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_z.lock().await;
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_y.tell)(format!(
             "{2}\t{:>45.47}\t\t{}",
             "/axios/axios.min.js".magenta(),
@@ -835,7 +796,7 @@ mod serve {
             session,
             server_z,
             req,
-            |conf: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
+            |_: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
                 let coninfo = request.connection_info();
                 let ip = coninfo
                     .realip_remote_addr()
@@ -867,10 +828,7 @@ mod serve {
         drop(server_y);
         let username_ = session.get::<String>("username");
         let coninfo = req.connection_info();
-        let ip = coninfo
-            .realip_remote_addr()
-            .clone()
-            .unwrap_or("<unknown IP>");
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         match username_.unwrap_or(None) {
             Some(username) => {
                 (server_p.tell)(format!(
