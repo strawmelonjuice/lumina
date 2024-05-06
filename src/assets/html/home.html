@@ -7,24 +7,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <title>Home - Ephew(@{{iid}})</title>
-    
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="/site.css">
     <link rel="stylesheet" href="/custom.css">
     <script src="/axios/axios.min.js"></script>
     <script src="/prefetch.js"></script>
     <script defer src="/site-home.js"></script>
 </head>
-<body class="bg-rose-50 dark:bg-red-950">
-<nav class="bg-sky-400 dark:bg-sky-700">
-    <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-        <div class="relative flex h-16 items-center justify-between">
+<body class="bg-brown-100 dark:bg-neutral-500">
+<nav class="bg-purple-300 dark:bg-violet-300">
+    <div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="relative flex items-center justify-between h-16">
             <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
                 <!-- Mobile menu button-->
                 <button
                     type="button"
-                    class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                    class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
                     aria-controls="mobile-menu"
                     aria-expanded="false"
                     id="btn-mobile-menu"
@@ -32,7 +31,7 @@
                     <span class="absolute -inset-0.5"></span>
                     <span class="sr-only">Open main menu</span>
                     <svg
-                        class="block h-6 w-6"
+                        class="block w-6 h-6"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -47,7 +46,7 @@
                         />
                     </svg>
                     <svg
-                        class="h-6 w-6"
+                        class="w-6 h-6"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -64,11 +63,11 @@
                 </button>
             </div>
             <div
-                class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start"
+                class="flex items-center justify-center flex-1 sm:items-stretch sm:justify-start"
             >
-                <div class="flex flex-shrink-0 items-center">
+                <div class="flex items-center flex-shrink-0">
                     <img
-                        class="h-10 w-auto rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
+                        class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
                         src="/logo.svg"
                         alt="Ephew Instance"
                     />
@@ -78,26 +77,26 @@
                         <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
                         <a
                             href="javascript:void(0)"
-                            class="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
+                            class="px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-md"
                             aria-current="page"
                             id="dashboard-nav"
                         >Dashboard</a
                         >
                         <a
                             href="javascript:void(0)"
-                            class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                            class="px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                             id="pages-nav"
                         >Publications</a
                         >
                         <a
                             href="javascript:void(0)"
-                            class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                            class="px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                             id="plugins-nav"
                         >Plugins</a
                         >
                         <a
                             href="javascript:void(0)"
-                            class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                            class="px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                             id="customisation-nav"
                         >Customisation</a
                         >
@@ -109,12 +108,12 @@
             >
                 <button
                     type="button"
-                    class="relative rounded-full bg-red-400 dark:bg-red-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                    class="relative p-1 text-gray-400 bg-red-400 rounded-full dark:bg-red-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                 >
                     <span class="absolute -inset-1.5"></span>
                     <span class="sr-only">View notifications</span>
                     <svg
-                        class="h-6 w-6"
+                        class="w-6 h-6"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -134,7 +133,7 @@
                     <div>
                         <button
                             type="button"
-                            class="relative flex rounded-full bg-red-400 dark:bg-red-900 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                            class="relative flex text-sm bg-red-400 rounded-full dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                             id="user-menu-button"
                             aria-expanded="false"
                             aria-haspopup="true"
@@ -142,7 +141,7 @@
                             <span class="absolute -inset-1.5"></span>
                             <span class="sr-only">Open user menu</span>
                             <img
-                                class="h-8 w-8 rounded-full"
+                                class="w-8 h-8 rounded-full"
                                 src="/assets/svg/user.svg"
                                 id="userimg"
                                 alt=""
@@ -150,7 +149,7 @@
                         </button>
                     </div>
                     <div
-                        class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        class="absolute right-0 z-10 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                         role="menu"
                         aria-orientation="vertical"
                         aria-labelledby="user-menu-button"
@@ -160,7 +159,7 @@
                         <div class="block px-4 py-2 text-sm text-gray-700">
                             Hi,
                             <span
-                                class="settodisplayname bg-orange-700 bg-opacity-20 italic p-1 rounded-md text-sm"
+                                class="p-1 text-sm italic bg-orange-700 rounded-md settodisplayname bg-opacity-20"
                                 style="overflow: hidden; white-space: nowrap"
                             >unset</span
                             >
@@ -184,7 +183,7 @@
                         >
                         <a
                             onclick="LogOut()"
-                            class="block cursor-pointer px-4 py-2 text-sm text-gray-700"
+                            class="block px-4 py-2 text-sm text-gray-700 cursor-pointer"
                             role="menuitem"
                             tabindex="-1"
                             id="user-menu-item-2"
@@ -196,30 +195,30 @@
         </div>
     </div>
     <div class="sm:hidden" id="mobile-menu">
-        <div class="space-y-1 px-2 pb-3 pt-2">
+        <div class="px-2 pt-2 pb-3 space-y-1">
             <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
             <a
                 href="javascript:void(0)"
-                class="bg-red-400 dark:bg-red-900 text-white block rounded-md px-3 py-2 text-base font-medium"
+                class="block px-3 py-2 text-base font-medium text-white bg-red-400 rounded-md dark:bg-red-900"
                 aria-current="page"
                 id="mobile-dashboard-nav"
             >Dashboard</a
             >
             <a
                 href="javascript:void(0)"
-                class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
+                class="block px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                 id="mobile-pages-nav"
             >Publications</a
             >
             <a
                 href="javascript:void(0)"
-                class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
+                class="block px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                 id="mobile-plugins-nav"
             >Plugins</a
             >
             <a
                 href="javascript:void(0)"
-                class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
+                class="block px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
                 id="mobile-customisation-nav"
             >Customisation</a
             >
