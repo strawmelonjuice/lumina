@@ -239,8 +239,8 @@ pub(crate) mod users {
             pub(crate) user_id: Option<i64>,
         }
         impl AuthResponse {
-            //noinspection RsExternalLinter
             /// Wraps the AuthResponse struct into a Result<Option<i64>, Error>, as originally intended.
+            #[allow(unused)]
             pub(crate) fn wrap(self) -> Result<Option<i64>, Error> {
                 if self.success && self.user_exists && self.password_correct {
                     // Password is correct, user exists, return the user_id

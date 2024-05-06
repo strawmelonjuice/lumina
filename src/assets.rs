@@ -7,6 +7,7 @@
 
 pub const STR_ASSETS_INDEX_HTML: &str = include_str!("assets/html/index.html");
 pub const STR_ASSETS_LOGIN_HTML: &str = include_str!("assets/html/login.html");
+pub const STR_ASSETS_SIGNUP_HTML: &str = include_str!("assets/html/signup.html");
 
 pub const STR_ASSETS_HOME_HTML: &str = include_str!("assets/handlebars/timeline.handlebars");
 
@@ -48,3 +49,5 @@ pub const STR_ASSETS_RED_CROSS_SVG: &str = include_str!("assets/svg/red_cross.sv
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("assets/png/ephewlogo-1.png");
 
 pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/dist/axios.min.js");
+pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
+    include_str!("../node_modules/axios/dist/axios.min.js.map");

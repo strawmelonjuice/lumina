@@ -8,12 +8,6 @@ extern crate log;
 extern crate simplelog;
 use rand::prelude::*;
 
-use std::fmt::Debug;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-use std::{env, fs, path::Path, process};
-
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
 use actix_web::cookie::Key;
@@ -25,6 +19,11 @@ use actix_web::{
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use std::{env, fs, path::Path, process};
 use tokio::sync::{Mutex, MutexGuard};
 
 use tell::tellgen;
@@ -250,14 +249,15 @@ async fn main() {
                         },
                     }
                 }
-                Err(_e) => {
+                Err(e) => {
                     eprintln!(
-                        "Error: Could not interpret server configuration at `{}`!",
+                        "ERROR: Could not interpret server configuration at `{}`!\n\n\t{}",
                         confp
                             .canonicalize()
                             .unwrap_or(confp.to_path_buf())
                             .to_string_lossy()
-                            .replace("\\\\?\\", "")
+                            .replace("\\\\?\\", ""),
+                        e.message()
                     );
                     process::exit(1);
                 }
@@ -388,6 +388,7 @@ async fn main() {
             .route("/", web::get().to(serve::root))
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
+            .route("/signup", web::get().to(serve::signup))
             .route("/logout", web::get().to(serve::logout))
             .route("/prefetch.js", web::get().to(serve::prefetch_js))
             .route("/login.js", web::get().to(serve::login_js))
@@ -402,6 +403,10 @@ async fn main() {
             .route("/favicon.ico", web::get().to(serve::logo_png))
             .route("/logo.png", web::get().to(serve::logo_png))
             .route("/axios/axios.min.js", web::get().to(serve::node_axios))
+            .route(
+                "/axios/axios.min.js.map",
+                web::get().to(serve::node_axios_map),
+            )
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
     })
@@ -509,8 +514,8 @@ mod serve {
     use crate::assets::{
         BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_INDEX_HTML,
         STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
-        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS,
-        STR_NODE_MOD_AXIOS_MIN_JS,
+        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SPINNER_SVG,
+        STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
     };
     use crate::storage::BasicUserInfo;
     use crate::{Config, ServerVars};
@@ -590,7 +595,33 @@ mod serve {
                     .clone(),
             )
     }
+    pub(super) async fn signup(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y = server_z.lock().await;
+        let server_p: ServerVars = server_y.clone();
+        drop(server_y);
+        let coninfo = req.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_p.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/signup".bright_magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
 
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(
+                STR_ASSETS_SIGNUP_HTML
+                    .replace(
+                        "{{iid}}",
+                        &server_p.clone().config.interinstance.iid.clone(),
+                    )
+                    .clone(),
+            )
+    }
     pub(super) async fn prefetch_js(
         server_z: Data<Mutex<ServerVars>>,
         req: HttpRequest,
@@ -768,6 +799,23 @@ mod serve {
         HttpResponse::build(StatusCode::OK)
             .content_type("image/png; charset=utf-8")
             .body(BYTES_ASSETS_LOGO_PNG)
+    }
+    pub(super) async fn node_axios_map(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/axios/axios.min.js.map".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(STR_NODE_MOD_AXIOS_MIN_JS_MAP)
     }
 
     pub(super) async fn node_axios(
