@@ -27,8 +27,26 @@ const NODE_NPM: &str = "npm";
 const BUN_NPM: &str = "bun.exe";
 #[cfg(not(windows))]
 const BUN_NPM: &str = "bun";
+fn create_dirs() -> Result<(), std::io::Error> {
+	std::fs::create_dir_all("./target/generated/")?;
+	std::fs::create_dir_all("./target/generated/js")?;
+	std::fs::create_dir_all("./target/generated/css")?;
+	Ok(())
+}
 
 fn main() {
+
+	match create_dirs() {
+		Ok(_) => {},
+		Err(e) => {
+			panic!(
+                    "Could not create output folders:\n\n{}",e
+                )
+		}
+	}
+
+
+
     match std::process::Command::new(BUN_NPM).arg("install").output() {
         Ok(t) => {
             if t.status.code().unwrap() != 0 {
