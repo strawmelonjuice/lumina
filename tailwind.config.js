@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-	content: ["./src/assets/**/*.{html,handlebars,js}"],
+	content: [
+		"./src/assets/**/*.{html,handlebars,js}",
+		"./target/generated/**/.{html,handlebars}",
+	],
 	theme: {
 		fontFamily: {
 			sans: ["Josefin Sans", "Fira Sans", "sans-serif"],

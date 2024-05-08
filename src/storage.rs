@@ -42,7 +42,7 @@ pub struct PostInfo {
 }
 /// Create a database connection
 pub(crate) fn create_con(config: &Config) -> Connection {
-    return match Connection::open(
+    match Connection::open(
         config
             .clone()
             .run
@@ -54,7 +54,7 @@ pub(crate) fn create_con(config: &Config) -> Connection {
             error!("Could not create a database connection!");
             process::exit(1);
         }
-    };
+    }
 }
 /// # `storage::fetch()`
 /// Fetches well-known data from the database.
@@ -72,7 +72,7 @@ pub fn fetch(
                 panic!("Unknown table requisted!");
             }
         };
-        let conn = create_con(&config);
+        let conn = create_con(config);
         dbconf(&conn);
         let mut stmt = conn
             .prepare(format!(r#"select * from {table} where {searchr} = "{searchv}""#).as_str())
