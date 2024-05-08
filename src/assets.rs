@@ -5,7 +5,9 @@
  */
 #![allow(dead_code)]
 
-pub const STR_ASSETS_INDEX_HTML: &str = include_str!("assets/html/index.html");
+build_const!("assets");
+pub const STR_ASSETS_INDEX_HTML: &str = STR_ASSETS_INDEX_HTML_;
+// pub const STR_ASSETS_INDEX_HTML: &str = include_str!("../target/generated/html/index.html");
 pub const STR_ASSETS_LOGIN_HTML: &str = include_str!("assets/html/login.html");
 pub const STR_ASSETS_SIGNUP_HTML: &str = include_str!("assets/html/signup.html");
 

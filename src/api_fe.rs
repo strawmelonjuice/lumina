@@ -57,14 +57,11 @@ pub(crate) async fn update(
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config: Config = server_y.clone().config;
     let coninfo = req.connection_info();
-    let ip = coninfo
-        .realip_remote_addr()
-        .clone()
-        .unwrap_or("<unknown IP>");
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     let username_ = session.get::<String>("username").unwrap_or(None);
     let username_a = session.get::<String>("username");
     let username_b = username_a.unwrap_or(None).unwrap_or(String::from(""));
-    let username_c = if username_b != String::from("") {
+    let username_c = if username_b != *"" {
         format!("/{}", username_b.green())
     } else {
         String::from("")
@@ -131,10 +128,7 @@ pub(crate) async fn auth(
         &server_y.clone(),
     );
     let coninfo = req.connection_info();
-    let ip = coninfo
-        .realip_remote_addr()
-        .clone()
-        .unwrap_or("<unknown IP>");
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     if result.success && result.user_exists && result.password_correct {
         let user_id = result.user_id.unwrap();
         let user: BasicUserInfo = serde_json::from_str(

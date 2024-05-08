@@ -26,11 +26,11 @@ function c(a, b = false) {
 			console.log("Attempting to save credentials");
 			window.localStorage.setItem(
 				"AutologinUsername",
-				document.forms["login"]["username"].value
+				document.forms["login"]["username"].value,
 			);
 			window.localStorage.setItem(
 				"AutologinPassword",
-				document.forms["login"]["password"].value
+				document.forms["login"]["password"].value,
 			);
 		}
 		setTimeout(() => {

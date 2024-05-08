@@ -7,6 +7,8 @@
 extern crate log;
 extern crate simplelog;
 use rand::prelude::*;
+#[macro_use]
+extern crate build_const;
 
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
@@ -450,7 +452,7 @@ async fn close(config: Config) {
             waiting = false;
         }
         input = input.replace(['\n', '\r'], "");
-        let split_input = input.as_str().split(" ").collect::<Vec<&str>>();
+        let split_input = input.as_str().split(' ').collect::<Vec<&str>>();
         match split_input[0].to_lowercase().as_str() {
             "c" | "x" | "exit" => {
                 println!("Bye!");
@@ -479,8 +481,8 @@ async fn close(config: Config) {
                             "{}",
                             format!(
                                 "Could not add user {} with password {}: {}",
-                                split_input[1].to_string(),
-                                split_input[2].to_string(),
+                                split_input[1],
+                                split_input[2],
                                 e
                             )
                             .red()
@@ -529,7 +531,7 @@ mod serve {
         let _server_p: ServerVars = server_y.clone();
         let username_ = session.get::<String>("username");
         let username = username_.unwrap_or(None).unwrap_or(String::from(""));
-        let username_b = if username != String::from("") {
+        let username_b = if username != *"" {
             format!("/{}", username.green())
         } else {
             String::from("")
@@ -544,7 +546,7 @@ mod serve {
             ip.yellow(),
             username_b
         );
-        return HttpResponse::NotFound().body("").into();
+        HttpResponse::NotFound().body("")
     }
     pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
         let server_y = server_z.lock().await;
@@ -846,10 +848,7 @@ mod serve {
             req,
             |_: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
                 let coninfo = request.connection_info();
-                let ip = coninfo
-                    .realip_remote_addr()
-                    .clone()
-                    .unwrap_or("<unknown IP>");
+                let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
                 (server_vars.tell)(format!(
                     "{}\t{:>45.47}\t\t{}/{:<25}",
                     "Request/200".bright_green(),
@@ -913,7 +912,7 @@ mod serve {
         let config = server_y.clone().config;
         let id_ = session.get::<String>("userid");
         let id = id_.unwrap_or(None).unwrap_or(String::from(""));
-        let safe = id != String::from("")
+        let safe = id != *""
             && session.get::<i64>("validity").unwrap_or(None)
                 == Some(config.clone().run.session_valid);
         if !safe {
@@ -941,7 +940,7 @@ pub(crate) async fn serve_fonts(
     session: Session,
 ) -> HttpResponse {
     // let reqx = req.clone();
-    let fnt: String = (&req).match_info().get("a").unwrap().parse().unwrap();
+    let fnt: String = req.match_info().get("a").unwrap().parse().unwrap();
     let fonts = fonts();
     let fontbytes: &[u8] = match fnt.as_str() {
         "Josefin_Sans/JosefinSans-VariableFont_wght.ttf" => fonts.josefin_sans,
@@ -953,10 +952,7 @@ pub(crate) async fn serve_fonts(
         }
     };
     let coninfo = req.connection_info();
-    let ip = coninfo
-        .realip_remote_addr()
-        .clone()
-        .unwrap_or("<unknown IP>");
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
