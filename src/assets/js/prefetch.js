@@ -12,14 +12,22 @@
 let fejson = {};
 
 setInterval(pulls, 30000);
-window.pulled = [
+const pulled = [
 	() => {
 		for (const a of document.getElementsByClassName("ownuserprofilelink")) {
 			a.setAttribute("href", `/user/${fejson.user.username}/me`);
 		}
 	},
+	() => {
+		for (const e of document.getElementsByClassName("placeholder-iid")) {
+			e.innerHTML = fejson.instance.config.interinstance.iid;
+		}
+	},
 ];
 
+/**
+ * Description placeholder
+ */
 function putpulls() {
 	for (o of pulled) {
 		o();
@@ -29,7 +37,11 @@ function putpulls() {
 setTimeout(() => {
 	setInterval(putpulls);
 }, 80);
-// Turns GET params into an object.
+/**
+ * Turns GET params into an object.
+ *
+ * @returns {{}}
+ */
 function getParams() {
 	const s = {};
 	if (window.location.hash.split("?")[1] === undefined) return s;
@@ -41,6 +53,9 @@ function getParams() {
 	}
 	return s;
 }
+/**
+ * Description placeholder
+ */
 function pulls() {
 	axios
 		.get("/api/fe/update")
@@ -53,3 +68,51 @@ function pulls() {
 		});
 }
 pulls();
+
+function randomStringFromArray(array) {
+	return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Description placeholder
+ *
+ * @returns {*}
+ */
+function funnyRandomUserName() {
+	const wordsboth = [
+		"strawberry",
+		"hat",
+		"burger",
+		"flat",
+		"orange",
+		"toothpaste",
+		"nerd",
+		"koala",
+		"sample",
+	];
+	const wordsfirst = wordsboth.concat([
+		"straw",
+		"hacker",
+		"hat",
+		"strawberry",
+		"apple",
+		"rotten",
+		"shrimp",
+		"feared-",
+		"smelly",
+	]);
+	const wordslast = wordsboth.concat([
+		"-bubble",
+		"-hat",
+		"-man",
+		"-bro",
+		"-woman",
+		"grapes",
+		"dancer",
+		"salad",
+		"hair",
+	]);
+	return `${randomStringFromArray(wordsfirst)}${randomStringFromArray(
+		wordslast
+	)}${Math.floor(Math.random() * 10001) + 1000}`.replace("--", "-");
+}

@@ -21,6 +21,8 @@ pub struct BasicUserInfo {
     pub(crate) username: String,
     /// Hashed password
     pub(crate) password: String,
+    /// Given email
+    pub(crate) email: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -84,6 +86,7 @@ pub fn fetch(
                         id: row.get(0)?,
                         username: row.get(1)?,
                         password: row.get(2)?,
+                        email: row.get(3)?,
                     })
                     .unwrap(),
                     "TimeLinePostPool" => serde_json::to_string(&PostInfo {
@@ -126,7 +129,8 @@ fn dbconf(conn: &Connection) {
 CREATE TABLE if not exists Users (
     id    INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
     username  TEXT NOT NULL,
-    password  TEXT NOT NULL
+    password  TEXT NOT NULL,
+    email     TEXT NOT NULL
 )
 ",
         (),
@@ -165,9 +169,16 @@ pub(crate) mod users {
 
     /// # `storage::users::add()`
     /// Add data for a new user to the database.
-    pub(crate) fn add(username: String, password: String, config: &Config) -> Result<i64, Error> {
+    pub(crate) fn add(
+        username: String,
+        email: String,
+        password: String,
+        config: &Config,
+    ) -> Result<i64, Error> {
         if username.chars().any(|c| match c {
-            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' => true,
+            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`' => {
+                true
+            }
             _ => false,
         }) {
             return Err(Error::new(
@@ -178,24 +189,45 @@ pub(crate) mod users {
         if username.len() < 3 {
             return Err(Error::new(ErrorKind::Other, "Username is too short."));
         }
+        use regex::Regex;
+        let email_regex = Regex::new(
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+        )
+        .unwrap();
+        if !(email_regex.is_match(&email)) {
+            return Err(Error::new(ErrorKind::Other, "Email is invalid."));
+        };
         if password.len() < 8 {
             return Err(Error::new(ErrorKind::Other, "Password is too short."));
         }
         let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
         let conn = create_con(&config.clone());
-        let res = fetch(
+        let onusername = super::fetch(
             &config.clone(),
             String::from("Users"),
             "username",
             username.clone(),
         )?;
+        let onemail = super::fetch(
+            &config.clone(),
+            String::from("Users"),
+            "email",
+            email.clone(),
+        )?;
+        let res: Option<String> = match onusername {
+            Some(s) => Some(s),
+            None => match onemail {
+                Some(s) => Some(s),
+                None => None,
+            },
+        };
         let password_encrypted = mcrypt.encrypt_str_to_base64(password);
         match res {
             Some(_) => Err(Error::new(ErrorKind::Other, "User already exists!")),
             None => {
                 match conn.execute(
-                    "INSERT INTO `users` (username, password) VALUES (?1,?2)",
-                    (username.clone(), password_encrypted),
+                    "INSERT INTO `users` (username, password, email) VALUES (?1,?2,?3)",
+                    (username.clone(), password_encrypted, email),
                 ) {
                     Ok(_) => {
                         match fetch(
@@ -214,10 +246,13 @@ pub(crate) mod users {
                             )),
                         }
                     }
-                    Err(_) => Err(Error::new(
-                        ErrorKind::Other,
-                        "Unknown database write error.",
-                    )),
+                    Err(e) => {
+                        error!("Unknown database write error: {}", e);
+                        Err(Error::new(
+                            ErrorKind::Other,
+                            "Unknown database write error.",
+                        ))
+                    }
                 }
             }
         }
@@ -261,64 +296,93 @@ pub(crate) mod users {
         /// # `storage::users::auth::check()`
         /// Authenticates a user by plain username and password.
         pub(crate) fn check(
-            username: String,
+            identifyer: String,
             password: String,
             server_vars: &crate::ServerVars,
         ) -> AuthResponse {
+            if identifyer.chars().any(|c| match c {
+                ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')'
+                | '`' => true,
+                _ => false,
+            }) {
+                return AuthResponse {
+                    success: false,
+                    user_exists: false,
+                    password_correct: false,
+                    user_id: None,
+                };
+            }
             let config: crate::Config = server_vars.config.clone();
             let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
-            match super::fetch(
+            let errorresponse = |e| {
+                error!("Auth: \n\t\tRan into an error:\n {}", e);
+                AuthResponse {
+                    success: false,
+                    user_exists: false,
+                    password_correct: false,
+                    user_id: None,
+                }
+            };
+            let onusername = match super::fetch(
                 &config.clone(),
                 String::from("Users"),
                 "username",
-                username.clone(),
+                identifyer.clone(),
             ) {
-                Ok(a) => match a {
-                    Some(d) => {
-                        let u: super::BasicUserInfo = from_str(&d).unwrap();
-                        if u.password == mcrypt.encrypt_str_to_base64(password) {
-                            (server_vars.tell)(format!(
-                                "Auth\t\t\t{}",
-                                format!("User {} successfully authorised.", u.username.blue())
-                                    .green()
-                            ));
-                            AuthResponse {
-                                success: true,
-                                user_exists: true,
-                                password_correct: true,
-                                user_id: Some(u.id),
-                            }
-                        } else {
-                            (server_vars.tell)(format!(
-                                "Auth\t\t\t{}",
-                                format!("User {}: Wrong password entered.", username.blue())
-                                    .bright_red()
-                            ));
-                            AuthResponse {
-                                success: true,
-                                user_exists: true,
-                                password_correct: false,
-                                user_id: None,
-                            }
-                        }
-                    }
-                    None => {
+                Ok(a) => a,
+                Err(e) => return errorresponse(e),
+            };
+            let onemail = match super::fetch(
+                &config.clone(),
+                String::from("Users"),
+                "email",
+                identifyer.clone(),
+            ) {
+                Ok(a) => a,
+                Err(e) => return errorresponse(e),
+            };
+            let asome: Option<String> = match onusername {
+                Some(s) => Some(s),
+                None => match onemail {
+                    Some(s) => Some(s),
+                    None => None,
+                },
+            };
+            match asome {
+                Some(d) => {
+                    let u: super::BasicUserInfo = from_str(&d).unwrap();
+                    if u.password == mcrypt.encrypt_str_to_base64(password) {
                         (server_vars.tell)(format!(
                             "Auth\t\t\t{}",
-                            format!("User {} does not exist.", username.blue()).bright_yellow()
+                            format!("User {} successfully authorised.", u.username.blue()).green()
                         ));
                         AuthResponse {
                             success: true,
-                            user_exists: false,
+                            user_exists: true,
+                            password_correct: true,
+                            user_id: Some(u.id),
+                        }
+                    } else {
+                        (server_vars.tell)(format!(
+                            "Auth\t\t\t{}",
+                            format!("User {}: Wrong password entered.", identifyer.blue())
+                                .bright_red()
+                        ));
+                        AuthResponse {
+                            success: true,
+                            user_exists: true,
                             password_correct: false,
                             user_id: None,
                         }
                     }
-                },
-                Err(e) => {
-                    error!("Auth: \n\t\tRan into an error:\n {}", e);
+                }
+                None => {
+                    (server_vars.tell)(format!(
+                        "Auth\t\t\t{}",
+                        format!("User {} does not exist.", identifyer.blue()).bright_yellow()
+                    ));
                     AuthResponse {
-                        success: false,
+                        success: true,
                         user_exists: false,
                         password_correct: false,
                         user_id: None,

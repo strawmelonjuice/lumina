@@ -391,11 +391,19 @@ async fn main() {
             .route("/home", web::get().to(serve::homepage))
             .route("/login", web::get().to(serve::login))
             .route("/signup", web::get().to(serve::signup))
-            .route("/logout", web::get().to(serve::logout))
+            .route("/session/logout", web::get().to(serve::logout))
+            .route("/home/", web::get().to(serve::homepage))
+            .route("/login/", web::get().to(serve::login))
+            .route("/signup/", web::get().to(serve::signup))
+            .route("/session/logout/", web::get().to(serve::logout))
             .route("/prefetch.js", web::get().to(serve::prefetch_js))
+            .route("/site-index.js", web::get().to(serve::index_js))
+            .route("/site-home.js", web::get().to(serve::home_js))
             .route("/login.js", web::get().to(serve::login_js))
+            .route("/signup.js", web::get().to(serve::signup_js))
             .route("/api/fe/update", web::get().to(api_fe::update))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
+            .route("/api/fe/auth-create", web::post().to(api_fe::newaccount))
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
             .route("/red-cross.svg", web::get().to(serve::red_cross_svg))
@@ -460,11 +468,12 @@ async fn close(config: Config) {
             }
             "au" | "adduser" => {
                 if split_input.len() < 2 {
-                    println!("Usage: adduser <username> <password>");
+                    println!("Usage: adduser <username> <password> <email>");
                 } else {
                     match storage::users::add(
                         split_input[1].to_string(),
                         split_input[2].to_string(),
+                        split_input[3].to_string(),
                         &config.clone(),
                     ) {
                         Ok(o) => println!(
@@ -493,11 +502,14 @@ async fn close(config: Config) {
             "h" | "help" => println!(
                 "\n{}{}{}",
                 "Ephew server runtime command line - Help\n".bright_yellow(),
-                format!("\n\tau | adduser {}{}",
+                format!("\n\t{} {} {} {}",
+                    "au | adduser".white(),
                         format!("{}{}{}", "<".red(), "username".bright_yellow(), ">".red()),
-                        format!("{}{}{}", "<".red(), "password".bright_yellow(), ">".red())
+                        format!("{}{}{}", "<".red(), "password".bright_yellow(), ">".red()),
+                        format!("{}{}{}", "<".red(), "email".bright_yellow(), ">".red())
+
                 ),
-                        "\n\t\tAdds a new user to the database.\n\th | help\n\t\tDisplays this help message.\n\tc | x | exit\n\t\tShut down the server.".green()
+                        format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"c | x | exit".white()).green()
             ),
             _ => println!("{}", msg),
         }
@@ -514,9 +526,10 @@ mod serve {
     use tokio::sync::{Mutex, MutexGuard};
 
     use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_INDEX_HTML,
-        STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
-        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SPINNER_SVG,
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_HOME_HTML,
+        STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS, STR_ASSETS_LOGIN_HTML,
+        STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG,
+        STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
         STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
     };
     use crate::storage::BasicUserInfo;
@@ -679,7 +692,87 @@ mod serve {
             .content_type("text/javascript; charset=utf-8")
             .body(js)
     }
+    pub(super) async fn index_js(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/login.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        let js = format!(
+            r#"/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
 
+ {}"#,
+            STR_ASSETS_INDEX_JS
+        );
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(js)
+    }
+    pub(super) async fn home_js(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/site-home.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        let js = format!(
+            r#"/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
+
+ {}"#,
+            STR_ASSETS_HOME_JS
+        );
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(js)
+    }
+    pub(super) async fn signup_js(
+        server_z: Data<Mutex<ServerVars>>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+        let coninfo = req.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_y.tell)(format!(
+            "{2}\t{:>45.47}\t\t{}",
+            "/login.js".magenta(),
+            ip.yellow(),
+            "Request/200".bright_green()
+        ));
+        let js = format!(
+            r#"/*
+    * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+    *
+    * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+    */
+
+    {}"#,
+            STR_ASSETS_SIGNUP_JS
+        );
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/javascript; charset=utf-8")
+            .body(js)
+    }
     pub(super) async fn site_c_css(
         server_z: Data<Mutex<ServerVars>>,
         req: HttpRequest,
@@ -856,10 +949,9 @@ mod serve {
                     ip.yellow(),
                     user.username.green()
                 ));
-                let cont = "";
                 HttpResponse::build(StatusCode::OK)
                     .content_type("text/html; charset=utf-8")
-                    .body(cont)
+                    .body(STR_ASSETS_HOME_HTML)
             },
         )
         .await
@@ -881,7 +973,7 @@ mod serve {
                 (server_p.tell)(format!(
                     "{}\t{:>45.47}\t\t{}/{:<25}",
                     "Request/200".bright_green(),
-                    "/logout".bright_magenta(),
+                    "/session/logout".bright_magenta(),
                     ip.yellow(),
                     username.green()
                 ));
@@ -895,6 +987,9 @@ mod serve {
                 .finish(),
         }
     }
+    // struct FenceSession {
+    // 	userid:
+    // }
     /// # `Fence()`
     /// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
     pub(crate) async fn fence(
@@ -910,12 +1005,24 @@ mod serve {
     ) -> HttpResponse {
         let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
         let config = server_y.clone().config;
-        let id_ = session.get::<String>("userid");
-        let id = id_.unwrap_or(None).unwrap_or(String::from(""));
-        let safe = id != *""
-            && session.get::<i64>("validity").unwrap_or(None)
-                == Some(config.clone().run.session_valid);
+        let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
+        let id = id_.unwrap_or(-100);
+        debug!("Session validity: {:?}", session.get::<i64>("validity"));
+        debug!("Session contents: {:?}", session.entries());
+        debug!("User ID: {:?}", id);
+
+        let safe = match id {
+            -100 => false,
+            _ => match session.get::<i64>("validity") {
+                Ok(s) => match s {
+                    Some(a) if a == config.clone().run.session_valid => true,
+                    _ => false,
+                },
+                Err(_) => false,
+            },
+        };
         if !safe {
+            session.purge();
             HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                 .append_header((LOCATION, "/login"))
                 .finish()

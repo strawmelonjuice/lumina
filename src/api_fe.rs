@@ -12,6 +12,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::storage::users::add;
 use crate::storage::users::auth::check;
 use crate::storage::{fetch, BasicUserInfo};
 use crate::{Config, ServerVars};
@@ -77,7 +78,7 @@ pub(crate) async fn update(
         instance: JSClientInstance {
             config: JSClientConfig {
                 interinstance: JSClientInterinstance {
-                    iid: "".to_string(),
+                    iid: config.clone().interinstance.iid,
                     lastpoll: 0,
                 },
             },
@@ -152,5 +153,60 @@ pub(crate) async fn auth(
         HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false}"#)
+    }
+}
+#[derive(Deserialize)]
+pub(super) struct AuthCreateUserReqData {
+    username: String,
+    email: String,
+    password: String,
+}
+pub(crate) async fn newaccount(
+    server_z: Data<Mutex<ServerVars>>,
+    session: Session,
+    req: HttpRequest,
+    data: actix_web::web::Json<AuthCreateUserReqData>,
+) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let config = server_y.clone().config;
+    (server_y.tell)("User creation request: received.".to_string());
+    let result = add(
+        data.username.clone(),
+        data.email.clone(),
+        data.password.clone(),
+        &config.clone(),
+    );
+    let coninfo = req.connection_info();
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+    match result {
+        Ok(user_id) => {
+            let user: BasicUserInfo = serde_json::from_str(
+                fetch(&config, String::from("Users"), "id", user_id.to_string())
+                    .unwrap()
+                    .unwrap()
+                    .as_str(),
+            )
+            .unwrap();
+            let username = user.username;
+            session.insert("userid", user.id).unwrap();
+            session.insert("username", username).unwrap();
+            session
+                .insert("validity", config.clone().run.session_valid)
+                .unwrap();
+            (server_y.tell)(format!(
+                "User creation request: approved for {} @ {}",
+                user.id, ip
+            ));
+            HttpResponse::build(StatusCode::OK)
+                .content_type("text/json; charset=utf-8")
+                .body(r#"{"Ok": true}"#)
+        }
+        Err(e) => {
+            (server_y.tell)(format!("User creation request:  denied - {e}"));
+            HttpResponse::build(StatusCode::EXPECTATION_FAILED)
+                .content_type("text/json; charset=utf-8")
+                .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
+                .into()
+        }
     }
 }

@@ -8,3 +8,4 @@ Warning ya -- Ephew stores in `$HOME/.ephewinstance` unless specified as argumen
 ```bash
 cargo run -- ./test
 ```
+You'll need Bun/NodeJS and the stable Rust Toolchain for that.
