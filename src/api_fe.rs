@@ -12,6 +12,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::storage::users::add;
 use crate::storage::users::auth::check;
 use crate::storage::{fetch, BasicUserInfo};
@@ -238,7 +239,7 @@ pub(crate) async fn pageservresponder(
 
                                "#,
             ),
-            side: String::from("Oh, "),
+            side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
         },
         _ => {
             return HttpResponse::build(StatusCode::EXPECTATION_FAILED)
