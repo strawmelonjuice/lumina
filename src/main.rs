@@ -30,12 +30,15 @@ use tokio::sync::{Mutex, MutexGuard};
 
 use tell::tellgen;
 
-use crate::assets::{fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS};
+use crate::assets::{
+    fonts, vec_string_assets_anons_svg, STR_ASSETS_ANON_SVG, STR_CLEAN_CONFIG_TOML,
+    STR_CLEAN_CUSTOMSTYLES_CSS,
+};
 use crate::serve::notfound;
 
 mod api_fe;
+mod api_ii;
 mod assets;
-mod instance_poller;
 mod storage;
 mod tell;
 
@@ -401,6 +404,10 @@ async fn main() {
             .route("/site-home.js", web::get().to(serve::home_js))
             .route("/login.js", web::get().to(serve::login_js))
             .route("/signup.js", web::get().to(serve::signup_js))
+            .route(
+                "/api/fe/fetch-page",
+                web::post().to(api_fe::pageservresponder),
+            )
             .route("/api/fe/update", web::get().to(api_fe::update))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
             .route("/api/fe/auth-create", web::post().to(api_fe::newaccount))
@@ -417,6 +424,7 @@ async fn main() {
                 "/axios/axios.min.js.map",
                 web::get().to(serve::node_axios_map),
             )
+            .service(avatar)
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
     })
@@ -439,7 +447,7 @@ async fn main() {
     }
     .run();
     let _ = futures::join!(
-        instance_poller::main(config.clone(), tell),
+        api_ii::main(config.clone(), tell),
         main_server,
         close(config.clone())
     );
@@ -526,11 +534,12 @@ mod serve {
     use tokio::sync::{Mutex, MutexGuard};
 
     use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_HOME_HTML,
-        STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS, STR_ASSETS_LOGIN_HTML,
-        STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG,
-        STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
-        STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_ANON_SVG, STR_ASSETS_GREEN_CHECK_SVG,
+        STR_ASSETS_HOME_HTML, STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS,
+        STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
+        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS,
+        STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
+        STR_NODE_MOD_AXIOS_MIN_JS_MAP,
     };
     use crate::storage::BasicUserInfo;
     use crate::{Config, ServerVars};
@@ -951,7 +960,14 @@ mod serve {
                 ));
                 HttpResponse::build(StatusCode::OK)
                     .content_type("text/html; charset=utf-8")
-                    .body(STR_ASSETS_HOME_HTML)
+                    .body(
+                        STR_ASSETS_HOME_HTML
+                            .replace(
+                                "{{iid}}",
+                                &server_vars.clone().config.interinstance.iid.clone(),
+                            )
+                            .clone(),
+                    )
             },
         )
         .await
@@ -978,7 +994,7 @@ mod serve {
                     username.green()
                 ));
                 session.purge();
-                HttpResponse::build(StatusCode::OK)
+                HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                     .append_header((LOCATION, "/login"))
                     .finish()
             }
@@ -1071,4 +1087,32 @@ pub(crate) async fn serve_fonts(
         .append_header(("Accept-Charset", "UTF-8"))
         .content_type("font/ttf")
         .body(fontbytes)
+}
+
+#[get("/user/avatar/{a:.*}")]
+pub(crate) async fn avatar(
+    req: HttpRequest,
+    server_z: Data<Mutex<ServerVars>>,
+    session: Session,
+) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let user: String = req.match_info().get("a").unwrap().parse().unwrap();
+    let coninfo = req.connection_info();
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+    (server_y.tell)(format!(
+        "{2}\t{:>45.47}\t\t{}",
+        req.path().magenta(),
+        ip.yellow(),
+        "Request/200".bright_green()
+    ));
+    let index: usize = rand::Rng::gen_range(&mut crate::thread_rng(), 0..=5);
+    let cont: String = {
+        let oo = &vec_string_assets_anons_svg()[index];
+        let o = oo.clone().to_string();
+        o
+    };
+    HttpResponse::Ok()
+        .append_header(("Accept-Charset", "UTF-8"))
+        .content_type("image/svg+xml")
+        .body(cont)
 }

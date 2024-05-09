@@ -32,7 +32,7 @@ function c(a, b = false) {
     }
     setTimeout(() => {
       window.location.assign(`/home/${window.location.hash}`);
-    }, 3000);
+    }, 800);
   } else {
     if (b) return;
     submitbutton.innerHTML = `<div style="background-image: url('/red-cross.svg'); background-repeat: no-repeat; background-size: cover;" class="pl-max pr-max relative h-10 w-10"></div>`;
