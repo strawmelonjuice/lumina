@@ -67,3 +67,5 @@ pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("assets/png/ephewlogo-1.
 pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/dist/axios.min.js");
 pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
     include_str!("../node_modules/axios/dist/axios.min.js.map");
+
+pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str = include_str!("assets/handlebars/home-side.handlebars");
