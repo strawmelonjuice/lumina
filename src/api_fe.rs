@@ -210,3 +210,44 @@ pub(crate) async fn newaccount(
         }
     }
 }
+#[derive(Deserialize)]
+pub struct FEPageServeRequest {
+    location: String,
+}
+#[derive(Serialize)]
+struct FEPageServeResponse {
+    main: String,
+    side: String,
+}
+pub(crate) async fn pageservresponder(
+    server_z: Data<Mutex<ServerVars>>,
+    session: Session,
+    req: HttpRequest,
+    data: actix_web::web::Json<FEPageServeRequest>,
+) -> HttpResponse {
+    let location = data.location.clone();
+    let o: FEPageServeResponse = match location.as_str() {
+        "home" => FEPageServeResponse {
+            main: String::from(
+                r#"
+<h1>welcome to instance <code class="placeholder-iid"></code></h1>
+			<p>
+				as you can see, there is no such thing as a homepage. ephew is
+				not ready for anything yet.
+			</p>
+
+                               "#,
+            ),
+            side: String::from("Oh, "),
+        },
+        _ => {
+            return HttpResponse::build(StatusCode::EXPECTATION_FAILED)
+                .content_type("text/json; charset=utf-8")
+                .body("")
+                .into()
+        }
+    };
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/json; charset=utf-8")
+        .body(serde_json::to_string(&o).unwrap())
+}

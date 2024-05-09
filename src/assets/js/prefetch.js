@@ -12,7 +12,14 @@
 let fejson = {};
 
 setInterval(pulls, 30000);
-const pulled = [
+window.pulled = [
+	() => {
+		for (const a of document.getElementsByClassName("ownuseravatarsrc")) {
+			if (a.getAttribute("src") === "") {
+				a.setAttribute("src", `/user/avatar/${fejson.user.id}`);
+			}
+		}
+	},
 	() => {
 		for (const a of document.getElementsByClassName("ownuserprofilelink")) {
 			a.setAttribute("href", `/user/${fejson.user.username}/me`);
