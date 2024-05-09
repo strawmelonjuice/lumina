@@ -351,27 +351,6 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    // some tests
-    // Ran successfully
-    //         println!("\n\n\n Creating a user named 'davemustaine' with password 'Polarbear':\n{:?}", storage::users::add("davemustaine".to_string(), "Polarbear".to_string(), &config.clone()));
-    //
-    // Ran successfully
-    //         println!(
-    //             " Checking for a user named 'gerardway' with password 'password'? {} \n\n\n",
-    //             match storage::users::auth::check(
-    //                 "gerardway".to_string(),
-    //                 "password".to_string(),
-    //                 &(server_p)
-    //             )
-    //             .wrap()
-    //             .unwrap_or(None)
-    //             {
-    //                 Some(a) => a.to_string(),
-    //                 None => "No such user.".to_string(),
-    //             }
-    //             .yellow()
-    //             .on_bright_green()
-    //         );
     let keydouble = config.server.cookie_key.repeat(2);
     let keybytes = keydouble.as_bytes();
     if keybytes.len() < 32 {
