@@ -867,6 +867,7 @@ dependencies = [
  "password-hash",
  "pbkdf2",
  "rand",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",

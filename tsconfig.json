@@ -8,5 +8,5 @@
 		"allowJs": true
 	},
 	"exclude": ["./target/generated/js/"],
-	"include": ["./src/assets/ts"]
+	// "include": ["./src/assets/ts"]
 }

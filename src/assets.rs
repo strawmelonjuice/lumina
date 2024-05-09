@@ -11,7 +11,7 @@ pub const STR_ASSETS_INDEX_HTML: &str = STR_ASSETS_INDEX_HTML_;
 pub const STR_ASSETS_LOGIN_HTML: &str = include_str!("assets/html/login.html");
 pub const STR_ASSETS_SIGNUP_HTML: &str = include_str!("assets/html/signup.html");
 
-pub const STR_ASSETS_HOME_HTML: &str = include_str!("assets/handlebars/timeline.handlebars");
+pub const STR_ASSETS_HOME_HTML: &str = include_str!("assets/html/home.html");
 
 pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("assets/toml/initial_config.toml");
 
@@ -19,7 +19,10 @@ pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str = include_str!("assets/styles/initial
 
 pub const STR_ASSETS_PREFETCH_JS: &str = include_str!("../target/generated/js/prefetch.min.js");
 
+pub const STR_ASSETS_INDEX_JS: &str = include_str!("../target/generated/js/site-index.min.js");
+pub const STR_ASSETS_HOME_JS: &str = include_str!("../target/generated/js/site-home.min.js");
 pub const STR_ASSETS_LOGIN_JS: &str = include_str!("../target/generated/js/login.min.js");
+pub const STR_ASSETS_SIGNUP_JS: &str = include_str!("../target/generated/js/signup.min.js");
 
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 
