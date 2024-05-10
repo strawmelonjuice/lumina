@@ -52,14 +52,15 @@ pub const STR_ASSETS_SPINNER_SVG: &str = include_str!("assets/svg/spinner.svg");
 pub const STR_ASSETS_RED_CROSS_SVG: &str = include_str!("assets/svg/red_cross.svg");
 pub const STR_ASSETS_ANON_SVG: &str = include_str!("assets/svg/avatar1.svg");
 
-
 pub fn vec_string_assets_anons_svg() -> Vec<String> {
-	vec!(STR_ASSETS_ANON_SVG.to_string(),
-	include_str!("assets/svg/avatar2.svg").to_string(),
-	include_str!("assets/svg/avatar3.svg").to_string(),
-	include_str!("assets/svg/avatar4.svg").to_string(),
-	include_str!("assets/svg/avatar5.svg").to_string(),
-	include_str!("assets/svg/avatar6.svg").to_string())
+    vec![
+        STR_ASSETS_ANON_SVG.to_string(),
+        include_str!("assets/svg/avatar2.svg").to_string(),
+        include_str!("assets/svg/avatar3.svg").to_string(),
+        include_str!("assets/svg/avatar4.svg").to_string(),
+        include_str!("assets/svg/avatar5.svg").to_string(),
+        include_str!("assets/svg/avatar6.svg").to_string(),
+    ]
 }
 
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("assets/png/ephewlogo-1.png");
@@ -68,4 +69,5 @@ pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/
 pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
     include_str!("../node_modules/axios/dist/axios.min.js.map");
 
-pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str = include_str!("assets/handlebars/home-side.handlebars");
+pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str =
+    include_str!("assets/handlebars/home-side.handlebars");
