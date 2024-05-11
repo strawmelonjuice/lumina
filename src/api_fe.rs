@@ -226,6 +226,10 @@ pub(crate) async fn pageservresponder(
     req: HttpRequest,
     data: actix_web::web::Json<FEPageServeRequest>,
 ) -> HttpResponse {
+    // These three WILL be used in the future, when pages actually get dynamic.
+    let _ = server_z;
+    let _ = session;
+    let _ = req;
     let location = data.location.clone();
     let o: FEPageServeResponse = match location.as_str() {
         "home" => FEPageServeResponse {
@@ -251,4 +255,54 @@ pub(crate) async fn pageservresponder(
     HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
         .body(serde_json::to_string(&o).unwrap())
+}
+#[derive(Deserialize)]
+pub struct FEUsernameCheckRequest {
+    u: String,
+}
+
+pub(crate) async fn check_username(
+    server_z: Data<Mutex<ServerVars>>,
+    data: actix_web::web::Json<FEUsernameCheckRequest>,
+) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let config = server_y.clone().config;
+    let username = data.u.clone();
+    if username.chars().any(|c| match c {
+        ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
+        | '%' | '?' | '!' => true,
+        _ => false,
+    }) || !(username.chars().all(char::is_alphanumeric))
+    {
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/json; charset=utf-8")
+            .body(format!(r#"{{"Ok": false, "Why": "InvalidChars"}}"#))
+            .into();
+    }
+    if username.len() < 4 {
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/json; charset=utf-8")
+            .body(format!(r#"{{"Ok": false, "Why": "TooShort"}}"#))
+            .into();
+    }
+    match crate::storage::fetch(
+        &config.clone(),
+        String::from("Users"),
+        "username",
+        username.clone(),
+    )
+    .unwrap_or(None)
+    {
+        Some(_) => {
+            return HttpResponse::build(StatusCode::OK)
+                .content_type("text/json; charset=utf-8")
+                .body(format!(r#"{{"Ok": false, "Why": "userExists"}}"#))
+                .into();
+        }
+        None => {}
+    };
+    return HttpResponse::build(StatusCode::OK)
+        .content_type("text/json; charset=utf-8")
+        .body(r#"{"Ok": true}"#)
+        .into();
 }

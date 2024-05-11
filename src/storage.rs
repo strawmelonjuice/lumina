@@ -176,11 +176,11 @@ pub(crate) mod users {
         config: &Config,
     ) -> Result<i64, Error> {
         if username.chars().any(|c| match c {
-            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`' => {
-                true
-            }
+            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
+            | '%' | '?' | '!' => true,
             _ => false,
-        }) {
+        }) || !(username.chars().all(char::is_alphanumeric))
+        {
             return Err(Error::new(
                 ErrorKind::Other,
                 "Invalid characters in username!",

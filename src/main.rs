@@ -390,6 +390,10 @@ async fn main() {
             .route("/api/fe/update", web::get().to(api_fe::update))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
             .route("/api/fe/auth-create", web::post().to(api_fe::newaccount))
+            .route(
+                "/api/fe/auth-create/check-username",
+                web::post().to(api_fe::check_username),
+            )
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
             .route("/red-cross.svg", web::get().to(serve::red_cross_svg))
