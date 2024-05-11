@@ -70,9 +70,9 @@ pub(crate) async fn update(
     };
     info!(
         "{}\t{:>45.47}\t\t{}{:<26}",
+        "Request/200".bright_green(),
         "/api/fe/update".magenta(),
         ip.yellow(),
-        "Request/200".bright_green(),
         username_c
     );
     let json = serde_json::to_string(&JSClientData {
