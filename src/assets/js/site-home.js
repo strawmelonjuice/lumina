@@ -12,6 +12,11 @@ function switchpages(toPageName) {
 			desktop: document.getElementById("home-nav"),
 			location: "home",
 			navigator: true,
+			f: () => {
+				document
+					.getElementById("mobiletimelineswitcher")
+					.classList.remove("hidden");
+			},
 		},
 		pages: {
 			mobile: document.getElementById("mobile-pages-nav"),
@@ -189,7 +194,6 @@ function showMobiletimelineSwitcher() {
 function switchTimeline(tid) {
 	console.log(`Switching to timeline with ID string: ${tid}`);
 	document.getElementById("mobiletimelineswitcher").classList.remove("hidden");
-	
 }
 document
 	.getElementById("mobiletimelineswitcher")
