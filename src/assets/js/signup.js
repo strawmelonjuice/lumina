@@ -49,7 +49,7 @@ function checkusername() {
 		.catch((error) => {
 			console.log(error);
 			document.getElementById("usernameLabel").innerHTML =
-				`Username&emsp;&emsp;⬅ Error while checking this username!`;
+				"Username&emsp;&emsp;⬅ Error while checking this username!";
 		});
 }
 document.forms["signup"]["username"].setAttribute("oninput", "checkusername()");
@@ -95,3 +95,6 @@ function regstry() {
 			});
 	}, 500);
 }
+window.on_mobile_swipe_down.push(() => {
+	window.mobileMenuToggle();
+});

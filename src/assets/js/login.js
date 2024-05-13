@@ -76,3 +76,6 @@ if (localStorage.getItem("AutologinUsername") !== null) {
     localStorage.getItem("AutologinPassword");
   authtry();
 }
+window.on_mobile_swipe_down.push(() => {
+	window.mobileMenuToggle();
+});
