@@ -9,7 +9,7 @@
  * @global
  * @type {{ instance: { config: { interinstance: { iid: string; lastpoll: number; }; }; }; user: { username: string; id: number; }; }}
  */
-let fejson = {};
+let fejson = { instance: { config: { interinstance: { iid: "", lastpoll: 0}} }, user: { username: "", id: 0 } };
 
 setInterval(pulls, 30000);
 window.pulled = [
@@ -32,9 +32,7 @@ window.pulled = [
 	},
 ];
 
-/**
- * Description placeholder
- */
+
 function putpulls() {
 	for (o of pulled) {
 		o();
@@ -123,3 +121,104 @@ function funnyRandomUserName() {
 		wordslast
 	)}${Math.floor(Math.random() * 10001) + 1000}`.replace("--", "-");
 }
+window.onload = () => {
+	window.mobileMenuToggle= () => {
+		const mobilemenu = document.getElementById("mobile-menu");
+		if (mobilemenu.classList.contains("hidden")) {
+			mobilemenu.classList.remove("hidden");
+			document
+				.getElementById("btn-mobile-menu-open")
+				.classList.add("hidden");
+			document
+				.getElementById("btn-mobile-menu-close")
+				.classList.remove("hidden");
+		} else {
+			mobilemenu.classList.add("hidden");
+			document
+				.getElementById("btn-mobile-menu-open")
+				.classList.remove("hidden");
+			document
+				.getElementById("btn-mobile-menu-close")
+				.classList.add("hidden");
+		}
+	}
+
+	window.mobileMenuToggle();
+	document
+		.getElementById("btn-mobile-menu")
+		.setAttribute("onClick", "window.mobileMenuToggle()");
+}
+window.on_mobile_swipe_left = [() => {
+	console.log("Swipe left detected");
+}];
+window.on_mobile_swipe_right = [() => {
+	console.log("Swipe right detected.");
+}];
+window.on_mobile_swipe_up = [() => {
+	console.log("Swipe up detected");
+}];
+window.on_mobile_swipe_down = [() => {
+	console.log("Swipe down detected");
+}];
+
+document.addEventListener('touchstart', handleTouchStart, false);        
+document.addEventListener('touchmove', handleTouchMove, false);
+
+let xDown = null;                                                        
+let yDown = null;
+
+function getTouches(evt) {
+  return evt.touches ||             // browser API
+         evt.originalEvent.touches; // jQuery (I love jquery, so Ephew might get it)
+}                                                     
+                                                                         
+function handleTouchStart(evt) {
+    const firstTouch = getTouches(evt)[0];                                      
+    xDown = firstTouch.clientX;                                      
+    yDown = firstTouch.clientY;                                      
+};                                                
+                                                                         
+function handleTouchMove(evt) {
+    if ( ! xDown || ! yDown ) {
+        return;
+    }
+
+    const xUp = evt.touches[0].clientX;                                    
+    const yUp = evt.touches[0].clientY;
+
+    const xDiff = xDown - xUp;
+    const yDiff = yDown - yUp;
+                                                                         
+    if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+        if ( xDiff > 0 ) {
+            if (window.matchMedia("(max-width: 1024px)").matches) {
+				for (fn of window.on_mobile_swipe_left) {
+					fn();
+				}
+			}
+        } else {
+            if (window.matchMedia("(max-width: 1024px)").matches) {
+				for (fn of window.on_mobile_swipe_right) {
+					fn();
+				}
+			}
+        }                       
+    } else {
+        if ( yDiff > 0 ) {
+            if (window.matchMedia("(max-width: 1024px)").matches) {
+				for (fn of window.on_mobile_swipe_up) {
+					fn();
+				}
+			}
+        } else { 
+            if (window.matchMedia("(max-width: 1024px)").matches) {
+				for (fn of window.on_mobile_swipe_down) {
+					fn();
+				}
+			}
+        }                                                                 
+    }
+    /* reset values */
+    xDown = null;
+    yDown = null;                                             
+};

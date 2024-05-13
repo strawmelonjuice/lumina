@@ -4,7 +4,6 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 function switchpages(toPageName) {
-	//    console.log("To: " + toPageName)
 	let to = toPageName;
 	if (toPageName === "") to = "home";
 	const navbutton = {
@@ -47,10 +46,10 @@ function switchpages(toPageName) {
 			location: "addplugin",
 			navigator: false,
 		},
-		customisation: {
-			mobile: document.getElementById("mobile-customisation-nav"),
-			desktop: document.getElementById("customisation-nav"),
-			location: "customisation",
+		notifications: {
+			mobile: document.getElementById("mobile-notifications-nav"),
+			desktop: document.getElementById("notifications-nav"),
+			location: "notifications-centre",
 			navigator: true,
 		},
 	};
@@ -129,24 +128,6 @@ setInterval(() => {
 	}
 }, 100);
 
-function mobileMenuToggle() {
-	const mobilemenu = document.getElementById("mobile-menu");
-	if (mobilemenu.classList.contains("hidden")) {
-		mobilemenu.classList.remove("hidden");
-		document.getElementById("btn-mobile-menu-open").classList.add("hidden");
-		document.getElementById("btn-mobile-menu-close").classList.remove("hidden");
-	} else {
-		mobilemenu.classList.add("hidden");
-		document.getElementById("btn-mobile-menu-open").classList.remove("hidden");
-		document.getElementById("btn-mobile-menu-close").classList.add("hidden");
-	}
-}
-
-mobileMenuToggle();
-document
-	.getElementById("btn-mobile-menu")
-	.setAttribute("onClick", "mobileMenuToggle()");
-
 function userMenuToggle() {
 	const userMenu = document.getElementById("user-menu");
 	if (userMenu.classList.contains("hidden")) {
@@ -199,3 +180,32 @@ const features = {
 		},
 	},
 };
+
+function showMobiletimelineSwitcher() {
+	document.getElementById("mainright").innerHTML =
+		document.getElementById("mainleft").innerHTML;
+	document.getElementById("mobiletimelineswitcher").classList.add("hidden");
+}
+function switchTimeline(tid) {
+	console.log(`Switching to timeline with ID string: ${tid}`);
+	document.getElementById("mobiletimelineswitcher").classList.remove("hidden");
+	
+}
+document
+	.getElementById("mobiletimelineswitcher")
+	.setAttribute("onclick", "showMobiletimelineSwitcher()");
+window.on_mobile_swipe_right.push(() => {
+	showMobiletimelineSwitcher();
+});
+
+window.on_mobile_swipe_down.push(() => {
+	window.mobileMenuToggle();
+});
+// Can't do this, scroll-swiping would be detected
+// window.on_mobile_swipe_up.push(() => {
+// 	switchpages(hashIsolated());
+// });
+
+for (e of document.getElementsByClassName("svg_activenotification")) {
+	e.style.display = "none";
+}
