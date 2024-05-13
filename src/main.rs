@@ -31,15 +31,19 @@ use tokio::sync::{Mutex, MutexGuard};
 use tell::tellgen;
 
 use crate::assets::{
-    fonts, vec_string_assets_anons_svg, STR_ASSETS_ANON_SVG, STR_CLEAN_CONFIG_TOML,
-    STR_CLEAN_CUSTOMSTYLES_CSS,
+    fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
 use crate::serve::notfound;
 
+/// # API's to the front-end.
 mod api_fe;
+/// # Inter-instance API's
 mod api_ii;
+/// ## Definition of assets, so file paths refactoring goes easier.
 mod assets;
+/// # Actions on the database
 mod storage;
+
 mod tell;
 
 #[derive(Clone)]
@@ -281,8 +285,7 @@ async fn main() {
         }
     };
     let logsets: LogSets = {
-        // How DRY of me.
-        fn asddg(o: u8) -> LevelFilter {
+        fn matchlogmode(o: u8) -> LevelFilter {
             match o {
                 0 => LevelFilter::Off,
                 1 => LevelFilter::Error,
@@ -308,11 +311,11 @@ async fn main() {
             },
             Some(d) => LogSets {
                 file_loglevel: match d.file_loglevel {
-                    Some(l) => asddg(l),
+                    Some(l) => matchlogmode(l),
                     None => LevelFilter::Info,
                 },
                 term_loglevel: match d.term_loglevel {
-                    Some(l) => asddg(l),
+                    Some(l) => matchlogmode(l),
                     None => LevelFilter::Warn,
                 },
                 logfile: match d.logfile {
@@ -517,12 +520,11 @@ mod serve {
     use tokio::sync::{Mutex, MutexGuard};
 
     use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_ANON_SVG, STR_ASSETS_GREEN_CHECK_SVG,
-        STR_ASSETS_HOME_HTML, STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS,
-        STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
-        STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS,
-        STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS,
-        STR_NODE_MOD_AXIOS_MIN_JS_MAP,
+        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_HOME_HTML,
+        STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS, STR_ASSETS_LOGIN_HTML,
+        STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG,
+        STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
+        STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
     };
     use crate::storage::BasicUserInfo;
     use crate::{Config, ServerVars};
@@ -1080,6 +1082,9 @@ pub(crate) async fn avatar(
 ) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let user: String = req.match_info().get("a").unwrap().parse().unwrap();
+
+    // For now unused. Will be used once users can have avatars.
+    let _ = (user, session);
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     (server_y.tell)(format!(
