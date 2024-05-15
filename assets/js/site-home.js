@@ -106,7 +106,7 @@ function switchpages(toPageName) {
 			if (a.navigator) {
 				a.mobile.setAttribute(
 					"class",
-					"text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium",
+					"block rounded-md px-3 py-2 text-base font-medium bg-orange-200 text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
 				);
 				a.desktop.setAttribute(
 					"class",
@@ -117,7 +117,16 @@ function switchpages(toPageName) {
 		}
 	}
 }
-
+document.addEventListener("keydown", (event) => {
+	if (event.key === "h") {
+		event.preventDefault();
+		window.location.hash = "home";
+	}
+	if (event.key === "n") {
+		event.preventDefault();
+		window.location.hash = "notifications";
+	}
+});
 function hashIsolated() {
 	if (window.location.hash === "") return "";
 	return window.location.hash.split("#")[1].split("?")[0];
