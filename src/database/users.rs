@@ -21,14 +21,14 @@ pub(crate) fn char_check_username(username: String) -> bool {
             '#' => (
                 // Make sure, if a # is in the username, only numbers may follow it.
                 || {
-                    let split_username = username.split("#");
+                    let split_username = username.split('#');
                     let array_split_username: Vec<&str> = split_username.collect();
                     let lastbit = username.replacen(array_split_username[0], "", 1);
                     let firstbit = username.replacen(&*lastbit, "", 1);
                     let vec_split_username: Vec<&str> = vec![&*firstbit, &*lastbit];
                     // println!("array: {:?}", array_split_username);
                     // println!("vec: {:?}", vec_split_username);
-                    if vec_split_username.len() < 1 || array_split_username[1] == "" {
+                    if vec_split_username.is_empty() || array_split_username[1].is_empty() {
                         return true;
                     };
                     (!(array_split_username[1].chars().all(char::is_numeric)))
@@ -38,9 +38,8 @@ pub(crate) fn char_check_username(username: String) -> bool {
             _ => false,
         }
     }) || !(username
-        .replace("_", "")
-        .replace("-", "")
-        .replacen("#", "", 1)
+        .replace(['_', '-'], "")
+        .replacen('#', "", 1)
         .chars()
         .all(char::is_alphanumeric))
 }
@@ -89,10 +88,7 @@ pub(crate) fn add(
     )?;
     let res: Option<String> = match onusername {
         Some(s) => Some(s),
-        None => match onemail {
-            Some(s) => Some(s),
-            None => None,
-        },
+        None => onemail,
     };
     let password_encrypted = mcrypt.encrypt_str_to_base64(password);
     match res {
@@ -218,10 +214,7 @@ pub(crate) mod auth {
         };
         let asome: Option<String> = match onusername {
             Some(s) => Some(s),
-            None => match onemail {
-                Some(s) => Some(s),
-                None => None,
-            },
+            None => onemail,
         };
         match asome {
             Some(d) => {
