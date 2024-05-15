@@ -4,11 +4,16 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 #[macro_use]
+extern crate build_const;
+#[macro_use]
 extern crate log;
 extern crate simplelog;
-use rand::prelude::*;
-#[macro_use]
-extern crate build_const;
+
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use std::{env, fs, path::Path, process};
 
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
@@ -19,13 +24,9 @@ use actix_web::{
     App, HttpServer,
 };
 use colored::Colorize;
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
-use std::fmt::Debug;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-use std::{env, fs, path::Path, process};
 use tokio::sync::{Mutex, MutexGuard};
 
 use tell::tellgen;
@@ -494,15 +495,12 @@ async fn close(config: Config) {
                 }
             }
             "h" | "help" => println!(
-                "\n{}{}{}",
+                "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
                 "Ephew server runtime command line - Help\n".bright_yellow(),
-                format!("\n\t{} {} {} {}",
                     "au | adduser".white(),
-                        format!("{}{}{}", "<".red(), "username".bright_yellow(), ">".red()),
-                        format!("{}{}{}", "<".red(), "password".bright_yellow(), ">".red()),
-                        format!("{}{}{}", "<".red(), "email".bright_yellow(), ">".red())
-
-                ),
+                "<".red(), "username".bright_yellow().on_red(), ">".red(),
+                "<".red(), "password".bright_yellow().on_red(), ">".red(),
+                "<".red(), "email".bright_yellow().on_red(), ">".red(),
                         format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"c | x | exit".white()).green()
             ),
             _ => println!("{}", msg),
