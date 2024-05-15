@@ -207,7 +207,6 @@ pub(crate) async fn newaccount(
             HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
-                .into()
         }
     }
 }
@@ -245,11 +244,14 @@ pub(crate) async fn pageservresponder(
             ),
             side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
         },
+        "notifications-centre" => FEPageServeResponse {
+            main: String::from("Notifications should show up here!"),
+            side: String::from(""),
+        },
         _ => {
             return HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body("")
-                .into()
         }
     };
     HttpResponse::build(StatusCode::OK)
@@ -271,14 +273,12 @@ pub(crate) async fn check_username(
     if crate::database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
-            .body(format!(r#"{{"Ok": false, "Why": "InvalidChars"}}"#))
-            .into();
+            .body(r#"{"Ok": false, "Why": "InvalidChars"}"#.to_string());
     }
     if username.len() < 4 {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
-            .body(format!(r#"{{"Ok": false, "Why": "TooShort"}}"#))
-            .into();
+            .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
     match crate::database::fetch(
         &config.clone(),
@@ -291,15 +291,13 @@ pub(crate) async fn check_username(
         Some(_) => {
             return HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
-                .body(format!(r#"{{"Ok": false, "Why": "userExists"}}"#))
-                .into();
+                .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
         }
         None => {}
     };
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
-        .body(r#"{"Ok": true}"#)
-        .into();
+        .body(r#"{"Ok": true}"#);
 }
 
 mod media;
