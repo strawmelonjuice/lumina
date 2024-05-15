@@ -13,9 +13,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
-use crate::storage::users::add;
-use crate::storage::users::auth::check;
-use crate::storage::{fetch, BasicUserInfo};
+use crate::database::users::add;
+use crate::database::users::auth::check;
+use crate::database::{fetch, BasicUserInfo};
 use crate::{Config, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -268,12 +268,7 @@ pub(crate) async fn check_username(
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config = server_y.clone().config;
     let username = data.u.clone();
-    if username.chars().any(|c| match c {
-        ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
-        | '%' | '?' | '!' => true,
-        _ => false,
-    }) || !(username.chars().all(char::is_alphanumeric))
-    {
+    if crate::database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
             .body(format!(r#"{{"Ok": false, "Why": "InvalidChars"}}"#))
@@ -285,7 +280,7 @@ pub(crate) async fn check_username(
             .body(format!(r#"{{"Ok": false, "Why": "TooShort"}}"#))
             .into();
     }
-    match crate::storage::fetch(
+    match crate::database::fetch(
         &config.clone(),
         String::from("Users"),
         "username",
@@ -306,3 +301,5 @@ pub(crate) async fn check_username(
         .body(r#"{"Ok": true}"#)
         .into();
 }
+
+mod media;
