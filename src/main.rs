@@ -567,8 +567,8 @@ pub(crate) async fn avatar(
     let index: usize = rand::Rng::gen_range(&mut crate::thread_rng(), 0..=5);
     let cont: String = {
         let oo = &vec_string_assets_anons_svg()[index];
-        let o = oo.clone().to_string();
-        o
+        
+        oo.clone().to_string()
     };
     HttpResponse::Ok()
         .append_header(("Accept-Charset", "UTF-8"))
