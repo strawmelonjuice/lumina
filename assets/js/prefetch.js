@@ -169,7 +169,7 @@ let yDown = null;
 
 function getTouches(evt) {
   return evt.touches ||             // browser API
-         evt.originalEvent.touches; // jQuery (I love jquery, so Ephew might get it)
+         evt.originalEvent.touches; // jQuery (I love jquery, so Lumina might get it)
 }                                                     
                                                                          
 function handleTouchStart(evt) {
