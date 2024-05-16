@@ -493,18 +493,15 @@ async fn close(config: Config) {
                 }
             }
             "h" | "help" => println!(
-                "\n{}{}{}",
+                "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
                 "Ephew server runtime command line - Help\n".bright_yellow(),
-                format!("\n\t{} {} {} {}",
                     "au | adduser".white(),
-                        format!("{}{}{}", "<".red(), "username".bright_yellow(), ">".red()),
-                        format!("{}{}{}", "<".red(), "password".bright_yellow(), ">".red()),
-                        format!("{}{}{}", "<".red(), "email".bright_yellow(), ">".red())
-
-                ),
+                "<".red(), "username".bright_yellow().on_red(), ">".red(),
+                "<".red(), "password".bright_yellow().on_red(), ">".red(),
+                "<".red(), "email".bright_yellow().on_red(), ">".red(),
                         format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"c | x | exit".white()).green()
             ),
-            _ => println!("{}", msg),
+			_ => println!("{}", msg),
         }
     }
 }
@@ -567,7 +564,7 @@ pub(crate) async fn avatar(
     let index: usize = rand::Rng::gen_range(&mut crate::thread_rng(), 0..=5);
     let cont: String = {
         let oo = &vec_string_assets_anons_svg()[index];
-        
+
         oo.clone().to_string()
     };
     HttpResponse::Ok()
