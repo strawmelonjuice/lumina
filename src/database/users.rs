@@ -38,7 +38,7 @@ pub(crate) fn char_check_username(username: String) -> bool {
             _ => false,
         }
     }) || !(username
-        .replace(['_', '-'], "")
+        .replace(['_', '-', '.'], "")
         .replacen('#', "", 1)
         .chars()
         .all(char::is_alphanumeric))
@@ -164,16 +164,14 @@ pub(crate) mod auth {
     }
 
     /// # `storage::users::auth::check()`
-    /// Authenticates a user by plain username and password.
+    /// Authenticates a user by plain username/email and password.
     pub(crate) fn check(
         identifyer: String,
         password: String,
         server_vars: &crate::ServerVars,
     ) -> AuthResponse {
         if identifyer.chars().any(|c| match c {
-            ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`' => {
-                true
-            }
+            ' ' | '\\' | '/' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`' => true,
             _ => false,
         }) {
             return AuthResponse {
