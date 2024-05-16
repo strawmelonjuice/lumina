@@ -38,7 +38,10 @@ pub struct PostInfo {
     /// Timestamp (UNIX)
     timestamp: i64,
     /// Content type
-    content_type: String,
+    // 1: Textual post (json<content: text/plain>)
+    // 2: Article textual post (json<header: text/plain, body: text/markdown>)
+    // 3: Media post (json<caption: text/markdown, media-id: integer[]>)
+    content_type: i32,
     /// Content in JSON, deserialised depending on content_type.
     content: String,
 }
@@ -146,7 +149,7 @@ CREATE TABLE if not exists TimeLinePostPool (
     instance        TEXT,
     author_id      TEXT NOT NULL,
     timestamp      INTEGER NOT NULL,
-    content_type    TEXT NOT NULL,
+    content_type    INTEGER NOT NULL,
     content        TEXT NOT NULL
 )
 ",
