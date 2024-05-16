@@ -236,7 +236,7 @@ pub(crate) async fn pageservresponder(
                 r#"
 <h1>welcome to instance <code class="placeholder-iid"></code></h1>
 			<p>
-				as you can see, there is no such thing as a homepage. ephew is
+				as you can see, there is no such thing as a homepage. lumina is
 				not ready for anything yet.
 			</p>
 

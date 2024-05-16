@@ -1,7 +1,7 @@
-# Ephew
+# Lumina
 
-Hello, this is an Ephew instance you landed on! The specific ID of this instance is `{{iid}}`.
+Hello, this is an Lumina instance you landed on! The specific ID of this instance is `{{iid}}`.
 
-## What is Ephew?
+## What is Lumina?
 
 haha, something that is not ready for you to see!

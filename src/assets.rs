@@ -46,7 +46,7 @@ pub fn fonts() -> Fonts {
     }
 }
 
-pub const STR_ASSETS_LOGO_SVG: &str = include_str!("../assets/svg/ephewlogo-1.svg");
+pub const STR_ASSETS_LOGO_SVG: &str = include_str!("../assets/svg/luminalogo-1.svg");
 
 pub const STR_ASSETS_GREEN_CHECK_SVG: &str = include_str!("../assets/svg/green_check.svg");
 
@@ -66,7 +66,7 @@ pub fn vec_string_assets_anons_svg() -> Vec<String> {
     ]
 }
 
-pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("../assets/png/ephewlogo-1.png");
+pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("../assets/png/luminalogo-1.png");
 
 pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/dist/axios.min.js");
 pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =

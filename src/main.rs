@@ -158,7 +158,7 @@ async fn main() {
             return PathBuf::from(env::args().nth(1).unwrap());
         };
         match home::home_dir() {
-            Some(path) => path.join(".ephewinstance/"),
+            Some(path) => path.join(".luminainstance/"),
             None => PathBuf::from(Path::new(".")),
         }
     })();
@@ -439,7 +439,7 @@ async fn main() {
 }
 
 async fn close(config: Config) {
-    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Ephew server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
+    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
     println!("{}", msg);
     let mut input = String::new();
     let mut waiting = true;
@@ -494,7 +494,7 @@ async fn close(config: Config) {
             }
             "h" | "help" => println!(
                 "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
-                "Ephew server runtime command line - Help\n".bright_yellow(),
+                "Lumina server runtime command line - Help\n".bright_yellow(),
                     "au | adduser".white(),
                 "<".red(), "username".bright_yellow().on_red(), ">".red(),
                 "<".red(), "password".bright_yellow().on_red(), ">".red(),
