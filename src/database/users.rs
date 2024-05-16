@@ -19,7 +19,7 @@ pub(crate) fn char_check_username(username: String) -> bool {
             ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
             | '%' | '?' | '!' => true,
             '#' => (
-                // Make sure, if a # is in the username, only numbers may follow it.
+                // Make sure, if a # is in the username, only 4 numbers may follow it.
                 || {
                     let split_username = username.split('#');
                     let array_split_username: Vec<&str> = split_username.collect();
