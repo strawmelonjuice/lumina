@@ -18,30 +18,30 @@ function checkusername() {
 		.then((resp) => {
 			if (resp.data.Ok === true) {
 				document.getElementById("usernameLabel").innerHTML =
-					`Username&emsp;&emsp;<span class="text-green-200">⬅ Username is available!&nbsp;<img src="/green-check.svg" class="inline"></span>`;
+					`Username&emsp;&emsp;<span class="text-green-300">⬅ Username is available!&nbsp;<img src="/green-check.svg" class="inline"></span>`;
 			} else {
 				switch (resp.data.Why) {
 					case "InvalidChars":
 						{
 							document.getElementById("usernameLabel").innerHTML =
-								`Username&emsp;&emsp;<span class="text-red-200">⬅ There are characters in this username that are not allowed!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
+								`Username&emsp;&emsp;<span class="text-red-300">⬅ There are characters in this username that are not allowed!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
 						}
 						break;
 					case "TooShort":
 						{
 							document.getElementById("usernameLabel").innerHTML =
-								`Username&emsp;&emsp;<span class="text-red-200">⬅ That username is too short!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
+								`Username&emsp;&emsp;<span class="text-red-300">⬅ That username is too short!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
 						}
 						break;
 					case "userExists":
 						{
 							document.getElementById("usernameLabel").innerHTML =
-								`Username&emsp;&emsp;<span class="text-red-200">⬅ Someone already claimed that username!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
+								`Username&emsp;&emsp;<span class="text-red-300">⬅ Someone already claimed that username!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
 						}
 						break;
 					default: {
 						document.getElementById("usernameLabel").innerHTML =
-							`Username&emsp;&emsp;<span class="text-red-200">⬅ Username is not available!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
+							`Username&emsp;&emsp;<span class="text-red-300">⬅ Username is not available!&nbsp;<img src="/red-cross.svg" class="inline"></span>`;
 					}
 				}
 			}

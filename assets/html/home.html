@@ -3,22 +3,21 @@
   ~
   ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
   -->
-<!--suppress HtmlUnknownTarget -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Home - Ephew(@{{iid}})</title>
+		<title>Home - Lumina(@{{iid}})</title>
 		<meta charset="UTF-8" />
 		<link rel="stylesheet" href="/site.css" />
 		<link rel="stylesheet" href="/custom.css" />
 		<script src="/axios/axios.min.js"></script>
 		<script src="/prefetch.js"></script>
-		<script defer src="/site-home.js"></script>	
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+		<script defer src="/site-home.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
 
 	<body class="w-full h-full max-h-[10VH] bg-brown-100 dark:bg-neutral-500">
-		<nav class="bg-emerald-200 dark:bg-teal-800">
+		<nav class="rounded-b-lg bg-emerald-200 dark:bg-teal-800 lg:rounded-b-none">
 			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
 				<div class="relative flex items-center justify-between h-16">
 					<div
@@ -73,7 +72,7 @@
 							<img
 								class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
 								src="/logo.svg"
-								alt="Ephew Instance"
+								alt="Lumina Instance"
 							/>
 						</div>
 						<div class="hidden sm:ml-6 sm:block">
@@ -97,32 +96,40 @@
 									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
 									id="notifications-nav"
 									><svg
-   class="inline w-6 h-6"
-   fill="none"
-   viewBox="0 0 24 24"
-   stroke-width="1.5"
-   stroke="currentColor"
-   aria-hidden="true"
-   version="1.1"
-   id="svg1"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs1" />
-  <path
-     stroke-linecap="round"
-     stroke-linejoin="round"
-     d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-     id="path1" />
-  <ellipse
-     style="stroke-opacity:1;stroke-dasharray:none;stroke-width:0.9;stroke:#000000;fill-rule:evenodd;fill:#ff0000;"
-     id="path2"
-	 class="svg_activenotification"
-     cx="16.526102"
-     cy="19.077923"
-     rx="1.9188341"
-     ry="1.8170681" />
-</svg>&nbsp;Notifications</a
+										xmlns="http://www.w3.org/2000/svg"
+										xmlns:svg="http://www.w3.org/2000/svg"
+										id="svg1"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.5"
+										aria-hidden="true"
+										class="inline w-6 h-6"
+										version="1.1"
+										viewBox="0 0 24 24"
+									>
+										<path
+											id="path1"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+										/>
+										<ellipse
+											style="
+												stroke-opacity: 1;
+												stroke-dasharray: none;
+												stroke-width: 0.9;
+												stroke: #000;
+												fill-rule: evenodd;
+												fill: red;
+											"
+											id="path2"
+											cx="16.526"
+											cy="19.078"
+											class="svg_activenotification"
+											rx="1.919"
+											ry="1.817"
+										/></svg
+									>&nbsp;Notifications</a
 								>
 							</div>
 						</div>
@@ -133,36 +140,45 @@
 						<button
 							type="button"
 							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+							onclick='switchpages("notifications")'
 						>
 							<span class="absolute -inset-1.5"></span>
 							<span class="sr-only">View notifications</span>
 							<svg
-   class="inline w-6 h-6"
-   fill="none"
-   viewBox="0 0 24 24"
-   stroke-width="1.5"
-   stroke="currentColor"
-   aria-hidden="true"
-   version="1.1"
-   id="svg1"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs1" />
-  <path
-     stroke-linecap="round"
-     stroke-linejoin="round"
-     d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-     id="path1" />
-  <ellipse
-     style="stroke-opacity:1;stroke-dasharray:none;stroke-width:0.9;stroke:#000000;fill-rule:evenodd;fill:#ff0000;"
-     id="path2"
-	 class="svg_activenotification"
-     cx="16.526102"
-     cy="19.077923"
-     rx="1.9188341"
-     ry="1.8170681" />
-</svg>
+								xmlns="http://www.w3.org/2000/svg"
+								xmlns:svg="http://www.w3.org/2000/svg"
+								id="svg1"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+								aria-hidden="true"
+								class="inline w-6 h-6"
+								version="1.1"
+								viewBox="0 0 24 24"
+							>
+								<path
+									id="path1"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+								/>
+								<ellipse
+									style="
+										stroke-opacity: 1;
+										stroke-dasharray: none;
+										stroke-width: 0.9;
+										stroke: #000;
+										fill-rule: evenodd;
+										fill: red;
+									"
+									id="path2"
+									cx="16.526"
+									cy="19.078"
+									class="svg_activenotification"
+									rx="1.919"
+									ry="1.817"
+								/>
+							</svg>
 						</button>
 
 						<!-- Profile dropdown -->
@@ -237,27 +253,24 @@
 				</div>
 			</div>
 			<div class="sm:hidden" id="mobile-menu">
-				<div class="px-2 pt-2 pb-3 space-y-1">
+				<div class="px-2 pt-2 pb-4 space-y-1">
 					<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
 					<a
 						href="javascript:void(0)"
-						class="block px-3 py-2 text-base font-medium text-white bg-red-400 rounded-md dark:bg-red-900"
+						class=""
 						aria-current="page"
 						id="mobile-home-nav"
 						>Home</a
 					>
-					<a
-						href="javascript:void(0)"
-						class="block px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
-						id="mobile-pages-nav"
+					<a href="javascript:void(0)" class="" id="mobile-pages-nav"
 						>Publications</a
 					>
 					<a
 						href="javascript:void(0)"
-						class="hidden px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
+						class="hidden"
+						style="display: none"
 						id="mobile-notifications-nav"
-						>Notifications</a
-					>
+					></a>
 				</div>
 			</div>
 		</nav>
@@ -273,14 +286,66 @@
 			>
 				<div
 					id="mainright"
-					class="p-8 rounded-md lg:w-11/12 lg:h-10/12 bg-brown-200 dark:bg-neutral-600"
+					class="w-[80VW] p-4 rounded-md lg:p-8 lg:w-11/12 lg:h-10/12 bg-brown-200 dark:bg-neutral-600"
 				></div>
 			</div>
 		</main>
-		<div id="mobiletimelineswitcher" class="absolute inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+		<div
+			id="mobiletimelineswitcher"
+			class="absolute inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+		>
 			<!-- Shows the switcher allowing timeline travel on mobile. -->
 			<button>
-				<svg   class="w-10 h-10" id="arrowright"    width="50"    height="50"    fill="none"    stroke="none"    stroke-linecap="square"    stroke-miterlimit="10"    version="1.1"    viewBox="0 0 50 50"    xmlns="http://www.w3.org/2000/svg"    xmlns:svg="http://www.w3.org/2000/svg">   <defs      id="defs20">     <clipPath>       <path d="M 0,0 H 960 V 720 H 0 Z"          clip-rule="nonzero" />     </clipPath>     <clipPath        id="p.0-1-4">       <path          id="path1-2-0"          d="M 0,0 H 960 V 720 H 0 Z"          clip-rule="nonzero" /></clipPath> </defs> <clipPath id="p.0"><path id="path1" d="M 0,0 H 960 V 720 H 0 Z" clip-rule="nonzero" /> </clipPath> <path style="fill:currentColor;fill-opacity:1;stroke:currentColor;stroke-width:2.848;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke" d="m 30.152807,9.1863138 a 7.7145349,0.13753011 41.944235 0 0 5.615234,5.2304682 7.7145349,0.13753011 41.944235 0 0 5.859375,5.082031 7.7145349,0.13753011 41.944235 0 0 -5.613281,-5.230468 7.7145349,0.13753011 41.944235 0 0 -5.861328,-5.0820312 z M 45.035619,22.438267 a 0.42024437,0.94349396 0 0 0 -0.419922,0.943359 0.42024437,0.94349396 0 0 0 0.419922,0.945313 0.42024437,0.94349396 0 0 0 0.419922,-0.945313 0.42024437,0.94349396 0 0 0 -0.419922,-0.943359 z M 18.87351,23.049595 A 14.878937,0.26167485 0 0 0 3.9946033,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.573032 14.878937,0.26167485 0 0 0 33.752416,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.049595 Z m 22.796875,4.263672 a 0.13753011,7.7145349 48.055765 0 0 -5.859375,5.082031 0.13753011,7.7145349 48.055765 0 0 -5.615234,5.230469 0.13753011,7.7145349 48.055765 0 0 5.859374,-5.082032 0.13753011,7.7145349 48.055765 0 0 5.615235,-5.230468 z" /></svg>
+				<svg
+					class="w-10 h-10"
+					id="arrowright"
+					width="50"
+					height="50"
+					fill="none"
+					stroke="none"
+					stroke-linecap="square"
+					stroke-miterlimit="10"
+					version="1.1"
+					viewBox="0 0 50 50"
+					xmlns="http://www.w3.org/2000/svg"
+					xmlns:svg="http://www.w3.org/2000/svg"
+				>
+					<defs id="defs20">
+						<clipPath>
+							<path
+								d="M 0,0 H 960 V 720 H 0 Z"
+								clip-rule="nonzero"
+							/>
+						</clipPath>
+						<clipPath id="p.0-1-4">
+							<path
+								id="path1-2-0"
+								d="M 0,0 H 960 V 720 H 0 Z"
+								clip-rule="nonzero"
+							/>
+						</clipPath>
+					</defs>
+					<clipPath id="p.0">
+						<path
+							id="path1"
+							d="M 0,0 H 960 V 720 H 0 Z"
+							clip-rule="nonzero"
+						/>
+					</clipPath>
+					<path
+						style="
+							fill: currentColor;
+							fill-opacity: 1;
+							stroke: currentColor;
+							stroke-width: 2.848;
+							stroke-linecap: round;
+							stroke-linejoin: round;
+							stroke-dasharray: none;
+							paint-order: fill markers stroke;
+						"
+						d="m 30.152807,9.1863138 a 7.7145349,0.13753011 41.944235 0 0 5.615234,5.2304682 7.7145349,0.13753011 41.944235 0 0 5.859375,5.082031 7.7145349,0.13753011 41.944235 0 0 -5.613281,-5.230468 7.7145349,0.13753011 41.944235 0 0 -5.861328,-5.0820312 z M 45.035619,22.438267 a 0.42024437,0.94349396 0 0 0 -0.419922,0.943359 0.42024437,0.94349396 0 0 0 0.419922,0.945313 0.42024437,0.94349396 0 0 0 0.419922,-0.945313 0.42024437,0.94349396 0 0 0 -0.419922,-0.943359 z M 18.87351,23.049595 A 14.878937,0.26167485 0 0 0 3.9946033,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.573032 14.878937,0.26167485 0 0 0 33.752416,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.049595 Z m 22.796875,4.263672 a 0.13753011,7.7145349 48.055765 0 0 -5.859375,5.082031 0.13753011,7.7145349 48.055765 0 0 -5.615234,5.230469 0.13753011,7.7145349 48.055765 0 0 5.859374,-5.082032 0.13753011,7.7145349 48.055765 0 0 5.615235,-5.230468 z"
+					/>
+				</svg>
 			</button>
 		</div>
 	</body>

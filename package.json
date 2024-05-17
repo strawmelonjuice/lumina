@@ -15,15 +15,15 @@
   "scripts": {
     "build": "npm run build:deps && npm run build:rs",
     "build:deps": "npm run build:css && npm run build:jsts && npm run minify",
-    "build:css": "postcss -o ./target/generated/css/main.css src/assets/styles/main.pcss",
+    "build:css": "postcss -o ./target/generated/css/main.css assets/styles/main.pcss",
     "build:jsts": "echo TS compilation is disabled.",
     "build:jsts-disabled": "tsc",
     "build:rs": "cargo build",
     "format": "npm run format:rs && npm run format:ts && npm run minify:css",
     "format:rs": "cargo fmt",
-    "format:ts": "npx biome format \"./src/assets/ts/main.ts\" --write",
+    "format:ts": "npx biome format \"./assets/ts/main.ts\" --write",
     "minify": "npm run minify:js && npm run minify:css",
-    "minify:js": "npx terser src/assets/js/prefetch.js > ./target/generated/js/prefetch.min.js && npx terser src/assets/js/login.js > ./target/generated/js/login.min.js && npx terser src/assets/js/login.js > ./target/generated/js/login.min.js && npx terser src/assets/js/site-home.js > ./target/generated/js/site-home.min.js && npx terser src/assets/js/site-index.js > ./target/generated/js/site-index.min.js && npx terser src/assets/js/signup.js > ./target/generated/js/signup.min.js",
+    "minify:js": "npx terser assets/js/prefetch.js > ./target/generated/js/prefetch.min.js && npx terser assets/js/login.js > ./target/generated/js/login.min.js && npx terser assets/js/login.js > ./target/generated/js/login.min.js && npx terser assets/js/site-home.js > ./target/generated/js/site-home.min.js && npx terser assets/js/site-index.js > ./target/generated/js/site-index.min.js && npx terser assets/js/signup.js > ./target/generated/js/signup.min.js",
     "minify:css": "npx cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
     "start": "cargo run"
   }

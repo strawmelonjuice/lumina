@@ -4,16 +4,11 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 #[macro_use]
-extern crate build_const;
-#[macro_use]
 extern crate log;
 extern crate simplelog;
-
-use std::fmt::Debug;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-use std::{env, fs, path::Path, process};
+use rand::prelude::*;
+#[macro_use]
+extern crate build_const;
 
 use actix_session::storage::CookieSessionStore;
 use actix_session::{Session, SessionMiddleware};
@@ -24,26 +19,29 @@ use actix_web::{
     App, HttpServer,
 };
 use colored::Colorize;
-use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use std::{env, fs, path::Path, process};
 use tokio::sync::{Mutex, MutexGuard};
 
 use tell::tellgen;
-
-use crate::assets::{
+/// ## Definition of assets, so file paths refactoring goes easier.
+pub mod assets;
+use crate::serve::notfound;
+use assets::{
     fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
-use crate::serve::notfound;
 
 /// # API's to the front-end.
 mod api_fe;
 /// # Inter-instance API's
 mod api_ii;
-/// ## Definition of assets, so file paths refactoring goes easier.
-mod assets;
 /// # Actions on the database
-mod storage;
+mod database;
 
 mod tell;
 
@@ -160,7 +158,7 @@ async fn main() {
             return PathBuf::from(env::args().nth(1).unwrap());
         };
         match home::home_dir() {
-            Some(path) => path.join(".ephewinstance/"),
+            Some(path) => path.join(".luminainstance/"),
             None => PathBuf::from(Path::new(".")),
         }
     })();
@@ -441,7 +439,7 @@ async fn main() {
 }
 
 async fn close(config: Config) {
-    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Ephew server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
+    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
     println!("{}", msg);
     let mut input = String::new();
     let mut waiting = true;
@@ -465,7 +463,7 @@ async fn close(config: Config) {
                 if split_input.len() < 2 {
                     println!("Usage: adduser <username> <password> <email>");
                 } else {
-                    match storage::users::add(
+                    match database::users::add(
                         split_input[1].to_string(),
                         split_input[2].to_string(),
                         split_input[3].to_string(),
@@ -496,548 +494,20 @@ async fn close(config: Config) {
             }
             "h" | "help" => println!(
                 "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
-                "Ephew server runtime command line - Help\n".bright_yellow(),
+                "Lumina server runtime command line - Help\n".bright_yellow(),
                     "au | adduser".white(),
                 "<".red(), "username".bright_yellow().on_red(), ">".red(),
                 "<".red(), "password".bright_yellow().on_red(), ">".red(),
                 "<".red(), "email".bright_yellow().on_red(), ">".red(),
                         format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"c | x | exit".white()).green()
             ),
-            _ => println!("{}", msg),
+			_ => println!("{}", msg),
         }
     }
 }
 
-mod serve {
-    use actix_session::Session;
-    use actix_web::http::header::LOCATION;
-    use actix_web::http::StatusCode;
-    use actix_web::web::Data;
-    use actix_web::{HttpRequest, HttpResponse, Responder};
-    use colored::Colorize;
-    use tokio::sync::{Mutex, MutexGuard};
+mod serve;
 
-    use crate::assets::{
-        BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_HOME_HTML,
-        STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS, STR_ASSETS_LOGIN_HTML,
-        STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG,
-        STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
-        STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
-    };
-    use crate::storage::BasicUserInfo;
-    use crate::{Config, ServerVars};
-
-    pub(super) async fn notfound(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-        session: Session,
-    ) -> HttpResponse {
-        let server_y = server_z.lock().await;
-        let _server_p: ServerVars = server_y.clone();
-        let username_ = session.get::<String>("username");
-        let username = username_.unwrap_or(None).unwrap_or(String::from(""));
-        let username_b = if username != *"" {
-            format!("/{}", username.green())
-        } else {
-            String::from("")
-        };
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-
-        warn!(
-            "{}\t{:>45.47}\t\t{}{:<26}",
-            "Request/404".bright_red(),
-            req.path().red(),
-            ip.yellow(),
-            username_b
-        );
-        HttpResponse::NotFound().body("")
-    }
-    pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-        let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
-        drop(server_y);
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_p.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/".bright_magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8")
-            .body(
-                STR_ASSETS_INDEX_HTML
-                    .replace(
-                        "{{iid}}",
-                        &server_p.clone().config.interinstance.iid.clone(),
-                    )
-                    .clone(),
-            )
-    }
-
-    pub(super) async fn login(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-        let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
-        drop(server_y);
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_p.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/login".bright_magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8")
-            .body(
-                STR_ASSETS_LOGIN_HTML
-                    .replace(
-                        "{{iid}}",
-                        &server_p.clone().config.interinstance.iid.clone(),
-                    )
-                    .clone(),
-            )
-    }
-    pub(super) async fn signup(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
-        drop(server_y);
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_p.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/signup".bright_magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8")
-            .body(
-                STR_ASSETS_SIGNUP_HTML
-                    .replace(
-                        "{{iid}}",
-                        &server_p.clone().config.interinstance.iid.clone(),
-                    )
-                    .clone(),
-            )
-    }
-    pub(super) async fn prefetch_js(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/prefetch.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        let js = format!(
-            r#"/*
- * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
- *
- * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
- */
-
- {}"#,
-            STR_ASSETS_PREFETCH_JS
-        );
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(js)
-    }
-
-    pub(super) async fn login_js(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/login.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        let js = format!(
-            r#"/*
- * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
- *
- * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
- */
-
- {}"#,
-            STR_ASSETS_LOGIN_JS
-        );
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(js)
-    }
-    pub(super) async fn index_js(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/login.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        let js = format!(
-            r#"/*
- * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
- *
- * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
- */
-
- {}"#,
-            STR_ASSETS_INDEX_JS
-        );
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(js)
-    }
-    pub(super) async fn home_js(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/site-home.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        let js = format!(
-            r#"/*
- * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
- *
- * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
- */
-
- {}"#,
-            STR_ASSETS_HOME_JS
-        );
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(js)
-    }
-    pub(super) async fn signup_js(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/login.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        let js = format!(
-            r#"/*
-    * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-    *
-    * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-    */
-
-    {}"#,
-            STR_ASSETS_SIGNUP_JS
-        );
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(js)
-    }
-    pub(super) async fn site_c_css(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let config: Config = server_y.clone().config;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/custom.css".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/css; charset=utf-8")
-            .body(config.run.customcss)
-    }
-
-    pub(super) async fn site_css(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/site.css".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/css; charset=utf-8")
-            .body(STR_GENERATED_MAIN_MIN_CSS)
-    }
-    pub(super) async fn red_cross_svg(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/red-cross.svg".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("image/svg+xml; charset=utf-8")
-            .body(STR_ASSETS_RED_CROSS_SVG)
-    }
-    pub(super) async fn spinner_svg(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/spinner.svg".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("image/svg+xml; charset=utf-8")
-            .body(STR_ASSETS_SPINNER_SVG)
-    }
-    pub(super) async fn green_check_svg(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/green-check.svg".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("image/svg+xml; charset=utf-8")
-            .body(STR_ASSETS_GREEN_CHECK_SVG)
-    }
-    pub(super) async fn logo_svg(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/logo.svg".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("image/svg+xml; charset=utf-8")
-            .body(STR_ASSETS_LOGO_SVG)
-    }
-
-    pub(super) async fn logo_png(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/logo.png".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("image/png; charset=utf-8")
-            .body(BYTES_ASSETS_LOGO_PNG)
-    }
-    pub(super) async fn node_axios_map(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/axios/axios.min.js.map".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(STR_NODE_MOD_AXIOS_MIN_JS_MAP)
-    }
-
-    pub(super) async fn node_axios(
-        server_z: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_y.tell)(format!(
-            "{2}\t{:>45.47}\t\t{}",
-            "/axios/axios.min.js".magenta(),
-            ip.yellow(),
-            "Request/200".bright_green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/javascript; charset=utf-8")
-            .body(STR_NODE_MOD_AXIOS_MIN_JS)
-    }
-    pub(super) async fn homepage(
-        server_z: Data<Mutex<ServerVars>>,
-        session: Session,
-        req: HttpRequest,
-    ) -> HttpResponse {
-        fence(
-            session,
-            server_z,
-            req,
-            |_: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
-                let coninfo = request.connection_info();
-                let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-                (server_vars.tell)(format!(
-                    "{}\t{:>45.47}\t\t{}/{:<25}",
-                    "Request/200".bright_green(),
-                    "/home".bright_magenta(),
-                    ip.yellow(),
-                    user.username.green()
-                ));
-                HttpResponse::build(StatusCode::OK)
-                    .content_type("text/html; charset=utf-8")
-                    .body(
-                        STR_ASSETS_HOME_HTML
-                            .replace(
-                                "{{iid}}",
-                                &server_vars.clone().config.interinstance.iid.clone(),
-                            )
-                            .clone(),
-                    )
-            },
-        )
-        .await
-    }
-
-    pub(super) async fn logout(
-        server_z: Data<Mutex<ServerVars>>,
-        session: Session,
-        req: HttpRequest,
-    ) -> impl Responder {
-        let server_y = server_z.lock().await;
-        let server_p: ServerVars = server_y.clone();
-        drop(server_y);
-        let username_ = session.get::<String>("username");
-        let coninfo = req.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        match username_.unwrap_or(None) {
-            Some(username) => {
-                (server_p.tell)(format!(
-                    "{}\t{:>45.47}\t\t{}/{:<25}",
-                    "Request/200".bright_green(),
-                    "/session/logout".bright_magenta(),
-                    ip.yellow(),
-                    username.green()
-                ));
-                session.purge();
-                HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-                    .append_header((LOCATION, "/login"))
-                    .finish()
-            }
-            None => HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-                .append_header((LOCATION, "/login"))
-                .finish(),
-        }
-    }
-    // struct FenceSession {
-    // 	userid:
-    // }
-    /// # `Fence()`
-    /// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
-    pub(crate) async fn fence(
-        session: Session,
-        server_vars_mutex: Data<Mutex<ServerVars>>,
-        req: HttpRequest,
-        next: fn(
-            config: Config,
-            vars: ServerVars,
-            user: BasicUserInfo,
-            req: HttpRequest,
-        ) -> HttpResponse,
-    ) -> HttpResponse {
-        let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
-        let config = server_y.clone().config;
-        let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
-        let id = id_.unwrap_or(-100);
-        debug!("Session validity: {:?}", session.get::<i64>("validity"));
-        debug!("Session contents: {:?}", session.entries());
-        debug!("User ID: {:?}", id);
-
-        let safe = match id {
-            -100 => false,
-            _ => match session.get::<i64>("validity") {
-                Ok(s) => match s {
-                    Some(a) if a == config.clone().run.session_valid => true,
-                    _ => false,
-                },
-                Err(_) => false,
-            },
-        };
-        if !safe {
-            session.purge();
-            HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
-                .append_header((LOCATION, "/login"))
-                .finish()
-        } else {
-            let user: BasicUserInfo = serde_json::from_str(
-                crate::storage::fetch(&config, String::from("Users"), "id", id.to_string())
-                    .unwrap()
-                    .unwrap()
-                    .as_str(),
-            )
-            .unwrap();
-
-            next(config, server_y.clone().to_owned(), user, req)
-        }
-    }
-}
 #[doc = r"Font file server"]
 #[get("/fonts/{a:.*}")]
 pub(crate) async fn serve_fonts(
@@ -1094,8 +564,8 @@ pub(crate) async fn avatar(
     let index: usize = rand::Rng::gen_range(&mut crate::thread_rng(), 0..=5);
     let cont: String = {
         let oo = &vec_string_assets_anons_svg()[index];
-        let o = oo.clone().to_string();
-        o
+
+        oo.clone().to_string()
     };
     HttpResponse::Ok()
         .append_header(("Accept-Charset", "UTF-8"))
