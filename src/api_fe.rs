@@ -13,9 +13,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
-use crate::storage::users::add;
-use crate::storage::users::auth::check;
-use crate::storage::{fetch, BasicUserInfo};
+use crate::database::users::add;
+use crate::database::users::auth::check;
+use crate::database::{fetch, BasicUserInfo};
 use crate::{Config, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -207,7 +207,6 @@ pub(crate) async fn newaccount(
             HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
-                .into()
         }
     }
 }
@@ -237,7 +236,7 @@ pub(crate) async fn pageservresponder(
                 r#"
 <h1>welcome to instance <code class="placeholder-iid"></code></h1>
 			<p>
-				as you can see, there is no such thing as a homepage. ephew is
+				as you can see, there is no such thing as a homepage. lumina is
 				not ready for anything yet.
 			</p>
 
@@ -245,11 +244,14 @@ pub(crate) async fn pageservresponder(
             ),
             side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
         },
+        "notifications-centre" => FEPageServeResponse {
+            main: String::from("Notifications should show up here!"),
+            side: String::from(""),
+        },
         _ => {
             return HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body("")
-                .into()
         }
     };
     HttpResponse::build(StatusCode::OK)
@@ -268,24 +270,17 @@ pub(crate) async fn check_username(
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let config = server_y.clone().config;
     let username = data.u.clone();
-    if username.chars().any(|c| match c {
-        ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
-        | '%' | '?' | '!' => true,
-        _ => false,
-    }) || !(username.chars().all(char::is_alphanumeric))
-    {
+    if crate::database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
-            .body(format!(r#"{{"Ok": false, "Why": "InvalidChars"}}"#))
-            .into();
+            .body(r#"{"Ok": false, "Why": "InvalidChars"}"#.to_string());
     }
     if username.len() < 4 {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
-            .body(format!(r#"{{"Ok": false, "Why": "TooShort"}}"#))
-            .into();
+            .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    match crate::storage::fetch(
+    match crate::database::fetch(
         &config.clone(),
         String::from("Users"),
         "username",
@@ -296,13 +291,13 @@ pub(crate) async fn check_username(
         Some(_) => {
             return HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
-                .body(format!(r#"{{"Ok": false, "Why": "userExists"}}"#))
-                .into();
+                .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
         }
         None => {}
     };
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
-        .body(r#"{"Ok": true}"#)
-        .into();
+        .body(r#"{"Ok": true}"#);
 }
+
+mod media;

@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
 	content: [
-		"./src/assets/**/*.{html,handlebars,js}",
+		"./assets/**/*.{html,handlebars,js}",
 		"./target/generated/**/.{html,handlebars}",
 	],
 	theme: {

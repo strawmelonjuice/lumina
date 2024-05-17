@@ -850,35 +850,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ephewinstance"
-version = "0.1.0"
-dependencies = [
- "actix-identity",
- "actix-session",
- "actix-web",
- "async-std",
- "build_const",
- "colored",
- "futures",
- "home",
- "log",
- "magic-crypt",
- "markdown",
- "password-hash",
- "pbkdf2",
- "rand",
- "regex",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "simplelog",
- "time",
- "tokio",
- "toml",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1775,6 +1746,35 @@ checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
 dependencies = [
  "digest 0.10.7",
  "hmac",
+]
+
+[[package]]
+name = "peonies-lumina-instance"
+version = "0.1.0"
+dependencies = [
+ "actix-identity",
+ "actix-session",
+ "actix-web",
+ "async-std",
+ "build_const",
+ "colored",
+ "futures",
+ "home",
+ "log",
+ "magic-crypt",
+ "markdown",
+ "password-hash",
+ "pbkdf2",
+ "rand",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "simplelog",
+ "time",
+ "tokio",
+ "toml",
 ]
 
 [[package]]

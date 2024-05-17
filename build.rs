@@ -7,6 +7,7 @@
 use markdown::to_html;
 
 use std::{fs::read_to_string, str::FromStr};
+
 // Javascript runtimes:
 //     NodeJS:
 #[cfg(windows)]
@@ -62,11 +63,8 @@ fn main() {
     assets.add_value(
         "STR_ASSETS_INDEX_HTML_",
         "&str",
-        process_markdown_into_html(
-            "./src/assets/html/index.html",
-            "./src/assets/markdown/intro.md",
-        )
-        .as_str(),
+        process_markdown_into_html("./assets/html/index.html", "./assets/markdown/intro.md")
+            .as_str(),
     );
 
     match std::process::Command::new(BUN_NPM).arg("install").output() {
