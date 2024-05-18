@@ -398,6 +398,7 @@ async fn main() {
             )
             .route("/site.css", web::get().to(serve::site_css))
             .route("/custom.css", web::get().to(serve::site_c_css))
+            .route("/btn/push.svg", web::get().to(serve::btn_push_svg))
             .route("/red-cross.svg", web::get().to(serve::red_cross_svg))
             .route("/spinner.svg", web::get().to(serve::spinner_svg))
             .route("/green-check.svg", web::get().to(serve::green_check_svg))
