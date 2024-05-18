@@ -16,7 +16,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 
-	<body class="w-full h-full max-h-[10VH] bg-brown-100 dark:bg-neutral-500">
+	<body class="w-screen h-screen overflow-clip p-0 m-0 max-h-[10VH] bg-brown-100 dark:bg-neutral-500">
 		<nav class="rounded-b-lg bg-emerald-200 dark:bg-teal-800 lg:rounded-b-none">
 			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
 				<div class="relative flex items-center justify-between h-16">
@@ -108,9 +108,9 @@
 				</div>
 			</div>
 		</nav>
-		<main class="h-screen max-h-[89VH] text-fuchsia-900 dark:text-violet-200 lg:grid lg:grid-flow-col lg:grid-cols-5 w-screen">
-			<div id="mainleft" class="hidden h-full lg:block bg-brown-200 dark:bg-neutral-600"></div>
-			<div class="h-full col-span-4 lg:p-12 bg-brown-100 dark:bg-neutral-700">
+		<main class="h-screen not:max-h-[89VH] text-fuchsia-900 dark:text-violet-200 lg:grid lg:grid-flow-col lg:grid-cols-5 w-screen overflow-clip">
+			<div id="mainleft" class="hidden h-full lg:block bg-brown-200 dark:bg-neutral-600 overflow-clip"></div>
+			<div class="h-full col-span-4 overflow-auto lg:p-12 bg-brown-100 dark:bg-neutral-700">
 				<div id="mainright" class="w-full p-4 rounded-md lg:p-8 lg:w-11/12 disabled:lg:h-10/12 bg-brown-200 dark:bg-neutral-600"></div>
 			</div>
 		</main>
