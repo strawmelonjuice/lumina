@@ -4,6 +4,12 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
+use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
+use crate::database::users::add;
+use crate::database::users::auth::check;
+use crate::database::PostInfo;
+use crate::database::{fetch, BasicUserInfo};
+use crate::{Config, ServerVars};
 use actix_session::Session;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -11,13 +17,7 @@ use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
-
-use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
-use crate::database::users::add;
-use crate::database::users::auth::check;
-use crate::database::{fetch, BasicUserInfo};
-use crate::{Config, ServerVars};
-
+mod fe;
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct JSClientData {
@@ -230,6 +230,8 @@ pub(crate) async fn pageservresponder(
     let _ = session;
     let _ = req;
     let location = data.location.clone();
+    let server_y = server_z.lock().await.clone();
+    let config: Config = server_y.clone().config;
     let o: FEPageServeResponse = match location.as_str() {
         "home" => FEPageServeResponse {
             main: String::from(
@@ -243,6 +245,15 @@ pub(crate) async fn pageservresponder(
                                "#,
             ),
             side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
+        },
+        "pages" => FEPageServeResponse {
+            side: fe::post_to_html((|| {
+                let postjson = fetch(&config, String::from("PostsStore"), "pid", "1".to_string())
+                    .unwrap()
+                    .unwrap();
+                serde_json::from_str::<PostInfo>(postjson.as_str()).unwrap()
+            })()),
+            main: String::from(include_str!("../assets/html/examplepost.html")),
         },
         "notifications-centre" => FEPageServeResponse {
             main: String::from("Notifications should show up here!"),
