@@ -13,11 +13,11 @@ use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
 
 use crate::assets::{
-    BYTES_ASSETS_LOGO_PNG, STR_ASSETS_GREEN_CHECK_SVG, STR_ASSETS_HOME_HTML, STR_ASSETS_HOME_JS,
-    STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS, STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS,
-    STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS, STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML,
-    STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG, STR_GENERATED_MAIN_MIN_CSS,
-    STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
+    BYTES_ASSETS_LOGO_PNG, STR_ASSETS_BTN_PUSH_SVG, STR_ASSETS_GREEN_CHECK_SVG,
+    STR_ASSETS_HOME_HTML, STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS,
+    STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
+    STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
+    STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
 };
 use crate::database::BasicUserInfo;
 use crate::{Config, ServerVars};
@@ -284,6 +284,24 @@ pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
         .body(STR_GENERATED_MAIN_MIN_CSS)
+}
+
+pub(super) async fn btn_push_svg(
+    server_z: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let coninfo = req.connection_info();
+    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+    (server_y.tell)(format!(
+        "{2}\t{:>45.47}\t\t{}",
+        "/btn/push.svg".magenta(),
+        ip.yellow(),
+        "Request/200".bright_green()
+    ));
+    HttpResponse::build(StatusCode::OK)
+        .content_type("image/svg+xml; charset=utf-8")
+        .body(STR_ASSETS_BTN_PUSH_SVG)
 }
 
 pub(super) async fn red_cross_svg(
