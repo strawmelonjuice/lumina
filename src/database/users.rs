@@ -9,7 +9,7 @@ use std::io::{Error, ErrorKind};
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use serde_json::from_str;
 
-use crate::Config;
+use crate::LuminaConfig;
 
 use super::{create_con, fetch, BasicUserInfo};
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
@@ -50,7 +50,7 @@ pub(crate) fn add(
     username: String,
     email: String,
     password: String,
-    config: &Config,
+    config: &LuminaConfig,
 ) -> Result<i64, Error> {
     if char_check_username(username.clone()) {
         return Err(Error::new(
@@ -181,7 +181,7 @@ pub(crate) mod auth {
                 user_id: None,
             };
         }
-        let config: crate::Config = server_vars.config.clone();
+        let config: crate::LuminaConfig = server_vars.config.clone();
         let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
         let errorresponse = |e| {
             error!("Auth: \n\t\tRan into an error:\n {}", e);

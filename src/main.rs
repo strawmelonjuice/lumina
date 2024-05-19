@@ -47,7 +47,7 @@ mod tell;
 
 #[derive(Clone)]
 struct ServerVars {
-    config: Config,
+    config: LuminaConfig,
     tell: fn(String) -> (),
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
@@ -75,7 +75,7 @@ pub struct PreConfig {
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Config {
+pub struct LuminaConfig {
     pub server: Server,
     pub interinstance: InterInstance,
     pub database: Database,
@@ -187,7 +187,7 @@ async fn main() {
         );
         process::exit(1);
     }
-    let config: Config = {
+    let config: LuminaConfig = {
         println!("Loading configuration from {}", vs);
         let va = v.clone().join("./config.toml");
         let confp = Path::new(&va);
@@ -244,7 +244,7 @@ async fn main() {
                 Ok(p) => {
                     let mut rng = thread_rng();
                     let p: PreConfig = p;
-                    Config {
+                    LuminaConfig {
                         server: p.server,
                         interinstance: p.interinstance,
                         database: p.database,
@@ -439,7 +439,7 @@ async fn main() {
     );
 }
 
-async fn close(config: Config) {
+async fn close(config: LuminaConfig) {
     let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","q".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
     println!("{}", msg);
     let mut input = String::new();

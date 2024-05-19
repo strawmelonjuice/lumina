@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').LuminaConfig} */
 module.exports = {
 	content: [
 		"./assets/**/*.{html,handlebars,js}",

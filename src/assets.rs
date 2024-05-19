@@ -76,3 +76,5 @@ pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
 
 pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str =
     include_str!("../assets/handlebars/home-side.handlebars");
+pub const STR_ASSETS_POST_RENDERS_HANDLEBARS: &str =
+    include_str!("../assets/handlebars/postrender.handlebars");
