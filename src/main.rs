@@ -440,7 +440,7 @@ async fn main() {
 }
 
 async fn close(config: Config) {
-    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","X".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
+    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","q".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
     println!("{}", msg);
     let mut input = String::new();
     let mut waiting = true;
@@ -456,7 +456,7 @@ async fn close(config: Config) {
         input = input.replace(['\n', '\r'], "");
         let split_input = input.as_str().split(' ').collect::<Vec<&str>>();
         match split_input[0].to_lowercase().as_str() {
-            "c" | "x" | "exit" => {
+            "q" | "x" | "exit" => {
                 println!("Bye!");
                 process::exit(0);
             }
@@ -500,7 +500,7 @@ async fn close(config: Config) {
                 "<".red(), "username".bright_yellow().on_red(), ">".red(),
                 "<".red(), "password".bright_yellow().on_red(), ">".red(),
                 "<".red(), "email".bright_yellow().on_red(), ">".red(),
-                        format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"c | x | exit".white()).green()
+                        format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"q | x | exit".white()).green()
             ),
 			_ => println!("{}", msg),
         }
