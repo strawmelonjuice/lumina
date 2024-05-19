@@ -16,241 +16,84 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 
-	<body
-		class="w-screen h-screen overflow-clip p-0 m-0 max-h-[10VH] bg-brown-100 dark:bg-neutral-500"
-	>
-		<nav
-			class="rounded-b-lg bg-emerald-200 dark:bg-teal-800 lg:rounded-b-none"
-		>
+	<body class="w-screen h-screen overflow-clip p-0 m-0 max-h-[10VH] bg-brown-100 dark:bg-neutral-500">
+		<nav class="rounded-b-lg bg-emerald-200 dark:bg-teal-800 lg:rounded-b-none">
 			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
 				<div class="relative flex items-center justify-between h-16">
-					<div
-						class="absolute inset-y-0 left-0 flex items-center sm:hidden"
-					>
+					<div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
 						<!-- Mobile menu button-->
-						<button
-							type="button"
-							class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-							aria-controls="mobile-menu"
-							aria-expanded="false"
-							id="btn-mobile-menu"
-						>
+						<button type="button" class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false" id="btn-mobile-menu">
 							<span class="absolute -inset-0.5"></span>
 							<span class="sr-only">Open main menu</span>
-							<svg
-								class="block w-6 h-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								aria-hidden="true"
-								id="btn-mobile-menu-open"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-								/>
+							<svg class="block w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" id="btn-mobile-menu-open">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
 							</svg>
-							<svg
-								class="w-6 h-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								aria-hidden="true"
-								id="btn-mobile-menu-close"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M6 18L18 6M6 6l12 12"
-								/>
+							<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" id="btn-mobile-menu-close">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</button>
 					</div>
-					<div
-						class="flex items-center justify-center flex-1 sm:items-stretch sm:justify-start"
-					>
+					<div class="flex items-center justify-center flex-1 sm:items-stretch sm:justify-start">
 						<div class="flex items-center flex-shrink-0">
-							<img
-								class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
-								src="/logo.svg"
-								alt="Lumina Instance"
-							/>
+							<img class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60" src="/logo.svg" alt="Lumina Instance" />
 						</div>
 						<div class="hidden sm:ml-6 sm:block">
 							<div class="flex space-x-4">
 								<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-								<a
-									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium text-white bg-gray-900 border-2 rounded-md"
-									aria-current="page"
-									id="home-nav"
-									>Home</a
-								>
-								<a
-									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
-									id="pages-nav"
-									>Publications</a
-								>
-								<a
-									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
-									id="notifications-nav"
-									><svg
-										xmlns="http://www.w3.org/2000/svg"
-										xmlns:svg="http://www.w3.org/2000/svg"
-										id="svg1"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="1.5"
-										aria-hidden="true"
-										class="inline w-6 h-6"
-										version="1.1"
-										viewBox="0 0 24 24"
-									>
-										<path
-											id="path1"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-										/>
-										<ellipse
-											style="
+								<a href="javascript:void(0)" class="px-3 py-2 text-sm font-medium text-white bg-gray-900 border-2 rounded-md" aria-current="page" id="home-nav">Home</a>
+								<a href="javascript:void(0)" class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white" id="pages-nav">Publications</a>
+								<a href="javascript:void(0)" class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white" id="notifications-nav"><svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" id="svg1" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" class="inline w-6 h-6" version="1.1" viewBox="0 0 24 24">
+										<path id="path1" stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+										<ellipse style="
 												stroke-opacity: 1;
 												stroke-dasharray: none;
 												stroke-width: 0.9;
 												stroke: #000;
 												fill-rule: evenodd;
 												fill: red;
-											"
-											id="path2"
-											cx="16.526"
-											cy="19.078"
-											class="svg_activenotification"
-											rx="1.919"
-											ry="1.817"
-										/></svg
-									>&nbsp;Notifications</a
-								>
+											" id="path2" cx="16.526" cy="19.078" class="svg_activenotification" rx="1.919" ry="1.817" />
+									</svg>&nbsp;Notifications</a>
 							</div>
 						</div>
 					</div>
-					<div
-						class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
-					>
-						<button
-							type="button"
-							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-							onclick='switchpages("notifications")'
-						>
+					<div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+						<button type="button" class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" onclick='switchpages("notifications")'>
 							<span class="absolute -inset-1.5"></span>
 							<span class="sr-only">View notifications</span>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								xmlns:svg="http://www.w3.org/2000/svg"
-								id="svg1"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="1.5"
-								aria-hidden="true"
-								class="inline w-6 h-6"
-								version="1.1"
-								viewBox="0 0 24 24"
-							>
-								<path
-									id="path1"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-								/>
-								<ellipse
-									style="
+							<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" id="svg1" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" class="inline w-6 h-6" version="1.1" viewBox="0 0 24 24">
+								<path id="path1" stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+								<ellipse style="
 										stroke-opacity: 1;
 										stroke-dasharray: none;
 										stroke-width: 0.9;
 										stroke: #000;
 										fill-rule: evenodd;
 										fill: red;
-									"
-									id="path2"
-									cx="16.526"
-									cy="19.078"
-									class="svg_activenotification"
-									rx="1.919"
-									ry="1.817"
-								/>
+									" id="path2" cx="16.526" cy="19.078" class="svg_activenotification" rx="1.919" ry="1.817" />
 							</svg>
 						</button>
 
 						<!-- Profile dropdown -->
 						<div class="relative ml-3">
 							<div>
-								<button
-									type="button"
-									class="relative flex text-sm bg-red-400 rounded-full dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-									id="user-menu-button"
-									aria-expanded="false"
-									aria-haspopup="true"
-								>
+								<button type="button" class="relative flex text-sm bg-red-400 rounded-full dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
 									<span class="absolute -inset-1.5"></span>
 									<span class="sr-only">Open user menu</span>
-									<img
-										class="w-8 h-8 rounded-full ownuseravatarsrc"
-										src=""
-										id="userimg"
-										alt=""
-									/>
+									<img class="w-8 h-8 rounded-full ownuseravatarsrc" src="" id="userimg" alt="" />
 								</button>
 							</div>
-							<div
-								class="absolute right-0 z-10 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-								role="menu"
-								aria-orientation="vertical"
-								aria-labelledby="user-menu-button"
-								id="user-menu"
-								tabindex="-1"
-							>
-								<div
-									class="block px-4 py-2 text-sm text-gray-700"
-								>
+							<div class="absolute right-0 z-10 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" id="user-menu" tabindex="-1">
+								<div class="block px-4 py-2 text-sm text-gray-700">
 									Hi,
-									<span
-										class="p-1 text-sm italic bg-orange-700 rounded-md settodisplayname bg-opacity-20"
-										style="
+									<span class="p-1 text-sm italic bg-orange-700 rounded-md settodisplayname bg-opacity-20" style="
 											overflow: hidden;
 											white-space: nowrap;
-										"
-										>unset</span
-									>
+										">unset</span>
 								</div>
 								<hr />
-								<a
-									href="javascript:void(0)"
-									class="block px-4 py-2 text-sm text-gray-700"
-									role="menuitem"
-									tabindex="-1"
-									id="user-menu-item-0"
-									>User settings</a
-								>
-								<a
-									href="javascript:void(0)"
-									class="block px-4 py-2 text-sm text-gray-700"
-									role="menuitem"
-									tabindex="-1"
-									id="user-menu-item-1"
-									>Contact instance support</a
-								>
-								<a
-									onclick="LogOut()"
-									class="block px-4 py-2 text-sm text-gray-700 cursor-pointer"
-									role="menuitem"
-									tabindex="-1"
-									id="user-menu-item-2"
-									>Sign out</a
-								>
+								<a href="javascript:void(0)" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-0">User settings</a>
+								<a href="javascript:void(0)" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-1">Contact instance support</a>
+								<a onclick="LogOut()" class="block px-4 py-2 text-sm text-gray-700 cursor-pointer" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</a>
 							</div>
 						</div>
 					</div>
@@ -259,85 +102,34 @@
 			<div class="sm:hidden" id="mobile-menu">
 				<div class="px-2 pt-2 pb-4 space-y-1">
 					<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-					<a
-						href="javascript:void(0)"
-						class=""
-						aria-current="page"
-						id="mobile-home-nav"
-						>Home</a
-					>
-					<a href="javascript:void(0)" class="" id="mobile-pages-nav"
-						>Publications</a
-					>
-					<a
-						href="javascript:void(0)"
-						class="hidden"
-						style="display: none"
-						id="mobile-notifications-nav"
-					></a>
+					<a href="javascript:void(0)" class="" aria-current="page" id="mobile-home-nav">Home</a>
+					<a href="javascript:void(0)" class="" id="mobile-pages-nav">Publications</a>
+					<a href="javascript:void(0)" class="hidden" style="display: none" id="mobile-notifications-nav"></a>
 				</div>
 			</div>
 		</nav>
-		<main
-			class="h-screen not:max-h-[89VH] text-fuchsia-900 dark:text-violet-200 lg:grid lg:grid-flow-col lg:grid-cols-5 w-screen overflow-clip"
-		>
-			<div
-				id="mainleft"
-				class="hidden h-full lg:block bg-brown-200 dark:bg-neutral-600 overflow-clip"
-			></div>
-			<div
-				class="h-full col-span-4 overflow-auto lg:p-12 bg-brown-100 dark:bg-neutral-700"
-			>
-				<div
-					id="mainright"
-					class="w-full p-4 rounded-md lg:p-8 lg:w-11/12 disabled:lg:h-10/12 bg-brown-200 dark:bg-neutral-600"
-				></div>
+		<main class="h-screen not:max-h-[89VH] text-fuchsia-900 dark:text-violet-200 lg:grid lg:grid-flow-col lg:grid-cols-5 w-screen overflow-clip">
+			<div id="mainleft" class="hidden h-full lg:block bg-brown-200 dark:bg-neutral-600 overflow-clip"></div>
+			<div class="h-full col-span-4 overflow-auto lg:p-12 bg-brown-100 dark:bg-neutral-700">
+				<div id="mainright" class="w-full p-4 rounded-md lg:p-8 lg:w-11/12 disabled:lg:h-10/12 bg-brown-200 dark:bg-neutral-600"></div>
 			</div>
 		</main>
-		<div
-			id="mobiletimelineswitcher"
-			class="fixed inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-		>
+		<div id="mobiletimelineswitcher" class="fixed inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
 			<!-- Shows the switcher allowing timeline travel on mobile. -->
 			<button>
-				<svg
-					class="w-10 h-10"
-					id="arrowright"
-					width="50"
-					height="50"
-					fill="none"
-					stroke="none"
-					stroke-linecap="square"
-					stroke-miterlimit="10"
-					version="1.1"
-					viewBox="0 0 50 50"
-					xmlns="http://www.w3.org/2000/svg"
-					xmlns:svg="http://www.w3.org/2000/svg"
-				>
+				<svg class="w-10 h-10" id="arrowright" width="50" height="50" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" version="1.1" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
 					<defs id="defs20">
 						<clipPath>
-							<path
-								d="M 0,0 H 960 V 720 H 0 Z"
-								clip-rule="nonzero"
-							/>
+							<path d="M 0,0 H 960 V 720 H 0 Z" clip-rule="nonzero" />
 						</clipPath>
 						<clipPath id="p.0-1-4">
-							<path
-								id="path1-2-0"
-								d="M 0,0 H 960 V 720 H 0 Z"
-								clip-rule="nonzero"
-							/>
+							<path id="path1-2-0" d="M 0,0 H 960 V 720 H 0 Z" clip-rule="nonzero" />
 						</clipPath>
 					</defs>
 					<clipPath id="p.0">
-						<path
-							id="path1"
-							d="M 0,0 H 960 V 720 H 0 Z"
-							clip-rule="nonzero"
-						/>
+						<path id="path1" d="M 0,0 H 960 V 720 H 0 Z" clip-rule="nonzero" />
 					</clipPath>
-					<path
-						style="
+					<path style="
 							fill: currentColor;
 							fill-opacity: 1;
 							stroke: currentColor;
@@ -346,12 +138,9 @@
 							stroke-linejoin: round;
 							stroke-dasharray: none;
 							paint-order: fill markers stroke;
-						"
-						d="m 30.152807,9.1863138 a 7.7145349,0.13753011 41.944235 0 0 5.615234,5.2304682 7.7145349,0.13753011 41.944235 0 0 5.859375,5.082031 7.7145349,0.13753011 41.944235 0 0 -5.613281,-5.230468 7.7145349,0.13753011 41.944235 0 0 -5.861328,-5.0820312 z M 45.035619,22.438267 a 0.42024437,0.94349396 0 0 0 -0.419922,0.943359 0.42024437,0.94349396 0 0 0 0.419922,0.945313 0.42024437,0.94349396 0 0 0 0.419922,-0.945313 0.42024437,0.94349396 0 0 0 -0.419922,-0.943359 z M 18.87351,23.049595 A 14.878937,0.26167485 0 0 0 3.9946033,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.573032 14.878937,0.26167485 0 0 0 33.752416,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.049595 Z m 22.796875,4.263672 a 0.13753011,7.7145349 48.055765 0 0 -5.859375,5.082031 0.13753011,7.7145349 48.055765 0 0 -5.615234,5.230469 0.13753011,7.7145349 48.055765 0 0 5.859374,-5.082032 0.13753011,7.7145349 48.055765 0 0 5.615235,-5.230468 z"
-					/>
+						" d="m 30.152807,9.1863138 a 7.7145349,0.13753011 41.944235 0 0 5.615234,5.2304682 7.7145349,0.13753011 41.944235 0 0 5.859375,5.082031 7.7145349,0.13753011 41.944235 0 0 -5.613281,-5.230468 7.7145349,0.13753011 41.944235 0 0 -5.861328,-5.0820312 z M 45.035619,22.438267 a 0.42024437,0.94349396 0 0 0 -0.419922,0.943359 0.42024437,0.94349396 0 0 0 0.419922,0.945313 0.42024437,0.94349396 0 0 0 0.419922,-0.945313 0.42024437,0.94349396 0 0 0 -0.419922,-0.943359 z M 18.87351,23.049595 A 14.878937,0.26167485 0 0 0 3.9946033,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.573032 14.878937,0.26167485 0 0 0 33.752416,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.049595 Z m 22.796875,4.263672 a 0.13753011,7.7145349 48.055765 0 0 -5.859375,5.082031 0.13753011,7.7145349 48.055765 0 0 -5.615234,5.230469 0.13753011,7.7145349 48.055765 0 0 5.859374,-5.082032 0.13753011,7.7145349 48.055765 0 0 5.615235,-5.230468 z" />
 				</svg>
 			</button>
 		</div>
 	</body>
 </html>
-
