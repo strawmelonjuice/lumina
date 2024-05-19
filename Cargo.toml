@@ -8,8 +8,6 @@ repository = "https://github.com/strawmelonjuice/Peonies-Ephew"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 futures = "0.3.30"
 async-std = "1.12.0"
@@ -28,11 +26,13 @@ pbkdf2 = "0.12.2"
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
 actix-identity = "0.7.1"
 actix-web = "4.5.1"
+handlebars = "5.1.0"
 home = "0.5.9"
 magic-crypt = "3.1.13"
 rand = "0.8.5"
 build_const = "0.2.2"
 regex = "1.10.4"
+markdown = "1.0.0-alpha.17"
 [build-dependencies]
 build_const = "0.2.2"
 markdown = "1.0.0-alpha.17"

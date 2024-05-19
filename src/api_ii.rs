@@ -6,10 +6,10 @@
 
 use std::time::Duration;
 
-use crate::Config;
+use crate::LuminaConfig;
 use async_std::task;
 
-pub(crate) async fn main(j: Config, tell: fn(String)) {
+pub(crate) async fn main(j: LuminaConfig, tell: fn(String)) {
     let mut o = 0;
     let mut i = j.interinstance.polling.pollintervall;
     if i < 30 {

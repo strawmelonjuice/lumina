@@ -19,8 +19,8 @@ use crate::assets::{
     STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
     STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
 };
-use crate::database::BasicUserInfo;
-use crate::{Config, ServerVars};
+use crate::database::{BasicUserInfo, IIExchangedUserInfo};
+use crate::{LuminaConfig, ServerVars};
 
 pub(super) async fn notfound(
     server_z: Data<Mutex<ServerVars>>,
@@ -257,7 +257,7 @@ pub(super) async fn site_c_css(
     req: HttpRequest,
 ) -> HttpResponse {
     let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config: Config = server_y.clone().config;
+    let config: LuminaConfig = server_y.clone().config;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     (server_y.tell)(format!(
@@ -429,32 +429,27 @@ pub(super) async fn homepage(
     session: Session,
     req: HttpRequest,
 ) -> HttpResponse {
-    fence(
-        session,
-        server_z,
-        req,
-        |_: Config, server_vars: ServerVars, user: BasicUserInfo, request: HttpRequest| {
-            let coninfo = request.connection_info();
-            let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-            (server_vars.tell)(format!(
-                "{}\t{:>45.47}\t\t{}/{:<25}",
-                "Request/200".bright_green(),
-                "/home".bright_magenta(),
-                ip.yellow(),
-                user.username.green()
-            ));
-            HttpResponse::build(StatusCode::OK)
-                .content_type("text/html; charset=utf-8")
-                .body(
-                    STR_ASSETS_HOME_HTML
-                        .replace(
-                            "{{iid}}",
-                            &server_vars.clone().config.interinstance.iid.clone(),
-                        )
-                        .clone(),
-                )
-        },
-    )
+    fence(session, server_z, req, |_, server_vars, user, request| {
+        let coninfo = request.connection_info();
+        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+        (server_vars.tell)(format!(
+            "{}\t{:>45.47}\t\t{}/{:<25}",
+            "Request/200".bright_green(),
+            "/home".bright_magenta(),
+            ip.yellow(),
+            user.username.green()
+        ));
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(
+                STR_ASSETS_HOME_HTML
+                    .replace(
+                        "{{iid}}",
+                        &server_vars.clone().config.interinstance.iid.clone(),
+                    )
+                    .clone(),
+            )
+    })
     .await
 }
 
@@ -499,9 +494,9 @@ pub(crate) async fn fence(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
     next: fn(
-        config: Config,
+        config: LuminaConfig,
         vars: ServerVars,
-        user: BasicUserInfo,
+        user: IIExchangedUserInfo,
         req: HttpRequest,
     ) -> HttpResponse,
 ) -> HttpResponse {
@@ -537,6 +532,11 @@ pub(crate) async fn fence(
         )
         .unwrap();
 
-        next(config, server_y.clone().to_owned(), user, req)
+        next(
+            config.clone(),
+            server_y.clone().to_owned(),
+            user.to_exchangable(&config),
+            req,
+        )
     }
 }
