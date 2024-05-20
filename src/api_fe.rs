@@ -49,6 +49,33 @@ struct JSClientUser {
     pub id: i64,
 }
 
+async fn shield(
+    session: Session,
+    server_vars_mutex: &Data<Mutex<ServerVars>>,
+    halt: HttpResponse,
+) -> Option<HttpResponse> {
+    let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
+    let config = server_y.clone().config;
+    let id_ = session.get::<i64>("userid").unwrap_or(None);
+    let id = id_.unwrap_or(-100);
+    let safe = match id {
+        -100 => false,
+        _ => match session.get::<i64>("validity") {
+            Ok(s) => match s {
+                Some(a) if a == config.clone().run.session_valid => true,
+                _ => false,
+            },
+            Err(_) => false,
+        },
+    };
+    if !safe {
+        session.purge();
+        Some(halt)
+    } else {
+        None
+    }
+}
+
 pub(crate) async fn update(
     server_z: Data<Mutex<ServerVars>>,
     session: Session,
@@ -216,24 +243,40 @@ pub struct FEPageServeRequest {
 struct FEPageServeResponse {
     main: String,
     side: String,
+    message: Vec<i64>,
 }
 pub(crate) async fn pageservresponder(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
-    req: HttpRequest,
+    // req: HttpRequest,
     data: actix_web::web::Json<FEPageServeRequest>,
 ) -> HttpResponse {
-    // These three WILL be used in the future, when pages actually get dynamic.
-    let _ = server_z;
-    let _ = session;
-    let _ = req;
-    let location = data.location.clone();
-    let server_y = server_z.lock().await.clone();
-    let config: LuminaConfig = server_y.clone().config;
-    let o: FEPageServeResponse = match location.as_str() {
-        "home" => FEPageServeResponse {
-            main: String::from(
-                r#"
+    match shield(
+        session,
+        &server_vars_mutex,
+        HttpResponse::build(StatusCode::OK)
+            .content_type("text/json; charset=utf-8")
+            .body(
+                serde_json::to_string(&FEPageServeResponse {
+                    main: String::from("It seems your session has expired."),
+                    side: String::new(),
+                    message: vec![1],
+                })
+                .unwrap(),
+            ),
+    )
+    .await
+    {
+        Some(o) => o,
+        None => {
+            // These three WILL be used in the future, when pages actually get dynamic.
+            let location = data.location.clone();
+            let server_vars = server_vars_mutex.lock().await.clone();
+            let config: LuminaConfig = server_vars.clone().config;
+            let o: FEPageServeResponse = match location.as_str() {
+                "home" => FEPageServeResponse {
+                    main: String::from(
+                        r#"
 <h1>welcome to instance <code class="placeholder-iid"></code></h1>
 			<p>
 				as you can see, there is no such thing as a homepage. lumina is
@@ -241,40 +284,54 @@ pub(crate) async fn pageservresponder(
 			</p>
 
                                "#,
-            ),
-            side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
-        },
-        "pages" => FEPageServeResponse {
-            side: String::new(),
-            main: {
-                let mut s = format!(
-                    "<h1>Post fetched from DB</h1>\n{}\n",
-                    serde_json::from_str::<PostInfo>(
-                        &fetch(&config, String::from("PostsStore"), "pid", "1".to_string())
+                    ),
+                    side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
+                    message: vec![],
+                },
+                "pages" => FEPageServeResponse {
+                    message: vec![],
+                    side: String::new(),
+                    main: {
+                        let mut s = format!(
+                            "<h1>Post fetched from DB</h1>\n{}\n",
+                            serde_json::from_str::<PostInfo>(
+                                &fetch(&config, String::from("PostsStore"), "pid", "1".to_string())
+                                    .unwrap()
+                                    .unwrap(),
+                            )
                             .unwrap()
+                            .to_formatted(&config)
+                            .to_html()
+                        );
+                        s.push_str(include_str!("../assets/html/examplepost.html"));
+                        s
+                    },
+                },
+                "notifications-centre" => FEPageServeResponse {
+                    main: String::from("Notifications should show up here!"),
+                    side: String::from(""),
+                    message: vec![33],
+                },
+                _ => {
+                    return HttpResponse::build(StatusCode::OK)
+                        .content_type("text/json; charset=utf-8")
+                        .body(
+                            serde_json::to_string(&FEPageServeResponse {
+                                main: String::from(
+                                    "This page does not exist according to the instance server.",
+                                ),
+                                side: String::new(),
+                                message: vec![2],
+                            })
                             .unwrap(),
-                    )
-                    .unwrap()
-                    .to_formatted(&config)
-                    .to_html()
-                );
-                s.push_str(include_str!("../assets/html/examplepost.html"));
-                s
-            },
-        },
-        "notifications-centre" => FEPageServeResponse {
-            main: String::from("Notifications should show up here!"),
-            side: String::from(""),
-        },
-        _ => {
-            return HttpResponse::build(StatusCode::EXPECTATION_FAILED)
+                        )
+                }
+            };
+            HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
-                .body("")
+                .body(serde_json::to_string(&o).unwrap())
         }
-    };
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/json; charset=utf-8")
-        .body(serde_json::to_string(&o).unwrap())
+    }
 }
 #[derive(Deserialize)]
 pub struct FEUsernameCheckRequest {

@@ -484,10 +484,6 @@ pub(super) async fn logout(
     }
 }
 
-// struct FenceSession {
-// 	userid:
-// }
-/// # `Fence()`
 /// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
 pub(crate) async fn fence(
     session: Session,
