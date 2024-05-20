@@ -3,6 +3,11 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+/**
+ * Description placeholder
+ *
+ * @param {string} toPageName
+ */
 function switchpages(toPageName) {
 	let to = toPageName;
 	if (toPageName === "") to = "home";
@@ -79,23 +84,50 @@ function switchpages(toPageName) {
 				.post("/api/fe/fetch-page", {
 					location: a.location,
 				})
-				.then((response) => {
-					document.querySelector("main div#mainright").innerHTML =
-						response.data.main;
-					document.querySelector("main div#mainleft").innerHTML =
-						response.data.side;
-					if (window.location.hash === "") window.location.hash = to;
-					else {
-						window.location.hash = window.location.hash.replace(
-							window.location.hash.split("?")[0],
-							to,
-						);
-					}
-					window.displayedPage = to;
-					if (a.f !== undefined) {
-						a.f();
-					}
-				})
+				.then(
+
+					/**
+					* @param {ResFromSource} response - Represents the response containing an _FEPageServeResponse_ coming from an instance server.
+					*/
+					(response) => {
+						/**
+						 * Represents the response containing an _FEPageServeResponse_ coming from an instance server.
+						 * @typedef {Object} ResFromSource
+						 * @property {FromSource} data - Represents the _FEPageServeResponse_ coming from an instance server.
+						 */
+						/**
+						 * Represents the _FEPageServeResponse_ coming from an instance server.
+						 * @typedef {Object} FromSource
+						 * @property {string} main Main HTML from source.
+						 * @property {string} side Sidebar HTML from source.
+						 * @property {number[]} message Messages from the source.
+						 * # Meanings
+						 * - 1: Session invalid
+						 * - 2: Source unknown (404)
+						 * - 33: Do not replace sidebar (keep it as it was.)
+						 */
+
+						document.querySelector("main div#mainright").innerHTML =
+							response.data.main;
+						if (!response.data.message.includes(33)) {
+							document.querySelector("main div#mainleft").innerHTML =
+								response.data.side;
+						};
+						if (response.data.message.includes(1)) {
+							window.location.assign(`/login#${window.location.hash.replace(window.location.hash.split("?")[0], to)}`);
+						};
+						if (window.location.hash === "") window.location.hash = to;
+						else {
+							window.location.hash = window.location.hash.replace(
+								window.location.hash.split("?")[0],
+								to,
+							);
+						}
+						window.displayedPage = to;
+						if (a.f !== undefined) {
+							a.f();
+						}
+					})
 				.catch((error) => {
 					document.querySelector("main div#mainright").innerHTML =
 						"There was an error loading this page.";
@@ -127,6 +159,11 @@ document.addEventListener("keydown", (event) => {
 		window.location.hash = "notifications";
 	}
 });
+/**
+ * Description placeholder
+ *
+ * @returns {string}
+ */
 function hashIsolated() {
 	if (window.location.hash === "") return "";
 	return window.location.hash.split("#")[1].split("?")[0];
@@ -142,6 +179,9 @@ setInterval(() => {
 	}
 }, 100);
 
+/**
+ * Description placeholder
+ */
 function userMenuToggle() {
 	const userMenu = document.getElementById("user-menu");
 	if (userMenu.classList.contains("hidden")) {
@@ -169,11 +209,19 @@ window.pulled.push(() => {
 	}
 });
 
+/**
+ * Description placeholder
+ */
 function LogOut() {
 	localStorage.clear();
 	window.location.assign("/session/logout");
 }
 
+/**
+ * Description placeholder
+ *
+ * @type {{ "plugins-disabled": { remove: (plugin: any) => void; }; }}
+ */
 const features = {
 	"plugins-disabled": {
 		remove: (plugin) => {
@@ -195,11 +243,19 @@ const features = {
 	},
 };
 
+/**
+ * Description placeholder
+ */
 function showMobiletimelineSwitcher() {
 	document.getElementById("mainright").innerHTML =
 		document.getElementById("mainleft").innerHTML;
 	document.getElementById("mobiletimelineswitcher").classList.add("hidden");
 }
+/**
+ * Description placeholder
+ *
+ * @param {string} tid Timeline ID to browse to
+ */
 function switchTimeline(tid) {
 	console.log(`Switching to timeline with ID string: ${tid}`);
 	document.getElementById("mobiletimelineswitcher").classList.remove("hidden");
