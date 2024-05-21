@@ -288,7 +288,7 @@ pub(crate) async fn pageservresponder(
                     side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
                     message: vec![],
                 },
-                "pages" => FEPageServeResponse {
+                "test" => FEPageServeResponse {
                     message: vec![],
                     side: String::new(),
                     main: {
