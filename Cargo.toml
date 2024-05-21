@@ -11,9 +11,9 @@ edition = "2021"
 [dependencies]
 futures = "0.3.30"
 async-std = "1.12.0"
-serde = { version = "1.0.199", features = ["derive"] }
+serde = { version = "1.0.202", features = ["derive"] }
 colored = "2.0.4"
-toml = "0.8.12"
+toml = "0.8.13"
 log = "0.4.21"
 reqwest = "0.12.4"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
@@ -25,7 +25,7 @@ tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
 pbkdf2 = "0.12.2"
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
 actix-identity = "0.7.1"
-actix-web = "4.5.1"
+actix-web = "4.6.0"
 handlebars = "5.1.0"
 home = "0.5.9"
 magic-crypt = "3.1.13"
