@@ -23,15 +23,15 @@ function switchpages(toPageName) {
 					.classList.remove("hidden");
 			},
 		},
-		pages: {
-			mobile: document.getElementById("mobile-pages-nav"),
-			desktop: document.getElementById("pages-nav"),
-			location: "pages",
+		test: {
+			mobile: document.getElementById("mobile-test-nav"),
+			desktop: document.getElementById("test-nav"),
+			location: "test",
 			navigator: true,
 		},
 		"pages-editor": {
-			mobile: document.getElementById("mobile-pages-nav"),
-			desktop: document.getElementById("pages-nav"),
+			mobile: document.getElementById("mobile-test-nav"),
+			desktop: document.getElementById("test-nav"),
 			location: "pages-editor",
 			navigator: false,
 			f: () => {
