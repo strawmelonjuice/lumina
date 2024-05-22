@@ -4,6 +4,8 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
+use crate::database::{BasicUserInfo, IIExchangedUserInfo};
+use crate::{LuminaConfig, ServerVars};
 use actix_session::Session;
 use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
@@ -11,16 +13,6 @@ use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
-
-use crate::assets::{
-    BYTES_ASSETS_LOGO_PNG, STR_ASSETS_BTN_PUSH_SVG, STR_ASSETS_GREEN_CHECK_SVG,
-    STR_ASSETS_HOME_HTML, STR_ASSETS_HOME_JS, STR_ASSETS_INDEX_HTML, STR_ASSETS_INDEX_JS,
-    STR_ASSETS_LOGIN_HTML, STR_ASSETS_LOGIN_JS, STR_ASSETS_LOGO_SVG, STR_ASSETS_PREFETCH_JS,
-    STR_ASSETS_RED_CROSS_SVG, STR_ASSETS_SIGNUP_HTML, STR_ASSETS_SIGNUP_JS, STR_ASSETS_SPINNER_SVG,
-    STR_GENERATED_MAIN_MIN_CSS, STR_NODE_MOD_AXIOS_MIN_JS, STR_NODE_MOD_AXIOS_MIN_JS_MAP,
-};
-use crate::database::{BasicUserInfo, IIExchangedUserInfo};
-use crate::{LuminaConfig, ServerVars};
 
 pub(super) async fn notfound(
     server_z: Data<Mutex<ServerVars>>,
@@ -65,7 +57,7 @@ pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) ->
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
-            STR_ASSETS_INDEX_HTML
+            crate::assets::STR_ASSETS_INDEX_HTML
                 .replace(
                     "{{iid}}",
                     &server_p.clone().config.interinstance.iid.clone(),
@@ -90,7 +82,7 @@ pub(super) async fn login(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
-            STR_ASSETS_LOGIN_HTML
+            crate::assets::STR_ASSETS_LOGIN_HTML
                 .replace(
                     "{{iid}}",
                     &server_p.clone().config.interinstance.iid.clone(),
@@ -115,7 +107,7 @@ pub(super) async fn signup(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) 
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
-            STR_ASSETS_SIGNUP_HTML
+            crate::assets::STR_ASSETS_SIGNUP_HTML
                 .replace(
                     "{{iid}}",
                     &server_p.clone().config.interinstance.iid.clone(),
@@ -145,7 +137,7 @@ pub(super) async fn prefetch_js(
 */
 
 {}"#,
-        STR_ASSETS_PREFETCH_JS
+        crate::assets::STR_ASSETS_PREFETCH_JS
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -170,7 +162,7 @@ pub(super) async fn login_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
 */
 
 {}"#,
-        STR_ASSETS_LOGIN_JS
+        crate::assets::STR_ASSETS_LOGIN_JS
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -195,7 +187,7 @@ pub(super) async fn index_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
 */
 
 {}"#,
-        STR_ASSETS_INDEX_JS
+        crate::assets::STR_ASSETS_INDEX_JS
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -220,7 +212,7 @@ pub(super) async fn home_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest)
 */
 
 {}"#,
-        STR_ASSETS_HOME_JS
+        crate::assets::STR_ASSETS_HOME_JS
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -245,7 +237,7 @@ pub(super) async fn signup_js(server_z: Data<Mutex<ServerVars>>, req: HttpReques
 */
 
 {}"#,
-        STR_ASSETS_SIGNUP_JS
+        crate::assets::STR_ASSETS_SIGNUP_JS
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
@@ -283,25 +275,7 @@ pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/css; charset=utf-8")
-        .body(STR_GENERATED_MAIN_MIN_CSS)
-}
-
-pub(super) async fn btn_push_svg(
-    server_z: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/btn/push.svg".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_BTN_PUSH_SVG)
+        .body(crate::assets::STR_GENERATED_MAIN_MIN_CSS)
 }
 
 pub(super) async fn red_cross_svg(
@@ -319,7 +293,7 @@ pub(super) async fn red_cross_svg(
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_RED_CROSS_SVG)
+        .body(crate::assets::STR_ASSETS_RED_CROSS_SVG)
 }
 
 pub(super) async fn spinner_svg(
@@ -337,7 +311,7 @@ pub(super) async fn spinner_svg(
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_SPINNER_SVG)
+        .body(crate::assets::STR_ASSETS_SPINNER_SVG)
 }
 
 pub(super) async fn green_check_svg(
@@ -355,7 +329,7 @@ pub(super) async fn green_check_svg(
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_GREEN_CHECK_SVG)
+        .body(crate::assets::STR_ASSETS_GREEN_CHECK_SVG)
 }
 
 pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
@@ -370,7 +344,7 @@ pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/svg+xml; charset=utf-8")
-        .body(STR_ASSETS_LOGO_SVG)
+        .body(crate::assets::STR_ASSETS_LOGO_SVG)
 }
 
 pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
@@ -385,7 +359,7 @@ pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("image/png; charset=utf-8")
-        .body(BYTES_ASSETS_LOGO_PNG)
+        .body(crate::assets::BYTES_ASSETS_LOGO_PNG)
 }
 
 pub(super) async fn node_axios_map(
@@ -403,7 +377,7 @@ pub(super) async fn node_axios_map(
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
-        .body(STR_NODE_MOD_AXIOS_MIN_JS_MAP)
+        .body(crate::assets::STR_NODE_MOD_AXIOS_MIN_JS_MAP)
 }
 
 pub(super) async fn node_axios(
@@ -421,7 +395,7 @@ pub(super) async fn node_axios(
     ));
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
-        .body(STR_NODE_MOD_AXIOS_MIN_JS)
+        .body(crate::assets::STR_NODE_MOD_AXIOS_MIN_JS)
 }
 
 pub(super) async fn homepage(
@@ -442,7 +416,7 @@ pub(super) async fn homepage(
         HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(
-                STR_ASSETS_HOME_HTML
+                crate::assets::STR_ASSETS_HOME_HTML
                     .replace(
                         "{{iid}}",
                         &server_vars.clone().config.interinstance.iid.clone(),

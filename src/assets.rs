@@ -50,6 +50,8 @@ pub const STR_ASSETS_LOGO_SVG: &str = include_str!("../assets/svg/luminalogo-1.s
 
 pub const STR_ASSETS_BTN_PUSH_SVG: &str = include_str!("../assets/svg/push.svg");
 
+pub const STR_ASSETS_BTN_COMMENT_SVG: &str = include_str!("../assets/svg/comment.svg");
+
 pub const STR_ASSETS_GREEN_CHECK_SVG: &str = include_str!("../assets/svg/green_check.svg");
 
 pub const STR_ASSETS_SPINNER_SVG: &str = include_str!("../assets/svg/spinner.svg");

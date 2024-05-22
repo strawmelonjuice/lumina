@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::LuminaConfig;
 
 /// Basic exchangable user information.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IIExchangedUserInfo {
     /// User ID
     pub(crate) id: i64,
@@ -82,8 +82,9 @@ pub struct PostPreRenderData {
     pub(crate) embeds: Option<Vec<String>>,
     pub(crate) tags: Vec<String>,
     pub(crate) local: bool,
+    button_push: String,
+    button_comment: String,
 }
-
 impl PostPreRenderData {
     pub fn to_html(&self) -> String {
         let mut handlebars = Handlebars::new();
@@ -195,6 +196,21 @@ impl PostInfo {
             embeds,
             tags,
             local,
+            button_push: crate::assets::STR_ASSETS_BTN_PUSH_SVG.replace(r#"<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+  ~
+  ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+  -->
+<svg width="120" height="120" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">"#, r#"<svg width="100%" height="100%" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">"#),
+    button_comment: crate::assets::STR_ASSETS_BTN_COMMENT_SVG.replace(r#"<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+  ~
+  ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+  -->
+<svg width="120" height="120" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">"#, r#"<svg width="100%" height="100%" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">"#),
+
         }
     }
 }

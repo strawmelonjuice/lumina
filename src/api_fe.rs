@@ -293,7 +293,7 @@ pub(crate) async fn pageservresponder(
                     side: String::new(),
                     main: {
                         let mut s = format!(
-                            "<h1>Post fetched from DB</h1>\n{}\n",
+                            "<h1>Post fetched from DB (dynamically rendered using Handlebars)</h1>\n{}\n",
                             serde_json::from_str::<PostInfo>(
                                 &fetch(&config, String::from("PostsStore"), "pid", "1".to_string())
                                     .unwrap()
