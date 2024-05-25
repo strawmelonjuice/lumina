@@ -1,5 +1,5 @@
 <div class="container px-4 py-8 mx-auto ml-1 mr-1 lg:mr-auto lg:ml-auto lg:max-w-[50VW]">
-    <div class="overflow-hidden rounded-lg shadow-lg bg-brown-25 dark:bg-neutral-700">
+    <div class="relative overflow-hidden rounded-lg shadow-lg bg-brown-25 dark:bg-neutral-700">
         {{#if (numequal posttype 2)}}
             {{!-- Display title for article posts --}}
             <h3 class="p-4 border-b-2 border-dotted dark:border-brown-25 border-neutral-700">{title}</h3>
@@ -13,7 +13,8 @@
                 </div>
             </div>
         {{/if}}
-        <div class="w-full border-b-2 border-dotted dark:border-brown-25 border-neutral-700">
+        <div class="relative w-full border-b-2 border-dotted dark:border-brown-25 border-neutral-700">
+            <div class="float-right p-2 text-indigo-300 w-max unparsed-timestamp dark:text-neutral-400">{{timestamp}}</div>
             <a href="{{#unless local}}https://{{author.instance}}{{/unless}}/user/profile/{{author.id}}">
                 <div class="flex flex-row p-2 min-w-60 w-max post-author-main justify-evenly">
                     <div class="w-1/5 text-xl">
@@ -32,30 +33,37 @@
         {{/if}}
         <div class="relative w-full ml-1 mr-1">
             <div class="w-full mt-4 mb-4">
-                <p class="text-xs">Tags on this post</p>
-                <ul class="justify-between w-full p-4 pb-1 ">
-                    {{#each tags}}
-                        {{!-- Displaying tags -- if any -- in their boxy little list. --}}
-                        <li class="inline-block p-1 m-2 text-sm border-2 border-dotted rounded-xl border-neutral-400 dark:border-slate-500 bg-slate-600 text-neutral-200 dark:text-slate-800 dark:bg-slate-400"><a href="/tag/{{this}}" class="text-blue-300 dark:text-blue-900">{{this}}</a></li>
-                    {{/each}}
-                </ul>
+                {{#if tags}}
+                    <p class="text-xs">Tags on this post</p>
+                    <ul class="justify-between w-full p-4 pb-1">
+                        {{#each tags}}
+                            {{!-- Displaying tags -- if any -- in their boxy little list. --}}
+                            <li class="inline-block p-1 m-1 text-sm border-2 border-dotted rounded-xl border-neutral-400 dark:border-slate-500 bg-slate-600 text-neutral-200 dark:text-slate-800 dark:bg-slate-400"><a href="/tag/{{this}}" class="text-blue-300 dark:text-blue-900">{{this}}</a></li>
+                        {{/each}}
+                    </ul>
+                {{/if}}
             </div>
-            <div class="flex items-center justify-between m-4 min-w-[9rem] w-max float-right h-fit min-h-12">
-                <div class="relative w-12 h-full p-1 me-1 ms-1">
+            <div class="flex items-center justify-between m-4 mr-6 min-w-[9rem] w-max float-right h-fit min-h-12">
+                <div class="relative w-12 p-1 me-1 ms-1 h-14 postbttn">
                     <!-- Like (Push) -->
-                    <div class="absolute w-12 h-12 m-2 text-center text-white align-middle bg-black rounded-full leading-12 hover:text-red-300 bottom-1">
+                    <div class="absolute w-12 h-12 m-2 text-center align-middle border-2 border-black border-solid rounded-full bg-slate-600 text-neutral-200 dark:text-slate-800 dark:bg-slate-400 leading-12 hover:text-violet-500">
                         {{{button_push}}}
                     </div>
+                    <span class="text-white bg-black postbttndescription dark:bg-brown-300 dark:text-black">Push up</span>
                 </div>
-                <div class="relative w-12 h-full p-1 me-1 ms-1">
+                <div class="relative w-12 p-1 h-14 me-1 ms-1 postbttn">
                     <!-- Reply (Comment) -->
-                    <div class="absolute w-12 h-12 m-2 text-center text-white align-middle bg-black rounded-full leading-12 hover:text-red-300 bottom-1">
+                    <div class="absolute w-12 h-12 m-2 text-center align-middle border-2 border-black border-solid rounded-full bg-slate-600 text-neutral-200 dark:text-slate-800 dark:bg-slate-400 leading-12 hover:text-red-300">
                         {{{button_comment}}}
                     </div>
+                    <span class="text-white bg-black postbttndescription dark:bg-brown-300 dark:text-black">Comment</span>
                 </div>
-                <div class="relative w-12 h-full p-1 me-1 ms-1">
+                <div class="relative w-12 p-1 h-14 me-1 ms-1 postbttn">
                     <!-- Repost (Bump) -->
-                    <div class="absolute w-12 h-12 m-2 text-center text-white align-middle bg-black leading-12 hover:text-red-300 bottom-1 ">B</div>
+                    <div class="absolute w-12 h-12 m-2 text-center align-middle border-2 border-black border-solid rounded-full bg-slate-600 text-neutral-200 dark:text-slate-800 dark:bg-slate-400 leading-12 hover:text-amber-400">
+                        {{{button_boost}}}
+                    </div>
+                    <span class="text-white bg-black postbttndescription dark:bg-brown-300 dark:text-black">Bump</span>
                 </div>
             </div>
         </div>

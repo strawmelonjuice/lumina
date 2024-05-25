@@ -45,6 +45,9 @@ mod database;
 
 mod tell;
 
+/// # Actions on posts
+mod post;
+
 #[derive(Clone)]
 struct ServerVars {
     config: LuminaConfig,
@@ -125,10 +128,19 @@ pub struct Server {
 #[serde(rename_all = "camelCase")]
 pub struct InterInstance {
     pub iid: String,
-    pub synclist: Vec<String>,
+    pub synclist: Vec<SynclistItem>,
     pub ignorelist: Vec<String>,
     pub polling: Polling,
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SynclistItem {
+    pub name: String, // The name of the instance to sync with, equal to the domain name it is public on.
+    pub level: String, // The level of syncing to do. "full" is the only one implemented right now.
+    pub key: String,  // The key to use for syncing. This is a secret kept between the two servers.
+                      // The key is not necessarily the authentication, as that is basically done through DNS, however, by also verifying the key, we can be sure that the server we're talking to is the right one.
+}
+
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -11,13 +11,11 @@ cookiekey = "Uneaten email in the washing machines to dry the popcorn"
 iid = "example.com"
 # Specifies instances to send sync requests to. Note that these are only answered if both servers have each other listed. If not, the admin's will get a request to add them, but don't necessarily have to.
 synclist = [
-    #    Of course, by default, the home domain is included, however! You can just remove it if you want to!
-    "peonies.xyz"
+	#    Of course, by default, the home domain is included, however! You can just remove it if you want to!
+	{ name = "peonies.xyz", level = "full", key = "A secret kept between two friends (servers :) Do not re-use these keys!)" },
 ]
 # Ignored instances are no longer allowed to send requests to join this instance's synclist.
-ignorelist = [
-    "example.com"
-]
+ignorelist = ["example.com"]
 [interinstance.polling]
 # Specifies the interval between polls. Minimum is 30.
 pollintervall = 120
@@ -37,7 +35,3 @@ file-loglevel = 3
 console-loglevel = 2
 file = "instance-logging.log"
 
-[web]
-
-[web.style]
-body.background-color= "rgb(255 241 242)"
