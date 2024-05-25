@@ -17,6 +17,7 @@ use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct JSClientData {
@@ -86,7 +87,6 @@ pub(crate) async fn update(
     let config: LuminaConfig = server_y.clone().config;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    let username_ = session.get::<String>("username").unwrap_or(None);
     let username_a = session.get::<String>("username");
     let username_b = username_a.unwrap_or(None).unwrap_or(String::from(""));
     let username_c = if username_b != *"" {
@@ -101,7 +101,7 @@ pub(crate) async fn update(
         ip.yellow(),
         username_c
     );
-    let json = serde_json::to_string(&JSClientData {
+    let mut d = JSClientData {
         instance: JSClientInstance {
             config: JSClientConfig {
                 interinstance: JSClientInterinstance {
@@ -111,29 +111,25 @@ pub(crate) async fn update(
             },
         },
         user: JSClientUser {
-            username: match username_.clone() {
-                Some(username) => username.to_string(),
-                None => "unset".to_string(),
-            },
-            id: fetch(
-                &config.clone(),
-                String::from("Users"),
-                "username",
-                match username_ {
-                    Some(username) => username.to_string(),
-                    None => "unset".to_string(),
-                },
-            )
-            .unwrap_or(None)
-            .unwrap_or(String::from("0"))
-            .parse()
-            .unwrap_or(0),
-        },
-    })
-    .unwrap();
-    HttpResponse::build(StatusCode::OK)
+            username: "unset".to_string(),
+            id: 0,
+        }
+    };
+    let userd_maybe = (|| {
+                let ujson: String = match fetch(&config, String::from("Users"), "username", username_b) {
+                    Ok(a) => a.unwrap_or_else(|| String::new()),
+                    Err(_) => String::new()
+                };
+                serde_json::from_str::<BasicUserInfo>(ujson.as_str())})();
+     if let Ok(userd) = userd_maybe {
+         d.user = JSClientUser {
+             username: userd.username,
+             id: userd.id
+         };
+     };
+    return    HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
-        .body(json)
+        .body(serde_json::to_string(&d).unwrap())
 }
 #[derive(Deserialize)]
 pub(super) struct AuthReqData {

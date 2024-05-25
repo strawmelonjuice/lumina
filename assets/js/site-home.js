@@ -85,10 +85,9 @@ function switchpages(toPageName) {
 					location: a.location,
 				})
 				.then(
-
 					/**
-					* @param {ResFromSource} response - Represents the response containing an _FEPageServeResponse_ coming from an instance server.
-					*/
+					 * @param {ResFromSource} response - Represents the response containing an _FEPageServeResponse_ coming from an instance server.
+					 */
 					(response) => {
 						/**
 						 * Represents the response containing an _FEPageServeResponse_ coming from an instance server.
@@ -110,13 +109,17 @@ function switchpages(toPageName) {
 						document.querySelector("main div#mainright").innerHTML =
 							response.data.main;
 						if (!response.data.message.includes(33)) {
-							document.querySelector("main div#mainleft").innerHTML =
-								response.data.side;
-						};
+							document.querySelector(
+								"main div#mainleft",
+							).innerHTML = response.data.side;
+						}
 						if (response.data.message.includes(1)) {
-							window.location.assign(`/login#${window.location.hash.replace(window.location.hash.split("?")[0], to)}`);
-						};
-						if (window.location.hash === "") window.location.hash = to;
+							window.location.assign(
+								`/login#${window.location.hash.replace(window.location.hash.split("?")[0], to)}`,
+							);
+						}
+						if (window.location.hash === "")
+							window.location.hash = to;
 						else {
 							window.location.hash = window.location.hash.replace(
 								window.location.hash.split("?")[0],
@@ -127,7 +130,8 @@ function switchpages(toPageName) {
 						if (a.f !== undefined) {
 							a.f();
 						}
-					})
+					},
+				)
 				.catch((error) => {
 					document.querySelector("main div#mainright").innerHTML =
 						"There was an error loading this page.";
@@ -138,7 +142,7 @@ function switchpages(toPageName) {
 			if (a.navigator) {
 				a.mobile.setAttribute(
 					"class",
-					"block rounded-md px-3 py-2 text-base font-medium bg-orange-200 text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
+					"block rounded-md px-3 py-2 text-base font-medium bg-orange-200 text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white",
 				);
 				a.desktop.setAttribute(
 					"class",
@@ -258,7 +262,9 @@ function showMobiletimelineSwitcher() {
  */
 function switchTimeline(tid) {
 	console.log(`Switching to timeline with ID string: ${tid}`);
-	document.getElementById("mobiletimelineswitcher").classList.remove("hidden");
+	document
+		.getElementById("mobiletimelineswitcher")
+		.classList.remove("hidden");
 }
 document
 	.getElementById("mobiletimelineswitcher")
