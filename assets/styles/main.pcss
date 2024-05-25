@@ -32,7 +32,6 @@
 	html {
 		font-family: "Josefin Sans", "Fira Sans", serif;
 	}
-	
 
 	h1,
 	h2,
@@ -55,7 +54,7 @@
 }
 
 body {
-  overscroll-behavior-y: contain;
+	overscroll-behavior-y: contain;
 }
 #homegrid {
 	display: grid;
@@ -65,7 +64,45 @@ body {
 
 .articlecontent {
 	p {
-		font-size: 1.125rem/* 18px */;
-    line-height: 1.75rem/* 28px */;
+		font-size: 1.125rem /* 18px */;
+		line-height: 1.75rem /* 28px */;
+	}
+}
+.postbttn {
+	position: relative;
+	display: inline-block;
+	border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+.postbttn .postbttndescription {
+	visibility: hidden;
+	width: 120px;
+	pointer-events: none;
+	text-align: center;
+	padding: 5px 0;
+	border-radius: 6px;
+	position: absolute;
+	z-index: 1;
+}
+
+.postbttn:hover .postbttndescription {
+	visibility: visible;
+	top: -5px;
+	right: 105%;
+}
+@media (prefers-color-scheme: dark) {
+}
+.postbttn .postbttndescription::after {
+	content: " ";
+	position: absolute;
+	bottom: 10%;
+	left: 100%;
+	margin-top: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: transparent transparent transparent black;
+}
+@media (prefers-color-scheme: dark) {
+	.postbttn .postbttndescription::after {
+		border-color: transparent transparent transparent rgb(224 206 199);
 	}
 }

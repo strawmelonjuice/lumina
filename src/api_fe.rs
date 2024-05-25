@@ -7,7 +7,8 @@
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
 use crate::database::users::auth::check;
-use crate::database::{fetch, BasicUserInfo, PostInfo};
+use crate::database::{fetch, BasicUserInfo};
+use crate::post::PostInfo;
 use crate::{LuminaConfig, ServerVars};
 use actix_session::Session;
 use actix_web::http::StatusCode;

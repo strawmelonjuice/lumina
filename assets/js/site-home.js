@@ -104,7 +104,7 @@ function switchpages(toPageName) {
 						 * # Meanings
 						 * - 1: Session invalid
 						 * - 2: Source unknown (404)
-						 * - 33: Do not replace sidebar (keep it as it was.)
+						 * - 33: Do not replace sidebar (keep it as is)
 						 */
 
 						document.querySelector("main div#mainright").innerHTML =
@@ -278,3 +278,24 @@ window.on_mobile_swipe_down.push(() => {
 for (e of document.getElementsByClassName("svg_activenotification")) {
 	e.style.display = "none";
 }
+
+setInterval(() => {
+	for (e of document.getElementsByClassName("unparsed-timestamp")) {
+		console.log(e.innerText);
+		const d = new Date(e.innerText * 1000);
+		// var hours = d.getHours();
+
+		// function pad(n) {
+		// 	return n < 10 ? '0' + n : n;
+		// }
+		// const minutes = pad(d.getMinutes());
+
+		// const seconds = pad(d.getSeconds());
+		// const formattedTime = hours + ':' + minutes + ':' + seconds;
+
+		e.innerText = d.toLocaleString();
+		e.classList.remove("unparsed-timestamp");
+		e.classList.add("parsed-timestamp");
+		// console.log(formattedTime);
+	}
+});
