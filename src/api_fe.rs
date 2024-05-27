@@ -113,23 +113,24 @@ pub(crate) async fn update(
         user: JSClientUser {
             username: "unset".to_string(),
             id: 0,
-        }
+        },
     };
     let userd_maybe = (|| {
-                let ujson: String = match fetch(&config, String::from("Users"), "username", username_b) {
-                    Ok(a) => a.unwrap_or_else(|| String::new()),
-                    Err(_) => String::new()
-                };
-                serde_json::from_str::<BasicUserInfo>(ujson.as_str())})();
-     if let Ok(userd) = userd_maybe {
-         d.user = JSClientUser {
-             username: userd.username,
-             id: userd.id
-         };
-     };
-    return    HttpResponse::build(StatusCode::OK)
+        let ujson: String = match fetch(&config, String::from("Users"), "username", username_b) {
+            Ok(a) => a.unwrap_or_else(|| String::new()),
+            Err(_) => String::new(),
+        };
+        serde_json::from_str::<BasicUserInfo>(ujson.as_str())
+    })();
+    if let Ok(userd) = userd_maybe {
+        d.user = JSClientUser {
+            username: userd.username,
+            id: userd.id,
+        };
+    };
+    return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
-        .body(serde_json::to_string(&d).unwrap())
+        .body(serde_json::to_string(&d).unwrap());
 }
 #[derive(Deserialize)]
 pub(super) struct AuthReqData {
@@ -309,6 +310,12 @@ pub(crate) async fn pageservresponder(
                     side: String::from(""),
                     message: vec![33],
                 },
+                "editor" => FEPageServeResponse {
+                    main: String::from(""),
+                    side: String::from(""),
+                    message: vec![34],
+                },
+
                 _ => {
                     return HttpResponse::build(StatusCode::OK)
                         .content_type("text/json; charset=utf-8")

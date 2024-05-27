@@ -141,7 +141,6 @@ pub struct SynclistItem {
                       // The key is not necessarily the authentication, as that is basically done through DNS, however, by also verifying the key, we can be sure that the server we're talking to is the right one.
 }
 
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Polling {
