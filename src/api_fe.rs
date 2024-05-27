@@ -115,13 +115,13 @@ pub(crate) async fn update(
             id: 0,
         },
     };
-    let userd_maybe = (|| {
+    let userd_maybe = {
         let ujson: String = match fetch(&config, String::from("Users"), "username", username_b) {
-            Ok(a) => a.unwrap_or_else(|| String::new()),
+            Ok(a) => a.unwrap_or_else(String::new),
             Err(_) => String::new(),
         };
         serde_json::from_str::<BasicUserInfo>(ujson.as_str())
-    })();
+    };
     if let Ok(userd) = userd_maybe {
         d.user = JSClientUser {
             username: userd.username,

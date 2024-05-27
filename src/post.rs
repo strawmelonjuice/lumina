@@ -62,7 +62,7 @@ impl PostInfo {
     pub fn to_formatted(&self, config: &LuminaConfig) -> PostPreRenderData {
         let author_u: BasicUserInfo = serde_json::from_str::<BasicUserInfo>(
             &fetch(
-                &config,
+                config,
                 String::from("Users"),
                 "id",
                 self.author_id.to_string(),
