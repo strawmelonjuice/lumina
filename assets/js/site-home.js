@@ -28,39 +28,36 @@ function switchpages(toPageName) {
 			desktop: document.getElementById("test-nav"),
 			location: "test",
 			navigator: true,
-		},
-		"pages-editor": {
-			mobile: document.getElementById("mobile-test-nav"),
-			desktop: document.getElementById("test-nav"),
-			location: "pages-editor",
-			navigator: false,
 			f: () => {
-				const g = document.getElementById("whatamiediting");
-				if (getParams().new !== undefined) {
-					g.innerText = "Creating a new publication!";
-					return;
-				}
-				if (getParams().id === undefined) {
-					g.innerText = "... with nothing open.";
-					return;
-				}
-				if (getParams().id !== undefined) {
-					g.innerHTML = `Editing <i><b>${getParams().id}</b></i>!`;
-					return;
-				}
+				document
+					.getElementById("mobiletimelineswitcher")
+					.classList.add("hidden");
 			},
 		},
-		addplugin: {
-			mobile: document.getElementById("mobile-plugins-nav"),
-			desktop: document.getElementById("plugins-nav"),
-			location: "addplugin",
+		editor: {
+			mobile: document.getElementById("mobile-test-nav"),
+			desktop: document.getElementById("test-nav"),
+			location: "editor",
 			navigator: false,
+			f: () => {
+				document
+					.getElementById("mobiletimelineswitcher")
+					.classList.add("hidden");
+				document
+					.getElementById("posteditor")
+					.classList.remove("hidden");
+			},
 		},
 		notifications: {
 			mobile: document.getElementById("mobile-notifications-nav"),
 			desktop: document.getElementById("notifications-nav"),
 			location: "notifications-centre",
 			navigator: true,
+			f: () => {
+				document
+					.getElementById("mobiletimelineswitcher")
+					.classList.add("hidden");
+			},
 		},
 	};
 	for (const d in navbutton) {
@@ -104,11 +101,17 @@ function switchpages(toPageName) {
 						 * - 1: Session invalid
 						 * - 2: Source unknown (404)
 						 * - 33: Do not replace sidebar (keep it as is)
+						 * - 34: Do not replace either (keep it as is)
 						 */
-
-						document.querySelector("main div#mainright").innerHTML =
-							response.data.main;
-						if (!response.data.message.includes(33)) {
+						if (!response.data.message.includes(34)) {
+							document.querySelector(
+								"main div#mainright",
+							).innerHTML = response.data.main;
+						}
+						if (
+							!response.data.message.includes(33) &&
+							!response.data.message.includes(34)
+						) {
 							document.querySelector(
 								"main div#mainleft",
 							).innerHTML = response.data.side;
@@ -305,3 +308,4 @@ setInterval(() => {
 		// console.log(formattedTime);
 	}
 });
+document.getElementById("posteditor").classList.add("hidden");
