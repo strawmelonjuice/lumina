@@ -9,7 +9,10 @@
  * @global
  * @type {{ instance: { config: { interinstance: { iid: string; lastpoll: number; }; }; }; user: { username: string; id: number; }; }}
  */
-let fejson = {instance: {config: {interinstance: {iid: "", lastpoll: 0}}}, user: {username: "", id: 0}};
+let fejson = {
+	instance: { config: { interinstance: { iid: "", lastpoll: 0 } } },
+	user: { username: "", id: 0 },
+};
 
 setInterval(pulls, 30000);
 window.pulled = [
@@ -31,7 +34,6 @@ window.pulled = [
 		}
 	},
 ];
-
 
 function putpulls() {
 	for (o of pulled) {
@@ -121,7 +123,7 @@ function funnyRandomUserName() {
 		"hair",
 	]);
 	return `${randomStringFromArray(wordsfirst)}${randomStringFromArray(
-		wordslast
+		wordslast,
 	)}${Math.floor(Math.random() * 10001) + 1000}`.replace("--", "-");
 }
 
@@ -145,44 +147,58 @@ window.onload = () => {
 				.getElementById("btn-mobile-menu-close")
 				.classList.add("hidden");
 		}
-	}
+	};
 
 	window.mobileMenuToggle();
 	document
 		.getElementById("btn-mobile-menu")
 		.setAttribute("onClick", "window.mobileMenuToggle()");
-}
-window.on_mobile_swipe_left = [(_) => {
-	console.log("Swipe left detected");
-}];
-window.on_mobile_swipe_right = [(_) => {
-	console.log("Swipe right detected.");
-}];
-window.on_mobile_swipe_up = [(_) => {
-	console.log("Swipe up detected");
-}];
-window.on_mobile_swipe_down = [(_) => {
-	console.log("Swipe down detected");
-}];
+};
+window.on_mobile_swipe_left = [
+	(_) => {
+		console.log("Swipe left detected");
+	},
+];
+window.on_mobile_swipe_right = [
+	(_) => {
+		console.log("Swipe right detected.");
+	},
+];
+window.on_mobile_swipe_up = [
+	(_) => {
+		console.log("Swipe up detected");
+	},
+];
+window.on_mobile_swipe_down = [
+	(_) => {
+		console.log("Swipe down detected");
+	},
+];
 
 setTimeout(() => {
-	document.getElementsByTagName("main")[0].addEventListener('touchstart', handleTouchStart, false);
-	document.getElementsByTagName("main")[0].addEventListener('touchmove', handleTouchMove, false);
-}, 300)
+	document
+		.getElementsByTagName("main")[0]
+		.addEventListener("touchstart", handleTouchStart, false);
+	document
+		.getElementsByTagName("main")[0]
+		.addEventListener("touchmove", handleTouchMove, false);
+}, 300);
 
 let xDown = null;
 let yDown = null;
 
 function getTouches(evt) {
-	return evt.touches ||             // browser API
-		evt.originalEvent.touches; // jQuery (I love jquery, so Lumina might get it)
+	return (
+		evt.touches || // browser API
+		evt.originalEvent.touches
+	); // jQuery (I love jquery, so Lumina might get it)
 }
 
 function handleTouchStart(evt) {
 	const firstTouch = getTouches(evt)[0];
 	xDown = firstTouch.clientX;
 	yDown = firstTouch.clientY;
-};
+}
 
 function handleTouchMove(evt) {
 	if (!xDown || !yDown) {
@@ -195,7 +211,8 @@ function handleTouchMove(evt) {
 	const xDiff = xDown - xUp;
 	const yDiff = yDown - yUp;
 
-	if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
+	if (Math.abs(xDiff) > Math.abs(yDiff)) {
+		/*most significant*/
 		if (xDiff > 0) {
 			if (window.matchMedia("(max-width: 1024px)").matches) {
 				for (fn of window.on_mobile_swipe_left) {
@@ -227,4 +244,4 @@ function handleTouchMove(evt) {
 	/* reset values */
 	xDown = null;
 	yDown = null;
-};
+}

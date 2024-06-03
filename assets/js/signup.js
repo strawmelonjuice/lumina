@@ -56,14 +56,14 @@ document.forms["signup"]["username"].setAttribute("oninput", "checkusername()");
 const submitbutton = document.forms["signup"]["submitbutton"];
 function d(a) {
 	if (a.data.Ok === true) {
-		submitbutton.innerHTML = `<div style="background-image: url('/green-check.svg'); background-repeat: no-repeat; background-size: cover;" class="pl-max pr-max relative h-10 w-10"></div>`;
+		submitbutton.innerHTML = `<div style="background-image: url('/green-check.svg'); background-repeat: no-repeat; background-size: cover;" class="relative w-10 h-10 pl-max pr-max"></div>`;
 		document.getElementById("Aaa1").innerText =
 			"Sign-up successful! You will be forwarded now.";
 		setTimeout(() => {
 			window.location.assign("/home/");
 		}, 3000);
 	} else {
-		submitbutton.innerHTML = `<div style="background-image: url('/red-cross.svg'); background-repeat: no-repeat; background-size: cover;" class="pl-max pr-max relative h-10 w-10"></div>`;
+		submitbutton.innerHTML = `<div style="background-image: url('/red-cross.svg'); background-repeat: no-repeat; background-size: cover;" class="relative w-10 h-10 pl-max pr-max"></div>`;
 		document.getElementById("Aaa1").innerText = a.data.Errorvalue;
 		setTimeout(() => {
 			submitbutton.innerText = "Sign up";
@@ -73,7 +73,7 @@ function d(a) {
 }
 
 function regstry() {
-	submitbutton.innerHTML = `<div style="background-image: url('/spinner.svg'); background-repeat: no-repeat; background-size: cover;" class="pl-max pr-max relative h-10 w-10"></div>`;
+	submitbutton.innerHTML = `<div style="background-image: url('/spinner.svg'); background-repeat: no-repeat; background-size: cover;" class="relative w-10 h-10 pl-max pr-max"></div>`;
 	submitbutton.setAttribute("disabled", "");
 	setTimeout(() => {
 		submitbutton.innerText = "Retry";

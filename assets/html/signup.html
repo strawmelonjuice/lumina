@@ -21,14 +21,14 @@
 	<body class="bg-brown-100 dark:bg-neutral-500">
 		<nav class="bg-emerald-200 dark:bg-teal-800">
 			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
-				<div class="relative flex items-center justify-between h-16">
+				<div class="flex relative justify-between items-center h-16">
 					<div
-						class="absolute inset-y-0 left-0 flex items-center sm:hidden"
+						class="flex absolute inset-y-0 left-0 items-center sm:hidden"
 					>
 						<!-- Mobile menu button-->
 						<button
 							type="button"
-							class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+							class="inline-flex relative justify-center items-center p-2 text-gray-400 rounded-md hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-inset focus:ring-white focus:outline-none"
 							aria-controls="mobile-menu"
 							aria-expanded="false"
 							id="btn-mobile-menu"
@@ -68,32 +68,32 @@
 						</button>
 					</div>
 					<div
-						class="flex items-center justify-center flex-1 sm:items-stretch sm:justify-start"
+						class="flex flex-1 justify-center items-center sm:justify-start sm:items-stretch"
 					>
-						<div class="flex items-center flex-shrink-0">
+						<div class="flex flex-shrink-0 items-center">
 							<img
-								class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
+								class="w-auto h-10 bg-opacity-60 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100"
 								src="/logo.svg"
 								alt="Lumina Instance"
 							/>
 						</div>
 					</div>
 					<div
-						class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+						class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
 					>
-						<div class="hidden sm:ml-6 sm:block">
+						<div class="hidden sm:block sm:ml-6">
 							<div class="flex space-x-4">
 								<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
 								<a
 									href="/signup"
-									class="px-3 py-2 text-sm font-medium text-white bg-gray-900 border-2 rounded-md"
+									class="py-2 px-3 text-sm font-medium text-white bg-gray-900 rounded-md border-2"
 									aria-current="page"
 									id="signup-nav"
 									>Sign-up</a
 								>
 								<a
 									href="/home"
-									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
+									class="py-2 px-3 text-sm font-medium bg-orange-200 rounded-md border-2 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
 									id="login-nav"
 									>Log in</a
 								>
@@ -101,7 +101,7 @@
 						</div>
 					</div>
 					<div
-						class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+						class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
 					></div>
 				</div>
 			</div>
@@ -109,13 +109,13 @@
 				<div class="px-2 pt-2 pb-3 space-y-1">
 					<a
 						href="/home"
-						class="block px-3 py-2 text-base font-medium text-white bg-orange-200 rounded-md dark:bg-yellow-600"
+						class="block py-2 px-3 text-base font-medium text-white bg-orange-200 rounded-md dark:bg-yellow-600"
 						id="mobile-login-nav"
 						>Log in</a
 					>
 					<a
 						href="/signup"
-						class="block px-3 py-2 text-base font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white"
+						class="block py-2 px-3 text-base font-medium text-gray-300 rounded-md hover:text-white hover:bg-gray-700"
 						id="mobile-signup-nav"
 						>Sign up</a
 					>
@@ -123,7 +123,7 @@
 			</div>
 		</nav>
 		<div
-			class="grid h-screen leading-snug place-items-center ring-offset-rose-950 text-slate-600"
+			class="grid place-items-center h-screen leading-snug ring-offset-rose-950 text-slate-600"
 		>
 			<form
 				action="javascript:void(0);"
@@ -139,7 +139,7 @@
 						>Username</label
 					>
 					<input
-						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						class="py-2 px-4 w-full rounded-lg border focus:ring-blue-500 form-input text-slate-600"
 						id="username"
 						placeholder="strawberrygrapes233"
 						required
@@ -153,7 +153,7 @@
 						>Email</label
 					>
 					<input
-						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						class="py-2 px-4 w-full rounded-lg border focus:ring-blue-500 form-input text-slate-600"
 						id="email"
 						placeholder="strawberrygrapes233@example.com"
 						required
@@ -171,7 +171,7 @@
 						>Password</label
 					>
 					<input
-						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						class="py-2 px-4 w-full rounded-lg border focus:ring-blue-500 form-input text-slate-600"
 						id="password"
 						placeholder="••••••••••••"
 						required
@@ -183,7 +183,7 @@
 						>Repeat password</label
 					>
 					<input
-						class="w-full px-4 py-2 border rounded-lg form-input text-slate-600 focus:ring-blue-500"
+						class="py-2 px-4 w-full rounded-lg border focus:ring-blue-500 form-input text-slate-600"
 						id="password2"
 						placeholder="••••••••••••"
 						required
@@ -191,7 +191,7 @@
 					/>
 				</div>
 				<button
-					class="grid content-center w-full p-4 px-4 py-2 bg-orange-200 border-opacity-100 rounded-lg text-brown-800 dark:text-orange-200 place-items-center border-amber-600 dark:bg-yellow-700 ring-rose-300 hover:bg-sky-600 dark:hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-opacity-50"
+					class="grid content-center place-items-center p-4 py-2 px-4 w-full bg-orange-200 rounded-lg border-amber-600 border-opacity-100 ring-rose-300 dark:text-orange-200 dark:bg-yellow-700 focus:ring-2 focus:ring-rose-500 focus:ring-opacity-50 focus:outline-none text-brown-800 dark:hover:bg-sky-900 hover:bg-sky-600"
 					id="submitbutton"
 					type="submit"
 				>
