@@ -280,6 +280,7 @@ pub(crate) async fn pageservresponder(
 				as you can see, there is no such thing as a homepage. lumina is
 				not ready for anything yet.
 			</p>
+			<p>For testing: <a class="underline" href="/home/#editor">Open editor window</a></p>
 
                                "#,
                     ),
@@ -311,7 +312,7 @@ pub(crate) async fn pageservresponder(
                     message: vec![33],
                 },
                 "editor" => FEPageServeResponse {
-                    main: String::from(""),
+                    main: String::from(crate::assets::STR_ASSETS_EDITOR_WINDOW_HTML),
                     side: String::from(""),
                     message: vec![34],
                 },
