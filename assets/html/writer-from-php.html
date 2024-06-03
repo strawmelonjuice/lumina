@@ -1,0 +1,49 @@
+<!-- None of this HTML is as supposed, this used to be a PHP file. -->
+<!-- Just here for reference on how to create the new Editor. -->
+
+<html>
+	<body>
+        <form action="/write.php" method="POST" class="big-ephew-form">
+            <div class="centered">
+                <h1>Article editor</h1>
+                <hr>
+                <div class="ephew-formlabels"><label for="privacy">
+                        <h4>Privacy</h4>
+                        <select name="privacy" required class="ephew-inputtablebox" style="width:100px;">
+                            <option value="public">Public</option>
+                            <option value="private" disabled>Fwends only</option>
+                            <option value="public-readonly" disabled>Comments off</option>
+                        </select>
+                    </label></div>
+                <div class="ephew-formlabels"><label for="alttext">
+                        <h4>Title</h4><input type=text name=alttext value="title" minlength="6" class="ephew-textinputtablebox" required>
+                        <p><i>A short version of your article, for displaying on the timeline! (6 characters minimum)</i></p>
+                    </label></div>
+                <div class="ephew-formlabels"><label for="phewcontent">
+                        <h4>Write your article</h4>
+                        <p><i>In the Ephew-Markdown Article editor. Built on SimpleMDE.</i></p>
+                        <p style="font-size: x-small;">100 characters minimum!</p>
+                </div>
+                <div><textarea name="phewcontent" id="MarkDownArticleEditor" class="ephew-textinputtablebox" required minlength="100"></textarea></div><br>
+                </label>
+            </div>
+            <div class="centered">
+                <input type="submit" class="ephew-buttons ephew-button-big" value="Post it!">
+                <input type=hidden name=phewtype value="article">
+            </div>
+        </form>
+        </div>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+        <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+        <script>
+            let markdownEditor = new SimpleMDE({
+                element: document.getElementById("MarkDownArticleEditor"),
+                autosave: {
+                    enabled: true,
+                    unique_id: "asjiiojehgdbhjsbxb",
+                },
+                spellChecker: false,
+            });
+        </script>        
+	</body>
+</html>

@@ -17,20 +17,20 @@
 	</head>
 
 	<body
-		class="w-screen h-screen overflow-clip p-0 m-0 max-h-[10VH] bg-brown-100 dark:bg-neutral-500"
+		class="p-0 m-0 w-screen h-screen overflow-clip max-h-[10VH] bg-brown-100 dark:bg-neutral-500"
 	>
 		<nav
-			class="rounded-b-lg bg-emerald-200 dark:bg-teal-800 lg:rounded-b-none"
+			class="bg-emerald-200 rounded-b-lg lg:rounded-b-none dark:bg-teal-800"
 		>
 			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
-				<div class="relative flex items-center justify-between h-16">
+				<div class="flex relative justify-between items-center h-16">
 					<div
-						class="absolute inset-y-0 left-0 flex items-center sm:hidden"
+						class="flex absolute inset-y-0 left-0 items-center sm:hidden"
 					>
 						<!-- Mobile menu button-->
 						<button
 							type="button"
-							class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+							class="inline-flex relative justify-center items-center p-2 text-gray-400 rounded-md hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-inset focus:ring-white focus:outline-none"
 							aria-controls="mobile-menu"
 							aria-expanded="false"
 							id="btn-mobile-menu"
@@ -70,34 +70,34 @@
 						</button>
 					</div>
 					<div
-						class="flex items-center justify-center flex-1 sm:items-stretch sm:justify-start"
+						class="flex flex-1 justify-center items-center sm:justify-start sm:items-stretch"
 					>
-						<div class="flex items-center flex-shrink-0">
+						<div class="flex flex-shrink-0 items-center">
 							<img
-								class="w-auto h-10 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100 bg-opacity-60"
+								class="w-auto h-10 bg-opacity-60 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100"
 								src="/logo.svg"
 								alt="Lumina Instance"
 							/>
 						</div>
-						<div class="hidden sm:ml-6 sm:block">
+						<div class="hidden sm:block sm:ml-6">
 							<div class="flex space-x-4">
 								<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
 								<a
 									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium text-white bg-gray-900 border-2 rounded-md"
+									class="py-2 px-3 text-sm font-medium text-white bg-gray-900 rounded-md border-2"
 									aria-current="page"
 									id="home-nav"
 									>Home</a
 								>
 								<a
 									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
+									class="py-2 px-3 text-sm font-medium bg-orange-200 rounded-md border-2 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
 									id="test-nav"
 									>Tests for post rendering</a
 								>
 								<a
 									href="javascript:void(0)"
-									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md text-brown-800 dark:text-orange-200 border-emerald-600 dark:bg-yellow-700 dark:border-zinc-400 hover:bg-gray-700 hover:text-white"
+									class="py-2 px-3 text-sm font-medium bg-orange-200 rounded-md border-2 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
 									id="notifications-nav"
 									><svg
 										xmlns="http://www.w3.org/2000/svg"
@@ -139,11 +139,11 @@
 						</div>
 					</div>
 					<div
-						class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+						class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
 					>
 						<button
 							type="button"
-							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
 							onclick='switchpages("notifications")'
 						>
 							<span class="absolute -inset-1.5"></span>
@@ -190,7 +190,7 @@
 							<div>
 								<button
 									type="button"
-									class="relative flex text-sm bg-red-400 rounded-full dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+									class="flex relative text-sm bg-red-400 rounded-full dark:bg-red-900 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
 									id="user-menu-button"
 									aria-expanded="false"
 									aria-haspopup="true"
@@ -206,7 +206,7 @@
 								</button>
 							</div>
 							<div
-								class="absolute right-0 z-10 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+								class="absolute right-0 z-10 py-1 mt-2 w-48 bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg origin-top-right focus:outline-none"
 								role="menu"
 								aria-orientation="vertical"
 								aria-labelledby="user-menu-button"
@@ -214,11 +214,11 @@
 								tabindex="-1"
 							>
 								<div
-									class="block px-4 py-2 text-sm text-gray-700"
+									class="block py-2 px-4 text-sm text-gray-700"
 								>
 									Hi,
 									<span
-										class="p-1 text-sm italic bg-orange-700 rounded-md settodisplayname bg-opacity-20"
+										class="p-1 text-sm italic bg-orange-700 bg-opacity-20 rounded-md settodisplayname"
 										style="
 											overflow: hidden;
 											white-space: nowrap;
@@ -229,7 +229,7 @@
 								<hr />
 								<a
 									href="javascript:void(0)"
-									class="block px-4 py-2 text-sm text-gray-700"
+									class="block py-2 px-4 text-sm text-gray-700"
 									role="menuitem"
 									tabindex="-1"
 									id="user-menu-item-0"
@@ -237,7 +237,7 @@
 								>
 								<a
 									href="javascript:void(0)"
-									class="block px-4 py-2 text-sm text-gray-700"
+									class="block py-2 px-4 text-sm text-gray-700"
 									role="menuitem"
 									tabindex="-1"
 									id="user-menu-item-1"
@@ -245,7 +245,7 @@
 								>
 								<a
 									onclick="LogOut()"
-									class="block px-4 py-2 text-sm text-gray-700 cursor-pointer"
+									class="block py-2 px-4 text-sm text-gray-700 cursor-pointer"
 									role="menuitem"
 									tabindex="-1"
 									id="user-menu-item-2"
@@ -256,7 +256,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="sm:hidden z-50" id="mobile-menu">
+			<div class="z-50 sm:hidden" id="mobile-menu">
 				<div class="px-2 pt-2 pb-4 space-y-1">
 					<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
 					<a
@@ -279,24 +279,24 @@
 			</div>
 		</nav>
 		<main
-			class="h-screen not:max-h-[89VH] text-fuchsia-900 dark:text-violet-200 lg:grid lg:grid-flow-col lg:grid-cols-5 w-screen overflow-clip"
+			class="w-screen h-screen text-fuchsia-900 lg:grid lg:grid-cols-5 lg:grid-flow-col dark:text-violet-200 not:max-h-[89VH] overflow-clip"
 		>
 			<div
 				id="mainleft"
-				class="hidden h-full lg:block bg-brown-200 dark:bg-neutral-600 overflow-clip"
+				class="hidden h-full lg:block bg-brown-200 overflow-clip dark:bg-neutral-600"
 			></div>
 			<div
-				class="h-full col-span-4 overflow-auto lg:p-12 bg-brown-100 dark:bg-neutral-700"
+				class="overflow-auto col-span-4 h-full lg:p-12 bg-brown-100 dark:bg-neutral-700"
 			>
 				<div
 					id="mainright"
-					class="w-full p-4 rounded-md lg:p-8 lg:w-11/12 disabled:lg:h-10/12 bg-brown-200 dark:bg-neutral-600"
+					class="p-4 w-full rounded-md lg:p-8 lg:w-11/12 bg-brown-200 dark:bg-neutral-600 disabled:lg:h-10/12"
 				></div>
 			</div>
 		</main>
 		<div
 			id="mobiletimelineswitcher"
-			class="fixed inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+			class="block fixed inset-y-0 left-1 z-10 p-1 mt-auto mb-auto w-12 h-12 text-sm bg-red-400 rounded-full lg:hidden dark:bg-red-900 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
 		>
 			<!-- Shows the switcher allowing timeline travel on mobile. -->
 			<button>

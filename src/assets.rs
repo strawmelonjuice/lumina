@@ -78,9 +78,7 @@ pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/
 pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
     include_str!("../node_modules/axios/dist/axios.min.js.map");
 
-pub const STR_ASSETS_EDITOR_WINDOW_HTML: &str =
-    include_str!("../assets/html/writer.html");
-
+pub const STR_ASSETS_EDITOR_WINDOW_HTML: &str = include_str!("../assets/html/writer.html");
 
 pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str =
     include_str!("../assets/handlebars/home-side.handlebars");

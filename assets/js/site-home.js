@@ -4,21 +4,15 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 function editorfold() {
-	document.querySelector(
-		"div#posteditor",
-	).classList.add("hidden");
+	document.querySelector("div#posteditor").classList.add("hidden");
 }
 
 function editorunfold() {
-	document
-		.getElementById("mobiletimelineswitcher")
-		.classList.add("hidden");
-	document
-		.getElementById("posteditor")
-		.classList.remove("hidden");
+	document.getElementById("mobiletimelineswitcher").classList.add("hidden");
+	document.getElementById("posteditor").classList.remove("hidden");
 	const error = `<p class="w-full h-full text-black bg-white dark:text-white dark:bg-black">
 				Failed to load post editor.
-			</p>`
+			</p>`;
 
 	axios
 		.post("/api/fe/fetch-page", {
@@ -44,80 +38,73 @@ function editorunfold() {
 				 * - 1: Session invalid
 				 * - 2: Source unknown (404)
 				 */
-				if (!response.data.message.includes(2) && !response.data.message.includes(1)) {
-					document.querySelector(
-						"div#posteditor",
-					).innerHTML = response.data.main;
-					window.history.back()
+				if (
+					!response.data.message.includes(2) &&
+					!response.data.message.includes(1)
+				) {
+					document.querySelector("div#posteditor").innerHTML =
+						response.data.main;
+					window.history.back();
 				} else {
-					document.querySelector(
-						"div#posteditor",
-					).innerHTML = error;
+					document.querySelector("div#posteditor").innerHTML = error;
 				}
-				document.querySelector(
-					"button#bttn_closeeditor",
-				).setAttribute("onclick", "editorfold()");
-				
+				document
+					.querySelector("button#bttn_closeeditor")
+					.setAttribute("onclick", "editorfold()");
 			},
 		)
 		.catch((error) => {
-			document.querySelector(
-				"div#posteditor",
-			).innerHTML = error;
+			document.querySelector("div#posteditor").innerHTML = error;
 			console.error(error);
 		});
-		setTimeout(() => {
-			window.dragEditor = (e) => {
-				e = e || window.event;
-				e.preventDefault();
-				// get the mouse cursor position at startup:
-				window.editorposition3 = e.clientX;
-				window.editorposition4 = e.clientY;
-				document.onmouseup = window.stopEditorDragging;
-				// call a function whenever the cursor moves:
-				document.onmousemove = window.editorDrag;
-			}
-			window.editorDrag = (e) =>  {
-				e = e || window.event;
-				e.preventDefault();
-				window.editorposition1 = window.editorposition3 - e.clientX;
-				window.editorposition2 = (function () {
-					const o = window.editorposition4 - e.clientY;
-					if ((document.querySelector(
-						"div#posteditor",
-					).offsetTop - o) < 20) {
-						return (document.querySelector(
-							"div#posteditor",
-						).offsetTop - 40);
-					} else {
-						return o;
-					}
-					
+	setTimeout(() => {
+		window.dragEditor = (e) => {
+			e = e || window.event;
+			e.preventDefault();
+			// get the mouse cursor position at startup:
+			window.editorposition3 = e.clientX;
+			window.editorposition4 = e.clientY;
+			document.onmouseup = window.stopEditorDragging;
+			// call a function whenever the cursor moves:
+			document.onmousemove = window.editorDrag;
+		};
+		window.editorDrag = (e) => {
+			e = e || window.event;
+			e.preventDefault();
+			window.editorposition1 = window.editorposition3 - e.clientX;
+			window.editorposition2 = (function () {
+				const o = window.editorposition4 - e.clientY;
+				if (
+					document.querySelector("div#posteditor").offsetTop - o <
+					20
+				) {
+					return (
+						document.querySelector("div#posteditor").offsetTop - 40
+					);
+				} else {
+					return o;
+				}
+			})();
+			window.editorposition3 = e.clientX;
+			window.editorposition4 = e.clientY;
+			document.querySelector("div#posteditor").style.top =
+				document.querySelector("div#posteditor").offsetTop -
+				window.editorposition2 +
+				"px";
+			document.querySelector("div#posteditor").style.left =
+				document.querySelector("div#posteditor").offsetLeft -
+				window.editorposition1 +
+				"px";
+		};
 
-				})();
-				window.editorposition3 = e.clientX;
-				window.editorposition4 = e.clientY;
-				document.querySelector(
-						"div#posteditor",
-					).style.top = (document.querySelector(
-						"div#posteditor",
-					).offsetTop - window.editorposition2) + "px";
-					document.querySelector(
-							"div#posteditor",
-						).style.left = (document.querySelector(
-							"div#posteditor",
-						).offsetLeft - window.editorposition1) + "px";
-			}
-
-			window.stopEditorDragging = ()=> {
-				/* stop moving when mouse button is released:*/
-				document.onmouseup = null;
-				document.onmousemove = null;
-			}
-			document.getElementById(
-				"editorwindowh",
-			).onmousedown = window.dragEditor;
-		}, 100);
+		window.stopEditorDragging = () => {
+			/* stop moving when mouse button is released:*/
+			document.onmouseup = null;
+			document.onmousemove = null;
+		};
+		document.getElementById("editorwindowh").onmousedown =
+			window.dragEditor;
+	}, 100);
 }
 
 /**
@@ -387,12 +374,12 @@ document
 	.getElementById("mobiletimelineswitcher")
 	.setAttribute("onclick", "showMobiletimelineSwitcher()");
 window.on_mobile_swipe_right.push((eve) => {
-	eve.preventDefault()
+	eve.preventDefault();
 	showMobiletimelineSwitcher();
 });
 
 window.on_mobile_swipe_down.push((eve) => {
-	eve.preventDefault()
+	eve.preventDefault();
 	window.mobileMenuToggle();
 });
 // Can't do this, scroll-swiping would be detected
