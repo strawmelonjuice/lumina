@@ -6,7 +6,9 @@
 function editorfold() {
 	document.querySelector("div#posteditor").classList.add("hidden");
 }
-
+function triggerEditor() {
+	window.location.hash = "editor";
+}
 function editorunfold() {
 	document.getElementById("mobiletimelineswitcher").classList.add("hidden");
 	document.getElementById("posteditor").classList.remove("hidden");
@@ -61,11 +63,9 @@ function editorunfold() {
 		window.dragEditor = (e) => {
 			e = e || window.event;
 			e.preventDefault();
-			// get the mouse cursor position at startup:
 			window.editorposition3 = e.clientX;
 			window.editorposition4 = e.clientY;
 			document.onmouseup = window.stopEditorDragging;
-			// call a function whenever the cursor moves:
 			document.onmousemove = window.editorDrag;
 		};
 		window.editorDrag = (e) => {
@@ -98,7 +98,6 @@ function editorunfold() {
 		};
 
 		window.stopEditorDragging = () => {
-			/* stop moving when mouse button is released:*/
 			document.onmouseup = null;
 			document.onmousemove = null;
 		};
@@ -215,7 +214,10 @@ function switchpages(toPageName) {
 						}
 						if (response.data.message.includes(1)) {
 							window.location.assign(
-								`/login#${window.location.hash.replace(window.location.hash.split("?")[0], to)}`,
+								`/login#${window.location.hash.replace(
+									window.location.hash.split("?")[0],
+									to,
+								)}`,
 							);
 						}
 						if (window.location.hash === "")

@@ -280,7 +280,7 @@ pub(crate) async fn pageservresponder(
 				as you can see, there is no such thing as a homepage. lumina is
 				not ready for anything yet.
 			</p>
-			<p>For testing: <a class="underline" href="/home/#editor">Open editor window</a></p>
+			<p>For testing: <a class="underline" onclick="triggerEditor()">Open editor window</a></p>
 
                                "#,
                     ),
