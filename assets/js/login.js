@@ -38,7 +38,7 @@ function c(a, b = false) {
 				document.forms["login"]["username"].value,
 			);
 			window.localStorage.setItem(
-				"AutologinPassword",
+				"AutologinMethod",
 				document.forms["login"]["password"].value,
 			);
 		}
@@ -85,7 +85,7 @@ if (localStorage.getItem("AutologinUsername") !== null) {
 	document.forms["login"]["username"].value =
 		localStorage.getItem("AutologinUsername");
 	document.forms["login"]["password"].value =
-		localStorage.getItem("AutologinPassword");
+		localStorage.getItem("AutologinMethod");
 	authtry();
 }
 window.on_mobile_swipe_down.push(() => {
