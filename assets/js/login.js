@@ -3,6 +3,8 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+// List of pages login.js is allowed to refer users to.
+const loginPageList = ["home"];
 
 document.forms["login"]["username"].placeholder = funnyRandomUserName();
 const submitbutton = document.forms["login"]["submitbutton"];
@@ -31,7 +33,16 @@ function c(a, b = false) {
 			);
 		}
 		setTimeout(() => {
-			window.location.assign(`/home/${window.location.hash}`);
+			const o = () => {
+				for (page of loginPageList) {
+					let p = "";
+					if (window.location.hash === page) {
+						p = page;
+					}
+					return p;
+				}
+			};
+			window.location.assign(`/home/${o}`);
 		}, 800);
 	} else {
 		if (b) return;
