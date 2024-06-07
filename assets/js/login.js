@@ -4,15 +4,25 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 // List of pages login.js is allowed to refer users to.
-const loginPageList = ["home"];
+const loginPageList = ["home", "notifications", "test"];
 
 document.forms["login"]["username"].placeholder = funnyRandomUserName();
 const submitbutton = document.forms["login"]["submitbutton"];
 function c(a, b = false) {
+	const allowedPage = (() => {
+		let p = "";
+		for (page of loginPageList) {
+			if (window.location.hash === `#${page}`) {
+				p = page;
+			}
+		}
+		return p;
+	})();
+
 	if (a.data.Ok === true) {
 		if (b) {
 			console.log("autologin success.");
-			window.location.replace(`/${window.location.hash}`);
+			window.location.replace(`/#${allowedPage}`);
 			if (!window.location.pathname.startsWith("/login")) {
 				window.location.reload(true);
 			}
@@ -33,16 +43,7 @@ function c(a, b = false) {
 			);
 		}
 		setTimeout(() => {
-			const o = () => {
-				for (page of loginPageList) {
-					let p = "";
-					if (window.location.hash === page) {
-						p = page;
-					}
-					return p;
-				}
-			};
-			window.location.assign(`/home/${o}`);
+			window.location.assign(`/home/#${allowedPage}`);
 		}, 800);
 	} else {
 		if (b) return;
