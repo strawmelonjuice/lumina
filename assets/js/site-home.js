@@ -53,6 +53,9 @@ function editorunfold() {
 				document
 					.querySelector("button#bttn_closeeditor")
 					.setAttribute("onclick", "editorfold()");
+				document
+					.querySelector("main")
+					.setAttribute("onclick", "editorfold()");
 			},
 		)
 		.catch((error) => {
