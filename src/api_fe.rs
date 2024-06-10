@@ -4,6 +4,7 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
+///! This module contains the API endpoints for the frontend, most of them being Actix request factories.
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
 use crate::database::users::auth::check;
@@ -360,7 +361,7 @@ pub(crate) async fn check_username(
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    match crate::database::fetch(
+    match fetch(
         &config.clone(),
         String::from("Users"),
         "username",

@@ -31,17 +31,17 @@ pub(crate) fn char_check_username(username: String) -> bool {
                     if vec_split_username.is_empty() || array_split_username[1].is_empty() {
                         return true;
                     };
-                    (!(array_split_username[1].chars().all(char::is_numeric)))
+                    (!array_split_username[1].chars().all(char::is_numeric))
                         || !(vec_split_username[1].len() == 5 || vec_split_username[1].len() == 7)
                 }
             )(),
             _ => false,
         }
-    }) || !(username
+    }) || !username
         .replace(['_', '-', '.'], "")
         .replacen('#', "", 1)
         .chars()
-        .all(char::is_alphanumeric))
+        .all(char::is_alphanumeric)
 }
 
 /// # `storage::users::add()`
@@ -66,7 +66,7 @@ pub(crate) fn add(
         r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
     )
     .unwrap();
-    if !(email_regex.is_match(&email)) {
+    if !email_regex.is_match(&email) {
         return Err(Error::new(ErrorKind::Other, "Email is invalid."));
     };
     if password.len() < 8 {
@@ -74,13 +74,13 @@ pub(crate) fn add(
     }
     let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
     let conn = create_con(&config.clone());
-    let onusername = super::fetch(
+    let onusername = fetch(
         &config.clone(),
         String::from("Users"),
         "username",
         username.clone(),
     )?;
-    let onemail = super::fetch(
+    let onemail = fetch(
         &config.clone(),
         String::from("Users"),
         "email",

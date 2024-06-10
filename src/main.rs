@@ -338,13 +338,13 @@ async fn main() {
     CombinedLogger::init(vec![
         TermLogger::new(
             logsets.term_loglevel,
-            simplelog::Config::default(),
+            Config::default(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
         ),
         WriteLogger::new(
             logsets.file_loglevel,
-            simplelog::Config::default(),
+            Config::default(),
             File::create(&logsets.logfile).unwrap(),
         ),
     ])
