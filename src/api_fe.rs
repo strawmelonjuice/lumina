@@ -17,7 +17,7 @@ use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{Mutex};
+use tokio::sync::Mutex;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -149,7 +149,8 @@ pub(crate) async fn auth(
         data.username.clone(),
         data.password.clone(),
         &server_vars_mutex,
-    ).await;
+    )
+    .await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     if result.success && result.user_exists && result.password_correct {
