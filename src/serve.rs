@@ -40,7 +40,10 @@ pub(super) async fn notfound(
     HttpResponse::NotFound().body("")
 }
 
-pub(super) async fn root(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn root(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -63,7 +66,10 @@ pub(super) async fn root(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRe
         )
 }
 
-pub(super) async fn login(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn login(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -86,7 +92,10 @@ pub(super) async fn login(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpR
         )
 }
 
-pub(super) async fn signup(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn signup(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -137,7 +146,10 @@ pub(super) async fn prefetch_js(
         .body(js)
 }
 
-pub(super) async fn login_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn login_js(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -162,7 +174,10 @@ pub(super) async fn login_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: Ht
         .body(js)
 }
 
-pub(super) async fn index_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn index_js(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -187,7 +202,10 @@ pub(super) async fn index_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: Ht
         .body(js)
 }
 
-pub(super) async fn home_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn home_js(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -212,7 +230,10 @@ pub(super) async fn home_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: Htt
         .body(js)
 }
 
-pub(super) async fn signup_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn signup_js(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -256,7 +277,10 @@ pub(super) async fn site_c_css(
         .body(config.run.customcss)
 }
 
-pub(super) async fn site_css(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn site_css(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -325,7 +349,10 @@ pub(super) async fn green_check_svg(
         .body(crate::assets::STR_ASSETS_GREEN_CHECK_SVG)
 }
 
-pub(super) async fn logo_svg(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn logo_svg(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -340,7 +367,10 @@ pub(super) async fn logo_svg(server_vars_mutex: Data<Mutex<ServerVars>>, req: Ht
         .body(crate::assets::STR_ASSETS_LOGO_SVG)
 }
 
-pub(super) async fn logo_png(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+pub(super) async fn logo_png(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    req: HttpRequest,
+) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
@@ -396,27 +426,32 @@ pub(super) async fn homepage(
     session: Session,
     req: HttpRequest,
 ) -> HttpResponse {
-    fence(session, server_vars_mutex, req, |_, server_vars, user, request| {
-        let coninfo = request.connection_info();
-        let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-        (server_vars.tell)(format!(
-            "{}\t{:>45.47}\t\t{}/{:<25}",
-            "Request/200".bright_green(),
-            "/home".bright_magenta(),
-            ip.yellow(),
-            user.username.green()
-        ));
-        HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8")
-            .body(
-                crate::assets::STR_ASSETS_HOME_HTML
-                    .replace(
-                        "{{iid}}",
-                        &server_vars.clone().config.interinstance.iid.clone(),
-                    )
-                    .clone(),
-            )
-    })
+    fence(
+        session,
+        server_vars_mutex,
+        req,
+        |_, server_vars, user, request| {
+            let coninfo = request.connection_info();
+            let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
+            (server_vars.tell)(format!(
+                "{}\t{:>45.47}\t\t{}/{:<25}",
+                "Request/200".bright_green(),
+                "/home".bright_magenta(),
+                ip.yellow(),
+                user.username.green()
+            ));
+            HttpResponse::build(StatusCode::OK)
+                .content_type("text/html; charset=utf-8")
+                .body(
+                    crate::assets::STR_ASSETS_HOME_HTML
+                        .replace(
+                            "{{iid}}",
+                            &server_vars.clone().config.interinstance.iid.clone(),
+                        )
+                        .clone(),
+                )
+        },
+    )
     .await
 }
 

@@ -128,14 +128,14 @@ pub(crate) fn add(
 }
 
 pub(crate) mod auth {
-    use std::io::{Error, ErrorKind};
     use actix_web::web::Data;
+    use std::io::{Error, ErrorKind};
 
+    use crate::ServerVars;
     use colored::Colorize;
     use magic_crypt::{new_magic_crypt, MagicCryptTrait};
     use serde_json::from_str;
     use tokio::sync::Mutex;
-    use crate::ServerVars;
 
     /// I first chose `Result<Option<>>`, but decided a struct which would just hold the options as bools would work as well.
     /// # AuthResponse
