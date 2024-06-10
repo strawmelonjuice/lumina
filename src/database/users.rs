@@ -129,10 +129,13 @@ pub(crate) fn add(
 
 pub(crate) mod auth {
     use std::io::{Error, ErrorKind};
+    use actix_web::web::Data;
 
     use colored::Colorize;
     use magic_crypt::{new_magic_crypt, MagicCryptTrait};
     use serde_json::from_str;
+    use tokio::sync::Mutex;
+    use crate::ServerVars;
 
     /// I first chose `Result<Option<>>`, but decided a struct which would just hold the options as bools would work as well.
     /// # AuthResponse
@@ -162,11 +165,12 @@ pub(crate) mod auth {
 
     /// # `storage::users::auth::check()`
     /// Authenticates a user by plain username/email and password.
-    pub(crate) fn check(
+    pub(crate) async fn check(
         identifyer: String,
         password: String,
-        server_vars: &crate::ServerVars,
+        server_vars_mutex: &Data<Mutex<ServerVars>>,
     ) -> AuthResponse {
+        let server_vars = ServerVars::grab(server_vars_mutex).await;
         if identifyer.chars().any(|c| {
             matches!(
                 c,
@@ -180,7 +184,7 @@ pub(crate) mod auth {
                 user_id: None,
             };
         }
-        let config: crate::LuminaConfig = server_vars.config.clone();
+        let config: crate::LuminaConfig = server_vars.clone().config.clone();
         let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
         let errorresponse = |e| {
             error!("Auth: \n\t\tRan into an error:\n {}", e);

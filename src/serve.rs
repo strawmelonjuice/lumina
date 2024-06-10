@@ -15,12 +15,11 @@ use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
 
 pub(super) async fn notfound(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
     session: Session,
 ) -> HttpResponse {
-    let server_y = server_z.lock().await;
-    let _server_p: ServerVars = server_y.clone();
+    let _server_vars = ServerVars::grab(&server_vars_mutex).await;
     let username_ = session.get::<String>("username");
     let username = username_.unwrap_or(None).unwrap_or(String::from(""));
     let username_b = if username != *"" {
@@ -41,13 +40,11 @@ pub(super) async fn notfound(
     HttpResponse::NotFound().body("")
 }
 
-pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
+pub(super) async fn root(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_p.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/".bright_magenta(),
         ip.yellow(),
@@ -60,19 +57,17 @@ pub(super) async fn root(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) ->
             crate::assets::STR_ASSETS_INDEX_HTML
                 .replace(
                     "{{iid}}",
-                    &server_p.clone().config.interinstance.iid.clone(),
+                    &server_vars.clone().config.interinstance.iid.clone(),
                 )
                 .clone(),
         )
 }
 
-pub(super) async fn login(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
+pub(super) async fn login(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_p.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login".bright_magenta(),
         ip.yellow(),
@@ -85,19 +80,17 @@ pub(super) async fn login(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -
             crate::assets::STR_ASSETS_LOGIN_HTML
                 .replace(
                     "{{iid}}",
-                    &server_p.clone().config.interinstance.iid.clone(),
+                    &server_vars.clone().config.interinstance.iid.clone(),
                 )
                 .clone(),
         )
 }
 
-pub(super) async fn signup(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
+pub(super) async fn signup(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_p.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/signup".bright_magenta(),
         ip.yellow(),
@@ -110,20 +103,20 @@ pub(super) async fn signup(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) 
             crate::assets::STR_ASSETS_SIGNUP_HTML
                 .replace(
                     "{{iid}}",
-                    &server_p.clone().config.interinstance.iid.clone(),
+                    &server_vars.clone().config.interinstance.iid.clone(),
                 )
                 .clone(),
         )
 }
 
 pub(super) async fn prefetch_js(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/prefetch.js".magenta(),
         ip.yellow(),
@@ -144,11 +137,11 @@ pub(super) async fn prefetch_js(
         .body(js)
 }
 
-pub(super) async fn login_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn login_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -169,11 +162,11 @@ pub(super) async fn login_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
         .body(js)
 }
 
-pub(super) async fn index_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn index_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -194,11 +187,11 @@ pub(super) async fn index_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
         .body(js)
 }
 
-pub(super) async fn home_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn home_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/site-home.js".magenta(),
         ip.yellow(),
@@ -219,11 +212,11 @@ pub(super) async fn home_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest)
         .body(js)
 }
 
-pub(super) async fn signup_js(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn signup_js(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -245,14 +238,14 @@ pub(super) async fn signup_js(server_z: Data<Mutex<ServerVars>>, req: HttpReques
 }
 
 pub(super) async fn site_c_css(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config: LuminaConfig = server_y.clone().config;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
+    let config: LuminaConfig = server_vars.clone().config;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/custom.css".magenta(),
         ip.yellow(),
@@ -263,11 +256,11 @@ pub(super) async fn site_c_css(
         .body(config.run.customcss)
 }
 
-pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn site_css(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/site.css".magenta(),
         ip.yellow(),
@@ -279,13 +272,13 @@ pub(super) async fn site_css(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
 }
 
 pub(super) async fn red_cross_svg(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/red-cross.svg".magenta(),
         ip.yellow(),
@@ -297,13 +290,13 @@ pub(super) async fn red_cross_svg(
 }
 
 pub(super) async fn spinner_svg(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/spinner.svg".magenta(),
         ip.yellow(),
@@ -315,13 +308,13 @@ pub(super) async fn spinner_svg(
 }
 
 pub(super) async fn green_check_svg(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/green-check.svg".magenta(),
         ip.yellow(),
@@ -332,11 +325,11 @@ pub(super) async fn green_check_svg(
         .body(crate::assets::STR_ASSETS_GREEN_CHECK_SVG)
 }
 
-pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn logo_svg(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/logo.svg".magenta(),
         ip.yellow(),
@@ -347,11 +340,11 @@ pub(super) async fn logo_svg(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
         .body(crate::assets::STR_ASSETS_LOGO_SVG)
 }
 
-pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+pub(super) async fn logo_png(server_vars_mutex: Data<Mutex<ServerVars>>, req: HttpRequest) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/logo.png".magenta(),
         ip.yellow(),
@@ -363,13 +356,13 @@ pub(super) async fn logo_png(server_z: Data<Mutex<ServerVars>>, req: HttpRequest
 }
 
 pub(super) async fn node_axios_map(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/axios/axios.min.js.map".magenta(),
         ip.yellow(),
@@ -381,13 +374,13 @@ pub(super) async fn node_axios_map(
 }
 
 pub(super) async fn node_axios(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/axios/axios.min.js".magenta(),
         ip.yellow(),
@@ -399,11 +392,11 @@ pub(super) async fn node_axios(
 }
 
 pub(super) async fn homepage(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
     req: HttpRequest,
 ) -> HttpResponse {
-    fence(session, server_z, req, |_, server_vars, user, request| {
+    fence(session, server_vars_mutex, req, |_, server_vars, user, request| {
         let coninfo = request.connection_info();
         let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
         (server_vars.tell)(format!(
@@ -428,19 +421,17 @@ pub(super) async fn homepage(
 }
 
 pub(super) async fn logout(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
     req: HttpRequest,
 ) -> impl Responder {
-    let server_y = server_z.lock().await;
-    let server_p: ServerVars = server_y.clone();
-    drop(server_y);
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let username_ = session.get::<String>("username");
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match username_.unwrap_or(None) {
         Some(username) => {
-            (server_p.tell)(format!(
+            (server_vars.tell)(format!(
                 "{}\t{:>45.47}\t\t{}/{:<25}",
                 "Request/200".bright_green(),
                 "/session/logout".bright_magenta(),
@@ -470,8 +461,8 @@ pub(crate) async fn fence(
         req: HttpRequest,
     ) -> HttpResponse,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
-    let config = server_y.clone().config;
+    let server_vars: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
+    let config = server_vars.clone().config;
     let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
     let id = id_.unwrap_or(-100);
     debug!("Session validity: {:?}", session.get::<i64>("validity"));
@@ -501,7 +492,7 @@ pub(crate) async fn fence(
 
         next(
             config.clone(),
-            server_y.clone().to_owned(),
+            server_vars.clone().to_owned(),
             user.to_exchangable(&config),
             req,
         )
