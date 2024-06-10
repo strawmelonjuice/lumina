@@ -17,7 +17,7 @@ use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::{Mutex};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,8 +57,8 @@ async fn shield(
     server_vars_mutex: &Data<Mutex<ServerVars>>,
     halt: HttpResponse,
 ) -> Option<HttpResponse> {
-    let server_y: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
-    let config = server_y.clone().config;
+    let server_vars = ServerVars::grab(server_vars_mutex).await;
+    let config = server_vars.clone().config;
     let id_ = session.get::<i64>("userid").unwrap_or(None);
     let id = id_.unwrap_or(-100);
     let safe = match id {
@@ -77,12 +77,12 @@ async fn shield(
 }
 
 pub(crate) async fn update(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
     req: HttpRequest,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config: LuminaConfig = server_y.clone().config;
+    let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
+    let config: LuminaConfig = server_vars.clone().config;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     let username_a = session.get::<String>("username");
@@ -137,19 +137,19 @@ pub(super) struct AuthReqData {
 }
 
 pub(crate) async fn auth(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
     req: HttpRequest,
     data: actix_web::web::Json<AuthReqData>,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config = server_y.clone().config;
-    (server_y.tell)("Auth request received.".to_string());
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
+    let config = server_vars.clone().config;
+    (server_vars.tell)("Auth request received.".to_string());
     let result = check(
         data.username.clone(),
         data.password.clone(),
-        &server_y.clone(),
-    );
+        &server_vars_mutex,
+    ).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     if result.success && result.user_exists && result.password_correct {
@@ -184,14 +184,14 @@ pub(super) struct AuthCreateUserReqData {
     password: String,
 }
 pub(crate) async fn newaccount(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
     req: HttpRequest,
     data: actix_web::web::Json<AuthCreateUserReqData>,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config = server_y.clone().config;
-    (server_y.tell)("User creation request: received.".to_string());
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
+    let config = server_vars.clone().config;
+    (server_vars.tell)("User creation request: received.".to_string());
     let result = add(
         data.username.clone(),
         data.email.clone(),
@@ -215,7 +215,7 @@ pub(crate) async fn newaccount(
             session
                 .insert("validity", config.clone().run.session_valid)
                 .unwrap();
-            (server_y.tell)(format!(
+            (server_vars.tell)(format!(
                 "User creation request: approved for {} @ {}",
                 user.id, ip
             ));
@@ -224,7 +224,7 @@ pub(crate) async fn newaccount(
                 .body(r#"{"Ok": true}"#)
         }
         Err(e) => {
-            (server_y.tell)(format!("User creation request:  denied - {e}"));
+            (server_vars.tell)(format!("User creation request:  denied - {e}"));
             HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
@@ -342,11 +342,11 @@ pub struct FEUsernameCheckRequest {
 }
 
 pub(crate) async fn check_username(
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     data: actix_web::web::Json<FEUsernameCheckRequest>,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
-    let config = server_y.clone().config;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
+    let config = server_vars.clone().config;
     let username = data.u.clone();
     if crate::database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)

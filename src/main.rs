@@ -53,6 +53,43 @@ struct ServerVars {
     config: LuminaConfig,
     tell: fn(String) -> (),
 }
+impl ServerVars {
+    /// This function grabs the server variables from the provided mutex.
+    ///
+    /// # Arguments
+    ///
+    /// * `server_vars_mutex` - A reference to a `Data<Mutex<ServerVars>>` containing the server variables.
+    ///
+    /// # Returns
+    ///
+    /// * `ServerVars` - A clone of the server variables stored in the mutex. These are cloned so that the mutex can be unlocked without having to wait for the calling function to finish.
+    ///
+    /// # Errors
+    ///
+    /// This function does not return any errors.
+    ///
+    /// # Panics
+    ///
+    /// This function does not panic.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // This is the shield function from 'api_fe', it implements grab in the simplest way.
+    /// async fn shield(
+    ///     session: Session,
+    ///     server_vars_mutex: &Data<Mutex<ServerVars>>,
+    ///     halt: HttpResponse,
+    /// ) -> Option<HttpResponse> {
+    ///     let server_vars = ServerVars::grab(server_vars_mutex).await;
+    ///     let config = server_vars.clone().config;
+    /// ...
+    /// ```
+    pub(crate) async fn grab(server_vars_mutex: &Data<Mutex<ServerVars>>) -> ServerVars {
+        let vars: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
+        vars.clone()
+    }
+}
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct JSClientData {
@@ -85,6 +122,7 @@ pub struct LuminaConfig {
     pub logging: Option<Logging>,
     pub run: ERun,
 }
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ERun {
@@ -523,7 +561,7 @@ mod serve;
 #[get("/fonts/{a:.*}")]
 pub(crate) async fn serve_fonts(
     req: HttpRequest,
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
 ) -> HttpResponse {
     // let reqx = req.clone();
@@ -535,13 +573,13 @@ pub(crate) async fn serve_fonts(
         "Gantari/Gantari-VariableFont_wght.ttf" => fonts.gantari,
         "Syne/Syne-VariableFont_wght.ttf" => fonts.syne,
         _ => {
-            return notfound(server_z, req, session).await;
+            return notfound(server_vars_mutex, req, session).await;
         }
     };
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         format!("/fonts/{}", fnt).magenta(),
         ip.yellow(),
@@ -556,17 +594,17 @@ pub(crate) async fn serve_fonts(
 #[get("/user/avatar/{a:.*}")]
 pub(crate) async fn avatar(
     req: HttpRequest,
-    server_z: Data<Mutex<ServerVars>>,
+    server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
 ) -> HttpResponse {
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let user: String = req.match_info().get("a").unwrap().parse().unwrap();
 
     // For now unused. Will be used once users can have avatars.
     let _ = (user, session);
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_y.tell)(format!(
+    (server_vars.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         req.path().magenta(),
         ip.yellow(),
