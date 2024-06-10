@@ -481,10 +481,7 @@ pub(crate) async fn fence(
     let safe = match id {
         -100 => false,
         _ => match session.get::<i64>("validity") {
-            Ok(s) => match s {
-                Some(a) if a == config.clone().run.session_valid => true,
-                _ => false,
-            },
+            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
             Err(_) => false,
         },
     };

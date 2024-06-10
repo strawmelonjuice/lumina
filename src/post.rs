@@ -48,13 +48,10 @@ impl PostPreRenderData {
         handlebars_helper!(num_is_equal: |x: u64, y: u64| x == y);
         handlebars.register_helper("numequal", Box::new(num_is_equal));
 
-        match handlebars.render_template(STR_ASSETS_POST_RENDERS_HANDLEBARS, self) {
-            Ok(html) => html,
-            Err(e) => {
-                eprintln!("Error rendering post: {}", e);
-                String::from("Error rendering post.")
-            }
-        }
+        handlebars.render_template(STR_ASSETS_POST_RENDERS_HANDLEBARS, self).unwrap_or_else(|e| {
+            eprintln!("Error rendering post: {}", e);
+            String::from("Error rendering post.")
+        })
     }
 }
 

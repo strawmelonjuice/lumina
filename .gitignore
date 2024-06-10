@@ -1,7 +1,7 @@
 /target
 /test
 *.log
-ObsidianVault/.obsidian/workspace.json
-ObsidianVault/.obsidian/appearance.json
 /node_modules/
 package-lock.json
+.idea/
+.vscode/

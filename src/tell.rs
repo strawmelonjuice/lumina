@@ -3,7 +3,7 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-
+//! This module contains the tellgen function and future derivatives.
 const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
 use crate::Logging;
 use colored::Colorize;
