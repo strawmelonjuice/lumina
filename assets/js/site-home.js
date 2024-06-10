@@ -310,7 +310,7 @@ document
 window.pulled.push(() => {
 	{
 		const f = document.getElementById("userimg");
-		if (f == null || f !== undefined) {
+		if (f !== null && f !== undefined) {
 			f.setAttribute("alt", fejson.user.username);
 		}
 	}
