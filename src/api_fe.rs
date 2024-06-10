@@ -4,7 +4,7 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-///! This module contains the API endpoints for the frontend, most of them being Actix request factories.
+//! This module contains the API endpoints for the frontend, most of them being Actix request factories.
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
 use crate::database::users::auth::check;
@@ -64,10 +64,7 @@ async fn shield(
     let safe = match id {
         -100 => false,
         _ => match session.get::<i64>("validity") {
-            Ok(s) => match s {
-                Some(a) if a == config.clone().run.session_valid => true,
-                _ => false,
-            },
+            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
             Err(_) => false,
         },
     };
@@ -361,20 +358,18 @@ pub(crate) async fn check_username(
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    match fetch(
+    if fetch(
         &config.clone(),
         String::from("Users"),
         "username",
         username.clone(),
     )
     .unwrap_or(None)
+    .is_some()
     {
-        Some(_) => {
-            return HttpResponse::build(StatusCode::OK)
-                .content_type("text/json; charset=utf-8")
-                .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
-        }
-        None => {}
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/json; charset=utf-8")
+            .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
     };
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")

@@ -153,11 +153,8 @@ pub(crate) mod auth {
             } else if !self.success {
                 // Unknown error, not important here, but there was an error causing an unknown outcome.
                 Err(Error::new(ErrorKind::Other, "Unknown error."))
-            } else if !self.user_exists {
-                // User does not exist
-                Ok(None)
             } else {
-                // Password incorrect
+                // User does not exist or password is incorrect.
                 Ok(None)
             }
         }
@@ -170,9 +167,11 @@ pub(crate) mod auth {
         password: String,
         server_vars: &crate::ServerVars,
     ) -> AuthResponse {
-        if identifyer.chars().any(|c| match c {
-            ' ' | '\\' | '/' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`' => true,
-            _ => false,
+        if identifyer.chars().any(|c| {
+            matches!(
+                c,
+                ' ' | '\\' | '/' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
+            )
         }) {
             return AuthResponse {
                 success: false,

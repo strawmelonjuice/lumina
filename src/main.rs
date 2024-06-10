@@ -538,9 +538,9 @@ pub(crate) async fn serve_fonts(
             return notfound(server_z, req, session).await;
         }
     };
+    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    let server_y: MutexGuard<ServerVars> = server_z.lock().await;
     (server_y.tell)(format!(
         "{2}\t{:>45.47}\t\t{}",
         format!("/fonts/{}", fnt).magenta(),
@@ -572,7 +572,7 @@ pub(crate) async fn avatar(
         ip.yellow(),
         "Request/200".bright_green()
     ));
-    let index: usize = rand::Rng::gen_range(&mut crate::thread_rng(), 0..=5);
+    let index: usize = Rng::gen_range(&mut thread_rng(), 0..=5);
     let cont: String = {
         let oo = &vec_string_assets_anons_svg()[index];
 
