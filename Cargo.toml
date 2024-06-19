@@ -15,7 +15,7 @@ serde = { version = "1.0.203", features = ["derive"] }
 colored = "2.0.4"
 toml = "0.8.14"
 log = "0.4.21"
-reqwest = "0.12.4"
+reqwest = "0.12.5"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
 simplelog = "0.12.2"
 time = "0.3.34"
@@ -25,13 +25,13 @@ tokio = { version = "1.38.0", features = ["rt", "rt-multi-thread", "macros"] }
 pbkdf2 = "0.12.2"
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
 actix-identity = "0.7.1"
-actix-web = "4.6.0"
+actix-web = "4.7.0"
 handlebars = "5.1.0"
 home = "0.5.9"
 magic-crypt = "3.1.13"
 rand = "0.8.5"
 build_const = "0.2.2"
-regex = "1.10.4"
+regex = "1.10.5"
 markdown = "1.0.0-alpha.17"
 [build-dependencies]
 build_const = "0.2.2"
