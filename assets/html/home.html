@@ -8,8 +8,7 @@
 	<head>
 		<title>Home - Lumina(@{{iid}})</title>
 		<meta charset="UTF-8" />
-		<link rel="stylesheet" href="/site.css" />
-		<link rel="stylesheet" href="/custom.css" />
+		<style></style>
 		<script src="/axios/axios.min.js"></script>
 		<script src="/prefetch.js"></script>
 		<script defer src="/site-home.js"></script>
@@ -101,14 +100,12 @@
 									id="notifications-nav"
 									><svg
 										xmlns="http://www.w3.org/2000/svg"
-										xmlns:svg="http://www.w3.org/2000/svg"
 										id="svg1"
 										fill="none"
 										stroke="currentColor"
 										stroke-width="1.5"
 										aria-hidden="true"
 										class="inline w-6 h-6"
-										version="1.1"
 										viewBox="0 0 24 24"
 									>
 										<path
@@ -150,14 +147,12 @@
 							<span class="sr-only">View notifications</span>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								xmlns:svg="http://www.w3.org/2000/svg"
 								id="svg1"
 								fill="none"
 								stroke="currentColor"
 								stroke-width="1.5"
 								aria-hidden="true"
 								class="inline w-6 h-6"
-								version="1.1"
 								viewBox="0 0 24 24"
 							>
 								<path
@@ -279,18 +274,18 @@
 			</div>
 		</nav>
 		<main
-			class="w-screen h-screen text-fuchsia-900 lg:grid lg:grid-cols-5 lg:grid-flow-col dark:text-violet-200 not:max-h-[89VH] overflow-clip"
+			class="monthclass-month dayclass-day w-screen h-screen text-fuchsia-900 lg:grid lg:grid-cols-5 lg:grid-flow-col dark:text-violet-200 not:max-h-[89VH] overflow-clip"
 		>
 			<div
 				id="mainleft"
 				class="hidden h-full lg:block bg-brown-200 overflow-clip dark:bg-neutral-600"
 			></div>
 			<div
-				class="overflow-auto col-span-4 h-full lg:p-12 bg-brown-100 dark:bg-neutral-700"
+				class="contentkeeper overflow-auto col-span-4 h-full no:lg:p-12 bg-brown-100 dark:bg-neutral-700"
 			>
 				<div
 					id="mainright"
-					class="p-4 w-full rounded-md lg:p-8 lg:w-11/12 bg-brown-200 dark:bg-neutral-600 disabled:lg:h-10/12"
+					class="p-4 w-full rounded-md lg:p-8 lg:w-11/12 bg-brown-200 dark:bg-neutral-600 disabled:lg:h-10/12 lg:m-12"
 				></div>
 			</div>
 		</main>
@@ -309,10 +304,8 @@
 					stroke="none"
 					stroke-linecap="square"
 					stroke-miterlimit="10"
-					version="1.1"
 					viewBox="0 0 50 50"
 					xmlns="http://www.w3.org/2000/svg"
-					xmlns:svg="http://www.w3.org/2000/svg"
 				>
 					<defs id="defs20">
 						<clipPath>
