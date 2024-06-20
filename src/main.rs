@@ -479,7 +479,14 @@ async fn main() {
         Ok(o) => {
             tell(format!(
                 "Running on {0}:{1}, which should be bound to {2}://{3}",
-                config.server.adress, config.server.port, if config.server.secure {"https"} else {"http"}, config.interinstance.iid
+                config.server.adress,
+                config.server.port,
+                if config.server.secure {
+                    "https"
+                } else {
+                    "http"
+                },
+                config.interinstance.iid
             ));
             o
         }
