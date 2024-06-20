@@ -9,20 +9,20 @@ extern crate build_const;
 extern crate log;
 extern crate simplelog;
 
-use std::{env, fs, path::Path, process};
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, fs, path::Path, process};
 
-use actix_session::{Session, SessionMiddleware};
 use actix_session::storage::CookieSessionStore;
+use actix_session::{Session, SessionMiddleware};
+use actix_web::cookie::Key;
 use actix_web::{get, HttpRequest, HttpResponse};
 use actix_web::{
-    App,
-    HttpServer, web::{self, Data},
+    web::{self, Data},
+    App, HttpServer,
 };
-use actix_web::cookie::Key;
 use colored::Colorize;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -30,19 +30,18 @@ use simplelog::*;
 use tokio::sync::{Mutex, MutexGuard};
 
 use assets::{
-    fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS, vec_string_assets_anons_svg,
+    fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
 use tell::tellgen;
 
 use crate::serve::notfound;
 
-
-/// ## Definition of assets, so file paths refactoring goes easier.
-pub mod assets;
 /// # API's to the front-end.
 mod api_fe;
 /// # Inter-instance API's
 mod api_ii;
+/// ## Definition of assets, so file paths refactoring goes easier.
+pub mod assets;
 /// # Actions on the database
 mod database;
 
@@ -156,6 +155,14 @@ pub struct LogSets {
     pub logfile: PathBuf,
 }
 
+fn default_as_false() -> bool {
+    false
+}
+
+fn default_as_true() -> bool {
+    true
+}
+
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Server {
@@ -163,6 +170,8 @@ pub struct Server {
     pub adress: String,
     #[serde(alias = "cookiekey")]
     pub cookie_key: String,
+    #[serde(default = "default_as_true")]
+    pub secure: bool,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -469,8 +478,8 @@ async fn main() {
     {
         Ok(o) => {
             tell(format!(
-                "Running on {0}:{1}, which should be bound to https://{2}",
-                config.server.adress, config.server.port, config.interinstance.iid
+                "Running on {0}:{1}, which should be bound to {2}://{3}",
+                config.server.adress, config.server.port, if config.server.secure {"https"} else {"http"}, config.interinstance.iid
             ));
             o
         }
@@ -500,7 +509,7 @@ async fn close(config: LuminaConfig) {
         let _ = std::io::stdout().flush();
         std::io::stdin()
             .read_line(&mut input)
-            .expect("Failed to read line");
+            .expect("Failed to read input");
         if input == *"\r\n" {
             waiting = false;
         }
