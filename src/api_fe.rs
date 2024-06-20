@@ -100,7 +100,7 @@ pub(crate) async fn update(
         ip.yellow(),
         username_c
     );
-    let mut d = JSClientData {
+    let mut d: JSClientData = JSClientData {
         instance: JSClientInstance {
             config: JSClientConfig {
                 interinstance: JSClientInterinstance {
