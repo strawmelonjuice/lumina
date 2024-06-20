@@ -1,6 +1,10 @@
-use crate::database::{fetch, BasicUserInfo, IIExchangedUserInfo};
-use crate::LuminaConfig;
+use handlebars::*;
 use serde::{Deserialize, Serialize};
+
+use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
+use crate::database::{BasicUserInfo, fetch, IIExchangedUserInfo};
+use crate::LuminaConfig;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PostInfo {
     /// Local Post ID
@@ -24,9 +28,6 @@ pub struct PostInfo {
     /// Tags
     pub tags: String, // Json<Vec<String>>
 }
-use handlebars::*;
-
-use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PostPreRenderData {
@@ -155,7 +156,7 @@ impl PostInfo {
             button_push: crate::assets::STR_ASSETS_BTN_PUSH_SVG
                 .replace(r#"height="120""#, r#"height="100%""#)
                 .replace(r#"width="120""#, r#"width="100%""#),
-            // <svg width="100%" height="100%" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            // <svg width="100%" height="100%"  viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             button_comment: crate::assets::STR_ASSETS_BTN_COMMENT_SVG
                 .replace(r#"height="120""#, r#"height="100%""#)
                 .replace(r#"width="120""#, r#"width="100%""#),

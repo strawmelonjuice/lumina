@@ -6,12 +6,13 @@
 
 use std::io::{Error, ErrorKind};
 
-use magic_crypt::{new_magic_crypt, MagicCryptTrait};
+use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 use serde_json::from_str;
 
 use crate::LuminaConfig;
 
-use super::{create_con, fetch, BasicUserInfo};
+use super::{BasicUserInfo, create_con, fetch};
+
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
 pub(crate) fn char_check_username(username: String) -> bool {
     username.chars().any(|c| {
@@ -128,14 +129,15 @@ pub(crate) fn add(
 }
 
 pub(crate) mod auth {
-    use actix_web::web::Data;
     use std::io::{Error, ErrorKind};
 
-    use crate::ServerVars;
+    use actix_web::web::Data;
     use colored::Colorize;
-    use magic_crypt::{new_magic_crypt, MagicCryptTrait};
+    use magic_crypt::{MagicCryptTrait, new_magic_crypt};
     use serde_json::from_str;
     use tokio::sync::Mutex;
+
+    use crate::ServerVars;
 
     /// I first chose `Result<Option<>>`, but decided a struct which would just hold the options as bools would work as well.
     /// # AuthResponse

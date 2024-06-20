@@ -4,11 +4,14 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 //! This module contains the tellgen function and future derivatives.
-const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
-use crate::Logging;
-use colored::Colorize;
 use std::time::SystemTime;
+
+use colored::Colorize;
 use time::{format_description, OffsetDateTime};
+
+use crate::Logging;
+
+const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
 
 #[doc = r"Generates a function that either prints as an [info] log, or prints as [log], depending on configuration. This because loglevel 3 is a bit too verbose, while loglevel 2 is too quiet."]
 pub(crate) fn tellgen(a: Option<Logging>) -> fn(msg: String) {
