@@ -6,12 +6,12 @@
 
 use std::io::{Error, ErrorKind};
 
-use magic_crypt::{MagicCryptTrait, new_magic_crypt};
+use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use serde_json::from_str;
 
 use crate::LuminaConfig;
 
-use super::{BasicUserInfo, create_con, fetch};
+use super::{create_con, fetch, BasicUserInfo};
 
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
 pub(crate) fn char_check_username(username: String) -> bool {
@@ -133,7 +133,7 @@ pub(crate) mod auth {
 
     use actix_web::web::Data;
     use colored::Colorize;
-    use magic_crypt::{MagicCryptTrait, new_magic_crypt};
+    use magic_crypt::{new_magic_crypt, MagicCryptTrait};
     use serde_json::from_str;
     use tokio::sync::Mutex;
 

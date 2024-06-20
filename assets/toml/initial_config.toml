@@ -1,10 +1,12 @@
 [server]
 # What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
 port = 8085
-# What adress to bind to? Usually, this is 127.0.0.1 for dev, and 0.0.0.0 for prod.
-adress = "0.0.0.0"
+# What adress to bind to?
+adress = "127.0.0.1"
 # Secret key for cookie encryption
 cookiekey = "Uneaten email in the washing machines to dry the popcorn"
+# For development purposes, please set this to true on prod (and use SSL!)
+secure = true
 
 [interinstance]
 # Instance ID, equals, the domain name this instance is open on.

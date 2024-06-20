@@ -6,19 +6,19 @@
 
 //! This module contains the API endpoints for the frontend, most of them being Actix request factories.
 use actix_session::Session;
-use actix_web::{HttpRequest, HttpResponse};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
+use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
-use crate::{LuminaConfig, ServerVars};
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
-use crate::database::{BasicUserInfo, fetch};
 use crate::database::users::add;
 use crate::database::users::auth::check;
+use crate::database::{fetch, BasicUserInfo};
 use crate::post::PostInfo;
+use crate::{LuminaConfig, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

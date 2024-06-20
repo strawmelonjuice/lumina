@@ -2,7 +2,7 @@ use handlebars::*;
 use serde::{Deserialize, Serialize};
 
 use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
-use crate::database::{BasicUserInfo, fetch, IIExchangedUserInfo};
+use crate::database::{fetch, BasicUserInfo, IIExchangedUserInfo};
 use crate::LuminaConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
