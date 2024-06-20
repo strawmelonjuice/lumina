@@ -466,8 +466,8 @@ async fn main() {
     {
         Ok(o) => {
             tell(format!(
-                "Running on {0}:{1} (http://127.0.0.1:{1}/)",
-                config.server.adress, config.server.port
+                "Running on {0}:{1}, which should be bound to https://{2}",
+                config.server.adress, config.server.port, config.interinstance.iid
             ));
             o
         }
