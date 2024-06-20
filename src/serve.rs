@@ -340,7 +340,6 @@ pub(super) async fn signup_js(
         .body(js)
 }
 
-
 pub(super) async fn red_cross_svg(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
