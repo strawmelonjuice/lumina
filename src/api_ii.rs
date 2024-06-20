@@ -6,8 +6,9 @@
 //! This module contains the inter-instance api's. It will mostly be used for pulling from other instances and syncing.
 use std::time::Duration;
 
-use crate::LuminaConfig;
 use async_std::task;
+
+use crate::LuminaConfig;
 
 pub(crate) async fn main(j: LuminaConfig, tell: fn(String)) {
     let mut o = 0;

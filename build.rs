@@ -4,9 +4,11 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-use markdown::to_html;
+extern crate build_const;
 
 use std::{fs::read_to_string, str::FromStr};
+
+use markdown::to_html;
 
 // Javascript runtimes:
 //     NodeJS:
@@ -48,7 +50,6 @@ fn process_markdown_into_html(htmlfile: &str, markdownfile: &str) -> String {
         .replace(r#"{{md}}"#, processed_md.as_str())
         .to_string()
 }
-extern crate build_const;
 
 fn main() {
     let mut assets = build_const::ConstWriter::for_build("assets")

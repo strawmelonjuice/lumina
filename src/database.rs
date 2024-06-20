@@ -10,8 +10,8 @@ use std::process;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
-use crate::post::PostInfo;
 use crate::LuminaConfig;
+use crate::post::PostInfo;
 
 /// Basic exchangable user information.
 #[derive(Debug, Serialize, Deserialize, Clone)]

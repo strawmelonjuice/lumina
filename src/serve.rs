@@ -4,15 +4,16 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-use crate::database::{BasicUserInfo, IIExchangedUserInfo};
-use crate::{LuminaConfig, ServerVars};
 use actix_session::Session;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use actix_web::http::header::LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
-use actix_web::{HttpRequest, HttpResponse, Responder};
 use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
+
+use crate::{LuminaConfig, ServerVars};
+use crate::database::{BasicUserInfo, IIExchangedUserInfo};
 
 pub(super) async fn notfound(
     server_vars_mutex: Data<Mutex<ServerVars>>,

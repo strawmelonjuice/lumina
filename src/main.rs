@@ -4,38 +4,41 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 #[macro_use]
+extern crate build_const;
+#[macro_use]
 extern crate log;
 extern crate simplelog;
-use rand::prelude::*;
-#[macro_use]
-extern crate build_const;
 
-use actix_session::storage::CookieSessionStore;
-use actix_session::{Session, SessionMiddleware};
-use actix_web::cookie::Key;
-use actix_web::{get, HttpRequest, HttpResponse};
-use actix_web::{
-    web::{self, Data},
-    App, HttpServer,
-};
-use colored::Colorize;
-use serde::{Deserialize, Serialize};
-use simplelog::*;
+use std::{env, fs, path::Path, process};
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::{env, fs, path::Path, process};
+
+use actix_session::{Session, SessionMiddleware};
+use actix_session::storage::CookieSessionStore;
+use actix_web::{get, HttpRequest, HttpResponse};
+use actix_web::{
+    App,
+    HttpServer, web::{self, Data},
+};
+use actix_web::cookie::Key;
+use colored::Colorize;
+use rand::prelude::*;
+use serde::{Deserialize, Serialize};
+use simplelog::*;
 use tokio::sync::{Mutex, MutexGuard};
 
+use assets::{
+    fonts, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS, vec_string_assets_anons_svg,
+};
 use tell::tellgen;
+
+use crate::serve::notfound;
+
+
 /// ## Definition of assets, so file paths refactoring goes easier.
 pub mod assets;
-use crate::serve::notfound;
-use assets::{
-    fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
-};
-
 /// # API's to the front-end.
 mod api_fe;
 /// # Inter-instance API's
