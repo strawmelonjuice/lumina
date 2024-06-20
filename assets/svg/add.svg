@@ -1,0 +1,30 @@
+<!--
+  ~ Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+  ~
+  ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+  -->
+<svg width="120" height="120" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+ <g transform="matrix(.80987 0 0 .80987 12.988 10.305)" fill-opacity=".9885" stroke="currentColor" stroke-linecap="square">
+  <g stroke-width="7.0817">
+   <rect transform="matrix(-.0059044 .99998 -1 .00069518 0 0)" x="56.4" y="-116.19" width="5.6289" height="41.082" ry=".16374" style="paint-order:fill markers stroke"/>
+   <rect transform="matrix(-.0059044 .99998 -1 .00069518 0 0)" x="56.288" y="-46.182" width="5.6289" height="41.082" ry=".16374" style="paint-order:fill markers stroke"/>
+   <rect transform="matrix(-.99998 -.0059044 -.00069518 -1 0 0)" x="-62.436" y="-115.4" width="5.6289" height="41.082" ry=".16374" style="paint-order:fill markers stroke"/>
+   <rect transform="matrix(-.99998 -.0059044 -.00069518 -1 0 0)" x="-62.548" y="-45.391" width="5.6289" height="41.082" ry=".16374" style="paint-order:fill markers stroke"/>
+  </g>
+  <rect transform="matrix(.081129 -.9967 1 -.002595 0 0)" x="-47.183" y="22.945" width="2.7072" height="20.116" ry=".08018" stroke-width="6.0882" style="paint-order:fill markers stroke"/>
+  <rect transform="matrix(-.9967 .081129 -.002595 1 0 0)" x="-48.235" y="22.012" width="2.7072" height="20.116" ry=".08018" stroke-width="6.0882" style="paint-order:fill markers stroke"/>
+ </g>
+ <g transform="matrix(0 -.80987 .80987 0 13.693 106.21)" fill-opacity=".9885" stroke="currentColor" stroke-linecap="square" stroke-width="6.0882">
+  <rect transform="matrix(.081129 -.9967 1 -.002595 0 0)" x="-47.183" y="22.945" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+  <rect transform="matrix(-.9967 .081129 -.002595 1 0 0)" x="-48.235" y="22.012" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+ </g>
+ <g transform="matrix(.80987 0 0 .80987 12.988 10.305)" fill-opacity=".9885" stroke="currentColor" stroke-linecap="square" stroke-width="6.0882">
+  <rect transform="matrix(-.081129 .9967 -1 .002595 0 0)" x="70.78" y="-105.58" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+  <rect transform="matrix(.9967 -.081129 .002595 -1 0 0)" x="71.447" y="-104.94" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+ </g>
+ <g transform="matrix(0 .80987 -.80987 0 108.53 10.389)" fill-opacity=".9885" stroke="currentColor" stroke-linecap="square" stroke-width="6.0882">
+  <rect transform="matrix(.081129 -.9967 1 -.002595 0 0)" x="-47.183" y="22.945" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+  <rect transform="matrix(-.9967 .081129 -.002595 1 0 0)" x="-48.235" y="22.012" width="2.7072" height="20.116" ry=".08018" style="paint-order:fill markers stroke"/>
+ </g>
+ <ellipse cx="60.481" cy="58.949" rx="53.378" ry="53.18" fill-opacity=".098814" opacity=".85" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8898"/>
+</svg>
