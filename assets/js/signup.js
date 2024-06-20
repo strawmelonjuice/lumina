@@ -13,7 +13,7 @@ function checkusername() {
 	const inp = document.forms["signup"]["username"];
 	axios
 		.post("/api/fe/auth-create/check-username", {
-			u: document.forms["signup"]["username"].value,
+			u: inp.value,
 		})
 		.then((resp) => {
 			if (resp.data.Ok === true) {

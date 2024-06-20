@@ -4,18 +4,20 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 const SPECIALDATES: &str = r#"
+/*Pride month banner*/
 .monthclass-6 .contentkeeper::before {
-    margin-top: .8em;
-    margin-bottom: .8em;
+    margin: .8em 3% .4em 3%;
     content: "Happy Pride Month!";
     justify-content: center;
     align-items: center;
     height: 2.4em;
     color: black;
-    width: 100%;
+    width: 94%;
+    border-radius: 20px;
     display: inline-flex;
     background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142))
 }
+/*29th of februari is nonexistent in non-leap years*/
 .dayclass-29.monthclass-2 .contentkeeper::before {
     margin-top: .8em;
     margin-bottom: .8em;
@@ -135,7 +137,7 @@ fn replaceable(string: &str, server_vars: &ServerVars) -> String {
     stylesheet.push_str("\n\n\n/* --- Main stylesheet --- */\n\n\n");
     stylesheet.push_str(crate::assets::STR_GENERATED_MAIN_MIN_CSS);
     stylesheet.push_str("\n\n\n/* --- Custom instance-specific CSS content --- */\n\n\n");
-    stylesheet.push_str(&*server_vars.config.run.customcss.clone());
+    stylesheet.push_str(&server_vars.config.run.customcss.clone());
     stylesheet.push_str("\n\n\n/* --- CSS content for special events --- */\n\n\n");
     stylesheet.push_str(specialdates.as_str());
     stylesheet.push_str("</style>");
@@ -152,7 +154,7 @@ fn replaceable(string: &str, server_vars: &ServerVars) -> String {
             "dayclass-day",
             format!("dayclass-{}", current_date.day()).as_str(),
         )
-        .replace("<style></style>", &*stylesheet);
+        .replace("<style></style>", &stylesheet);
     s.clone()
 }
 
@@ -545,7 +547,7 @@ pub(crate) async fn fence(
     debug!("Session contents: {:?}", session.entries());
     debug!("User ID: {:?}", id);
 
-    let safe = match id {
+    let safe: bool = match id {
         -100 => false,
         _ => match session.get::<i64>("validity") {
             Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),

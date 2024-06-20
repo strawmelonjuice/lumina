@@ -155,10 +155,6 @@ pub struct LogSets {
     pub logfile: PathBuf,
 }
 
-fn default_as_false() -> bool {
-    false
-}
-
 fn default_as_true() -> bool {
     true
 }
