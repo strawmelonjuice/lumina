@@ -1,3 +1,4 @@
+version = "0.3-a"
 [server]
 # What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
 port = 8085
