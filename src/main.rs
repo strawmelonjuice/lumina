@@ -3,6 +3,7 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+const CURRENT_CONFIG_VERSION: &str = "0.3-a";
 #[macro_use]
 extern crate build_const;
 #[macro_use]
@@ -108,8 +109,14 @@ struct JSClientConfigInterInstance {
     iid: String,
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct PrePreConfig {
+    version: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreConfig {
+    pub version: String,
     pub server: Server,
     pub interinstance: InterInstance,
     pub database: Database,
@@ -118,6 +125,7 @@ pub struct PreConfig {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LuminaConfig {
+    pub version: String,
     pub server: Server,
     pub interinstance: InterInstance,
     pub database: Database,
@@ -182,9 +190,7 @@ pub struct InterInstance {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SynclistItem {
     pub name: String, // The name of the instance to sync with, equal to the domain name it is public on.
-    pub level: String, // The level of syncing to do. "full" is the only one implemented right now.
-    pub key: String,  // The key to use for syncing. This is a secret kept between the two servers.
-                      // The key is not necessarily the authentication, as that is basically done through DNS, however, by also verifying the key, we can be sure that the server we're talking to is the right one.
+    pub level: String, // The level of syncing to do. "full" is the only one being implemented right now.
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -296,12 +302,28 @@ async fn main() {
             };
         }
         let o = v.clone();
+        let config_version_up_to_date: bool = match fs::read_to_string(confp) {
+            Ok(g) => match toml::from_str(&g) {
+                Ok(p) => {
+                    let p: PrePreConfig = p;
+                    p.version.unwrap_or(String::from("Unset")) == *CURRENT_CONFIG_VERSION
+                }
+                _ => false,
+            },
+            _ => false,
+        };
+        if !config_version_up_to_date {
+            eprintln!("ERROR! The config file Lumina tried to load, doesn't match the configuration version Lumina supports. (Expected: {})", CURRENT_CONFIG_VERSION);
+            process::exit(1);
+        };
+
         match fs::read_to_string(confp) {
             Ok(g) => match toml::from_str(&g) {
                 Ok(p) => {
                     let mut rng = thread_rng();
                     let p: PreConfig = p;
                     LuminaConfig {
+                        version: p.version,
                         server: p.server,
                         interinstance: p.interinstance,
                         database: p.database,
