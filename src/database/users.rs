@@ -129,7 +129,6 @@ pub(crate) fn add(
 }
 
 pub(crate) mod auth {
-    use std::io::{Error, ErrorKind};
 
     use actix_web::web::Data;
     use colored::Colorize;
@@ -139,31 +138,21 @@ pub(crate) mod auth {
 
     use crate::ServerVars;
 
-    /// I first chose `Result<Option<>>`, but decided a struct which would just hold the options as bools would work as well.
     /// # AuthResponse
     /// Tells the server what the database knows of a user. If it exists, and if the password provided was correct.
-    pub(crate) struct AuthResponse {
-        pub(crate) success: bool,
-        pub(crate) user_exists: bool,
-        pub(crate) password_correct: bool,
-        pub(crate) user_id: Option<i64>,
+    pub enum AuthResponse {
+        Success(i64),
+        UserNoneExistant,
+        Fail(FailReason),
     }
-    impl AuthResponse {
-        /// Wraps the AuthResponse struct into a Result<Option<i64>, Error>, as originally intended.
-        #[allow(unused)]
-        pub(crate) fn wrap(self) -> Result<Option<i64>, Error> {
-            if self.success && self.user_exists && self.password_correct {
-                // Password is correct, user exists, return the user_id
-                Ok(Some(self.user_id.unwrap()))
-            } else if !self.success {
-                // Unknown error, not important here, but there was an error causing an unknown outcome.
-                Err(Error::new(ErrorKind::Other, "Unknown error."))
-            } else {
-                // User does not exist or password is incorrect.
-                Ok(None)
-            }
-        }
+    /// # FailReason
+    /// The reason why the authentication failed.
+    pub enum FailReason {
+        Unspecified,
+        PasswordIncorrect,
+        InvalidUsername,
     }
+
 
     /// # `storage::users::auth::check()`
     /// Authenticates a user by plain username/email and password.
@@ -179,23 +168,14 @@ pub(crate) mod auth {
                 ' ' | '\\' | '/' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')' | '`'
             )
         }) {
-            return AuthResponse {
-                success: false,
-                user_exists: false,
-                password_correct: false,
-                user_id: None,
-            };
+            // Invalid characters in username.
+            return AuthResponse::Fail(FailReason::InvalidUsername);
         }
         let config: crate::LuminaConfig = server_vars.clone().config.clone();
         let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
         let errorresponse = |e| {
             error!("Auth: \n\t\tRan into an error:\n {}", e);
-            AuthResponse {
-                success: false,
-                user_exists: false,
-                password_correct: false,
-                user_id: None,
-            }
+            AuthResponse::Fail(FailReason::Unspecified)
         };
         let onusername = match super::fetch(
             &config.clone(),
@@ -215,11 +195,11 @@ pub(crate) mod auth {
             Ok(a) => a,
             Err(e) => return errorresponse(e),
         };
-        let asome: Option<String> = match onusername {
+        let a_some: Option<String> = match onusername {
             Some(s) => Some(s),
             None => onemail,
         };
-        match asome {
+        match a_some {
             Some(d) => {
                 let u: super::BasicUserInfo = from_str(&d).unwrap();
                 if u.password == mcrypt.encrypt_str_to_base64(password) {
@@ -227,23 +207,13 @@ pub(crate) mod auth {
                         "Auth\t\t\t{}",
                         format!("User {} successfully authorised.", u.username.blue()).green()
                     ));
-                    AuthResponse {
-                        success: true,
-                        user_exists: true,
-                        password_correct: true,
-                        user_id: Some(u.id),
-                    }
+                    AuthResponse::Success(u.id)
                 } else {
                     (server_vars.tell)(format!(
                         "Auth\t\t\t{}",
                         format!("User {}: Wrong password entered.", identifyer.blue()).bright_red()
                     ));
-                    AuthResponse {
-                        success: true,
-                        user_exists: true,
-                        password_correct: false,
-                        user_id: None,
-                    }
+                    AuthResponse::Fail(FailReason::PasswordIncorrect)
                 }
             }
             None => {
@@ -251,12 +221,7 @@ pub(crate) mod auth {
                     "Auth\t\t\t{}",
                     format!("User {} does not exist.", identifyer.blue()).bright_yellow()
                 ));
-                AuthResponse {
-                    success: true,
-                    user_exists: false,
-                    password_correct: false,
-                    user_id: None,
-                }
+                AuthResponse::UserNoneExistant
             }
         }
     }

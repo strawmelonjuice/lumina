@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
-use crate::database::users::auth::check;
+use crate::database::users::auth::{AuthResponse, check};
 use crate::database::{fetch, BasicUserInfo};
 use crate::post::PostInfo;
 use crate::{LuminaConfig, ServerVars};
@@ -154,29 +154,29 @@ pub(crate) async fn auth(
     .await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    if result.success && result.user_exists && result.password_correct {
-        let user_id = result.user_id.unwrap();
-        let user: BasicUserInfo = serde_json::from_str(
-            fetch(&config, String::from("Users"), "id", user_id.to_string())
-                .unwrap()
-                .unwrap()
-                .as_str(),
-        )
-        .unwrap();
-        let username = user.username;
-        info!("User '{}' logged in succesfully from {}", username, ip);
-        session.insert("userid", user.id).unwrap();
-        session.insert("username", username).unwrap();
-        session
-            .insert("validity", config.clone().run.session_valid)
+    match result {
+        AuthResponse::Success(user_id) => {
+            let user: BasicUserInfo = serde_json::from_str(
+                fetch(&config, String::from("Users"), "id", user_id.to_string())
+                    .unwrap()
+                    .unwrap()
+                    .as_str(),
+            )
             .unwrap();
-        HttpResponse::build(StatusCode::OK)
+            let username = user.username;
+            info!("User '{0}' logged in succesfully from {1}", username, ip);
+            session.insert("userid", user.id).unwrap();
+            session.insert("username", username).unwrap();
+            session
+                .insert("validity", config.clone().run.session_valid)
+                .unwrap();
+            HttpResponse::build(StatusCode::OK)
+                .content_type("text/json; charset=utf-8")
+                .body(r#"{"Ok": true}"#)
+        },
+        _ => HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/json; charset=utf-8")
-            .body(r#"{"Ok": true}"#)
-    } else {
-        HttpResponse::build(StatusCode::UNAUTHORIZED)
-            .content_type("text/json; charset=utf-8")
-            .body(r#"{"Ok": false}"#)
+            .body(r#"{"Ok": false}"#),
     }
 }
 #[derive(Deserialize)]
