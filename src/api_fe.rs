@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
-use crate::database::users::auth::{AuthResponse, check};
+use crate::database::users::auth::{check, AuthResponse};
 use crate::database::{fetch, BasicUserInfo};
 use crate::post::PostInfo;
 use crate::{LuminaConfig, ServerVars};
@@ -173,7 +173,7 @@ pub(crate) async fn auth(
             HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
                 .body(r#"{"Ok": true}"#)
-        },
+        }
         _ => HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false}"#),
