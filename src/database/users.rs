@@ -153,7 +153,6 @@ pub(crate) mod auth {
         InvalidUsername,
     }
 
-
     /// # `storage::users::auth::check()`
     /// Authenticates a user by plain username/email and password.
     pub(crate) async fn check(
