@@ -64,7 +64,6 @@ function editorunfold() {
 		});
 	setTimeout(() => {
 		window.dragEditor = (e) => {
-			e = e || window.event;
 			e.preventDefault();
 			window.editorposition3 = e.clientX;
 			window.editorposition4 = e.clientY;
@@ -72,7 +71,6 @@ function editorunfold() {
 			document.onmousemove = window.editorDrag;
 		};
 		window.editorDrag = (e) => {
-			e = e || window.event;
 			e.preventDefault();
 			window.editorposition1 = window.editorposition3 - e.clientX;
 			window.editorposition2 = (function () {
@@ -286,7 +284,11 @@ setInterval(() => {
 		hashIsolated() !== window.displayedPage
 	) {
 		console.log("Automatically switching this page up.");
-		switchpages(hashIsolated());
+		if (hashIsolated() === "editordirect") {
+			triggerEditor();
+		} else {
+			switchpages(hashIsolated());
+		}
 	}
 }, 100);
 
