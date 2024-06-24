@@ -17,6 +17,17 @@ const SPECIALDATES: &str = r#"
     display: inline-flex;
     background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142))
 }
+.monthclass-6 .contentkeeper:hover::before {
+animation: prideBannerAnimation 6s linear infinite;
+  background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142));
+  background-size: 400% 100%;
+  background-repeat: repeat;
+  }
+@keyframes prideBannerAnimation {
+  0% { background-position: 0 0; }
+  50% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
 /*29th of februari is nonexistent in non-leap years*/
 .dayclass-29.monthclass-2 .contentkeeper::before {
     margin-top: .8em;
