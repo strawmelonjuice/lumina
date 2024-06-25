@@ -108,3 +108,72 @@ body {
 		border-color: transparent transparent transparent rgb(224 206 199);
 	}
 }
+
+
+.editor-container {
+	/* SET Height for Text Areas */
+	height: 2em;
+	background-color: rgb(255, 255, 255);
+	outline: 2px ridge rgba(50, 104, 220, 0.2);
+	transition: outline 0.5s ease;
+	line-height: 2em;
+}
+
+.editor-container:focus-within {
+	/* box-shadow: 0 0 5px rgb(181, 181, 181); */
+	outline: 2px ridge rgba(50, 104, 220, 1);
+}
+
+.editor-container>* {
+	height: 100%;
+	font-size: 1em;
+	padding: 0;
+	padding-left: 0.5em;
+	width: 100%;
+	overflow: auto;
+}
+
+.editor-container div * {
+	margin-bottom: 0.1em;
+	line-height: 0.5em;
+}
+
+.editor-container div a{
+	color: rgba(50, 104, 220, 1);
+}
+
+.editor-container div code {
+	color: rgba(50, 104, 220, 1);
+	background-color: rgb(240, 240, 240);
+	padding: 0.4em;
+}
+.editor-container div img {
+	max-width: 95%;
+}
+
+.editor-container div {
+	white-space: pre-wrap;
+}
+
+.editor-container:focus-within>div {
+	display: none;
+}
+
+.editor-container:focus-within :is(#editor-short-input, #editor-long-input) {
+	display: initial;
+}
+
+#editor-short-input,
+#editor-long-input {
+	display: none;
+	font: inherit;
+	border: none;
+	overflow-x: auto;
+	resize: none;
+}
+
+#editor-short-input:focus,
+#editor-long-input:focus {
+	border: none;
+	outline: none;
+}

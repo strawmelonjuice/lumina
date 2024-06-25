@@ -7,12 +7,111 @@ function editorfold() {
 	document.querySelector("div#posteditor").classList.add("hidden");
 }
 function triggerEditor() {
+	// Initialise the new post editor so that it's ready to be used
 	window.location.hash = "editor";
+}
+function renderMarkdownLong() {
+
+	document.getElementById("editor-long-preview").innerHTML = document.getElementById("editor-long-input").value.replace(/^###### (.*)/gm, "<h6>$1</h6>")
+		.replace(/^##### (.*)/gm, "<h5>$1</h5>")
+		.replace(/^#### (.*)/gm, "<h4>$1</h4>")
+		.replace(/^### (.*)/gm, "<h3>$1</h3>")
+		.replace(/^## (.*)/gm, "<h2>$1</h2>")
+		.replace(/^# (.*)/gm, "<h1>$1</h1>")
+		.replace(
+			/\!\[(.*?)\]\((.*?)\)/g,
+			'<img src="$2" alt="$1">',
+		)
+		.replace(
+			/\[(.*?)\]\((.*?)\)/g,
+			'<a href="$2" target="_blank">$1</a>',
+		).replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+		.replace(/\*(.*?)\*/g, "<i>$1</i>")
+		.replace(/_(.*?)_/g, "<sub>$1</sub>")
+		.replace(/~(.*?)~/g, "<del>$1</del>")
+		.replace(/\^(.*?)\^/g, "<sup>$1</sup>")
+		.replace(/`(.*?)`/g, "<code>$1</code>");
+
+}
+function renderMarkdownShort() {
+	document.getElementById("editor-short-preview").innerHTML = (document.getElementById("editor-short-input").value).replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+		.replace(/\*(.*?)\*/g, "<i>$1</i>")
+		.replace(/_(.*?)_/g, "<sub>$1</sub>")
+		.replace(/~(.*?)~/g, "<del>$1</del>")
+		.replace(/\^(.*?)\^/g, "<sup>$1</sup>")
+		.replace(/`(.*?)`/g, "<code>$1</code>");
+
+}
+function switcheditormode(elm) {
+	const modenames = ["short", "long", "embed"];
+	const desiredmode = elm.dataset.modeOpener;
+	for (const modename of modenames) {
+		// console.log(
+		// 	"Desired mode: " + desiredmode + "\nIterated mode: " + modename,
+		// );
+		const opener = document.querySelector(
+			`nav#editormodepicker [data-mode-opener="${modename}"]`,
+		);
+		const field = document.querySelector(
+			`div#editorwindowm [data-mode-field="${modename}"]`,
+		);
+
+		if (modename === desiredmode) {
+			opener.className = `p-0 cursor-default bg-orange-100 rounded-md rounded-b-none border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 text-brown-800 dark:border-zinc-400 border-b-0 flex justify-center items-center`;
+			field.classList.add("block");
+			field.classList.remove("hidden");
+		} else {
+			opener.className = `p-0 cursor-pointer bg-emerald-200 dark:bg-teal-800 rounded-md border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400 flex justify-center items-center`;
+			field.classList.add("hidden");
+			field.classList.remove("block");
+		}
+	}
+	switch (desiredmode) {
+		case "short":
+		{
+			document.getElementById("editor-short-input").addEventListener("change", renderMarkdownShort);
+			setInterval(renderMarkdownShort, 400);
+			renderMarkdownShort();
+
+			document.addEventListener("keydown", (ev) => {
+				if (ev.key === "Enter" && document.activeElement === el) {
+					document.getElementById("editor-short-input").focus();
+				} else if (ev.key === "Escape" && document.activeElement === document.getElementById("editor-short-input")) {
+					document.activeElement.blur();
+				}
+			});
+
+			document.getElementById("editor-short-container").addEventListener("click", () => {
+				document.getElementById("editor-short-input").focus();
+			});
+		}
+			break;
+		case "long":
+		{
+			document.getElementById("editor-long-input").addEventListener("change", renderMarkdownLong);
+			renderMarkdownLong();
+
+			document.addEventListener("keydown", (ev) => {
+				if (ev.key === "Enter" && document.activeElement === el) {
+					document.getElementById("editor-long-input").focus();
+				} else if (ev.key === "Escape" && document.activeElement === document.getElementById("editor-long-input")) {
+					document.activeElement.blur();
+				}
+			});
+
+			document.getElementById("editor-long-container").addEventListener("click", () => {
+				document.getElementById("editor-long-input").focus();
+			});
+		}
+			break;
+		default: break;
+
+	}
 }
 function editorunfold() {
 	document.getElementById("mobiletimelineswitcher").classList.add("hidden");
 	document.getElementById("posteditor").classList.remove("hidden");
-	const error = `<p class="w-full h-full text-black bg-white dark:text-white dark:bg-black">
+	const errormsg = `<p class="w-full h-full text-black bg-white dark:text-white dark:bg-black">
 				Failed to load post editor.
 			</p>`;
 
@@ -33,8 +132,8 @@ function editorunfold() {
 				/**
 				 * Represents the _FEPageServeResponse_ coming from an instance server.
 				 * @typedef {Object} FromSource
-				 * @property {string} main Main HTML from source.
-				 * @property {string} side Sidebar HTML from source.
+				 * @property {string} main Main HTML from the source.
+				 * @property {string} side Sidebar HTML from the source.
 				 * @property {number[]} message Messages from the source.
 				 * # Meanings
 				 * - 1: Session invalid
@@ -59,7 +158,7 @@ function editorunfold() {
 			},
 		)
 		.catch((error) => {
-			document.querySelector("div#posteditor").innerHTML = error;
+			document.querySelector("div#posteditor").innerHTML = errormsg;
 			console.error(error);
 		});
 	setTimeout(() => {
@@ -105,6 +204,7 @@ function editorunfold() {
 		document.getElementById("editorwindowh").onmousedown =
 			window.dragEditor;
 	}, 100);
+
 }
 
 /**
@@ -399,7 +499,7 @@ for (e of document.getElementsByClassName("svg_activenotification")) {
 }
 
 setInterval(() => {
-	for (e of document.getElementsByClassName("unparsed-timestamp")) {
+	for (const e of document.getElementsByClassName("unparsed-timestamp")) {
 		console.log(e.innerText);
 		const d = new Date(e.innerText * 1000);
 		// var hours = d.getHours();
@@ -418,4 +518,12 @@ setInterval(() => {
 		// console.log(formattedTime);
 	}
 });
+// Fold up the new post editor
 editorfold();
+const editorwaiter = setInterval(() => {
+	// when the editor is loaded, mode should be set to short.
+	if (document.getElementById("editor-short-input") !== null) {
+		switcheditormode(document.querySelector("nav#editormodepicker [data-mode-opener='short']"));
+		clearInterval(editorwaiter);
+	}
+});

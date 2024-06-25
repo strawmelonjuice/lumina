@@ -6,11 +6,11 @@
 <!doctype html>
 <div
 	id="editorwindow"
-	class="relative w-full h-full bg-emerald-200 bg-opacity-60 rounded-lg dark:bg-teal-800 overflow-clip"
+	class="relative w-full h-full bg-emerald-200 bg-opacity-60 rounded-lg dark:bg-teal-800 overflow-clip border-2 border-fuchsia-900 dark:border-violet-200"
 >
 	<div
 		id="editorwindowh"
-		class="absolute top-0 w-full h-10 bg-teal-800 dark:bg-emerald-200 cursor-move md:h-[2cm]"
+		class="absolute top-0 w-full h-12 bg-teal-800 dark:bg-emerald-200 cursor-move md:h-[2cm]"
 	>
 		<header
 			class="special absolute h-1/2 top-0 w-full flex items-center justify-center text-orange-100 dark:text-neutral-800"
@@ -18,17 +18,29 @@
 			Post editor
 		</header>
 		<nav
+			id="editormodepicker"
 			class="absolute h-1/2 bottom-0 grid grid-flow-col justify-stretch w-[calc(90%-2.25rem)] lg:w-[calc(90%-1cm)] pl-1"
 		>
 			<div
-				class="p-0 cursor-default bg-orange-100 rounded-md rounded-b-none border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 hover:text-white text-brown-800 dark:border-zinc-400 border-b-0 flex justify-center items-center"
+				class="p-0 cursor-default bg-orange-100 rounded-md rounded-b-none border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 text-brown-800 dark:border-zinc-400 border-b-0 flex justify-center items-center"
+				data-mode-opener="short"
+				onclick="switcheditormode(this)"
 			>
-				Active
+				Text post mode
 			</div>
 			<div
 				class="p-0 cursor-pointer bg-emerald-200 dark:bg-teal-800 rounded-md border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400 flex justify-center items-center"
+				data-mode-opener="long"
+				onclick="switcheditormode(this)"
 			>
-				Inactive
+				Article mode
+			</div>
+			<div
+				class="p-0 cursor-pointer bg-emerald-200 dark:bg-teal-800 rounded-md border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400 flex justify-center items-center"
+				data-mode-opener="embed"
+				onclick="switcheditormode(this)"
+			>
+				Embed mode
 			</div>
 		</nav>
 		<div
@@ -44,8 +56,24 @@
 	</div>
 	<div
 		id="editorwindowm"
-		class="top-10 h-[calc(100%-2.5rem)] md:top-[2cm] absolute w-full md:h-[calc(100%-2cm)] bg-orange-100 dark:bg-neutral-800"
+		class="top-12 h-[calc(100%-2.5rem)] md:top-[2cm] absolute w-full md:h-[calc(100%-2cm)] bg-orange-100 dark:bg-neutral-800"
 	>
 		<p>Choose a mode above</p>
+		<div data-mode-field="short" class="block" >Mode: Short
+			<label for="editor-short-input">Type it out</label>
+			<div tabindex="1" title="Enter text here!" id="editor-short-container" class="editor-container">
+				<div id="editor-short-preview">fasd</div>
+				<input type="text" id="editor-short-input" value="Enter markdown like *italic* or **bold**">
+			</div>
+		</div>
+		<div data-mode-field="long" class="hidden">Mode: Long
+			<label for="editor-long-input">Enter text here!</label>
+			<div tabindex="1" title="Enter text here!" id="editor-long-container" class="editor-container h-8/10">
+				<div id="editor-long-preview" class="h-full"></div>
+				<textarea name="" id="editor-long-input" cols="30" rows="10" class="h-full">## My article
+				Enter markdown like *italic* or **bold**!</textarea>
+			</div>
+		</div>
+		<div data-mode-field="embed" class="hidden">Mode: Embed</div>
 	</div>
 </div>
