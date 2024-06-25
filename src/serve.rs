@@ -3,6 +3,7 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+//noinspection ALL
 const SPECIALDATES: &str = r#"
 /*Pride month banner*/
 .monthclass-6 .contentkeeper::before {
@@ -17,16 +18,38 @@ const SPECIALDATES: &str = r#"
     display: inline-flex;
     background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142))
 }
+.monthclass-6 .contentkeeper {
+--bs: 300% 100%;
+
+}
 .monthclass-6 .contentkeeper:hover::before {
-animation: prideBannerAnimation 6s linear infinite;
-  background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142));
-  background-size: 400% 100%;
-  background-repeat: repeat;
+animation: prideBannerAnimation 10s linear infinite;
   }
 @keyframes prideBannerAnimation {
-  0% { background-position: 0 0; }
-  50% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
+  0% {  }
+  25% { background-position: 0 0;
+    background-size: var(--bs);
+  background-repeat: repeat;}
+    30% { background-position: 50% 0;
+        content: "Protect LGBTQ+ Rights!";
+        background-size: var(--bs);
+        background-repeat: repeat;
+    }
+  50% { background-position: 100% 0;
+content: "Protect LGBTQ+ Rights!";
+    background-size: var(--bs);
+  background-repeat: repeat;
+  }
+    80% { background-position: 50% 0;
+        content: "Protect LGBTQ+ Rights!";
+        background-size: var(--bs);
+        background-repeat: repeat;
+    }
+  75% { background-position: 0 0;
+    background-size: var(--bs);
+  background-repeat: repeat;
+  }
+  100% {  }
 }
 /*29th of februari is nonexistent in non-leap years*/
 .dayclass-29.monthclass-2 .contentkeeper::before {
