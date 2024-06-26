@@ -3,44 +3,118 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+
+const subPageList = {
+	home: {
+		mobile: document.getElementById("mobile-home-nav"),
+		desktop: document.getElementById("home-nav"),
+		location: "home",
+		navigator: true,
+		f: () => {
+			document
+				.getElementById("mobiletimelineswitcher")
+				.classList.remove("hidden");
+		},
+	},
+	test: {
+		mobile: document.getElementById("mobile-test-nav"),
+		desktop: document.getElementById("test-nav"),
+		location: "test",
+		navigator: true,
+		f: () => {
+			document
+				.getElementById("mobiletimelineswitcher")
+				.classList.add("hidden");
+		},
+	},
+	editor: {
+		mobile: document.getElementById("mobile-home-nav"),
+		desktop: document.getElementById("home-nav"),
+		location: "editor",
+		navigator: false,
+		f: editorunfold,
+	},
+	notifications: {
+		mobile: document.getElementById("mobile-notifications-nav"),
+		desktop: document.getElementById("notifications-nav"),
+		location: "notifications-centre",
+		navigator: true,
+		f: () => {
+			document
+				.getElementById("mobiletimelineswitcher")
+				.classList.add("hidden");
+		},
+	},
+};
+
 function editorfold() {
 	document.querySelector("div#posteditor").classList.add("hidden");
+	if (document.body.dataset.editorOpen === undefined) {
+		document.body.dataset.editorOpen = "initial";
+	} else {
+		document.body.dataset.editorOpen = "false";
+	}
 }
 function triggerEditor() {
-	// Initialise the new post editor so that it's ready to be used
-	window.location.hash = "editor";
+	if (
+		document.body.dataset.editorOpen !== "true" &&
+		window.location.hash === "#editor"
+	) {
+		// editor glitched out, going back to retry...
+		console.log("triggerEditor: retrying...");
+		window.history.back();
+		// wait a bit before retrying...
+		setTimeout(() => {
+			window.location.hash = "editor";
+		}, 600);
+		return;
+	}
+	if (document.body.dataset.editorOpen !== "true") {
+		window.location.hash = "editor";
+	} else {
+		console.log(
+			"triggerEditor got called, but editor is already open. Refolding editor instead.",
+		);
+		editorfold();
+	}
 }
 function renderMarkdownLong() {
-
-	document.getElementById("editor-long-preview").innerHTML = document.getElementById("editor-long-input").value.replace(/^###### (.*)/gm, "<h6>$1</h6>")
-		.replace(/^##### (.*)/gm, "<h5>$1</h5>")
-		.replace(/^#### (.*)/gm, "<h4>$1</h4>")
-		.replace(/^### (.*)/gm, "<h3>$1</h3>")
-		.replace(/^## (.*)/gm, "<h2>$1</h2>")
-		.replace(/^# (.*)/gm, "<h1>$1</h1>")
-		.replace(
-			/\!\[(.*?)\]\((.*?)\)/g,
-			'<img src="$2" alt="$1">',
-		)
-		.replace(
-			/\[(.*?)\]\((.*?)\)/g,
-			'<a href="$2" target="_blank">$1</a>',
-		).replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
-		.replace(/\*(.*?)\*/g, "<i>$1</i>")
-		.replace(/_(.*?)_/g, "<sub>$1</sub>")
-		.replace(/~(.*?)~/g, "<del>$1</del>")
-		.replace(/\^(.*?)\^/g, "<sup>$1</sup>")
-		.replace(/`(.*?)`/g, "<code>$1</code>");
-
+	if (document.getElementById("editor-long-input").value === "") {
+		document.getElementById("editor-long-preview").innerHTML =
+			`<p class="w-full h-full text-neutral-400 dark:stroke-stone-400">Click here to start writing! Use markdown to style!</p>`;
+		return;
+	}
+	axios
+		.post("/api/fe/editor_fetch_markdownpreview", {
+			a: document.getElementById("editor-long-input").value,
+		})
+		.then((response) => {
+			if (response.data.Ok === true) {
+				document.getElementById("editor-long-preview").innerHTML =
+					response.data.htmlContent;
+			} else {
+				document.getElementById("editor-long-preview").innerText =
+					"There was an error rendering the markdown.";
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+			document.getElementById("editor-long-preview").innerText =
+				"There was an error rendering the markdown.";
+		});
 }
 function renderMarkdownShort() {
-	document.getElementById("editor-short-preview").innerHTML = (document.getElementById("editor-short-input").value).replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+	document.getElementById("editor-short-preview").innerHTML = document
+		.getElementById("editor-short-input")
+		.value.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
 		.replace(/\*(.*?)\*/g, "<i>$1</i>")
-		.replace(/_(.*?)_/g, "<sub>$1</sub>")
+		.replace(/_(.*?)_/g, "<i>$1</i>")
 		.replace(/~(.*?)~/g, "<del>$1</del>")
 		.replace(/\^(.*?)\^/g, "<sup>$1</sup>")
-		.replace(/`(.*?)`/g, "<code>$1</code>");
-
+		.replace(
+			/`(.*?)`/g,
+			`<code class="text-blue-500 bg-slate-200 dark:text-blue-200 dark:bg-slate-600 m-1">$1</code>`,
+		);
 }
 function switcheditormode(elm) {
 	const modenames = ["short", "long", "embed"];
@@ -57,55 +131,83 @@ function switcheditormode(elm) {
 		);
 
 		if (modename === desiredmode) {
-			opener.className = `p-0 cursor-default bg-orange-100 rounded-md rounded-b-none border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 text-brown-800 dark:border-zinc-400 border-b-0 flex justify-center items-center`;
+			opener.className =
+				"flex items-center justify-center p-0 bg-orange-100 border-2 border-b-0 rounded-md rounded-b-none cursor-default border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 text-brown-800 dark:border-zinc-400";
 			field.classList.add("block");
 			field.classList.remove("hidden");
 		} else {
-			opener.className = `p-0 cursor-pointer bg-emerald-200 dark:bg-teal-800 rounded-md border-2 border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400 flex justify-center items-center`;
+			opener.className =
+				"flex items-center justify-center p-0 border-2 rounded-md cursor-pointer bg-emerald-200 dark:bg-teal-800 border-emerald-600 dark:text-orange-100 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400";
 			field.classList.add("hidden");
 			field.classList.remove("block");
 		}
 	}
 	switch (desiredmode) {
 		case "short":
-		{
-			document.getElementById("editor-short-input").addEventListener("change", renderMarkdownShort);
-			setInterval(renderMarkdownShort, 400);
-			renderMarkdownShort();
+			{
+				document
+					.getElementById("editor-short-input")
+					.addEventListener("change", renderMarkdownShort);
+				setInterval(renderMarkdownShort, 400);
+				renderMarkdownShort();
 
-			document.addEventListener("keydown", (ev) => {
-				if (ev.key === "Enter" && document.activeElement === el) {
-					document.getElementById("editor-short-input").focus();
-				} else if (ev.key === "Escape" && document.activeElement === document.getElementById("editor-short-input")) {
-					document.activeElement.blur();
-				}
-			});
+				document.addEventListener("keydown", (ev) => {
+					if (
+						ev.key === "Enter" &&
+						document.activeElement ===
+							document.getElementById("editor-short-container")
+					) {
+						document.getElementById("editor-short-input").focus();
+					} else if (
+						ev.key === "Escape" &&
+						document.activeElement ===
+							document.getElementById("editor-short-input")
+					) {
+						document.activeElement.blur();
+					}
+				});
 
-			document.getElementById("editor-short-container").addEventListener("click", () => {
+				document
+					.getElementById("editor-short-container")
+					.addEventListener("click", () => {
+						document.getElementById("editor-short-input").focus();
+					});
 				document.getElementById("editor-short-input").focus();
-			});
-		}
+			}
 			break;
 		case "long":
-		{
-			document.getElementById("editor-long-input").addEventListener("change", renderMarkdownLong);
-			renderMarkdownLong();
+			{
+				document
+					.getElementById("editor-long-input")
+					.addEventListener("change", renderMarkdownLong);
+				renderMarkdownLong();
 
-			document.addEventListener("keydown", (ev) => {
-				if (ev.key === "Enter" && document.activeElement === el) {
-					document.getElementById("editor-long-input").focus();
-				} else if (ev.key === "Escape" && document.activeElement === document.getElementById("editor-long-input")) {
-					document.activeElement.blur();
-				}
-			});
+				document.addEventListener("keydown", (ev) => {
+					if (
+						ev.key === "Enter" &&
+						document.activeElement ===
+							document.getElementById("editor-long-container")
+					) {
+						document.getElementById("editor-long-input").focus();
+					} else if (
+						ev.key === "Escape" &&
+						document.activeElement ===
+							document.getElementById("editor-long-input")
+					) {
+						document.activeElement.blur();
+					}
+				});
 
-			document.getElementById("editor-long-container").addEventListener("click", () => {
+				document
+					.getElementById("editor-long-container")
+					.addEventListener("click", () => {
+						document.getElementById("editor-long-input").focus();
+					});
 				document.getElementById("editor-long-input").focus();
-			});
-		}
+			}
 			break;
-		default: break;
-
+		default:
+			break;
 	}
 }
 function editorunfold() {
@@ -114,53 +216,61 @@ function editorunfold() {
 	const errormsg = `<p class="w-full h-full text-black bg-white dark:text-white dark:bg-black">
 				Failed to load post editor.
 			</p>`;
-
-	axios
-		.post("/api/fe/fetch-page", {
-			location: "editor",
-		})
-		.then(
-			/**
-			 * @param {ResFromSource} response - Represents the response containing an _FEPageServeResponse_ coming from an instance server.
-			 */
-			(response) => {
+	if (document.body.dataset.editorOpen === "initial") {
+		axios
+			.post("/api/fe/fetch-page", {
+				location: "editor",
+			})
+			.then(
 				/**
-				 * Represents the response containing an _FEPageServeResponse_ coming from an instance server.
-				 * @typedef {Object} ResFromSource
-				 * @property {FromSource} data - Represents the _FEPageServeResponse_ coming from an instance server.
+				 * @param {ResFromSource} response - Represents the response containing an _FEPageServeResponse_ coming from an instance server.
 				 */
-				/**
-				 * Represents the _FEPageServeResponse_ coming from an instance server.
-				 * @typedef {Object} FromSource
-				 * @property {string} main Main HTML from the source.
-				 * @property {string} side Sidebar HTML from the source.
-				 * @property {number[]} message Messages from the source.
-				 * # Meanings
-				 * - 1: Session invalid
-				 * - 2: Source unknown (404)
-				 */
-				if (
-					!response.data.message.includes(2) &&
-					!response.data.message.includes(1)
-				) {
-					document.querySelector("div#posteditor").innerHTML =
-						response.data.main;
-					window.history.back();
-				} else {
-					document.querySelector("div#posteditor").innerHTML = error;
-				}
-				document
-					.querySelector("button#bttn_closeeditor")
-					.setAttribute("onclick", "editorfold()");
-				document
-					.querySelector("main")
-					.setAttribute("onclick", "editorfold()");
-			},
-		)
-		.catch((error) => {
-			document.querySelector("div#posteditor").innerHTML = errormsg;
-			console.error(error);
-		});
+				(response) => {
+					/**
+					 * Represents the response containing an _FEPageServeResponse_ coming from an instance server.
+					 * @typedef {Object} ResFromSource
+					 * @property {FromSource} data - Represents the _FEPageServeResponse_ coming from an instance server.
+					 */
+					/**
+					 * Represents the _FEPageServeResponse_ coming from an instance server.
+					 * @typedef {Object} FromSource
+					 * @property {string} main Main HTML from the source.
+					 * @property {string} side Sidebar HTML from the source.
+					 * @property {number[]} message Messages from the source.
+					 * # Meanings
+					 * - 1: Session invalid
+					 * - 2: Source unknown (404)
+					 */
+					if (
+						!response.data.message.includes(2) &&
+						!response.data.message.includes(1)
+					) {
+						document.querySelector("div#posteditor").innerHTML =
+							response.data.main;
+						window.history.back();
+					} else {
+						document.querySelector("div#posteditor").innerHTML =
+							error;
+					}
+					document
+						.querySelector("button#bttn_closeeditor")
+						.setAttribute("onclick", "editorfold()");
+					document
+						.querySelector("main")
+						.setAttribute("onclick", "editorfold()");
+					switcheditormode(
+						document.querySelector(
+							"nav#editormodepicker [data-mode-opener='short']",
+						),
+					);
+				},
+			)
+			.catch((error) => {
+				document.querySelector("div#posteditor").innerHTML = errormsg;
+				console.error(error);
+				return;
+			});
+	}
 	setTimeout(() => {
 		window.dragEditor = (e) => {
 			e.preventDefault();
@@ -172,7 +282,7 @@ function editorunfold() {
 		window.editorDrag = (e) => {
 			e.preventDefault();
 			window.editorposition1 = window.editorposition3 - e.clientX;
-			window.editorposition2 = (function () {
+			window.editorposition2 = (() => {
 				const o = window.editorposition4 - e.clientY;
 				if (
 					document.querySelector("div#posteditor").offsetTop - o <
@@ -181,20 +291,19 @@ function editorunfold() {
 					return (
 						document.querySelector("div#posteditor").offsetTop - 40
 					);
-				} else {
-					return o;
 				}
+				return o;
 			})();
 			window.editorposition3 = e.clientX;
 			window.editorposition4 = e.clientY;
-			document.querySelector("div#posteditor").style.top =
+			document.querySelector("div#posteditor").style.top = `${
 				document.querySelector("div#posteditor").offsetTop -
-				window.editorposition2 +
-				"px";
-			document.querySelector("div#posteditor").style.left =
+				window.editorposition2
+			}px`;
+			document.querySelector("div#posteditor").style.left = `${
 				document.querySelector("div#posteditor").offsetLeft -
-				window.editorposition1 +
-				"px";
+				window.editorposition1
+			}px`;
 		};
 
 		window.stopEditorDragging = () => {
@@ -203,8 +312,9 @@ function editorunfold() {
 		};
 		document.getElementById("editorwindowh").onmousedown =
 			window.dragEditor;
-	}, 100);
 
+		document.body.dataset.editorOpen = "true";
+	}, 100);
 }
 
 /**
@@ -215,50 +325,9 @@ function editorunfold() {
 function switchpages(toPageName) {
 	let to = toPageName;
 	if (toPageName === "") to = "home";
-	const navbutton = {
-		home: {
-			mobile: document.getElementById("mobile-home-nav"),
-			desktop: document.getElementById("home-nav"),
-			location: "home",
-			navigator: true,
-			f: () => {
-				document
-					.getElementById("mobiletimelineswitcher")
-					.classList.remove("hidden");
-			},
-		},
-		test: {
-			mobile: document.getElementById("mobile-test-nav"),
-			desktop: document.getElementById("test-nav"),
-			location: "test",
-			navigator: true,
-			f: () => {
-				document
-					.getElementById("mobiletimelineswitcher")
-					.classList.add("hidden");
-			},
-		},
-		editor: {
-			mobile: document.getElementById("mobile-test-nav"),
-			desktop: document.getElementById("test-nav"),
-			location: "editor",
-			navigator: false,
-			f: editorunfold,
-		},
-		notifications: {
-			mobile: document.getElementById("mobile-notifications-nav"),
-			desktop: document.getElementById("notifications-nav"),
-			location: "notifications-centre",
-			navigator: true,
-			f: () => {
-				document
-					.getElementById("mobiletimelineswitcher")
-					.classList.add("hidden");
-			},
-		},
-	};
-	for (const d in navbutton) {
-		const a = navbutton[d];
+
+	for (const d in subPageList) {
+		const a = subPageList[d];
 		if (a.navigator) {
 			for (const h of [a.mobile, a.desktop]) {
 				h.setAttribute("onclick", `switchpages("${d}")`);
@@ -358,13 +427,19 @@ function switchpages(toPageName) {
 }
 
 document.addEventListener("keydown", (event) => {
-	if (event.key === "h") {
-		event.preventDefault();
-		window.location.hash = "home";
-	}
-	if (event.key === "n") {
-		event.preventDefault();
-		window.location.hash = "notifications";
+	if (document.body.dataset.editorOpen !== "true") {
+		if (event.key === "e") {
+			event.preventDefault();
+			triggerEditor();
+		}
+		if (event.key === "h") {
+			event.preventDefault();
+			window.location.hash = "home";
+		}
+		if (event.key === "n") {
+			event.preventDefault();
+			window.location.hash = "notifications";
+		}
 	}
 });
 
@@ -383,7 +458,7 @@ setInterval(() => {
 		window.displayedPage === undefined ||
 		hashIsolated() !== window.displayedPage
 	) {
-		console.log("Automatically switching this page up.");
+		// console.log("Automatically switching this page up.");
 		if (hashIsolated() === "editordirect") {
 			triggerEditor();
 		} else {
@@ -520,10 +595,3 @@ setInterval(() => {
 });
 // Fold up the new post editor
 editorfold();
-const editorwaiter = setInterval(() => {
-	// when the editor is loaded, mode should be set to short.
-	if (document.getElementById("editor-short-input") !== null) {
-		switcheditormode(document.querySelector("nav#editormodepicker [data-mode-opener='short']"));
-		clearInterval(editorwaiter);
-	}
-});
