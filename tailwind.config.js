@@ -3,6 +3,7 @@ module.exports = {
 	content: [
 		"./assets/**/*.{html,handlebars,js}",
 		"./target/generated/**/.{html,handlebars}",
+		"./src/api_fe.rs",
 	],
 	theme: {
 		fontFamily: {

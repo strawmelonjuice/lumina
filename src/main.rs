@@ -468,6 +468,10 @@ async fn main() {
                 "/api/fe/fetch-page",
                 web::post().to(api_fe::pageservresponder),
             )
+            .route(
+                "/api/fe/editor_fetch_markdownpreview",
+                web::post().to(api_fe::render_editor_articlepost),
+            )
             .route("/api/fe/update", web::get().to(api_fe::update))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
             .route("/api/fe/auth-create", web::post().to(api_fe::newaccount))

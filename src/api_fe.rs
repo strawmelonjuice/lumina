@@ -52,12 +52,15 @@ struct JSClientUser {
     pub username: String,
     pub id: i64,
 }
-
+pub enum ShieldValue {
+    Notsafe(HttpResponse),
+    Safe,
+}
 async fn shield(
     session: Session,
     server_vars_mutex: &Data<Mutex<ServerVars>>,
     halt: HttpResponse,
-) -> Option<HttpResponse> {
+) -> ShieldValue {
     let server_vars = ServerVars::grab(server_vars_mutex).await;
     let config = server_vars.clone().config;
     let id_ = session.get::<i64>("userid").unwrap_or(None);
@@ -71,9 +74,9 @@ async fn shield(
     };
     if !safe {
         session.purge();
-        Some(halt)
+        ShieldValue::Notsafe(halt)
     } else {
-        None
+        ShieldValue::Safe
     }
 }
 
@@ -265,8 +268,8 @@ pub(crate) async fn pageservresponder(
     )
     .await
     {
-        Some(o) => o,
-        None => {
+        ShieldValue::Notsafe(o) => o,
+        ShieldValue::Safe => {
             // These three WILL be used in the future, when pages actually get dynamic.
             let location = data.location.clone();
             let server_vars = server_vars_mutex.lock().await.clone();
@@ -375,6 +378,59 @@ pub(crate) async fn check_username(
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
         .body(r#"{"Ok": true}"#);
+}
+
+#[derive(Deserialize)]
+pub struct EditorContent {
+    a: String,
+}
+#[derive(Serialize, Deserialize)]
+
+struct EditorResponse {
+    #[serde(rename = "Ok")]
+    ok: bool,
+    #[serde(rename = "htmlContent")]
+    html_content: String,
+}
+pub(crate) async fn render_editor_articlepost(
+    server_vars_mutex: Data<Mutex<ServerVars>>,
+    data: actix_web::web::Json<EditorContent>,
+) -> HttpResponse {
+    let server_vars = ServerVars::grab(&server_vars_mutex).await;
+    let _config = server_vars.clone().config;
+    let unprocessed_md = data.a.clone();
+
+    let processed_md =
+        match markdown::to_html_with_options(unprocessed_md.as_str(), &markdown::Options::gfm()) {
+            Ok(html) => html,
+            Err(_) => {
+                return HttpResponse::build(StatusCode::OK)
+                    .content_type("text/json; charset=utf-8")
+                    .body(
+                        serde_json::to_string(&EditorResponse {
+                            ok: false,
+                            html_content: String::from("Markdown processing failed."),
+                        })
+                        .unwrap(),
+                    );
+            }
+        };
+    let readied_html = processed_md
+.replace(r#"<img "#, r#"<img class="max-w-9/12" "#)
+.replace(r#"<a "#, r#"<a class="text-blue-400" "#)
+.replace(r#"<code>"#, r#"<code class="m-1 text-stone-500 bg-slate-200 dark:text-stone-200 dark:bg-slate-600">"#)
+.replace(r#"<blockquote>"#, r#"<blockquote class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800">"#)
+.replace(r#""#, r#""#)
+.replace(r#""#, r#""#);
+    return HttpResponse::build(StatusCode::OK)
+        .content_type("text/json; charset=utf-8")
+        .body(
+            serde_json::to_string(&EditorResponse {
+                ok: true,
+                html_content: readied_html,
+            })
+            .unwrap(),
+        );
 }
 
 mod media;
