@@ -63,7 +63,7 @@ function getParams() {
 }
 
 /**
- * Description placeholder
+ * description placeholder
  */
 function pulls() {
 	axios
@@ -84,7 +84,7 @@ function randomStringFromArray(array) {
 }
 
 /**
- * Description placeholder
+ * description placeholder
  *
  * @returns {*}
  */

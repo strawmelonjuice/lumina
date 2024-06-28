@@ -3,7 +3,7 @@ members = ["libs/lumina-urls"]
 [workspace.dependencies]
 serde = { version = "1.0.203", features = ["derive"] }
 toml = "0.8.14"
-reqwest = "0.12.5"
+reqwest = { version = "0.12.5", features = ["blocking"] }
 serde_json = "1.0.115"
 regex = "1.10.5"
 [workspace.package]
@@ -18,17 +18,17 @@ name = "strawmelonjuice-lumina"
 authors.workspace = true
 publish = false
 license.workspace = true
-license-file.workspace = true
+# license-file.workspace = true
 repository.workspace = true
 version = "0.1.0"
 edition.workspace = true
 [dependencies]
 regex = { workspace = true }
-serde = {workspace = true}
-reqwest = {workspace = true}
-serde_json= {workspace = true}
-toml = {workspace = true}
-lumina-urls = { path = "libs/lumina-urls"}
+serde = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+serde_json = { workspace = true }
+toml = { workspace = true }
+lumina-urls = { path = "libs/lumina-urls" }
 futures = "0.3.30"
 async-std = "1.12.0"
 colored = "2.0.4"
