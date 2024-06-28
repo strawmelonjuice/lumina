@@ -1,25 +1,40 @@
-[package]
-name = "peonies-lumina-instance"
-
+[workspace]
+members = ["libs/lumina-urls"]
+[workspace.dependencies]
+serde = { version = "1.0.203", features = ["derive"] }
+toml = "0.8.14"
+reqwest = "0.12.5"
+serde_json = "1.0.115"
+regex = "1.10.5"
+[workspace.package]
 authors = ['MLC "Strawmelonjuice" Bloeiman']
-publish = false
 license = "BSD-3-Clause"
-repository = "https://github.com/strawmelonjuice/Peonies-Ephew"
-version = "0.1.0"
+repository = "https://github.com/strawmelonjuice/lumina"
 edition = "2021"
+license-file = "./LICENSE"
 
+[package]
+name = "strawmelonjuice-lumina"
+authors.workspace = true
+publish = false
+license.workspace = true
+license-file.workspace = true
+repository.workspace = true
+version = "0.1.0"
+edition.workspace = true
 [dependencies]
+regex = { workspace = true }
+serde = {workspace = true}
+reqwest = {workspace = true}
+serde_json= {workspace = true}
+toml = {workspace = true}
+lumina-urls = { path = "libs/lumina-urls"}
 futures = "0.3.30"
 async-std = "1.12.0"
-serde = { version = "1.0.203", features = ["derive"] }
 colored = "2.0.4"
-toml = "0.8.14"
 log = "0.4.21"
-reqwest = "0.12.5"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
-simplelog = "0.12.2"
 time = "0.3.34"
-serde_json = "1.0.115"
 password-hash = "0.5.0"
 tokio = { version = "1.38.0", features = ["rt", "rt-multi-thread", "macros"] }
 pbkdf2 = "0.12.2"
@@ -31,9 +46,9 @@ home = "0.5.9"
 magic-crypt = "3.1.13"
 rand = "0.8.5"
 build_const = "0.2.2"
-regex = "1.10.5"
 markdown = "1.0.0-alpha.17"
 chrono = "0.4.38"
+simplelog = "0.12.2"
 [build-dependencies]
 build_const = "0.2.2"
 markdown = "1.0.0-alpha.17"

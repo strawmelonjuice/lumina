@@ -1,0 +1,15 @@
+[package]
+name = "lumina-urls"
+description = "Parses urls and returns their information, used in Lumina for embeds"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+version = "0.1.0"
+
+[dependencies]
+scraper = "0.19.0"
+regex = { workspace = true }
+serde = {workspace = true}
+reqwest = { workspace = true }
+serde_json= {workspace = true}
