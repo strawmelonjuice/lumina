@@ -318,7 +318,7 @@ function editorunfold() {
 }
 
 /**
- * Description placeholder
+ * description placeholder
  *
  * @param {string} toPageName
  */
@@ -444,7 +444,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 /**
- * Description placeholder
+ * description placeholder
  *
  * @returns {string}
  */
@@ -468,7 +468,7 @@ setInterval(() => {
 }, 100);
 
 /**
- * Description placeholder
+ * description placeholder
  */
 function userMenuToggle() {
 	const userMenu = document.getElementById("user-menu");
@@ -498,7 +498,7 @@ window.pulled.push(() => {
 });
 
 /**
- * Description placeholder
+ * description placeholder
  */
 function LogOut() {
 	localStorage.clear();
@@ -506,7 +506,7 @@ function LogOut() {
 }
 
 /**
- * Description placeholder
+ * description placeholder
  *
  * @type {{ "plugins-disabled": { remove: (plugin: any) => void; }; }}
  */
@@ -532,7 +532,7 @@ const features = {
 };
 
 /**
- * Description placeholder
+ * description placeholder
  */
 function showMobiletimelineSwitcher() {
 	document.getElementById("mainright").innerHTML =
@@ -541,7 +541,7 @@ function showMobiletimelineSwitcher() {
 }
 
 /**
- * Description placeholder
+ * description placeholder
  *
  * @param {string} tid Timeline ID to browse to
  */
