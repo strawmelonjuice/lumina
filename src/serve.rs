@@ -6,23 +6,26 @@
 //noinspection ALL
 const SPECIALDATES: &str = r#"
 /*Pride month banner*/
-.monthclass-6 .contentkeeper::before {
-    margin: .8em 3% .4em 3%;
-    content: "Happy Pride Month!";
+body:has(.monthclass-6)::before {
+    margin: 0;
+    content: "Happy Pride Month! 💖🏳️‍🌈";
     justify-content: center;
     align-items: center;
-    height: 2.4em;
+    height: 1.4em;
     color: black;
-    width: 94%;
-    border-radius: 20px;
+    width: 100VW;
+    border-radius: 0;
     display: inline-flex;
     background-image: linear-gradient(to right, rgb(237, 34, 36), rgb(243, 91, 34), rgb(249, 150, 33), rgb(245, 193, 30), rgb(241, 235, 27) 27%, rgb(241, 235, 27), rgb(241, 235, 27) 33%, rgb(99, 199, 32), rgb(12, 155, 73), rgb(33, 135, 141), rgb(57, 84, 165), rgb(97, 55, 155), rgb(147, 40, 142))
 }
-.monthclass-6 .contentkeeper {
+
+
+
+body:has(.monthclass-6) {
 --bs: 300% 100%;
 
 }
-.monthclass-6 .contentkeeper:hover::before {
+body:has(.monthclass-6):hover::before {
 animation: prideBannerAnimation 10s linear infinite;
   }
 @keyframes prideBannerAnimation {
@@ -31,28 +34,43 @@ animation: prideBannerAnimation 10s linear infinite;
     background-size: var(--bs);
   background-repeat: repeat;}
     30% { background-position: 50% 0;
-        content: "Protect LGBTQ+ Rights!";
+        content: "Protect LGBTQ+ Rights! 🏳️‍🌈✊";
         background-size: var(--bs);
         background-repeat: repeat;
     }
   50% { background-position: 100% 0;
-content: "Protect LGBTQ+ Rights!";
+content: "Protect LGBTQ+ Rights! 🏳️‍🌈✊";
     background-size: var(--bs);
   background-repeat: repeat;
   }
-    80% { background-position: 50% 0;
-        content: "Protect LGBTQ+ Rights!";
-        background-size: var(--bs);
-        background-repeat: repeat;
-    }
+
   75% { background-position: 0 0;
     background-size: var(--bs);
   background-repeat: repeat;
   }
+    80% { background-position: 50% 0;
+        content: "Protect LGBTQ+ Rights!  🏳️‍🌈 ✊";
+        background-size: var(--bs);
+        background-repeat: repeat;
+    }
   100% {  }
 }
+body:has(.monthclass-6):active::before {
+    animation: none;
+    animation-delay: 3s;
+    animation-duration: 999s;
+    animation-name: transrights;
+    animation-iteration-count: 1;
+    animation-timing-function: ease-in-out;
+}
+@keyframes transrights {
+    0% {
+        content: "Protect trans Rights!  ✊ 🩵🩷🤍🩷🩵";
+        background-image: linear-gradient(to right, rgb(85, 205, 252), rgb(179, 157, 233), rgb(247, 168, 184), rgb(246, 216, 221), rgb(255, 255, 255) 45%, rgb(255, 255, 255), rgb(255, 255, 255) 55%, rgb(246, 216, 221), rgb(247, 168, 184), rgb(179, 157, 233), rgb(85, 205, 252));
+    }
+}
 /*29th of februari is nonexistent in non-leap years*/
-.dayclass-29.monthclass-2 .contentkeeper::before {
+body:has(.dayclass-29.monthclass-2)::before {
     margin-top: .8em;
     margin-bottom: .8em;
     content: "[This day does not exist]";
