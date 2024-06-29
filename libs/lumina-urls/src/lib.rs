@@ -58,7 +58,8 @@ impl UrlMetaInfo {
                         }
                     },
                     extract("og:title", &document),
-                ).unwrap_or(String::from("Could not get a title at this time."));
+                )
+                .unwrap_or(String::from("Could not get a title at this time."));
                 self = Succes(UrlMetaTags {
                     title,
                     description: onesome(
@@ -86,7 +87,7 @@ fn extract(name: &str, document: &Html) -> Option<String> {
     }
 }
 
-/// Out of two `Option<T>`'s, picks the one containing a `Some(T)`. 
+/// Out of two `Option<T>`'s, picks the one containing a `Some(T)`.
 /// If both have `Some`, `a` will be preferred. If both have `None`, `None` will be returned.
 fn onesome<T>(a: Option<T>, b: Option<T>) -> Option<T> {
     match a {
