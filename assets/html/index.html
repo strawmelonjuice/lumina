@@ -4,35 +4,36 @@
   ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
   -->
 <!--suppress HtmlUnknownTarget -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+	<head>
+		<title>Welcome - Lumina(@{{iid}})</title>
+		<meta charset="UTF-8" />
+		<style></style>
+		<script src="/axios/axios.min.js"></script>
+		<script src="/prefetch.js"></script>
+		<script defer src="/site-index.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
 
-<head>
-	<title>Welcome - Lumina(@{{iid}})</title>
-	<meta charset="UTF-8">
-	<style></style>
-	<script src="/axios/axios.min.js"></script>
-	<script src="/prefetch.js"></script>
-	<script defer src="/site-index.js"></script>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-
-<body class="bg-brown-100 dark:bg-neutral-500">
-	<nav class="bg-emerald-200 dark:bg-teal-800">
-		<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
-			<div class="flex relative justify-between items-center h-16">
-				<div class="flex absolute inset-y-0 left-0 items-center sm:hidden">
-					<!-- Mobile menu button-->
-					<button
+	<body class="bg-brown-100 dark:bg-neutral-500">
+		<nav class="bg-emerald-200 dark:bg-teal-800">
+			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
+				<div class="flex relative justify-between items-center h-16">
+					<div
+						class="flex absolute inset-y-0 left-0 items-center sm:hidden"
+					>
+						<!-- Mobile menu button-->
+						<button
 							type="button"
 							class="inline-flex relative justify-center items-center p-2 text-gray-400 rounded-md hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-inset focus:ring-white focus:outline-none"
 							aria-controls="mobile-menu"
 							aria-expanded="false"
 							id="btn-mobile-menu"
-					>
-						<span class="absolute -inset-0.5"></span>
-						<span class="sr-only">Open main menu</span>
-						<svg
+						>
+							<span class="absolute -inset-0.5"></span>
+							<span class="sr-only">Open main menu</span>
+							<svg
 								class="block w-6 h-6"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -40,14 +41,14 @@
 								stroke="currentColor"
 								aria-hidden="true"
 								id="btn-mobile-menu-open"
-						>
-							<path
+							>
+								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-							/>
-						</svg>
-						<svg
+								/>
+							</svg>
+							<svg
 								class="w-6 h-6"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -55,55 +56,75 @@
 								stroke="currentColor"
 								aria-hidden="true"
 								id="btn-mobile-menu-close"
-						>
-							<path
+							>
+								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
-					</button>
-				</div>
-				<div class="flex flex-1 justify-center items-center sm:justify-start sm:items-stretch">
-					<div class="flex flex-shrink-0 items-center">
-						<img class="w-auto h-10 bg-opacity-60 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100"
-							src="/logo.svg" alt="Lumina Instance" />
+								/>
+							</svg>
+						</button>
 					</div>
-				</div>
-				<div class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6">
-					<div class="hidden sm:block sm:ml-6">
-						<div class="flex space-x-4">
-							<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-							<a href="/signup" class="py-2 px-3 text-sm font-medium text-white bg-gray-900 rounded-md border-2"
-								aria-current="page" id="signup-nav">Sign-up</a>
-							<a href="/home"
-								class="py-2 px-3 text-sm font-medium bg-orange-200 rounded-md border-2 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
-								id="login-nav">Log in</a>
+					<div
+						class="flex flex-1 justify-center items-center sm:justify-start sm:items-stretch"
+					>
+						<div class="flex flex-shrink-0 items-center">
+							<img
+								class="w-auto h-10 bg-opacity-60 rounded-md border-amber-600 bg-stone-100 dark:bg-stone-100"
+								src="/logo.svg"
+								alt="Lumina Instance"
+							/>
 						</div>
 					</div>
-				</div>
-				<div class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6">
+					<div
+						class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
+					>
+						<div class="hidden sm:block sm:ml-6">
+							<div class="flex space-x-4">
+								<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+								<a
+									href="/signup"
+									class="py-2 px-3 text-sm font-medium text-white bg-gray-900 rounded-md border-2"
+									aria-current="page"
+									id="signup-nav"
+									>Sign-up</a
+								>
+								<a
+									href="/home"
+									class="py-2 px-3 text-sm font-medium bg-orange-200 rounded-md border-2 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
+									id="login-nav"
+									>Log in</a
+								>
+							</div>
+						</div>
+					</div>
+					<div
+						class="flex absolute inset-y-0 right-0 items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
+					></div>
 				</div>
 			</div>
-		</div>
-		<div class="sm:hidden" id="mobile-menu">
-			<div class="px-2 pt-2 pb-3 space-y-1">
-				<a href="/home"
-					class="block py-2 px-3 text-base font-medium text-white bg-red-400 rounded-md dark:bg-red-900"
-					id="mobile-login-nav">Log in</a>
-				<a href="/signup"
-					class="block py-2 px-3 text-base font-medium text-gray-300 rounded-md hover:text-white hover:bg-gray-700"
-					id="mobile-signup-nav">Sign up</a>
+			<div class="sm:hidden" id="mobile-menu">
+				<div class="px-2 pt-2 pb-3 space-y-1">
+					<a
+						href="/home"
+						class="block py-2 px-3 text-base font-medium text-white bg-red-400 rounded-md dark:bg-red-900"
+						id="mobile-login-nav"
+						>Log in</a
+					>
+					<a
+						href="/signup"
+						class="block py-2 px-3 text-base font-medium text-gray-300 rounded-md hover:text-white hover:bg-gray-700"
+						id="mobile-signup-nav"
+						>Sign up</a
+					>
+				</div>
 			</div>
-		</div>
-	</nav>
-	<main
-			class="monthclass-month dayclass-day text-fuchsia-900 dark:text-violet-200">
-		<div class="contentkeeper">
-		{{md}}
-
-		</div>	</main>
-	<script src="/axios/axios.min.js"></script>
-</body>
-
+		</nav>
+		<main
+			class="monthclass-month dayclass-day text-fuchsia-900 dark:text-violet-200"
+		>
+			<div class="contentkeeper">{{md}}</div>
+		</main>
+		<script src="/axios/axios.min.js"></script>
+	</body>
 </html>

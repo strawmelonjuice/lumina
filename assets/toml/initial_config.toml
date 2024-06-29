@@ -37,4 +37,3 @@ file = "instance-db.sqlite"
 file-loglevel = 3
 console-loglevel = 2
 file = "instance-logging.log"
-
