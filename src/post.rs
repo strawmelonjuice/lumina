@@ -1,8 +1,14 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
+
 use handlebars::*;
 use serde::{Deserialize, Serialize};
 
 use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
-use crate::database::{fetch, BasicUserInfo, IIExchangedUserInfo};
+use crate::database::{unifetch, BasicUserInfo, IIExchangedUserInfo};
 use crate::LuminaConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,17 +66,9 @@ impl PostPreRenderData {
 
 impl PostInfo {
     pub fn to_formatted(&self, config: &LuminaConfig) -> PostPreRenderData {
-        let author_u: BasicUserInfo = serde_json::from_str::<BasicUserInfo>(
-            &fetch(
-                config,
-                String::from("Users"),
-                "id",
-                self.author_id.to_string(),
-            )
-            .unwrap()
-            .unwrap(),
-        )
-        .unwrap();
+        let author_u: BasicUserInfo =
+            unifetch::<BasicUserInfo>(config, ("id", self.author_id.to_string().as_str()))
+                .unwrap_user();
 
         let author = IIExchangedUserInfo {
             id: self.author_id,

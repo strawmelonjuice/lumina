@@ -128,7 +128,7 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
 
-use crate::database::{BasicUserInfo, IIExchangedUserInfo};
+use crate::database::{self, BasicUserInfo, IIExchangedUserInfo};
 use crate::{LuminaConfig, ServerVars};
 use chrono::Datelike;
 
@@ -598,27 +598,16 @@ pub(crate) async fn fence(
     debug!("Session validity: {:?}", session.get::<i64>("validity"));
     debug!("Session contents: {:?}", session.entries());
     debug!("User ID: {:?}", id);
-
-    let safe: bool = match id {
-        -100 => false,
-        _ => match session.get::<i64>("validity") {
-            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
-            Err(_) => false,
-        },
-    };
+    let safe = crate::api_fe::checksessionvalidity(id, &session, &config);
     if !safe {
         session.purge();
         HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
             .append_header((LOCATION, "/login"))
             .finish()
     } else {
-        let user: BasicUserInfo = serde_json::from_str(
-            crate::database::fetch(&config, String::from("Users"), "id", id.to_string())
-                .unwrap()
-                .unwrap()
-                .as_str(),
-        )
-        .unwrap();
+        let user: BasicUserInfo = database::fetch::user(&config, ("id", id.to_string()))
+            .unwrap()
+            .unwrap();
 
         next(
             config.clone(),

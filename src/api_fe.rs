@@ -16,8 +16,7 @@ use tokio::sync::Mutex;
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::add;
 use crate::database::users::auth::{check, AuthResponse};
-use crate::database::{fetch, BasicUserInfo};
-use crate::post::PostInfo;
+use crate::database::{self};
 use crate::{LuminaConfig, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -65,18 +64,22 @@ async fn shield(
     let config = server_vars.clone().config;
     let id_ = session.get::<i64>("userid").unwrap_or(None);
     let id = id_.unwrap_or(-100);
-    let safe = match id {
-        -100 => false,
-        _ => match session.get::<i64>("validity") {
-            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
-            Err(_) => false,
-        },
-    };
+    let safe = checksessionvalidity(id, &session, &config);
     if !safe {
         session.purge();
         ShieldValue::Notsafe(halt)
     } else {
         ShieldValue::Safe
+    }
+}
+
+pub(crate) fn checksessionvalidity(id: i64, session: &Session, config: &LuminaConfig) -> bool {
+    match id {
+        -100 => false,
+        _ => match session.get::<i64>("validity") {
+            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
+            Err(_) => false,
+        },
     }
 }
 
@@ -117,14 +120,8 @@ pub(crate) async fn update(
             id: 0,
         },
     };
-    let userd_maybe = {
-        let ujson: String = match fetch(&config, String::from("Users"), "username", username_b) {
-            Ok(a) => a.unwrap_or_else(String::new),
-            Err(_) => String::new(),
-        };
-        serde_json::from_str::<BasicUserInfo>(ujson.as_str())
-    };
-    if let Ok(userd) = userd_maybe {
+    let userd_maybe = database::fetch::user(&config, ("username", username_b)).unwrap_or(None);
+    if let Some(userd) = userd_maybe {
         d.user = JSClientUser {
             username: userd.username,
             id: userd.id,
@@ -159,13 +156,9 @@ pub(crate) async fn auth(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         AuthResponse::Success(user_id) => {
-            let user: BasicUserInfo = serde_json::from_str(
-                fetch(&config, String::from("Users"), "id", user_id.to_string())
-                    .unwrap()
-                    .unwrap()
-                    .as_str(),
-            )
-            .unwrap();
+            let user = database::fetch::user(&config, ("id", user_id.to_string()))
+                .unwrap()
+                .unwrap();
             let username = user.username;
             info!("User '{0}' logged in succesfully from {1}", username, ip);
             session.insert("userid", user.id).unwrap();
@@ -207,13 +200,9 @@ pub(crate) async fn newaccount(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         Ok(user_id) => {
-            let user: BasicUserInfo = serde_json::from_str(
-                fetch(&config, String::from("Users"), "id", user_id.to_string())
-                    .unwrap()
-                    .unwrap()
-                    .as_str(),
-            )
-            .unwrap();
+            let user = database::fetch::user(&config, ("id", user_id.to_string()))
+                .unwrap()
+                .unwrap();
             let username = user.username;
             session.insert("userid", user.id).unwrap();
             session.insert("username", username).unwrap();
@@ -295,14 +284,11 @@ pub(crate) async fn pageservresponder(
                     main: {
                         let mut s = format!(
                             "<h1>Post fetched from DB (dynamically rendered using HandleBars)</h1>\n{}\n",
-                            serde_json::from_str::<PostInfo>(
-                                &fetch(&config, String::from("PostsStore"), "pid", "1".to_string())
-                                    .unwrap()
-                                    .unwrap(),
-                            )
-                            .unwrap()
-                            .to_formatted(&config)
-                            .to_html()
+                            &database::fetch::post(&config, ("pid", "1".to_string()))
+                                .unwrap()
+                                .unwrap()
+                                .to_formatted(&config)
+                                .to_html()
                         );
                         s.push_str(include_str!("../assets/html/examplepost.html"));
                         s
@@ -352,7 +338,7 @@ pub(crate) async fn check_username(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let config = server_vars.clone().config;
     let username = data.u.clone();
-    if crate::database::users::char_check_username(username.clone()) {
+    if database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false, "Why": "InvalidChars"}"#.to_string());
@@ -362,14 +348,9 @@ pub(crate) async fn check_username(
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    if fetch(
-        &config.clone(),
-        String::from("Users"),
-        "username",
-        username.clone(),
-    )
-    .unwrap_or(None)
-    .is_some()
+    if database::fetch::user(&config.clone(), ("username", username.clone()))
+        .unwrap_or(None)
+        .is_some()
     {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
@@ -385,7 +366,6 @@ pub struct EditorContent {
     a: String,
 }
 #[derive(Serialize, Deserialize)]
-
 struct EditorResponse {
     #[serde(rename = "Ok")]
     ok: bool,
@@ -416,12 +396,10 @@ pub(crate) async fn render_editor_articlepost(
             }
         };
     let readied_html = processed_md
-.replace(r#"<img "#, r#"<img class="max-w-9/12" "#)
-.replace(r#"<a "#, r#"<a class="text-blue-400" "#)
-.replace(r#"<code>"#, r#"<code class="m-1 text-stone-500 bg-slate-200 dark:text-stone-200 dark:bg-slate-600">"#)
-.replace(r#"<blockquote>"#, r#"<blockquote class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800">"#)
-.replace(r#""#, r#""#)
-.replace(r#""#, r#""#);
+        .replace(r#"<img "#, r#"<img class="max-w-9/12" "#)
+        .replace(r#"<a "#, r#"<a class="text-blue-400" "#)
+        .replace(r#"<code>"#, r#"<code class="m-1 text-stone-500 bg-slate-200 dark:text-stone-200 dark:bg-slate-600">"#)
+        .replace(r#"<blockquote>"#, r#"<blockquote class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800">"#);
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
         .body(

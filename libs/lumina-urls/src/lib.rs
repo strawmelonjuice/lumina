@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+ *
+ * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+ */
+
 use crate::PageType::General;
 use crate::UrlMetaInfo::{Fail, Succes};
 use scraper::{Html, Selector};
@@ -25,7 +31,7 @@ pub struct UrlMetaTags {
     pub page: PageType,
 }
 pub enum UrlMetaInfo {
-    Succes(UrlMetaTags),
+    Succes(Box<UrlMetaTags>),
     Fail,
     Unset,
 }
@@ -52,15 +58,15 @@ impl UrlMetaInfo {
                 let title = onesome(
                     {
                         let selector = Selector::parse("title").unwrap();
-                        match document.select(&selector).next() {
-                            Some(elm) => Some(String::from(elm.value().name())),
-                            None => None,
-                        }
+                        document
+                            .select(&selector)
+                            .next()
+                            .map(|elm| String::from(elm.value().name()))
                     },
                     extract("og:title", &document),
                 )
                 .unwrap_or(String::from("Could not get a title at this time."));
-                self = Succes(UrlMetaTags {
+                self = Succes(Box::from(UrlMetaTags {
                     title,
                     description: onesome(
                         extract("description", &document),
@@ -69,7 +75,7 @@ impl UrlMetaInfo {
                     .unwrap_or(String::from("Could not get a description at this time.")),
                     thumbnail: onesome(extract("og:image", &document), extract("image", &document)),
                     page: General,
-                });
+                }));
                 self
             }
         }
@@ -79,10 +85,7 @@ impl UrlMetaInfo {
 fn extract(name: &str, document: &Html) -> Option<String> {
     let selector = Selector::parse(format!(r#"meta[name="{}"]"#, name).as_str()).unwrap();
     match document.select(&selector).next() {
-        Some(elm) => match elm.value().attr("content") {
-            Some(t) => Some(String::from(t)),
-            None => None,
-        },
+        Some(elm) => elm.value().attr("content").map(String::from),
         None => None,
     }
 }

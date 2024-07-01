@@ -7,13 +7,22 @@
 use std::io::{Error, ErrorKind};
 
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
-use serde_json::from_str;
 
-use crate::LuminaConfig;
+use crate::{database, LuminaConfig};
 
-use super::{create_con, fetch, BasicUserInfo};
-
+use super::{create_con, BasicUserInfo};
+/// The minimum length of a username.
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
+
+/// Checks if a username contains valid characters.
+///
+/// # Arguments
+///
+/// * `username` - A string slice that holds the username.
+///
+/// # Returns
+///
+/// * `bool` - Returns true if the username contains invalid characters, false otherwise.
 pub(crate) fn char_check_username(username: String) -> bool {
     username.chars().any(|c| {
         match c {
@@ -45,8 +54,18 @@ pub(crate) fn char_check_username(username: String) -> bool {
         .all(char::is_alphanumeric)
 }
 
-/// # `storage::users::add()`
-/// Add data for a new user to the database.
+/// Adds a new user to the database.
+///
+/// # Arguments
+///
+/// * `username` - A string slice that holds the username.
+/// * `email` - A string slice that holds the email.
+/// * `password` - A string slice that holds the password.
+/// * `config` - A reference to the LuminaConfig struct.
+///
+/// # Returns
+///
+/// * `Result<i64, Error>` - Returns the user id if the user is successfully added, otherwise returns an error.
 pub(crate) fn add(
     username: String,
     email: String,
@@ -75,19 +94,9 @@ pub(crate) fn add(
     }
     let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
     let conn = create_con(&config.clone());
-    let onusername = fetch(
-        &config.clone(),
-        String::from("Users"),
-        "username",
-        username.clone(),
-    )?;
-    let onemail = fetch(
-        &config.clone(),
-        String::from("Users"),
-        "email",
-        email.clone(),
-    )?;
-    let res: Option<String> = match onusername {
+    let onusername = database::fetch::user(&config.clone(), ("username", username.clone()))?;
+    let onemail = database::fetch::user(&config.clone(), ("email", email.clone()))?;
+    let res: Option<BasicUserInfo> = match onusername {
         Some(s) => Some(s),
         None => onemail,
     };
@@ -100,16 +109,8 @@ pub(crate) fn add(
                 (username.clone(), password_encrypted, email),
             ) {
                 Ok(_) => {
-                    match fetch(
-                        &config.clone(),
-                        String::from("Users"),
-                        "username",
-                        username.clone(),
-                    )? {
-                        Some(q) => {
-                            let o: BasicUserInfo = from_str(&q)?;
-                            Ok(o.id)
-                        }
+                    match database::fetch::user(&config.clone(), ("username", username.clone()))? {
+                        Some(q) => Ok(q.id),
                         None => Err(Error::new(
                             ErrorKind::Other,
                             "Unknown database check error.",
@@ -129,14 +130,12 @@ pub(crate) fn add(
 }
 
 pub(crate) mod auth {
-
+    use crate::database::BasicUserInfo;
+    use crate::ServerVars;
     use actix_web::web::Data;
     use colored::Colorize;
     use magic_crypt::{new_magic_crypt, MagicCryptTrait};
-    use serde_json::from_str;
     use tokio::sync::Mutex;
-
-    use crate::ServerVars;
 
     /// # AuthResponse
     /// Tells the server what the database knows of a user. If it exists, and if the password provided was correct.
@@ -176,31 +175,22 @@ pub(crate) mod auth {
             error!("Auth: \n\t\tRan into an error:\n {}", e);
             AuthResponse::Fail(FailReason::Unspecified)
         };
-        let onusername = match super::fetch(
-            &config.clone(),
-            String::from("Users"),
-            "username",
-            identifyer.clone(),
-        ) {
-            Ok(a) => a,
-            Err(e) => return errorresponse(e),
-        };
-        let onemail = match super::fetch(
-            &config.clone(),
-            String::from("Users"),
-            "email",
-            identifyer.clone(),
-        ) {
-            Ok(a) => a,
-            Err(e) => return errorresponse(e),
-        };
-        let a_some: Option<String> = match onusername {
+        let onusername =
+            match super::database::fetch::user(&config.clone(), ("username", identifyer.clone())) {
+                Ok(a) => a,
+                Err(e) => return errorresponse(e),
+            };
+        let onemail =
+            match super::database::fetch::user(&config.clone(), ("email", identifyer.clone())) {
+                Ok(a) => a,
+                Err(e) => return errorresponse(e),
+            };
+        let a_some: Option<BasicUserInfo> = match onusername {
             Some(s) => Some(s),
             None => onemail,
         };
         match a_some {
-            Some(d) => {
-                let u: super::BasicUserInfo = from_str(&d).unwrap();
+            Some(u) => {
                 if u.password == mcrypt.encrypt_str_to_base64(password) {
                     (server_vars.tell)(format!(
                         "Auth\t\t\t{}",
