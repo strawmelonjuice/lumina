@@ -268,7 +268,7 @@ function editorunfold() {
 			.catch((error) => {
 				document.querySelector("div#posteditor").innerHTML = errormsg;
 				console.error(error);
-				return;
+				
 			});
 	}
 	setTimeout(() => {
