@@ -6,9 +6,10 @@
 
 extern crate build_const;
 
-use std::{fs::read_to_string, str::FromStr};
-
 use markdown::to_html;
+use std::fmt::format;
+use std::process::Command;
+use std::{fs::read_to_string, str::FromStr};
 
 // Javascript runtimes:
 //     NodeJS:
@@ -32,7 +33,83 @@ const NODE_NPM: &str = "npm";
 #[cfg(windows)]
 const BUN_NPM: &str = "bun.exe";
 #[cfg(not(windows))]
-const BUN_NPM: &str = "bun";
+const BUN_NPM: &str = "~/.bun/bin/bun";
+
+#[cfg(windows)]
+const PNPM_NPM: &str = "pnpm.cmd";
+#[cfg(not(windows))]
+const PNPM_NPM: &str = "pnpm";
+macro_rules! warn {
+    ($($arg:tt)*) => {
+        let message = format(format_args!($($arg)*)).replace("\n", "\ncargo:warning=");
+        println!("cargo:warning={}", message)
+    }
+}
+fn run_js_pm_stuff(
+    pnpm: (u32, &mut Command),
+    bun: (u32, &mut Command),
+    npm: (u32, &mut Command),
+    errmsg: impl AsRef<str>,
+) {
+    let errormsg = errmsg.as_ref();
+    let mut errors = String::new();
+    match pnpm.1.output() {
+        Ok(t) => {
+            if t.status.code().unwrap() != 0 {
+                warn!(
+                    "{}",
+                    format!(
+                        "build.rs:{} - PNPM: {}:\n\n{}",
+                        pnpm.0,
+                        errormsg,
+                        std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
+                    )
+                );
+            }
+        }
+        Err(err) => {
+            errors.push_str(format!("PNPM: {}; ", err).as_str());
+            match bun.1.output() {
+                Ok(t) => {
+                    if t.status.code().unwrap() != 0 {
+                        warn!(
+                            "{}",
+                            format!(
+                                "build.rs:{} - Bun: {}:\n\n{}",
+                                bun.0,
+                                errormsg,
+                                std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
+                            )
+                        );
+                    }
+                }
+                Err(err) => {
+                    errors.push_str(format!("Bun: {}; ", err).as_str());
+                    match npm.1.output() {
+                        Ok(t) => {
+                            if t.status.code().unwrap() != 0 {
+                                warn!(
+                                    "{}",
+                                    format!(
+                                        "build.rs:{} - NPM: {}:\n\n{}",
+                                        npm.0,
+                                        errormsg,
+                                        std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
+                                    )
+                                );
+                            }
+                        }
+                        Err(err) => {
+                            errors.push_str(format!("NPM: {}; ", err).as_str());
+                            warn!("{} error messages: {errors}", "No supported (NodeJS / Bun) Javascript runtimes, or package managers (PNPM/Bun/NPM) found on path!".to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn create_dirs() -> Result<(), std::io::Error> {
     std::fs::create_dir_all("./target/generated/")?;
     std::fs::create_dir_all("./target/generated/js")?;
@@ -40,6 +117,7 @@ fn create_dirs() -> Result<(), std::io::Error> {
     std::fs::create_dir_all("./target/generated/css")?;
     Ok(())
 }
+
 fn process_markdown_into_html(htmlfile: &str, markdownfile: &str) -> String {
     let html_file = std::path::PathBuf::from_str(htmlfile).unwrap();
     let md_file = std::path::PathBuf::from_str(markdownfile).unwrap();
@@ -50,7 +128,6 @@ fn process_markdown_into_html(htmlfile: &str, markdownfile: &str) -> String {
         .replace(r#"{{md}}"#, processed_md.as_str())
         .to_string()
 }
-
 fn main() {
     let mut assets = build_const::ConstWriter::for_build("assets")
         .unwrap()
@@ -58,7 +135,7 @@ fn main() {
     match create_dirs() {
         Ok(_) => {}
         Err(e) => {
-            panic!("Could not create output folders:\n\n{}", e)
+            warn!("{}", format!("Could not create output folders:\n\n{}", e));
         }
     }
     assets.add_value(
@@ -67,31 +144,13 @@ fn main() {
         process_markdown_into_html("./assets/html/index.html", "./assets/markdown/intro.md")
             .as_str(),
     );
-
-    match std::process::Command::new(BUN_NPM).arg("install").output() {
-        Ok(t) => {
-            if t.status.code().unwrap() != 0 {
-                panic!(
-                    "Could not install dependencies:\n\n{}",
-                    std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
-                )
-            }
-        }
-        Err(_err) => match std::process::Command::new(NODE_NPM).arg("install").output() {
-            Ok(t) => {
-                if t.status.code().unwrap() != 0 {
-                    panic!(
-                        "Could not install dependencies:\n\n{}",
-                        std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
-                    )
-                }
-            }
-            Err(_err) => {
-                panic!("No supported (Node.JS or Bun) Javascript runtimes found on path! Or could not install dependencies.");
-            }
-        },
-    };
-    match std::process::Command::new(BUNJSR)
+    run_js_pm_stuff(
+        (line!(), Command::new(PNPM_NPM).arg("install")),
+        (line!(), Command::new(BUN_NPM).arg("install")),
+        (line!(), Command::new(NODE_NPM).arg("install")),
+        "Could not install dependencies.",
+    );
+    match Command::new(BUNJSR)
         .arg("--bun")
         .arg("run")
         .arg("build:deps")
@@ -99,27 +158,36 @@ fn main() {
     {
         Ok(t) => {
             if t.status.code().unwrap() != 0 {
-                panic!(
-                    "Could not generate assets:\n\n{}",
-                    std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
-                )
+                warn!(
+                    "{}",
+                    format!(
+                        "{} - Could not generate assets:\\n\\n```\\n{}\\n```\\nStatus code: {}.",
+                        "build.rs:103",
+                        std::str::from_utf8(&t.stderr)
+                            .unwrap_or("Unknown error.")
+                            .replace('\n', "\\n"),
+                        t.status.code().unwrap()
+                    )
+                );
             }
         }
-        Err(_err) => match std::process::Command::new(NODEJSR)
-            .arg("run")
+        Err(_err) => match Command::new(NODEJSR)
+            .arg("run-script")
             .arg("build:deps")
             .output()
         {
             Ok(t) => {
                 if t.status.code().unwrap() != 0 {
-                    panic!(
-                        "Could not generate assets:\n\n{}",
-                        std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.")
-                    )
+                    warn!("{}", format!(
+                        "{} - Could not generate assets:\\n\\n```\\n{}\\n```\\nStatus code: {}.",
+                        "build.rs:118",
+                        std::str::from_utf8(&t.stderr).unwrap_or("Unknown error.").replace('\n', "\\n"),
+                        t.status.code().unwrap()
+                    ));
                 }
             }
             Err(_err) => {
-                panic!("No supported (Node.JS or Bun) Javascript runtimes found on path! Or could not generate necessary files.");
+                warn!("{}","No supported (NodeJS / Bun) Javascript runtimes found on path! Or could not generate necessary files.".to_string());
             }
         },
     };
