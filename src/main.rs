@@ -9,6 +9,7 @@ extern crate build_const;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
+use console::Term;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -33,7 +34,7 @@ use tokio::sync::{Mutex, MutexGuard};
 use assets::{
     fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
-use tell::tellgen;
+use tell::*;
 
 use crate::serve::notfound;
 
@@ -55,6 +56,7 @@ mod post;
 struct ServerVars {
     config: LuminaConfig,
     tell: fn(String) -> (),
+    console: Term,
 }
 impl ServerVars {
     /// This function grabs the server variables from the provided mutex.
@@ -184,7 +186,7 @@ pub struct InterInstance {
     pub iid: String,
     pub synclist: Vec<SynclistItem>,
     pub ignorelist: Vec<String>,
-    pub polling: Polling,
+    pub syncing: Syncing,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -195,8 +197,8 @@ pub struct SynclistItem {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Polling {
-    pub pollintervall: u64,
+pub struct Syncing {
+    pub syncintervall: u64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -421,9 +423,10 @@ async fn main() {
     let server_p: ServerVars = ServerVars {
         config: config.clone(),
         tell,
+        console: Term::stdout(),
     };
     let server_q: Data<Mutex<ServerVars>> = Data::new(Mutex::new(server_p.clone()));
-    tell(format!(
+    server_p.tell(format!(
         "Logging to {}",
         logsets
             .logfile
@@ -497,7 +500,7 @@ async fn main() {
     .bind((config.server.adress.clone(), config.server.port))
     {
         Ok(o) => {
-            tell(format!(
+            server_p.tell(format!(
                 "Running on {0}:{1}, which should be bound to {2}://{3}",
                 config.server.adress,
                 config.server.port,
@@ -520,78 +523,82 @@ async fn main() {
     }
     .run();
     let _ = futures::join!(
-        api_ii::main(config.clone(), tell),
+        api_ii::main(server_p.clone()),
         main_server,
         close(config.clone())
     );
 }
 
 async fn close(config: LuminaConfig) {
-    let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.","q".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
-    println!("{}", msg);
-    let mut input = String::new();
-    let mut waiting = true;
-    while waiting {
-        input.clear();
-        let _ = std::io::stdout().flush();
-        std::io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read input");
-        if input == *"\r\n" {
-            waiting = false;
-        }
-        input = input.replace(['\n', '\r'], "");
-        let split_input = input.as_str().split(' ').collect::<Vec<&str>>();
-        match split_input[0].to_lowercase().as_str() {
-            "q" | "x" | "exit" => {
-                println!("Bye!");
-                process::exit(0);
-            }
-            "au" | "adduser" => {
-                if split_input.len() < 2 {
-                    println!("Usage: adduser <username> <password> <email>");
-                } else {
-                    match database::users::add(
-                        split_input[1].to_string(),
-                        split_input[2].to_string(),
-                        split_input[3].to_string(),
-                        &config.clone(),
-                    ) {
-                        Ok(o) => println!(
-                            "{}",
-                            format!(
-                                "Added user {} with password {} and ID {}.",
-                                split_input[1].bright_magenta(),
-                                split_input[2].bright_magenta(),
-                                o.to_string().bright_magenta(),
-                            )
-                            .green()
-                        ),
-                        Err(e) => println!(
-                            "{}",
-                            format!(
-                                "Could not add user {} with password {}: {}",
-                                split_input[1],
-                                split_input[2],
-                                e
-                            )
-                            .red()
-                        ),
-                    }
-                }
-            }
-            "h" | "help" => println!(
-                "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
-                "Lumina server runtime command line - Help\n".bright_yellow(),
-                    "au | adduser".white(),
-                "<".red(), "username".bright_yellow().on_red(), ">".red(),
-                "<".red(), "password".bright_yellow().on_red(), ">".red(),
-                "<".red(), "email".bright_yellow().on_red(), ">".red(),
-                        format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(),"q | x | exit".white()).green()
-            ),
-			_ => println!("{}", msg),
-        }
-    }
+    // This function is uh, pruned mostly, because it affected others.
+    let _ = tokio::signal::ctrl_c().await;
+    println!("\n\n\nBye!\n");
+    process::exit(0);
+    // let msg = format!("Type [{}] and then [{}] to exit or use '{}' to show more available Lumina server runtime commands.", "q".blue(), "return".bright_magenta(), "help".bright_blue()).bright_yellow();
+    // println!("{}", msg);
+    // let mut input = String::new();
+    // let mut waiting = true;
+    // while waiting {
+    //     input.clear();
+    //     let _ = std::io::stdout().flush();
+    //     std::io::stdin()
+    //         .read_line(&mut input)
+    //         .expect("Failed to read input");
+    //     if input == *"\r\n" {
+    //         waiting = false;
+    //     }
+    //     input = input.replace(['\n', '\r'], "");
+    //     let split_input = input.as_str().split(' ').collect::<Vec<&str>>();
+    //     match split_input[0].to_lowercase().as_str() {
+    //         "q" | "x" | "exit" => {
+    //             println!("Bye!");
+    //             process::exit(0);
+    //         }
+    //         "au" | "adduser" => {
+    //             if split_input.len() < 2 {
+    //                 println!("Usage: adduser <username> <password> <email>");
+    //             } else {
+    //                 match database::users::add(
+    //                     split_input[1].to_string(),
+    //                     split_input[2].to_string(),
+    //                     split_input[3].to_string(),
+    //                     &config.clone(),
+    //                 ) {
+    //                     Ok(o) => println!(
+    //                         "{}",
+    //                         format!(
+    //                             "Added user {} with password {} and ID {}.",
+    //                             split_input[1].bright_magenta(),
+    //                             split_input[2].bright_magenta(),
+    //                             o.to_string().bright_magenta(),
+    //                         )
+    //                             .green()
+    //                     ),
+    //                     Err(e) => println!(
+    //                         "{}",
+    //                         format!(
+    //                             "Could not add user {} with password {}: {}",
+    //                             split_input[1],
+    //                             split_input[2],
+    //                             e
+    //                         )
+    //                             .red()
+    //                     ),
+    //                 }
+    //             }
+    //         }
+    //         "h" | "help" => println!(
+    //             "\n{}\n\t{} {}{}{} {}{}{} {}{}{}{}",
+    //             "Lumina server runtime command line - Help\n".bright_yellow(),
+    //             "au | adduser".white(),
+    //             "<".red(), "username".bright_yellow().on_red(), ">".red(),
+    //             "<".red(), "password".bright_yellow().on_red(), ">".red(),
+    //             "<".red(), "email".bright_yellow().on_red(), ">".red(),
+    //             format!("\n\t\tAdds a new user to the database.\n\t{}\n\t\tDisplays this help message.\n\t{}\n\t\tShut down the server.", "h | help".white(), "q | x | exit".white()).green()
+    //         ),
+    //         _ => println!("{}", msg),
+    //     }
+    // }
 }
 
 mod serve;

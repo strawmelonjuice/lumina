@@ -3,9 +3,11 @@
 
 # Lumina(/peonies) server
 
-Warning ya -- Lumina stores in `$HOME/.luminainstance` unless specified as argument. If you'd like to keep it in the workspace, use:
+Warning ya -- Lumina stores in `$HOME/.luminainstance` unless specified as argument. If you'd like to keep it in the
+workspace, use:
 
 ```bash
 cargo run -- ./test
 ```
-You'll need Bun/NodeJS and the stable Rust Toolchain for that.
+
+You'll need `PNPM/Bun/NPM` on `Bun/NodeJS` and the stable Rust Toolchain for that (those are in order of preference.).

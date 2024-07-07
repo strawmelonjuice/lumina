@@ -42,7 +42,7 @@ struct JSClientConfig {
 #[serde(rename_all = "camelCase")]
 struct JSClientInterinstance {
     pub iid: String,
-    pub lastpoll: i64,
+    pub lastsync: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -111,7 +111,7 @@ pub(crate) async fn update(
             config: JSClientConfig {
                 interinstance: JSClientInterinstance {
                     iid: config.clone().interinstance.iid,
-                    lastpoll: 0,
+                    lastsync: 0,
                 },
             },
         },
