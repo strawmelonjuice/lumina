@@ -37,7 +37,6 @@ use assets::{
 };
 
 /// ## API's to the front-end.
-/// This module contains the API endpoints for the frontend, most of them being Actix request factories.
 mod api_fe;
 /// # Inter-instance API's
 mod api_ii;
