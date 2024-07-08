@@ -13,38 +13,6 @@ use crate::{Logging, ServerVars};
 
 const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
 
-/// tellgen is deprecated, but to keep the codebase confusing, it is still here.
-/// It doesn't support any of the logging levels, and what remains is just a wrapper around tell.
-/// use tell on ServerVars instead.
-pub(crate) fn tellgen(plogging: Option<Logging>) -> fn(msg: String) {
-    match plogging {
-        Some(logging) => {
-            Logging::tell(logging, "tellgen is deprecated, please use tell instead.");
-        }
-        None => {
-            warn!("tellgen is deprecated, please use tell on ServerVars instead.")
-        }
-    }
-    return |msg| {
-        error!("deprecated tellgen()-wrap call:");
-        let dt1: OffsetDateTime = SystemTime::now().into();
-        let dt_fmt = format_description::parse(DATE_FORMAT_STR).unwrap();
-        let times = dt1.format(&dt_fmt).unwrap();
-        println!(
-            "{} {} {} {}",
-            times,
-            "[LOG] ".magenta(),
-            msg,
-            ("<-- deprecated tellgen()-wrap call").bright_red()
-        );
-        info!(
-            "{} {}",
-            msg,
-            "<-- deprecated tellgen()-wrap call".bright_red()
-        );
-    };
-}
-
 #[doc = r"A function that either prints as an [info] log, or prints as [log], depending on configuration. This because loglevel 3 is a bit too verbose, while loglevel 2 is too quiet."]
 impl ServerVars {
     pub(crate) fn tell(&self, rmsg: impl AsRef<str>) {

@@ -9,7 +9,7 @@ extern crate build_const;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
-use console::Term;
+// use console::Term;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -31,12 +31,10 @@ use serde::{Deserialize, Serialize};
 use simplelog::*;
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::serve::notfound;
 use assets::{
     fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
-use tell::*;
-
-use crate::serve::notfound;
 
 /// # API's to the front-end.
 mod api_fe;
@@ -46,16 +44,16 @@ mod api_ii;
 pub mod assets;
 /// # Actions on the database
 mod database;
-
-mod tell;
-
 /// # Actions on posts
 mod post;
+/// # Actions for gentle logging ("telling")
+/// Logging doesn't need this, but for prettyness these are added as implementations on ServerVars.
+mod tell;
 
 #[derive(Clone)]
 struct ServerVars {
     config: LuminaConfig,
-    console: Term,
+    // console: Term,
 }
 impl ServerVars {
     /// This function grabs the server variables from the provided mutex.
@@ -418,11 +416,9 @@ async fn main() {
         ),
     ])
     .unwrap();
-    let tell = tellgen(config.clone().logging);
     let server_p: ServerVars = ServerVars {
         config: config.clone(),
-        tell,
-        console: Term::stdout(),
+        // console: Term::stdout(),
     };
     let server_q: Data<Mutex<ServerVars>> = Data::new(Mutex::new(server_p.clone()));
     server_p.tell(format!(
