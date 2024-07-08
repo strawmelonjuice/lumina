@@ -3,7 +3,10 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-//! This module contains the tellgen function and future derivatives.
+
+//! ## Actions for gentle logging ("telling")
+//! Logging doesn't need this, but for prettyness these are added as implementations on ServerVars.
+
 use std::time::SystemTime;
 
 use colored::Colorize;
