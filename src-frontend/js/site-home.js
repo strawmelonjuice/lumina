@@ -472,6 +472,9 @@ setInterval(() => {
  */
 function userMenuToggle() {
 	const userMenu = document.getElementById("user-menu");
+	document.querySelector("main").addEventListener("click",  (ev) => {
+		userMenu.classList.add("hidden");
+	});
 	if (userMenu.classList.contains("hidden")) {
 		userMenu.classList.remove("hidden");
 	} else {
