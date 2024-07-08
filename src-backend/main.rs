@@ -36,7 +36,8 @@ use assets::{
     fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
 };
 
-/// # API's to the front-end.
+/// ## API's to the front-end.
+/// This module contains the API endpoints for the frontend, most of them being Actix request factories.
 mod api_fe;
 /// # Inter-instance API's
 mod api_ii;
