@@ -141,8 +141,11 @@ fn main() {
     assets.add_value(
         "STR_ASSETS_INDEX_HTML_",
         "&str",
-        process_markdown_into_html("./assets/html/index.html", "./assets/markdown/intro.md")
-            .as_str(),
+        process_markdown_into_html(
+            "./src-frontend/html/index.html",
+            "./src-frontend/markdown/intro.md",
+        )
+        .as_str(),
     );
     run_js_pm_stuff(
         (line!(), Command::new(PNPM_NPM).arg("install")),

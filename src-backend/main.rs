@@ -55,7 +55,6 @@ mod post;
 #[derive(Clone)]
 struct ServerVars {
     config: LuminaConfig,
-    tell: fn(String) -> (),
     console: Term,
 }
 impl ServerVars {
@@ -522,14 +521,10 @@ async fn main() {
         }
     }
     .run();
-    let _ = futures::join!(
-        api_ii::main(server_p.clone()),
-        main_server,
-        close(config.clone())
-    );
+    let _ = futures::join!(api_ii::main(server_p.clone()), main_server, close());
 }
 
-async fn close(config: LuminaConfig) {
+async fn close() {
     // This function is uh, pruned mostly, because it affected others.
     let _ = tokio::signal::ctrl_c().await;
     println!("\n\n\nBye!\n");
@@ -625,7 +620,7 @@ pub(crate) async fn serve_fonts(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         format!("/fonts/{}", fnt).magenta(),
         ip.yellow(),
@@ -650,7 +645,7 @@ pub(crate) async fn avatar(
     let _ = (user, session);
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         req.path().magenta(),
         ip.yellow(),
