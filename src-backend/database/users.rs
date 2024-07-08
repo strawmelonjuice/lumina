@@ -192,13 +192,13 @@ pub(crate) mod auth {
         match a_some {
             Some(u) => {
                 if u.password == mcrypt.encrypt_str_to_base64(password) {
-                    (server_vars.tell)(format!(
+                    server_vars.tell(format!(
                         "Auth\t\t\t{}",
                         format!("User {} successfully authorised.", u.username.blue()).green()
                     ));
                     AuthResponse::Success(u.id)
                 } else {
-                    (server_vars.tell)(format!(
+                    server_vars.tell(format!(
                         "Auth\t\t\t{}",
                         format!("User {}: Wrong password entered.", identifyer.blue()).bright_red()
                     ));
@@ -206,7 +206,7 @@ pub(crate) mod auth {
                 }
             }
             None => {
-                (server_vars.tell)(format!(
+                server_vars.tell(format!(
                     "Auth\t\t\t{}",
                     format!("User {} does not exist.", identifyer.blue()).bright_yellow()
                 ));

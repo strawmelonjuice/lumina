@@ -165,7 +165,7 @@ pub(super) async fn root(
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/".bright_magenta(),
         ip.yellow(),
@@ -217,7 +217,7 @@ pub(super) async fn login(
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login".bright_magenta(),
         ip.yellow(),
@@ -239,7 +239,7 @@ pub(super) async fn signup(
     let server_vars: ServerVars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/signup".bright_magenta(),
         ip.yellow(),
@@ -261,7 +261,7 @@ pub(super) async fn prefetch_js(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/prefetch.js".magenta(),
         ip.yellow(),
@@ -289,7 +289,7 @@ pub(super) async fn login_js(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -317,7 +317,7 @@ pub(super) async fn index_js(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -345,7 +345,7 @@ pub(super) async fn home_js(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/site-home.js".magenta(),
         ip.yellow(),
@@ -373,7 +373,7 @@ pub(super) async fn signup_js(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/login.js".magenta(),
         ip.yellow(),
@@ -401,7 +401,7 @@ pub(super) async fn red_cross_svg(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/red-cross.svg".magenta(),
         ip.yellow(),
@@ -419,7 +419,7 @@ pub(super) async fn spinner_svg(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/spinner.svg".magenta(),
         ip.yellow(),
@@ -437,7 +437,7 @@ pub(super) async fn green_check_svg(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/green-check.svg".magenta(),
         ip.yellow(),
@@ -455,7 +455,7 @@ pub(super) async fn logo_svg(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/logo.svg".magenta(),
         ip.yellow(),
@@ -473,7 +473,7 @@ pub(super) async fn logo_png(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/logo.png".magenta(),
         ip.yellow(),
@@ -491,7 +491,7 @@ pub(super) async fn node_axios_map(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/axios/axios.min.js.map".magenta(),
         ip.yellow(),
@@ -509,7 +509,7 @@ pub(super) async fn node_axios(
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let coninfo = req.connection_info();
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    (server_vars.tell)(format!(
+    server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
         "/axios/axios.min.js".magenta(),
         ip.yellow(),
@@ -532,7 +532,7 @@ pub(super) async fn homepage(
         |_, server_vars, user, request| {
             let coninfo = request.connection_info();
             let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-            (server_vars.tell)(format!(
+            server_vars.tell(format!(
                 "{}\t{:>45.47}\t\t{}/{:<25}",
                 "Request/200".bright_green(),
                 "/home".bright_magenta(),
@@ -561,7 +561,7 @@ pub(super) async fn logout(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match username_.unwrap_or(None) {
         Some(username) => {
-            (server_vars.tell)(format!(
+            server_vars.tell(format!(
                 "{}\t{:>45.47}\t\t{}/{:<25}",
                 "Request/200".bright_green(),
                 "/session/logout".bright_magenta(),

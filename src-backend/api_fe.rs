@@ -145,7 +145,7 @@ pub(crate) async fn auth(
 ) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let config = server_vars.clone().config;
-    (server_vars.tell)("Auth request received.".to_string());
+    server_vars.tell("Auth request received.".to_string());
     let result = check(
         data.username.clone(),
         data.password.clone(),
@@ -189,7 +189,7 @@ pub(crate) async fn newaccount(
 ) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let config = server_vars.clone().config;
-    (server_vars.tell)("User creation request: received.".to_string());
+    server_vars.tell("User creation request: received.".to_string());
     let result = add(
         data.username.clone(),
         data.email.clone(),
@@ -209,7 +209,7 @@ pub(crate) async fn newaccount(
             session
                 .insert("validity", config.clone().run.session_valid)
                 .unwrap();
-            (server_vars.tell)(format!(
+            server_vars.tell(format!(
                 "User creation request: approved for {} @ {}",
                 user.id, ip
             ));
@@ -218,7 +218,7 @@ pub(crate) async fn newaccount(
                 .body(r#"{"Ok": true}"#)
         }
         Err(e) => {
-            (server_vars.tell)(format!("User creation request:  denied - {e}"));
+            server_vars.tell(format!("User creation request:  denied - {e}"));
             HttpResponse::build(StatusCode::EXPECTATION_FAILED)
                 .content_type("text/json; charset=utf-8")
                 .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
@@ -290,7 +290,7 @@ pub(crate) async fn pageservresponder(
                                 .to_formatted(&config)
                                 .to_html()
                         );
-                        s.push_str(include_str!("../assets/html/examplepost.html"));
+                        s.push_str(include_str!("../src-frontend/html/examplepost.html"));
                         s
                     },
                 },
