@@ -3,6 +3,7 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
+//! ## Inter-instance API's
 //! This module contains the inter-instance api's. It will mostly be used for pulling from other instances and syncing.
 
 use std::time::Duration;

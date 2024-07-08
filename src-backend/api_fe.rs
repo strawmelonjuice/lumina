@@ -4,6 +4,9 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
+//! ## API's to the front-end.
+//! This module contains the API endpoints for the frontend, most of them being Actix request factories.
+
 use actix_session::Session;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
