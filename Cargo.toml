@@ -1,7 +1,7 @@
 [workspace]
 members = ["libs/lumina-urls"]
 [workspace.dependencies]
-serde = { version = "1.0.203", features = ["derive"] }
+serde = { version = "1.0.204", features = ["derive"] }
 toml = "0.8.14"
 reqwest = { version = "0.12.5", features = ["blocking"] }
 serde_json = "1.0.120"
@@ -51,11 +51,11 @@ home = "0.5.9"
 magic-crypt = "3.1.13"
 rand = "0.8.5"
 build_const = "0.2.2"
-markdown = "1.0.0-alpha.17"
+markdown = "1.0.0-alpha.18"
 chrono = "0.4.38"
 simplelog = "0.12.2"
 indicatif = "0.17.8"
 console = "0.15.8"
 [build-dependencies]
 build_const = "0.2.2"
-markdown = "1.0.0-alpha.17"
+markdown = "1.0.0-alpha.18"
