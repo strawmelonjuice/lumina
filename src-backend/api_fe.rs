@@ -147,7 +147,7 @@ pub(crate) async fn auth(
 ) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let config = server_vars.clone().config;
-    server_vars.tell("Auth request received.".to_string());
+    server_vars.tell("Auth request received.");
     let result = check(
         data.username.clone(),
         data.password.clone(),
@@ -191,7 +191,7 @@ pub(crate) async fn newaccount(
 ) -> HttpResponse {
     let server_vars = ServerVars::grab(&server_vars_mutex).await;
     let config = server_vars.clone().config;
-    server_vars.tell("User creation request: received.".to_string());
+    server_vars.tell("User creation request: received.");
     let result = add(
         data.username.clone(),
         data.email.clone(),
