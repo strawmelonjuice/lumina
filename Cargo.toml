@@ -46,7 +46,7 @@ pbkdf2 = "0.12.2"
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
 actix-identity = "0.7.1"
 actix-web = "4.7.0"
-handlebars = "5.1.0"
+handlebars = "6.0.0"
 home = "0.5.9"
 magic-crypt = "3.1.13"
 rand = "0.8.5"
