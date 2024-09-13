@@ -272,7 +272,6 @@ pub(super) async fn appjs(
         .body(crate::assets::STR_ASSETS_APPJS)
 }
 
-
 pub(super) async fn appjsmap(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
@@ -380,8 +379,6 @@ pub(super) async fn logo_png(
         .content_type("image/png; charset=utf-8")
         .body(crate::assets::BYTES_ASSETS_LOGO_PNG)
 }
-
-
 
 pub(super) async fn homepage(
     server_vars_mutex: Data<Mutex<ServerVars>>,

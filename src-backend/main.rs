@@ -459,7 +459,6 @@ async fn main() {
             .route("/session/logout/", web::get().to(serve::logout))
             .route("/app.js", web::get().to(serve::appjs))
             .route("/app.js.map", web::get().to(serve::appjsmap))
-
             .route(
                 "/api/fe/fetch-page",
                 web::post().to(api_fe::pageservresponder),
@@ -481,7 +480,6 @@ async fn main() {
             .route("/logo.svg", web::get().to(serve::logo_svg))
             .route("/favicon.ico", web::get().to(serve::logo_png))
             .route("/logo.png", web::get().to(serve::logo_png))
-
             .service(avatar)
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
