@@ -2,8 +2,10 @@
 import Bun from "bun";
 const pat = "./target/generated/js/app.js";
 let js: string = await Bun.file(pat).text();
-js = js + "\n\n\n" +
-`/*
+js =
+	js +
+	"\n\n\n" +
+	`/*
  * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
  *
  * Part of project Lumina.

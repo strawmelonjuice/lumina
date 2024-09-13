@@ -21,7 +21,6 @@ pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str =
 pub const STR_ASSETS_APPJS: &str = include_str!("../target/generated/js/app.js");
 pub const STR_ASSETS_APPJS_MAP: &str = include_str!("../target/generated/js/app.js.map");
 
-
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 
 type Fontbytes = &'static [u8];
@@ -72,7 +71,6 @@ pub fn vec_string_assets_anons_svg() -> Vec<String> {
 }
 
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("../src-frontend/png/luminalogo-1.png");
-
 
 pub const STR_ASSETS_EDITOR_WINDOW_HTML: &str = include_str!("../src-frontend/html/writer.html");
 

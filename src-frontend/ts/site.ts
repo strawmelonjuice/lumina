@@ -149,7 +149,6 @@ export const siteHome = () => {
 		const modenames = ["short", "long", "embed"];
 		const desiredmode = elm.dataset.modeOpener;
 		for (const modename of modenames) {
-			
 			const opener = document.querySelector(
 				`nav#editormodepicker [data-mode-opener="${modename}"]`,
 			);
@@ -248,10 +247,6 @@ export const siteHome = () => {
 		}
 	}
 
-	
-		
-	
-
 	function editorunfold() {
 		document
 			.getElementById("mobiletimelineswitcher")
@@ -291,13 +286,18 @@ export const siteHome = () => {
 							),
 						);
 						const elements = <HTMLCollectionOf<HTMLElement>>(
-							window.document.getElementsByClassName("editor-switcher")
+							window.document.getElementsByClassName(
+								"editor-switcher",
+							)
 						);
-					console.log(elements);
+						console.log(elements);
 						for (let element of elements) {
-							element.addEventListener("click", (event: MouseEvent) => {
-								switcheditormode(<HTMLElement>event.target);
-							});
+							element.addEventListener(
+								"click",
+								(event: MouseEvent) => {
+									switcheditormode(<HTMLElement>event.target);
+								},
+							);
 						}
 					},
 				)
@@ -322,7 +322,7 @@ export const siteHome = () => {
 				);
 				divPostEditor.style.width = "70VH";
 				divPostEditor.style.height = "calc(50VW - 30VH)";
-				divPostEditor.style.position  = "";
+				divPostEditor.style.position = "";
 				divPostEditor.style.marginTop = "";
 				divPostEditor.style.marginBottom = "";
 				divPostEditor.style.marginLeft = "";
@@ -360,18 +360,19 @@ export const siteHome = () => {
 				);
 				divPostEditor.style.width = "95VW";
 				divPostEditor.style.height = "85VH";
-				divPostEditor.style.position  = "fixed";
+				divPostEditor.style.position = "fixed";
 				divPostEditor.style.marginTop = "auto";
 				divPostEditor.style.marginBottom = "auto";
 				divPostEditor.style.marginLeft = "auto";
 				divPostEditor.style.marginRight = "auto";
 				divPostEditor.style.top = "60px";
-				divPostEditor.style.bottom = "0";			
-				divPostEditor.style.left = "0";			
-				divPostEditor.style.right = "0";			
-				
+				divPostEditor.style.bottom = "0";
+				divPostEditor.style.left = "0";
+				divPostEditor.style.right = "0";
 			};
-			document.getElementById("editorwindowh").addEventListener("dblclick", window.editorFullScreenMode)
+			document
+				.getElementById("editorwindowh")
+				.addEventListener("dblclick", window.editorFullScreenMode);
 			document.body.dataset.editorOpen = "true";
 		}, 100);
 	}
@@ -716,6 +717,6 @@ declare global {
 		editorposition3: number;
 		editorposition4: number;
 		displayedPage: string;
-		editorFullScreenMode: (event: Event)=>void;
+		editorFullScreenMode: (event: Event) => void;
 	}
 }
