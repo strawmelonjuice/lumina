@@ -18,7 +18,7 @@
 	"scripts": {
 		"build": "npm run build:deps && npm run build:rs",
 		"build:deps": "npm run build:css && npm run build:jsts && npm run minify",
-		"build:css": "bunx postcss -o ./target/generated/css/main.css src-frontend/styles/main.pcss",
+		"build:css": "bun x postcss -o ./target/generated/css/main.css src-frontend/styles/main.pcss -u autoprefixer -u tailwindcss",
 		"build:jsts": "bun build './src-frontend/ts/app.ts' --minify --target=browser --outdir './target/generated/js/' --sourcemap=linked --minify && bun ./tobundle.ts",
 		"build:rs": "cargo build",
 		"format": "npm run format:rs && npm run format:ts && npm run minify:css",
