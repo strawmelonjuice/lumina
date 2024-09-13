@@ -457,11 +457,9 @@ async fn main() {
             .route("/login/", web::get().to(serve::login))
             .route("/signup/", web::get().to(serve::signup))
             .route("/session/logout/", web::get().to(serve::logout))
-            .route("/prefetch.js", web::get().to(serve::prefetch_js))
-            .route("/site-index.js", web::get().to(serve::index_js))
-            .route("/site-home.js", web::get().to(serve::home_js))
-            .route("/login.js", web::get().to(serve::login_js))
-            .route("/signup.js", web::get().to(serve::signup_js))
+            .route("/app.js", web::get().to(serve::appjs))
+            .route("/app.js.map", web::get().to(serve::appjsmap))
+
             .route(
                 "/api/fe/fetch-page",
                 web::post().to(api_fe::pageservresponder),
@@ -483,11 +481,7 @@ async fn main() {
             .route("/logo.svg", web::get().to(serve::logo_svg))
             .route("/favicon.ico", web::get().to(serve::logo_png))
             .route("/logo.png", web::get().to(serve::logo_png))
-            .route("/axios/axios.min.js", web::get().to(serve::node_axios))
-            .route(
-                "/axios/axios.min.js.map",
-                web::get().to(serve::node_axios_map),
-            )
+
             .service(avatar)
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))

@@ -7,7 +7,7 @@
 /** @type {import('tailwindcss').LuminaConfig} */
 module.exports = {
     content: [
-        "./src-frontend/**/*.{html,handlebars,js}",
+        "./src-frontend/**/*.{html,handlebars,ts}",
         "./target/generated/**/.{html,handlebars}",
         "./src-backend/api_fe.rs",
     ],

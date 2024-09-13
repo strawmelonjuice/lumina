@@ -1,17 +1,12 @@
 {
 	"compilerOptions": {
-		"lib": [
-			"DOM",
-			"ES2023"
-		],
-		"outDir": "./target/generated/js/",
+		"lib": ["DOM", "ES2023", "es5", "es6", "dom", "dom.iterable"],
 		"noImplicitAny": true,
 		"skipLibCheck": true,
-		"module": "UMD",
-		"allowJs": true
+		"module": "esnext",
+		"moduleResolution": "node",
+		"target": "es2017"
 	},
-	"exclude": [
-		"./target/generated/js/"
-	]
+	"exclude": ["./target/generated/js/"]
 	// "include": ["./src-frontend/ts"]
 }

@@ -18,12 +18,9 @@ pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("../assets/toml/initial_con
 pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str =
     include_str!("../src-frontend/styles/initial_customstyles.css");
 
-pub const STR_ASSETS_PREFETCH_JS: &str = include_str!("../target/generated/js/prefetch.min.js");
+pub const STR_ASSETS_APPJS: &str = include_str!("../target/generated/js/app.js");
+pub const STR_ASSETS_APPJS_MAP: &str = include_str!("../target/generated/js/app.js.map");
 
-pub const STR_ASSETS_INDEX_JS: &str = include_str!("../target/generated/js/site-index.min.js");
-pub const STR_ASSETS_HOME_JS: &str = include_str!("../target/generated/js/site-home.min.js");
-pub const STR_ASSETS_LOGIN_JS: &str = include_str!("../target/generated/js/login.min.js");
-pub const STR_ASSETS_SIGNUP_JS: &str = include_str!("../target/generated/js/signup.min.js");
 
 pub const STR_GENERATED_MAIN_MIN_CSS: &str = include_str!("../target/generated/css/main.min.css");
 
@@ -76,9 +73,6 @@ pub fn vec_string_assets_anons_svg() -> Vec<String> {
 
 pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("../src-frontend/png/luminalogo-1.png");
 
-pub const STR_NODE_MOD_AXIOS_MIN_JS: &str = include_str!("../node_modules/axios/dist/axios.min.js");
-pub const STR_NODE_MOD_AXIOS_MIN_JS_MAP: &str =
-    include_str!("../node_modules/axios/dist/axios.min.js.map");
 
 pub const STR_ASSETS_EDITOR_WINDOW_HTML: &str = include_str!("../src-frontend/html/writer.html");
 

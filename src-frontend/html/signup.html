@@ -11,9 +11,7 @@
 		<title>Sign up - Lumina(@{{iid}})</title>
 		<style></style>
 		<link href="/logo.png" rel="icon" type="image/png" />
-		<script src="/axios/axios.min.js"></script>
-		<script src="/prefetch.js"></script>
-		<script defer src="/signup.js"></script>
+		<script src="/app.js" type="module"></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 
@@ -128,7 +126,7 @@
 				action="javascript:void(0);"
 				class="self-center w-5/12 ring-offset-rose-950 text-slate-600"
 				name="signup"
-				onsubmit="regstry()"
+				id="registrationform"
 			>
 				<div class="mb-4">
 					<label

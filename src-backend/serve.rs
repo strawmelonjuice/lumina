@@ -254,7 +254,7 @@ pub(super) async fn signup(
         ))
 }
 
-pub(super) async fn prefetch_js(
+pub(super) async fn appjs(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
@@ -263,26 +263,17 @@ pub(super) async fn prefetch_js(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
-        "/prefetch.js".magenta(),
+        "/app.js".magenta(),
         ip.yellow(),
         "Request/200".bright_green()
     ));
-    let js = format!(
-        r#"/*
-* Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-*
-* Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-*/
-
-{}"#,
-        crate::assets::STR_ASSETS_PREFETCH_JS
-    );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
-        .body(js)
+        .body(crate::assets::STR_ASSETS_APPJS)
 }
 
-pub(super) async fn login_js(
+
+pub(super) async fn appjsmap(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     req: HttpRequest,
 ) -> HttpResponse {
@@ -291,107 +282,13 @@ pub(super) async fn login_js(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     server_vars.tell(format!(
         "{2}\t{:>45.47}\t\t{}",
-        "/login.js".magenta(),
+        "/app.js.map".magenta(),
         ip.yellow(),
         "Request/200".bright_green()
     ));
-    let js = format!(
-        r#"/*
-* Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-*
-* Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-*/
-
-{}"#,
-        crate::assets::STR_ASSETS_LOGIN_JS
-    );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/javascript; charset=utf-8")
-        .body(js)
-}
-
-pub(super) async fn index_js(
-    server_vars_mutex: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_vars = ServerVars::grab(&server_vars_mutex).await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    server_vars.tell(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/login.js".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    let js = format!(
-        r#"/*
-* Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-*
-* Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-*/
-
-{}"#,
-        crate::assets::STR_ASSETS_INDEX_JS
-    );
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(js)
-}
-
-pub(super) async fn home_js(
-    server_vars_mutex: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_vars = ServerVars::grab(&server_vars_mutex).await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    server_vars.tell(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/site-home.js".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    let js = format!(
-        r#"/*
-* Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-*
-* Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-*/
-
-{}"#,
-        crate::assets::STR_ASSETS_HOME_JS
-    );
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(js)
-}
-
-pub(super) async fn signup_js(
-    server_vars_mutex: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_vars = ServerVars::grab(&server_vars_mutex).await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    server_vars.tell(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/login.js".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    let js = format!(
-        r#"/*
-* Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
-*
-* Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-*/
-
-{}"#,
-        crate::assets::STR_ASSETS_SIGNUP_JS
-    );
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(js)
+        .body(crate::assets::STR_ASSETS_APPJS_MAP)
 }
 
 pub(super) async fn red_cross_svg(
@@ -484,41 +381,7 @@ pub(super) async fn logo_png(
         .body(crate::assets::BYTES_ASSETS_LOGO_PNG)
 }
 
-pub(super) async fn node_axios_map(
-    server_vars_mutex: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_vars = ServerVars::grab(&server_vars_mutex).await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    server_vars.tell(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/axios/axios.min.js.map".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(crate::assets::STR_NODE_MOD_AXIOS_MIN_JS_MAP)
-}
 
-pub(super) async fn node_axios(
-    server_vars_mutex: Data<Mutex<ServerVars>>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let server_vars = ServerVars::grab(&server_vars_mutex).await;
-    let coninfo = req.connection_info();
-    let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
-    server_vars.tell(format!(
-        "{2}\t{:>45.47}\t\t{}",
-        "/axios/axios.min.js".magenta(),
-        ip.yellow(),
-        "Request/200".bright_green()
-    ));
-    HttpResponse::build(StatusCode::OK)
-        .content_type("text/javascript; charset=utf-8")
-        .body(crate::assets::STR_NODE_MOD_AXIOS_MIN_JS)
-}
 
 pub(super) async fn homepage(
     server_vars_mutex: Data<Mutex<ServerVars>>,

@@ -9,9 +9,7 @@
 		<title>Home - Lumina(@{{iid}})</title>
 		<meta charset="UTF-8" />
 		<style></style>
-		<script src="/axios/axios.min.js"></script>
-		<script src="/prefetch.js"></script>
-		<script defer src="/site-home.js"></script>
+		<script src="/app.js" type="module"></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 
@@ -141,7 +139,7 @@
 						<button
 							type="button"
 							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
-							onclick='switchpages("notifications")'
+							id="switchpageNotificationsTrigger"
 						>
 							<span class="absolute -inset-1.5"></span>
 							<span class="sr-only">View notifications</span>
@@ -239,8 +237,7 @@
 									>Contact instance support</a
 								>
 								<a
-									onclick="LogOut()"
-									class="block px-4 py-2 text-sm text-gray-700 cursor-pointer"
+									class="block px-4 py-2 text-sm text-gray-700 cursor-pointer logoutbutton"
 									role="menuitem"
 									tabindex="-1"
 									id="user-menu-item-2"
@@ -289,8 +286,8 @@
 				></div>
 			</div>
 			<div
-				class="fixed flex items-center justify-center w-12 h-12 p-0 text-sm bg-red-400 rounded-full shadow-2xl cursor-pointer bottom-3 lg:bottom-6 right-3 dark:bg-red-900 lg:w-20 lg:h-20"
-				onclick="triggerEditor()"
+				class="fixed flex items-center justify-center w-12 h-12 p-0 text-sm bg-red-400 rounded-full shadow-2xl cursor-pointer bottom-3 lg:bottom-6 right-3 dark:bg-red-900 lg:w-20 lg:h-20 z-[70]"
+				id="editorTrigger"
 			>
 				<svg
 					width="120"

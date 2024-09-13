@@ -1,30 +1,33 @@
 {
-  "devDependencies": {
-    "tailwindcss": "latest",
-    "autoprefixer": "latest",
-    "postcss": "latest",
-    "terser": "latest",
-    "typescript": "^5.0.0",
-    "postcss-cli": "^11.0.0",
-    "@biomejs/biome": "latest",
-    "clean-css-cli": "4"
-  },
-  "dependencies": {
-    "axios": "^1.6.7"
-  },
-  "scripts": {
-    "build": "npm run build:deps && npm run build:rs",
-    "build:deps": "npm run build:css && npm run build:jsts && npm run minify",
-    "build:css": "postcss -o ./target/generated/css/main.css src-frontend/styles/main.pcss",
-    "build:jsts": "echo TS compilation is disabled.",
-    "build:jsts-disabled": "tsc",
-    "build:rs": "cargo build",
-    "format": "npm run format:rs && npm run format:ts && npm run minify:css",
-    "format:rs": "cargo fmt",
-    "format:ts": "npx biome format \"./src-frontend/ts/main.ts\" --write",
-    "minify": "npm run minify:js && npm run minify:css",
-    "minify:js": "npx terser src-frontend/js/prefetch.js > ./target/generated/js/prefetch.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/site-home.js > ./target/generated/js/site-home.min.js && npx terser src-frontend/js/site-index.js > ./target/generated/js/site-index.min.js && npx terser src-frontend/js/signup.js > ./target/generated/js/signup.min.js",
-    "minify:css": "npx cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
-    "start": "cargo run"
-  }
+	"$schema": "https://json.schemastore.org/package.json",
+	"packageManager": "bun",
+	"devDependencies": {
+		"tailwindcss": "latest",
+		"autoprefixer": "latest",
+		"postcss": "latest",
+		"terser": "latest",
+		"typescript": "^5.0.0",
+		"postcss-cli": "^11.0.0",
+		"@biomejs/biome": "latest",
+		"clean-css-cli": "4",
+		"bun": "latest"
+	},
+	"dependencies": {
+		"axios": "^1.6.7"
+	},
+	"scripts": {
+		"build": "npm run build:deps && npm run build:rs",
+		"build:deps": "npm run build:css && npm run build:jsts && npm run minify",
+		"build:css": "bunx postcss -o ./target/generated/css/main.css src-frontend/styles/main.pcss",
+		"build:jsts": "bun build './src-frontend/ts/app.ts' --minify --target=browser --outdir './target/generated/js/' --sourcemap=linked --minify && bun ./tobundle.ts",
+		"build:rs": "cargo build",
+		"format": "npm run format:rs && npm run format:ts && npm run minify:css",
+		"format:rs": "cargo fmt",
+		"format:ts": "npx biome format \"./src-frontend/ts/main.ts\" --write",
+		"minify": "npm run minify:js && npm run minify:css",
+		"minify:js": "echo JS minification disabled, this is already done when bundling.",
+		"minify:js-disabled": "npx terser src-frontend/js/app.js > ./target/generated/js/app.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/site-home.js > ./target/generated/js/site-home.min.js && npx terser src-frontend/js/site-index.js > ./target/generated/js/site-index.min.js && npx terser src-frontend/js/signup.js > ./target/generated/js/signup.min.js",
+		"minify:css": "npx cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
+		"start": "cargo run"
+	}
 }
