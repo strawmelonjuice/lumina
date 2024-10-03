@@ -119,7 +119,7 @@ pub(crate) async fn update(
         },
         user: JSClientUser {
             username: "unset".to_string(),
-            id: 0,
+            id: -1,
         },
     };
     let userd_maybe = database::fetch::user(&config, ("username", username_b)).unwrap_or(None);
