@@ -1,0 +1,71 @@
+<div class="container py-8 px-4 mx-auto mr-1 ml-1 lg:mr-auto lg:ml-auto lg:max-w-[50VW]">
+    <div class="overflow-hidden relative rounded-lg shadow-lg bg-brown-25 dark:bg-neutral-700">
+        {{#if (numequal posttype 2)}}
+            {{!-- Display title for article posts --}}
+            <h3 class="p-4 border-b-2 border-dotted border-neutral-700 dark:border-brown-25">{title}</h3>
+        {{/if}}
+        {{#if (numequal posttype 3)}}
+            {{!-- Display media in media posts --}}
+            <div class="postcontent">
+                <embed loading="lazy" src="https://via.placeholder.com/400x800" alt="Social Media Post" class="object-contain w-full rounded-b-none rounded-t-lg lg:max-h-[60VH]" />
+                <div class="p-4">
+                    <p class="text-lg text-neutral-900 dark:text-neutral-100">{{content}}</p>
+                </div>
+            </div>
+        {{/if}}
+        <div class="relative w-full border-b-2 border-dotted border-neutral-700 dark:border-brown-25">
+            <div class="float-right p-2 w-max text-indigo-300 unparsed-timestamp dark:text-neutral-400">{{timestamp}}</div>
+            <a href="{{#unless local}}https://{{author.instance}}{{/unless}}/user/profile/{{author.id}}">
+                <div class="flex flex-row justify-evenly p-2 w-max min-w-60 post-author-main">
+                    <div class="w-1/5 text-xl">
+                        <img loading="lazy" class="w-8 h-8 rounded-full" src="{{#unless local}}https://{{author.instance}}{{/unless}}/user/avatar/{{author.id}}" alt="@">
+                    </div>
+                    <span class="text-lg">{{author.username}}{{#unless local}}@{{author.instance}}{{/unless}}</span>
+                </div>
+            </a>
+        </div>
+        {{#if (numequal posttype 1)}}
+            <div class="border-b-2 border-dotted postcontent border-neutral-700 dark:border-brown-25">
+                <div class="p-4 bg-brown-100 dark:bg-neutral-800">
+                    <p class="text-lg text-neutral-900 dark:text-neutral-100">{{content}}</p>
+                </div>
+            </div>
+        {{/if}}
+        <div class="relative mr-1 ml-1 w-full">
+            <div class="mt-4 mb-4 w-full">
+                {{#if tags}}
+                    <p class="text-xs">Tags on this post</p>
+                    <ul class="justify-between p-4 pb-1 w-full">
+                        {{#each tags}}
+                            {{!-- Displaying tags -- if any -- in their boxy little list. --}}
+                            <li class="inline-block p-1 m-1 text-sm rounded-xl border-2 border-dotted border-neutral-400 bg-slate-600 text-neutral-200 dark:border-slate-500 dark:text-slate-800 dark:bg-slate-400"><a href="/tag/{{this}}" class="text-blue-300 dark:text-blue-900">{{this}}</a></li>
+                        {{/each}}
+                    </ul>
+                {{/if}}
+            </div>
+            <div class="flex float-right justify-between items-center m-4 mr-6 w-max min-w-[9rem] h-fit min-h-12">
+                <div class="relative p-1 w-12 h-14 me-1 ms-1 postbttn">
+                    <!-- Like (Push) -->
+                    <div class="absolute m-2 w-12 h-12 text-center align-middle rounded-full border-2 border-black border-solid hover:text-violet-500 bg-slate-600 text-neutral-200 leading-12 dark:text-slate-800 dark:bg-slate-400">
+                        {{{button_push}}}
+                    </div>
+                    <span class="text-white bg-black dark:text-black postbttndescription dark:bg-brown-300">Push up</span>
+                </div>
+                <div class="relative p-1 w-12 h-14 me-1 ms-1 postbttn">
+                    <!-- Reply (Comment) -->
+                    <div class="absolute m-2 w-12 h-12 text-center align-middle rounded-full border-2 border-black border-solid hover:text-red-300 bg-slate-600 text-neutral-200 leading-12 dark:text-slate-800 dark:bg-slate-400">
+                        {{{button_comment}}}
+                    </div>
+                    <span class="text-white bg-black dark:text-black postbttndescription dark:bg-brown-300">Comment</span>
+                </div>
+                <div class="relative p-1 w-12 h-14 me-1 ms-1 postbttn">
+                    <!-- Repost (Bump) -->
+                    <div class="absolute m-2 w-12 h-12 text-center align-middle rounded-full border-2 border-black border-solid hover:text-amber-400 bg-slate-600 text-neutral-200 leading-12 dark:text-slate-800 dark:bg-slate-400">
+                        {{{button_boost}}}
+                    </div>
+                    <span class="text-white bg-black dark:text-black postbttndescription dark:bg-brown-300">Bump</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
