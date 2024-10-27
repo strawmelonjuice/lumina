@@ -1,0 +1,39 @@
+version = "0.3-a"
+[server]
+# What port to bind to (the server is designed with apache2 reverse-proxy in mind, so 80 is not necessarily default.)
+port = 8085
+# What adress to bind to?
+adress = "127.0.0.1"
+# Secret key for cookie encryption
+cookiekey = "Uneaten email in the washing machines to dry the popcorn"
+# For development purposes, please set this to true on prod (and use SSL!)
+secure = true
+
+[interinstance]
+# Instance ID, equals, the domain name this instance is open on.
+iid = "example.com"
+# Specifies instances to send sync requests to. Note that these are only answered if both servers have each other listed. If not, the admin's will get a request to add them, but don't necessarily have to.
+synclist = [
+    #    Of course, by default, the home domain is included, however! You can just remove it if you want to!
+    { name = "peonies.xyz", level = "full" },
+]
+# Ignored instances are no longer allowed to send requests to join this instance's synclist.
+ignorelist = ["example.com"]
+[interinstance.syncing]
+# Specifies the interval between syncs. Minimum is 30.
+syncintervall = 120
+
+[database]
+# What kind of database to use, currently only supporting "sqlite".
+method = "sqlite"
+# Encryption key for sensitive data like passwords. Changing it will immediately mark all existing passwords as false.
+cryptkey = "In these parts, passwords are encrypted. Pardners. How do you do?"
+
+[database.sqlite]
+# The database file to use for sqlite.
+file = "instance-db.sqlite"
+
+[logging]
+file-loglevel = 3
+console-loglevel = 2
+file = "instance-logging.log"

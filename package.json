@@ -1,33 +1,27 @@
 {
 	"$schema": "https://json.schemastore.org/package.json",
-	"packageManager": "bun",
+	"packageManager": "bun@1.1.30+",
 	"devDependencies": {
-		"tailwindcss": "latest",
-		"autoprefixer": "latest",
-		"postcss": "latest",
-		"terser": "latest",
-		"typescript": "^5.0.0",
-		"postcss-cli": "^11.0.0",
 		"@biomejs/biome": "latest",
-		"clean-css-cli": "4",
 		"bun": "latest"
 	},
 	"dependencies": {
-		"axios": "^1.6.7"
+		"axios": "^1.7.7",
+		"nodemon": "^3.1.7"
 	},
 	"scripts": {
-		"build": "npm run build:deps && npm run build:rs",
-		"build:deps": "npm run build:css && npm run build:jsts && npm run minify",
-		"build:css": "bun x postcss -o ./target/generated/css/main.css src-frontend/styles/main.pcss -u autoprefixer -u tailwindcss",
-		"build:jsts": "bun build './src-frontend/ts/app.ts' --minify --target=browser --outdir './target/generated/js/' --sourcemap=linked --minify && bun ./tobundle.ts",
-		"build:rs": "cargo build",
-		"format": "npm run format:rs && npm run format:ts && npm run minify:css",
-		"format:rs": "cargo fmt",
-		"format:ts": "npx biome format \"./src-frontend/ts/main.ts\" --write",
-		"minify": "npm run minify:js && npm run minify:css",
-		"minify:js": "echo JS minification disabled, this is already done when bundling.",
-		"minify:js-disabled": "npx terser src-frontend/js/app.js > ./target/generated/js/app.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/login.js > ./target/generated/js/login.min.js && npx terser src-frontend/js/site-home.js > ./target/generated/js/site-home.min.js && npx terser src-frontend/js/site-index.js > ./target/generated/js/site-index.min.js && npx terser src-frontend/js/signup.js > ./target/generated/js/signup.min.js",
-		"minify:css": "npx cleancss -O1 specialComments:all --inline none ./target/generated/css/main.css > ./target/generated/css/main.min.css",
-		"start": "cargo run"
-	}
+		"build": "bash ./build.sh --frontend-ts",
+		"build-with-gleam": "bash ./build.sh --frontend-gleam",
+		"format": "bun run format:gleam && bun run format:ts && bun run minify:css",
+		"format:gleam": "echo \"Incomplete script.\"",
+		"format:ts": "bun x biome format . --write",
+		"minify": "bun run minify:css",
+		"start": "cd ./backend/ && gleam run --no-print-progress",
+		"dev-ts": "bun run build && bun run start",
+		"dev-gleam": "bun run build-with-gleam && bun run start",
+		"watch-ts": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css --ignore **/build --ignore backend/priv/generated --exec bun run dev-ts ",
+		"watch-gleam": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css --ignore **/build --ignore backend/priv/generated --exec bun run dev-gleam ",
+		"clean": "rm -rf ./backend/node_modules/ && rm -rf ./frontend/node_modules/ && rm -rf ./frontend-ts/node_modules/ && rm -rf ./backend/priv/generated && mkdir -p ./backend/priv/generated/css && mkdir -p ./backend/priv/generated/js && cd backend && gleam clean && cd ../frontend && gleam clean && cd ../shared && gleam clean"
+	},
+	"trustedDependencies": ["@biomejs/biome", "bun"]
 }
