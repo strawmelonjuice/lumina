@@ -484,6 +484,7 @@ pub fn login(ctx: Context) {
                       attribute.type_("checkbox"),
                       attribute.id("autologin"),
                     ]),
+                    html.text(" "),
                     html.text("Stay logged in"),
                     html.br([]),
                     html.small([attribute("style", "font-size: 8px")], [
