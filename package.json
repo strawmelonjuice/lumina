@@ -16,11 +16,11 @@
 		"format:gleam": "echo \"Incomplete script.\"",
 		"format:ts": "bun x biome format . --write",
 		"minify": "bun run minify:css",
-		"start": "cd ./backend/ && gleam run --no-print-progress",
+		"start": "cd ./backend/ && gleam run ",
 		"dev-ts": "bun run build && bun run start",
 		"dev-gleam": "bun run build-with-gleam && bun run start",
-		"watch-ts": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css --ignore **/build --ignore backend/priv/generated --exec bun run dev-ts ",
-		"watch-gleam": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css --ignore **/build --ignore backend/priv/generated --exec bun run dev-gleam ",
+		"watch-ts": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css ---ignore ./shared/build/**  --ignore ./frontend/build/**  --ignore ./backend/build/** -ignore ./backend/priv/generated/** --exec bun run dev-ts ",
+		"watch-gleam": "bun  x nodemon --verbose  -e ts,gleam,svg,handlebars,hb,pcss,css --ignore ./shared/build/**  --ignore ./frontend/build/**  --ignore ./backend/build/**  --ignore ./backend/priv/generated/** --exec bun run dev-gleam ",
 		"clean": "rm -rf ./backend/node_modules/ && rm -rf ./frontend/node_modules/ && rm -rf ./frontend-ts/node_modules/ && rm -rf ./backend/priv/generated && mkdir -p ./backend/priv/generated/css && mkdir -p ./backend/priv/generated/js && cd backend && gleam clean && cd ../frontend && gleam clean && cd ../shared && gleam clean"
 	},
 	"trustedDependencies": ["@biomejs/biome", "bun"]
