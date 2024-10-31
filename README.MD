@@ -2,7 +2,7 @@
 
 ## Requirements
 - [The Gleam compiler, `Erlang` and `rebar3`](https://gleam.run/getting-started/installing/)
-- A `MySQL`/`MariaDB` database
+- A `MySQL`/`MariaDB` database (or a `SQLite` one if you want to be QD!)
 - The [Bun](https://bun.sh/) TypeScript ecosystem
 
 ## Running Lumina
