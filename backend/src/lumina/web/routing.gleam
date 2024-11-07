@@ -94,6 +94,11 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
           wisp.html_response(string_builder.from_string(js), 200)
           |> wisp.set_header("Content-Type", "text/javascript")
         }
+        ["api", "test"] -> {
+          wisp.response(200)
+          |> wisp.set_body(wisp.Text("FETCHED!" |> string_builder.from_string))
+          |> wisp.set_header("Content-Type", "text/plain")
+        }
         ["user", "avatar", id] -> api_fe.get_avatar(req, ctx, id)
         ["app.js.map"] -> {
           wisp.log_info("\t\tOoh, someone is debugging?")
