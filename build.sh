@@ -24,7 +24,7 @@ else
 			exit 1
 		fi
 		echo "import { main } from \"./frontend.mjs\";main();" >"$LOCA/frontend/build/dev/javascript/frontend/app.js"
-		bun build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked --minify
+		bun build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=external --minify
 		bun "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 	else
 		echo "Invalid or missing frontend option, expected either \"--frontend-ts\" or \"--frontend-gleam\"."
