@@ -10,6 +10,7 @@ import gleam/io
 import gleam/list
 import gleam/option
 import gleam/string
+import gleamy_lights/premixed
 import gleamyshell
 import lumina/data/config
 import lumina/data/context.{Context}
@@ -55,8 +56,6 @@ fn start_def() {
   }
   start(string.replace(home, "\\", "/") <> "/.luminainstance/")
 }
-
-import gleamy_lights/premixed
 
 fn start(in: String) {
   use <- bool.lazy_guard(
