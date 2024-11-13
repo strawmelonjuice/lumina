@@ -11,6 +11,12 @@ import gleamy_lights/premixed
 import gleamy_lights/premixed/gleam_colours
 import plinth/browser/window
 
+// Page modules
+import frontend/page/login
+import frontend/page/signup
+import frontend/page/site/home
+import frontend/page/site/index
+
 pub fn main() {
   web_io.println(
     "Hello from the "
