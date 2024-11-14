@@ -14,29 +14,14 @@ import gleam/string
 import gleam/string_builder
 import kirala/bbmarkdown/html_renderer
 import lumina/data/context.{type Context}
+import lumina/shared/shared_fejsonobject
+import lumina/shared/shared_users
 import lumina/users
 import lumina/web/pages
 import lumina/web/routing/fence
 import lustre/element
 import wisp.{type Request, type Response}
 import wisp_kv_sessions
-
-pub type JSClientdata {
-  JSClientdata(instance: JSInstanceData, user: JSUserData)
-}
-
-pub type JSInstanceData {
-  JSInstanceData(
-    /// The instance ID
-    iid: String,
-    /// The last time the instance was synced
-    last_sync: Int,
-  )
-}
-
-pub type JSUserData {
-  JSUserData(id: Int, username: String)
-}
 
 pub fn get_update(req: Request, ctx: Context) -> Response {
   let uid = case
@@ -64,21 +49,13 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
     }
   }
   let clientdata =
-    JSClientdata(
-      instance: JSInstanceData(
-        // Instance ID is easy!
-        iid: ctx.config.lumina_synchronisation_iid,
-        // Syncs are not implemented yet
+    shared_fejsonobject.FEJSonObj(
+      pulled: 0,
+      instance: shared_fejsonobject.FEJsonObjInstanceInfo(
+        iid: "localhost",
         last_sync: 0,
       ),
-      user: JSUserData(
-        // User id will come from the session in the future, and is then resolved to a username by the database
-        id: case uid {
-          Some(id) -> id
-          None -> -1
-        },
-        username: username,
-      ),
+      user: shared_users.SafeUser(id: -1, username: username, email: "unset"),
     )
   json.object([
     #(
@@ -93,6 +70,7 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
       json.object([
         #("id", json.int(clientdata.user.id)),
         #("username", json.string(clientdata.user.username)),
+        #("email", json.string(clientdata.user.email)),
       ]),
     ),
   ])
