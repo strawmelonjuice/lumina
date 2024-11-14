@@ -11,6 +11,10 @@ import gleamy_lights/premixed
 import gleamy_lights/premixed/gleam_colours
 import plinth/browser/window
 
-pub fn render() {
-  web_io.println("Login page")
+pub fn home_render() {
+  web_io.println("Home page")
+}
+
+pub fn index_render() {
+  web_io.println("Index page")
 }

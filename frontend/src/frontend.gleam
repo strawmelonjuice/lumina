@@ -14,10 +14,19 @@ import plinth/browser/window
 // Page modules
 import frontend/page/login
 import frontend/page/signup
-import frontend/page/site/home
-import frontend/page/site/index
+import frontend/page/site
 
 pub fn main() {
+  window.add_event_listener("load", fn(_) {
+    let path = window.pathname()
+    case path {
+      "/" -> site.index_render()
+      "/home" -> site.home_render()
+      "/login" -> login.render()
+      "/signup" -> signup.render()
+      _ -> web_io.println("404: Page not found")
+    }
+  })
   web_io.println(
     "Hello from the "
     <> gleam_colours.text_faff_pink("Gleam")
