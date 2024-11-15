@@ -16,7 +16,7 @@ pub type LuminaConfig {
 }
 
 pub type LuminaDBConnectionInfo {
-  LuminaDBConnectionInfoPGO(pog.Config)
+  LuminaDBConnectionInfoPOSTGRES(pog.Config)
   LuminaDBConnectionInfoSQLite(file: String)
 }
 
@@ -130,20 +130,20 @@ pub fn load(in: String) {
         "sqlite"
       }
       Ok("sqlite") -> "sqlite"
-      Ok("pgo") -> "pgo"
+      Ok("postgres") -> "postgres"
       Ok(_) -> {
         panic as "Invalid database type provided"
       }
     }
   {
-    "pgo" -> {
+    "postgres" -> {
       let db_password =
-        envoy.get("_LUMINA_PGO_PASSWORD_") |> option.from_result()
-      // let db_password = case envoy.get("_LUMINA_PGO_PASSWORD_") {
+        envoy.get("_LUMINA_POSTGRES_PASSWORD_") |> option.from_result()
+      // let db_password = case envoy.get("_LUMINA_POSTGRES_PASSWORD_") {
       //   Error(_) -> {
       //     wisp.log_notice(
       //       "No Postgres database password provided under environment variable '"
-      //       <> premixed.text_orange("_LUMINA_PGO_PASSWORD_")
+      //       <> premixed.text_orange("_LUMINA_POSTGRES_PASSWORD_")
       //       <> "', using "
       //       <> premixed.text_green("passwordless"),
       //     )
@@ -151,11 +151,11 @@ pub fn load(in: String) {
       //   }
       //   Ok(name) -> option.Some(name)
       // }
-      let db_name: String = case envoy.get("_LUMINA_PGO_DATABASE_") {
+      let db_name: String = case envoy.get("_LUMINA_POSTGRES_DATABASE_") {
         Error(_) -> {
           wisp.log_notice(
             "No Postgres database database name provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_PGO_DATABASE_")
+            <> premixed.text_orange("_LUMINA_POSTGRES_DATABASE_")
             <> "', using default "
             <> premixed.text_green("lumina_db"),
           )
@@ -163,15 +163,15 @@ pub fn load(in: String) {
         }
         Ok(name) -> name
       }
-      let db_port: Int = case envoy.get("_LUMINA_PGO_PORT_") {
+      let db_port: Int = case envoy.get("_LUMINA_POSTGRES_PORT_") {
         Error(_) -> {
           wisp.log_notice(
             "No Postgres database port provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_PGO_PORT_")
+            <> premixed.text_orange("_LUMINA_POSTGRES_PORT_")
             <> "', using default "
-            <> premixed.text_green("3306"),
+            <> premixed.text_green("5432"),
           )
-          3306
+          5432
         }
         Ok(port) ->
           case int.parse(port) {
@@ -179,19 +179,19 @@ pub fn load(in: String) {
             Error(_) -> {
               wisp.log_notice(
                 "Invalid Postgres database port provided under environment variable '"
-                <> premixed.text_orange("_LUMINA_PGO_PORT_")
+                <> premixed.text_orange("_LUMINA_POSTGRES_PORT_")
                 <> "', using default "
-                <> premixed.text_green("3306"),
+                <> premixed.text_green("5432"),
               )
-              3306
+              5432
             }
           }
       }
-      let db_host: String = case envoy.get("_LUMINA_PGO_HOST_") {
+      let db_host: String = case envoy.get("_LUMINA_POSTGRES_HOST_") {
         Error(_) -> {
           wisp.log_notice(
             "No Postgres database host provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_PGO_HOST_")
+            <> premixed.text_orange("_LUMINA_POSTGRES_HOST_")
             <> "', using default "
             <> premixed.text_green("localhost"),
           )
@@ -199,11 +199,11 @@ pub fn load(in: String) {
         }
         Ok(host) -> host
       }
-      let db_username: String = case envoy.get("_LUMINA_PGO_USERNAME_") {
+      let db_username: String = case envoy.get("_LUMINA_POSTGRES_USERNAME_") {
         Error(_) -> {
           wisp.log_notice(
             "No Postgres database username provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_PGO_USERNAME_")
+            <> premixed.text_orange("_LUMINA_POSTGRES_USERNAME_")
             <> "', using default "
             <> premixed.text_green("lumina"),
           )
@@ -217,7 +217,7 @@ pub fn load(in: String) {
       |> pog.user(db_username)
       |> pog.password(db_password)
       |> pog.database(db_name)
-      |> LuminaDBConnectionInfoPGO
+      |> LuminaDBConnectionInfoPOSTGRES
     }
     "sqlite" -> {
       wisp.log_warning(

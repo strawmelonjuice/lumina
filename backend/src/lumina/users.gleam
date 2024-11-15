@@ -1,13 +1,5 @@
 //// User management module
 
-import pog
-
-import pog
-
-import pog
-
-import pog
-
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
@@ -27,6 +19,7 @@ import gmysql
 import lumina/data/context.{type Context}
 import lumina/database
 import lumina/shared/shared_users
+import pog
 import sqlight
 
 pub type SafeUser =
@@ -47,14 +40,17 @@ pub fn fetch(ctx: Context, uid: Int) -> Option(User) {
 
   case
     case ctx.db {
-      database.MySQLConnection(con) -> {
-        gmysql.query(
-          "SELECT * FROM `users` WHERE `id` = ?",
-          con,
-          [gmysql.to_param(uid)],
-          decoder,
-        )
+      database.POSTGRESConnection(con) -> {
+        pog.query("SELECT * FROM `users` WHERE `id` = ?")
+        |> pog.returning(decoder)
+        |> pog.parameter(pog.int(uid))
+        |> pog.execute(con)
         |> result.map_error(string.inspect)
+        |> result.map(fn(a) {
+          case a {
+            pog.Returned(_, i) -> i
+          }
+        })
       }
       database.SQLiteConnection(con) -> {
         use conn <- sqlight.with_connection(con)
@@ -87,14 +83,17 @@ fn fetch_username(ctx: Context, username: String) -> Option(User) {
 
   case
     case ctx.db {
-      database.MySQLConnection(con) -> {
-        gmysql.query(
-          "SELECT * FROM `users` WHERE `username` = ?",
-          con,
-          [gmysql.to_param(username)],
-          decoder,
-        )
+      database.POSTGRESConnection(con) -> {
+        pog.query("SELECT * FROM `users` WHERE `username` = ?")
+        |> pog.returning(decoder)
+        |> pog.parameter(pog.text(username))
+        |> pog.execute(con)
         |> result.map_error(string.inspect)
+        |> result.map(fn(a) {
+          case a {
+            pog.Returned(_, i) -> i
+          }
+        })
       }
       database.SQLiteConnection(con) -> {
         use conn <- sqlight.with_connection(con)
@@ -128,14 +127,17 @@ fn fetch_email(ctx: Context, email: String) -> Option(User) {
 
   case
     case ctx.db {
-      database.MySQLConnection(con) -> {
-        gmysql.query(
-          "SELECT * FROM `users` WHERE `email` = ?",
-          con,
-          [gmysql.to_param(email)],
-          decoder,
-        )
+      database.POSTGRESConnection(con) -> {
+        pog.query("SELECT * FROM `users` WHERE `email` = ?")
+        |> pog.returning(decoder)
+        |> pog.parameter(pog.text(email))
+        |> pog.execute(con)
         |> result.map_error(string.inspect)
+        |> result.map(fn(a) {
+          case a {
+            pog.Returned(_, i) -> i
+          }
+        })
       }
       database.SQLiteConnection(con) -> {
         use conn <- sqlight.with_connection(con)
@@ -236,7 +238,7 @@ pub fn add_user(
   // Add user to the database and return the user is
   use r <- result.try(result.map_error(
     case ctx.db {
-      database.PGOConnection(con) -> {
+      database.POSTGRESConnection(con) -> {
         pog.query(
           "INSERT INTO `users` (`username`, `email`, `password`) VALUES (?, ?, ?); SELECT max(id) FROM `users`",
         )
@@ -248,7 +250,10 @@ pub fn add_user(
         |> result.map_error(string.inspect)
         |> result.map(fn(a) {
           case a {
-            pog.Returned(i) -> i
+            pog.Returned(_, i) -> {
+              let assert Ok(d) = list.first(i)
+              d
+            }
           }
         })
       }
