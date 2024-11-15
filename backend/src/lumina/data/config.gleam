@@ -1,3 +1,8 @@
+import pog
+
+// Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+// Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+
 pub type LuminaConfig {
   LuminaConfig(
     lumina_server_port: Int,
@@ -11,14 +16,8 @@ pub type LuminaConfig {
 }
 
 pub type LuminaDBConnectionInfo {
-  MySQLConnectionInfo(
-    port: Int,
-    host: String,
-    username: String,
-    password: option.Option(String),
-    name: String,
-  )
-  SQLiteConnectionInfo(file: String)
+  LuminaDBConnectionInfoPGO(pog.Config)
+  LuminaDBConnectionInfoSQLite(file: String)
 }
 
 import envoy
@@ -131,20 +130,20 @@ pub fn load(in: String) {
         "sqlite"
       }
       Ok("sqlite") -> "sqlite"
-      Ok("mysql") -> "mysql"
+      Ok("pgo") -> "pgo"
       Ok(_) -> {
         panic as "Invalid database type provided"
       }
     }
   {
-    "mysql" -> {
+    "pgo" -> {
       let db_password =
-        envoy.get("_LUMINA_MYSQL_PASSWORD_") |> option.from_result()
-      // let db_password = case envoy.get("_LUMINA_MYSQL_PASSWORD_") {
+        envoy.get("_LUMINA_PGO_PASSWORD_") |> option.from_result()
+      // let db_password = case envoy.get("_LUMINA_PGO_PASSWORD_") {
       //   Error(_) -> {
       //     wisp.log_notice(
-      //       "No MYSQL password provided under environment variable '"
-      //       <> premixed.text_orange("_LUMINA_MYSQL_PASSWORD_")
+      //       "No Postgres database password provided under environment variable '"
+      //       <> premixed.text_orange("_LUMINA_PGO_PASSWORD_")
       //       <> "', using "
       //       <> premixed.text_green("passwordless"),
       //     )
@@ -152,11 +151,11 @@ pub fn load(in: String) {
       //   }
       //   Ok(name) -> option.Some(name)
       // }
-      let db_name: String = case envoy.get("_LUMINA_MYSQL_DATABASE_") {
+      let db_name: String = case envoy.get("_LUMINA_PGO_DATABASE_") {
         Error(_) -> {
           wisp.log_notice(
-            "No MYSQL database name provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_MYSQL_DATABASE_")
+            "No Postgres database database name provided under environment variable '"
+            <> premixed.text_orange("_LUMINA_PGO_DATABASE_")
             <> "', using default "
             <> premixed.text_green("lumina_db"),
           )
@@ -164,11 +163,11 @@ pub fn load(in: String) {
         }
         Ok(name) -> name
       }
-      let db_port: Int = case envoy.get("_LUMINA_MYSQL_PORT_") {
+      let db_port: Int = case envoy.get("_LUMINA_PGO_PORT_") {
         Error(_) -> {
           wisp.log_notice(
-            "No MYSQL port provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_MYSQL_PORT_")
+            "No Postgres database port provided under environment variable '"
+            <> premixed.text_orange("_LUMINA_PGO_PORT_")
             <> "', using default "
             <> premixed.text_green("3306"),
           )
@@ -179,8 +178,8 @@ pub fn load(in: String) {
             Ok(p) -> p
             Error(_) -> {
               wisp.log_notice(
-                "Invalid MYSQL port provided under environment variable '"
-                <> premixed.text_orange("_LUMINA_MYSQL_PORT_")
+                "Invalid Postgres database port provided under environment variable '"
+                <> premixed.text_orange("_LUMINA_PGO_PORT_")
                 <> "', using default "
                 <> premixed.text_green("3306"),
               )
@@ -188,11 +187,11 @@ pub fn load(in: String) {
             }
           }
       }
-      let db_host: String = case envoy.get("_LUMINA_MYSQL_HOST_") {
+      let db_host: String = case envoy.get("_LUMINA_PGO_HOST_") {
         Error(_) -> {
           wisp.log_notice(
-            "No MYSQL host provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_MYSQL_HOST_")
+            "No Postgres database host provided under environment variable '"
+            <> premixed.text_orange("_LUMINA_PGO_HOST_")
             <> "', using default "
             <> premixed.text_green("localhost"),
           )
@@ -200,11 +199,11 @@ pub fn load(in: String) {
         }
         Ok(host) -> host
       }
-      let db_username: String = case envoy.get("_LUMINA_MYSQL_USERNAME_") {
+      let db_username: String = case envoy.get("_LUMINA_PGO_USERNAME_") {
         Error(_) -> {
           wisp.log_notice(
-            "No MYSQL username provided under environment variable '"
-            <> premixed.text_orange("_LUMINA_MYSQL_USERNAME_")
+            "No Postgres database username provided under environment variable '"
+            <> premixed.text_orange("_LUMINA_PGO_USERNAME_")
             <> "', using default "
             <> premixed.text_green("lumina"),
           )
@@ -212,13 +211,13 @@ pub fn load(in: String) {
         }
         Ok(name) -> name
       }
-      MySQLConnectionInfo(
-        port: db_port,
-        host: db_host,
-        username: db_username,
-        password: db_password,
-        name: db_name,
-      )
+      pog.default_config()
+      |> pog.port(db_port)
+      |> pog.host(db_host)
+      |> pog.user(db_username)
+      |> pog.password(db_password)
+      |> pog.database(db_name)
+      |> LuminaDBConnectionInfoPGO
     }
     "sqlite" -> {
       wisp.log_warning(
@@ -238,7 +237,7 @@ pub fn load(in: String) {
         }
         Ok(name) -> name
       }
-      SQLiteConnectionInfo(file: db_file)
+      LuminaDBConnectionInfoSQLite(file: db_file)
     }
     _ -> {
       panic as "Invalid database type provided"
@@ -249,7 +248,7 @@ pub fn load(in: String) {
   let sy_time: Int = case envoy.get("_LUMINA_SYNCHRONISATION_INTERVAL_") {
     Error(_) -> {
       wisp.log_notice(
-        "No MYSQL port provided under environment variable '"
+        "No Postgres database port provided under environment variable '"
         <> premixed.text_orange("_LUMINA_SYNCHRONISATION_INTERVAL_")
         <> "', using default "
         <> premixed.text_green("30"),

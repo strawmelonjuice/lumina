@@ -1,5 +1,13 @@
 //// User management module
 
+import pog
+
+import pog
+
+import pog
+
+import pog
+
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
@@ -228,18 +236,21 @@ pub fn add_user(
   // Add user to the database and return the user is
   use r <- result.try(result.map_error(
     case ctx.db {
-      database.MySQLConnection(con) -> {
-        gmysql.query(
+      database.PGOConnection(con) -> {
+        pog.query(
           "INSERT INTO `users` (`username`, `email`, `password`) VALUES (?, ?, ?); SELECT max(id) FROM `users`",
-          con,
-          [
-            gmysql.to_param(username),
-            gmysql.to_param(email),
-            gmysql.to_param(hashed_password),
-          ],
-          dynamic.element(0, dynamic.int),
         )
+        |> pog.parameter(pog.text(username))
+        |> pog.parameter(pog.text(email))
+        |> pog.parameter(pog.text(hashed_password))
+        |> pog.returning(dynamic.list(dynamic.int))
+        |> pog.execute(con)
         |> result.map_error(string.inspect)
+        |> result.map(fn(a) {
+          case a {
+            pog.Returned(i) -> i
+          }
+        })
       }
       database.SQLiteConnection(con) -> {
         use conn <- sqlight.with_connection(con)
