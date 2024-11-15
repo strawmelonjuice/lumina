@@ -35,8 +35,6 @@ pub fn load(in: String) {
   let envfile = in <> ".env"
   case fs.is_file(envfile) {
     // If an .env file exists, load it.
-    // Dotenv is not usable, as it depends on older versions of simplifile and newer versions of gleam than the ones used in this project.
-    // But partly it's code is just what I'd do in any other language
     Ok(True) -> {
       let assert Ok(env_file) = fs.read(envfile)
       string.split(env_file, "\n")
@@ -48,8 +46,6 @@ pub fn load(in: String) {
           |> result.unwrap("")
           |> string.trim()
 
-        // so for those cases we need to join the rest of the line
-        // and split again
         let value =
           list.drop(splited_line, 1)
           |> string.join("=")

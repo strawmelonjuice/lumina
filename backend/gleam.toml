@@ -34,6 +34,7 @@ lustre = ">= 4.5.0 and < 5.0.0"
 kirala_bbmarkdown = ">= 1.0.2 and < 2.0.0"
 sqlight = ">= 0.9.1 and < 1.0.0"
 argus = ">= 1.0.2 and < 2.0.0"
+pog = ">= 1.0.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
