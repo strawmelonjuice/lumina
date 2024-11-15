@@ -5,7 +5,7 @@ import gleam/string
 import gleamy_lights/premixed.{text_error_red, text_lime}
 import gmysql
 import lumina/data/config.{
-  type LuminaConfig, type LuminaDBConnectionInfo, LuminaDBConnectionInfoPGO,
+  type LuminaConfig, type LuminaDBConnectionInfo, LuminaDBConnectionInfoPOSTGRES,
   LuminaDBConnectionInfoSQLite,
 }
 import pog
@@ -13,17 +13,17 @@ import sqlight
 import wisp
 
 pub type LuminaDBConnection {
-  PGOConnection(pog.Connection)
+  POSTGRESConnection(pog.Connection)
   // SQLight shouldn't keep the connection, easier if it just stores the path and reconnects everytime.
   SQLiteConnection(String)
 }
 
 pub fn connect(lc: LuminaConfig, in: String) -> LuminaDBConnection {
   case lc.db_connection_info {
-    LuminaDBConnectionInfoPGO(config) -> {
+    LuminaDBConnectionInfoPOSTGRES(config) -> {
       wisp.log_info("Connecting to Postgres database...")
       pog.connect(config)
-      |> PGOConnection
+      |> POSTGRESConnection
     }
     LuminaDBConnectionInfoSQLite(file_) -> {
       // Always relative to the instance folder.
@@ -44,7 +44,7 @@ pub fn connect(lc: LuminaConfig, in: String) -> LuminaDBConnection {
 
 pub fn c(connection: LuminaDBConnection, conf: LuminaConfig) {
   case connection {
-    PGOConnection(con) -> {
+    POSTGRESConnection(con) -> {
       i(con)
     }
     SQLiteConnection(con) -> {
@@ -54,7 +54,7 @@ pub fn c(connection: LuminaDBConnection, conf: LuminaConfig) {
   }
 }
 
-/// Sets up the tables in the PGO database.
+/// Sets up the tables in the POSTGRES database.
 fn i(con: pog.Connection) {
   case
     pog.query(
