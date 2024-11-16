@@ -97,7 +97,7 @@ fn start(in: String) {
   // Connect to database
   let dbc = database.connect(lumina_config, in)
   // Sets up database in case of need.
-  database.c(dbc, lumina_config)
+  database.c(dbc)
 
   // Set up session store
   let assert Ok(actor_store) = actor_store.try_create_session_store()

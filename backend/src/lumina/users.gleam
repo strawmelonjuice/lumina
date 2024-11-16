@@ -1,5 +1,3 @@
-import gleam/io
-
 //// User management module
 
 

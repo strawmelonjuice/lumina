@@ -59,5 +59,22 @@ if [[ "$*" == *"--run"* ]]; then
 else
 	if [[ "$*" == *"--pack"* ]]; then
 		echo "'--pack' detected. Packaging for deployment."
+else 
+	if [[ "$*" == *"--test"* ]]; then
+		echo "'--test' detected. Running backend tests."        				
+		cd "$LOCA/backend/"
+		gleam test --target erlang
+		echo "'--test' detected. Running frontend tests."        				
+
+		if [[ "$*" == *"--frontend-ts"* ]]; then
+        				cd "$LOCA/frontend-ts/"
+        				bun test 
+        else
+        	if [[ "$*" == *"--frontend-gleam"* ]]; then
+        				cd "$LOCA/frontend/"
+						gleam test --target javascript
+			fi
 	fi
+fi
+fi
 fi
