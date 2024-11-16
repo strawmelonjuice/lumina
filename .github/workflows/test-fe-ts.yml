@@ -1,4 +1,4 @@
-name: test-fe-gleam
+name: test-fe-ts
 on:
     push:
         branches:
