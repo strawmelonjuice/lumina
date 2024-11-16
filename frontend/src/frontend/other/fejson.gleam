@@ -3,7 +3,6 @@
 
 import lumina/shared/shared_fejsonobject
 import lumina/shared/shared_users
-import plinth/javascript/date
 
 pub type FEJsonObj =
   shared_fejsonobject.FEJSonObj
