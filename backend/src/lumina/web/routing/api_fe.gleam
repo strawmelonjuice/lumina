@@ -295,7 +295,7 @@ type MarkdownPreviewResponse {
   MarkdownPreviewResponse(ok: Bool, html: String)
 }
 
-pub fn editor_preview_markdown(req: wisp.Request, ctx: context.Context) {
+pub fn editor_preview_markdown(req: wisp.Request, _ctx: context.Context) {
   let pagesrverresponseencoder = fn(response: MarkdownPreviewResponse) {
     json.object([
       #("Ok", json.bool(response.ok)),
