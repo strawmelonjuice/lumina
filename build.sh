@@ -17,7 +17,7 @@ else
 		echo "Building front-end (Gleam)..."
 
 		cd "$LOCA/frontend/"
-		if gleam build --target js --no-print-progress; then
+		if gleam build --target js; then
 			echo "Frontend build success."
 		else
 			echo "Frontend compilation ran into an error."
@@ -45,7 +45,7 @@ bun x cleancss -O1 specialComments:all --inline none "$LOCA/backend/priv/generat
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 echo "Starting on back-end compilation"
 cd "$LOCA/backend/"
-if gleam build --target erlang --no-print-progress; then
+if gleam build --target erlang; then
 	echo "Success!"
 else
 	echo "Compilation ran into an error!"
