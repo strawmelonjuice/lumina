@@ -1,11 +1,9 @@
-import gleam/dynamic
 import gleam/list
-import gleam/option
+import gleam/result
 import gleam/string
 import gleamy_lights/premixed.{text_error_red, text_lime}
-import gmysql
 import lumina/data/config.{
-  type LuminaConfig, type LuminaDBConnectionInfo, LuminaDBConnectionInfoPOSTGRES,
+  type LuminaConfig, LuminaDBConnectionInfoPOSTGRES,
   LuminaDBConnectionInfoSQLite,
 }
 import pog
@@ -56,40 +54,41 @@ pub fn c(connection: LuminaDBConnection, conf: LuminaConfig) {
 
 /// Sets up the tables in the POSTGRES database.
 fn i(con: pog.Connection) {
-  case
-    pog.query(
-      "
-CREATE TABLE IF NOT EXISTS external_posts(
+  let result =
+    [
+      "CREATE TABLE IF NOT EXISTS external_posts(
 	host_id INTEGER PRIMARY KEY,
 	source_id INTEGER NOT NULL,
 	source_instance TEXT NOT NULL
-			);
-CREATE TABLE IF NOT EXISTS interinstance_relations(
+			);",
+      "CREATE TABLE IF NOT EXISTS interinstance_relations(
 	instance_id TEXT PRIMARY KEY,
 	synclevel TEXT NOT NULL,
 	last_contact INTEGER NOT NULL
-			);
-CREATE TABLE IF NOT EXISTS local_posts(
+			);",
+      "CREATE TABLE IF NOT EXISTS local_posts(
 	host_id INTEGER PRIMARY KEY,
 	user_id INTEGER NOT NULL,
 	privacy INTEGER NOT NULL
-			);
-CREATE TABLE IF NOT EXISTS posts_pool(
+			);",
+      "CREATE TABLE IF NOT EXISTS posts_pool(
 	postid INTEGER PRIMARY KEY,
 	kind TEXT NOT NULL,
 	content TEXT NOT NULL,
 	from_local INTEGER NOT NULL
-			);
-CREATE TABLE IF NOT EXISTS users(
-	id INTEGER PRIMARY KEY,
+			);",
+      "CREATE TABLE IF NOT EXISTS users(
+	id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	username TEXT NOT NULL,
 	password TEXT NOT NULL,
 	email TEXT NOT NULL
-			);
-",
-    )
-    |> pog.execute(con)
-  {
+			);",
+    ]
+    |> list.try_each(fn(query) {
+      pog.query(query)
+      |> pog.execute(con)
+    })
+  case result {
     Ok(_) -> Nil
     Error(e) -> {
       wisp.log_info(
@@ -153,4 +152,21 @@ CREATE TABLE IF NOT EXISTS users(
       wisp.log_error(string.inspect(e))
     }
   }
+}
+
+pub fn pogerror_to_string(s) {
+  s
+  |> result.map_error(fn(e) {
+    case e {
+      pog.PostgresqlError(a, b, c) ->
+        "["
+        <> premixed.text_bright_yellow("Postgres error -> " <> b)
+        <> "] "
+        <> premixed.bg_error_red(c)
+        <> " (code: "
+        <> a
+        <> ")"
+      _ -> string.inspect(e)
+    }
+  })
 }

@@ -1,4 +1,8 @@
+import gleam/io
+
 //// User management module
+
+
 
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
@@ -10,6 +14,7 @@ const minimum_password_length = 8
 import argus
 import gleam/bool
 import gleam/dynamic
+import wisp
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/regex
@@ -41,11 +46,11 @@ pub fn fetch(ctx: Context, uid: Int) -> Option(User) {
   case
     case ctx.db {
       database.POSTGRESConnection(con) -> {
-        pog.query("SELECT * FROM `users` WHERE `id` = ?")
+        pog.query("SELECT * FROM users WHERE id = $1")
         |> pog.returning(decoder)
         |> pog.parameter(pog.int(uid))
         |> pog.execute(con)
-        |> result.map_error(string.inspect)
+        |> database.pogerror_to_string
         |> result.map(fn(a) {
           case a {
             pog.Returned(_, i) -> i
@@ -70,7 +75,8 @@ pub fn fetch(ctx: Context, uid: Int) -> Option(User) {
     Error(e) -> {
       let errormsg =
         "An error occurred while fetching the user from the database: " <> e
-      panic as errormsg
+      wisp.log_emergency(errormsg)
+      panic
     }
     _ -> None
   }
@@ -84,11 +90,11 @@ fn fetch_username(ctx: Context, username: String) -> Option(User) {
   case
     case ctx.db {
       database.POSTGRESConnection(con) -> {
-        pog.query("SELECT * FROM `users` WHERE `username` = ?")
-        |> pog.returning(decoder)
+        pog.query("SELECT * FROM users WHERE username = $1")
         |> pog.parameter(pog.text(username))
+        |> pog.returning(decoder)
         |> pog.execute(con)
-        |> result.map_error(string.inspect)
+        |> database.pogerror_to_string
         |> result.map(fn(a) {
           case a {
             pog.Returned(_, i) -> i
@@ -113,10 +119,12 @@ fn fetch_username(ctx: Context, username: String) -> Option(User) {
     Error(e) -> {
       let errormsg =
         "An error occurred while fetching the user from the database: "
-        <> string.inspect(e)
-      panic as errormsg
+        <> e
+      wisp.log_emergency(errormsg)
+      panic
     }
-    _ -> None
+    Ok([]) -> None
+	  	_ -> panic
   }
 }
 
@@ -128,7 +136,7 @@ fn fetch_email(ctx: Context, email: String) -> Option(User) {
   case
     case ctx.db {
       database.POSTGRESConnection(con) -> {
-        pog.query("SELECT * FROM `users` WHERE `email` = ?")
+        pog.query("SELECT * FROM users WHERE email = $1")
         |> pog.returning(decoder)
         |> pog.parameter(pog.text(email))
         |> pog.execute(con)
@@ -157,8 +165,9 @@ fn fetch_email(ctx: Context, email: String) -> Option(User) {
     Error(e) -> {
       let errormsg =
         "An error occurred while fetching the user from the database: "
-        <> string.inspect(e)
-      panic as errormsg
+        <> e
+      wisp.log_emergency(errormsg)
+      panic
     }
     _ -> None
   }
@@ -240,20 +249,17 @@ pub fn add_user(
     case ctx.db {
       database.POSTGRESConnection(con) -> {
         pog.query(
-          "INSERT INTO `users` (`username`, `email`, `password`) VALUES (?, ?, ?); SELECT max(id) FROM `users`",
+          "INSERT INTO users (username,email,password) VALUES ($1, $2, $3) RETURNING id",
         )
         |> pog.parameter(pog.text(username))
         |> pog.parameter(pog.text(email))
         |> pog.parameter(pog.text(hashed_password))
-        |> pog.returning(dynamic.list(dynamic.int))
+        |> pog.returning(dynamic.element(0, dynamic.int))
         |> pog.execute(con)
-        |> result.map_error(string.inspect)
+        |> database.pogerror_to_string
         |> result.map(fn(a) {
           case a {
-            pog.Returned(_, i) -> {
-              let assert Ok(d) = list.first(i)
-              d
-            }
+            pog.Returned(_, i) -> i
           }
         })
       }

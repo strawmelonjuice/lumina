@@ -182,7 +182,7 @@ pub fn create_user(req: wisp.Request, ctx: context.Context) {
               wisp.bad_request()
             }
             users.DatabaseError(f) -> {
-              wisp.log_critical("Database Error: " <> string.inspect(f))
+              wisp.log_critical("Database Error: " <> f)
               wisp.unprocessable_entity()
             }
             users.ReturnError -> {

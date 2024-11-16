@@ -1,14 +1,13 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
-import frontend/tools/fejson
+import frontend/other/fejson
 import gleam/bool
 import gleam/dynamic
 import gleam/fetch.{type FetchError}
 import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/int
-import gleam/io
 import gleam/javascript/promise
 import gleam/json
 import gleam/string
@@ -18,13 +17,14 @@ import gleamy_lights/premixed/gleam_colours
 import lumina/shared/shared_fejsonobject
 import lumina/shared/shared_users
 import plinth/browser/window
-import plinth/javascript/date
 import plinth/javascript/global
 
 // Page modules
 import frontend/page/login
 import frontend/page/signup
 import frontend/page/site
+
+const fejsontimeout = 700
 
 pub fn main() {
   window.add_event_listener("load", fn(_) {
@@ -48,7 +48,11 @@ pub fn main() {
 fn update_fejson() {
   let origi = fejson.get()
   use <- bool.guard(
-    when: { { fejson.timestamp() - origi.pulled } > 300 } |> bool.negate,
+    when: {
+      { fejson.timestamp() - origi.pulled } |> int.absolute_value
+      > fejsontimeout
+    }
+      |> bool.negate,
     return: promise.resolve(Nil),
   )
   shared_fejsonobject.FEJSonObj(
