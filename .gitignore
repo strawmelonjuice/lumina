@@ -1,5 +1,6 @@
 *.beam
 *.ez
+/target/
 backend/build
 backend/priv/generated
 erl_crash.dump
