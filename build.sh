@@ -2,28 +2,101 @@
 
 LOCA=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SECONDS=0
+QUIET=false
+TESTS=false
+BUNFLAGS=""
+CARGOFLAGS=""
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+if [[ "$*" == *"--QUIET"* ]]; then
+	QUIET=true
+fi
+if [[ "$*" == *"--test"* ]]; then
+	QUIET=true
+	TESTS=true
+fi
+if [ "$QUIET" = true ]; then
+	echo "Quiet mode enabled."
+	BUNFLAGS="$BUNFLAGS --silent --quiet"
+	CARGOFLAGS="$CARGOFLAGS --quiet"
+	export BUN_DEBUG_QUIET_LOGS=1
+fi
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 noti() {
+	if [ "$QUIET" = true ]; then
+		return
+	fi
 	echo -e "\e[3m\e[1m$1\e[23m\e[22m"
 }
 errnoti() {
+	if [ "$QUIET" = true ]; then
+		return
+	fi
 	echo -e "\x1B[31m$1\e[0m"
 }
 success() {
+	if [ "$QUIET" = true ]; then
+		if [ "$TESTS" = false ]; then
+			return
+		fi
+	fi
 	echo -e "\e[38;5;42m$1\e[39m"
 }
+res_noti() {
+	if [ "$QUIET" = true ]; then
+		if [ "$TESTS" = false ]; then
+			return
+		fi
+	fi
+	if [[ "$1" = 1 ]]; then
+		echo -e "\e[3m\e[1m$2\e[23m\e[22m"
+	else
+		echo -e "\e[4m\e[3m\e[1m$2\e[23m\e[22m\e[0m"
+	fi
+}
+res_fail() {
+	if [ "$QUIET" = true ]; then
+		if [ "$TESTS" = false ]; then
+			return
+		fi
+	fi
+	echo -e "\e[4m\x1B[31m$1\e[0m\e[0m"
+}
+res_succ() {
+	if [ "$QUIET" = true ]; then
+		if [ "$TESTS" = false ]; then
+			return
+		fi
+	fi
+	echo -e "\e[4m\e[38;5;42m$1\e[39m\e[0m"
+}
 
+# echo "noti:"
+# noti "This is a notification."
+# echo "errnoti:"
+# errnoti "This is an error notification."
+# echo "success:"
+# success "This is a success message."
+# echo "res_noti:"
+# res_noti 1 "This is a result notification."
+# res_noti 2 "This is a result phase change."
+# echo "res_fail:"
+# res_fail "This is a failed result."
+# echo "res_succ:"
+# res_succ "This is a successful result."
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+res_noti 2 "Starting build process..."
 rm -rf "$LOCA/backend/priv/generated/js"
 mkdir "$LOCA/backend/priv/generated/js"
 
 if [[ "$*" == *"--frontend-ts"* ]]; then
 	noti "Building front-end (TS)..."
 	cd "$LOCA/frontend-ts/" || exit 1
-	bun install
+	bun install $BUNFLAGS
 	noti "Transpiling and copying to Lumina server..."
-	bun build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked --minify
-	bun "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked
+	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 else
 	if [[ "$*" == *"--frontend-gleam"* ]]; then
 		noti "Building front-end (Gleam)..."
@@ -37,8 +110,8 @@ else
 		fi
 		noti "Copying to Lumina server..."
 		echo "import { main } from \"./frontend.mjs\";main();" >"$LOCA/frontend/build/dev/javascript/frontend/app.js"
-		bun build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=external --minify
-		bun "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=none
+		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 	else
 		errnoti "Invalid or missing frontend option, expected either \"--frontend-ts\" or \"--frontend-gleam\"."
 		exit 1
@@ -47,7 +120,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 noti "Front-end should be done. Continuing to generated assets."
 cd "$LOCA/backend/" || exit 1
-bun install
+bun install $BUNFLAGS
 rm -rf "$LOCA/backend/priv/generated/css/"
 mkdir "$LOCA/backend/priv/generated/css/"
 noti "Generating CSS... (TailwindCSS)"
@@ -78,7 +151,7 @@ else
 	exit 1
 fi
 duration=$SECONDS
-noti "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
+res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
 if [[ "$*" == *"--run"* ]]; then
 	noti "'--run' detected. Running Lumina directly!"
 	gleam run -- start
@@ -87,41 +160,51 @@ else
 		noti "'--pack' detected. Packaging for deployment."
 	else
 		if [[ "$*" == *"--test"* ]]; then
-			noti "'--test' detected. Running Cargo tests."
+			clear
+			res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
+			res_noti 2 "Running tests"
+			res_noti 1 "Running Cargo tests"
 			cd "$LOCA/rsffi/" || exit 1
 			cargo check || {
-				errnoti "\t--> Cargo tests ran into an error."
+				res_fail "\t--> Cargo tests ran into an error."
 				exit 1
 			}
-			noti "'--test' detected. Running backend tests."
+			res_succ "\t-> Success"
+			res_noti 1 "Running backend tests"
 			cd "$LOCA/backend/" || exit 1
 			gleam test --target erlang || {
-				errnoti "\t--> Backend tests ran into an error."
+				res_fail "\t--> Backend tests ran into an error."
 				exit 1
 			}
-			noti "'--test' detected. Running library tests."
-			cd "$LOCA/shared/" || exit 1
-			gleam test --target erlang || {
-				errnoti "\t--> Library tests ran into an error."
-				exit 1
-			}
-			noti "'--test' detected. Running frontend tests."
+			res_succ "\t-> Success"
+
+			# # These tests are not needed, the shared libary can be tested within the gleam frontend and backend tests.
+			# res_noti 1 "Running library tests"
+			# cd "$LOCA/shared/" || exit 1
+			# gleam test --target erlang || {
+			# 	res_fail "\t--> Library tests ran into an error."
+			# 	exit 1
+			# }
+			# res_succ "\t-> Success"
+			res_noti 1 "Running frontend tests"
 			if [[ "$*" == *"--frontend-ts"* ]]; then
 				cd "$LOCA/frontend-ts/" || exit 1
 				bun test || {
-					errnoti "\t--> Frontend tests ran into an error."
+					res_fail "\t--> Frontend tests ran into an error."
 					exit 1
 				}
+				res_succ "\t-> Success"
 			else
 				if [[ "$*" == *"--frontend-gleam"* ]]; then
 					cd "$LOCA/frontend/" || exit 1
 					gleam test --target javascript || {
-						errnoti "\t--> Frontend tests ran into an error."
+						res_fail "\t--> Frontend tests ran into an error."
 						exit 1
 					}
+					res_succ "\t-> Success"
 				fi
 			fi
-			success "All tests completed."
+			res_succ "\n\nAll tests completed."
 		fi
 	fi
 fi
