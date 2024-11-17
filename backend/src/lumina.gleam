@@ -16,6 +16,7 @@ import lumina/data/config
 import lumina/data/context.{Context}
 import lumina/database
 import lumina/web/routing
+import lumina_rsffi
 import mist
 import simplifile as fs
 import wisp
@@ -26,6 +27,7 @@ import wisp_kv_sessions/session_config
 const me = "lumina"
 
 pub fn main() {
+  let assert 3 = lumina_rsffi.add(1, 2)
   case argv.load().arguments {
     ["start", ..] -> start_def()
     ["start-in", folder, ..] -> start(folder)

@@ -24,7 +24,7 @@ import frontend/page/login
 import frontend/page/signup
 import frontend/page/site
 
-const fejsontimeout = 700
+const fejsontimeout = 30_000
 
 pub fn main() {
   window.add_event_listener("load", fn(_) {
@@ -42,7 +42,7 @@ pub fn main() {
     <> gleam_colours.text_faff_pink("Gleam")
     <> " frontend rewrite!",
   )
-  global.set_interval(200, update_fejson)
+  global.set_interval(4000, update_fejson)
 }
 
 fn update_fejson() {
