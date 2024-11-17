@@ -1,7 +1,5 @@
 //// User management module
 
-
-
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
@@ -12,7 +10,6 @@ const minimum_password_length = 8
 import argus
 import gleam/bool
 import gleam/dynamic
-import wisp
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/regex
@@ -24,6 +21,7 @@ import lumina/database
 import lumina/shared/shared_users
 import pog
 import sqlight
+import wisp
 
 pub type SafeUser =
   shared_users.SafeUser
@@ -116,13 +114,12 @@ fn fetch_username(ctx: Context, username: String) -> Option(User) {
     }
     Error(e) -> {
       let errormsg =
-        "An error occurred while fetching the user from the database: "
-        <> e
+        "An error occurred while fetching the user from the database: " <> e
       wisp.log_emergency(errormsg)
       panic
     }
     Ok([]) -> None
-	  	_ -> panic
+    _ -> panic
   }
 }
 
@@ -162,8 +159,7 @@ fn fetch_email(ctx: Context, email: String) -> Option(User) {
     }
     Error(e) -> {
       let errormsg =
-        "An error occurred while fetching the user from the database: "
-        <> e
+        "An error occurred while fetching the user from the database: " <> e
       wisp.log_emergency(errormsg)
       panic
     }
