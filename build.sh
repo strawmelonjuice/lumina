@@ -4,6 +4,7 @@ LOCA=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SECONDS=0
 QUIET=false
 TESTS=false
+PACK=false
 BUNFLAGS=""
 CARGOFLAGS=""
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -14,6 +15,12 @@ fi
 if [[ "$*" == *"--test"* ]]; then
 	QUIET=true
 	TESTS=true
+fi
+if [[ "$*" == *"--pack"* ]]; then
+	PACK=true
+fi
+if [[ "$*" == *"--run-packed"* ]]; then
+	PACK=true
 fi
 if [ "$QUIET" = true ]; then
 	echo "Quiet mode enabled."
@@ -158,6 +165,13 @@ if [[ "$*" == *"--run"* ]]; then
 else
 	if [[ "$*" == *"--pack"* ]]; then
 		noti "'--pack' detected. Packaging for deployment."
+		rm -rf "$LOCA/target/"
+		mkdir -p "$LOCA/target/"
+		gleam run -m gleescript &&
+			cp -r "$LOCA/backend/priv/" "$LOCA/target/" &&
+			mv ./lumina "$LOCA/target/lumina" &&
+			res_succ "Lumina Escript written to \"$LOCA/target/lumina\", ready for deployment."
+		exit 0
 	else
 		if [[ "$*" == *"--test"* ]]; then
 			clear

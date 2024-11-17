@@ -8,7 +8,8 @@ import gleam/erlang/os
 import gleam/erlang/process
 import gleam/io
 import gleam/list
-import gleam/option
+import gleam/option.{None, Some}
+import gleam/result
 import gleam/string
 import gleamy_lights/premixed
 import gleamyshell
@@ -94,8 +95,7 @@ fn start(in: String) {
 
   // Set a secret_key_base
   let secret_key_base = wisp.random_string(64)
-  let assert Ok(priv_directory) = erlang.priv_directory("lumina")
-
+  let priv_directory = get_priv_directory()
   // Connect to database
   let dbc = database.connect(lumina_config, in)
   // Sets up database in case of need.
@@ -141,4 +141,46 @@ fn start(in: String) {
     |> mist.port(ctx.config.lumina_server_port)
     |> mist.start_http
   process.sleep_forever()
+}
+
+fn get_priv_directory() -> String {
+  case
+    {
+      let a =
+        erlang.priv_directory("lumina")
+        |> result.unwrap("")
+
+      use <- bool.guard(
+        when: a
+          |> fs.is_directory
+          |> result.unwrap(False),
+        return: Some(a),
+      )
+      let a =
+        erlang.priv_directory("backend")
+        |> result.unwrap("")
+
+      use <- bool.guard(
+        when: a
+          |> fs.is_directory
+          |> result.unwrap(False),
+        return: Some(a),
+      )
+      let a = "./priv"
+      use <- bool.guard(
+        when: a
+          |> fs.is_directory
+          |> result.unwrap(False),
+        return: Some(a),
+      )
+      None
+    }
+  {
+    Some(a) -> a
+    None -> {
+      "Could not find a suitable priv directory."
+      |> io.println_error
+      panic
+    }
+  }
 }
