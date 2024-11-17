@@ -15,7 +15,6 @@ import gleam/option.{type Option, None, Some}
 import gleam/regex
 import gleam/result
 import gleam/string
-import gmysql
 import lumina/data/context.{type Context}
 import lumina/database
 import lumina/shared/shared_users
@@ -375,6 +374,6 @@ pub type AuthResponseError {
   InvalidIdentifier
   // 5** - Internal errors
   Unspecified
-  DataBaseError(gmysql.Error)
+  DataBaseError(String)
   DecryptionError(argus.HashError)
 }
