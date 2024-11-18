@@ -79,7 +79,7 @@ fn start_l(in: String) -> Result(Nil, String) {
     ),
     return: fn() {
       Error(premixed.text_error_red(
-        "Lumina does not run correctly on Windows yet. Please use WSL for now, or be brave and use the '--allow-windows' flag.",
+        "Lumina does not run correctly on Windows yet. Please use WSL or use the '--allow-windows' flag to run Lumina on Windows.",
       ))
     },
   )
