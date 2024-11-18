@@ -109,7 +109,7 @@ fn start_l(in: String) -> Result(Nil, String) {
   let secret_key_base = wisp.random_string(64)
   let priv_directory = get_priv_directory()
   // Connect to database
-  let dbc = database.connect(lumina_config, in)
+  use dbc <- result.try(database.connect(lumina_config, in))
 
   // Sets up database in case of need. Exits on error.
   use _ <- result.try(database.c(dbc))

@@ -16,26 +16,34 @@ pub type LuminaDBConnection {
   SQLiteConnection(String)
 }
 
-pub fn connect(lc: LuminaConfig, in: String) -> LuminaDBConnection {
+pub fn connect(
+  lc: LuminaConfig,
+  in: String,
+) -> Result(LuminaDBConnection, String) {
   case lc.db_connection_info {
     LuminaDBConnectionInfoPOSTGRES(config) -> {
       wisp.log_info("Connecting to Postgres database...")
-      pog.connect(config)
-      |> POSTGRESConnection
+      Ok(
+        pog.connect(config)
+        |> POSTGRESConnection,
+      )
     }
     LuminaDBConnectionInfoSQLite(file_) -> {
       // Always relative to the instance folder.
       let file = in <> "/" <> file_
       wisp.log_info("Connecting to SQLite database...")
-      let conn = case sqlight.open(file) {
-        Ok(connection) -> connection
+      case sqlight.open(file) {
+        Ok(connection) -> {
+          use _ <- result.try(result.replace_error(
+            sqlight.close(connection),
+            "Could not close SQLite connection for later usage.",
+          ))
+          Ok(SQLiteConnection(file))
+        }
         Error(e) -> {
-          wisp.log_critical("SQLite Connection error: " <> e.message)
-          panic
+          Error("SQLite Connection error: " <> e.message)
         }
       }
-      let assert Ok(_) = sqlight.close(conn)
-      SQLiteConnection(file)
     }
   }
 }
