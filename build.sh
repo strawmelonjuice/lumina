@@ -200,7 +200,6 @@ else
 	else
 		if [[ "$*" == *"--test"* ]]; then
 			TESTS_SUCCEEDED=true
-			clear
 			res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
 			res_noti 2 "Running tests"
 			res_noti 1 "Running Cargo tests"
