@@ -209,14 +209,14 @@ else
 				res_fail "\t--> Cargo tests ran into an error."
 				TESTS_SUCCEEDED=false
 			}
-			res_succ "\t-> Success"
-			res_noti 1 "Running backend tests"
+			res_succ "\t-> Success: Rust libraries"
+			res_noti 1 "Running tests on Lumina server (backend)"
 			cd "$LOCA/backend/" || exit 1
 			gleam run -m backend_test --target erlang || {
 				res_fail "\t--> Backend tests ran into an error."
 				TESTS_SUCCEEDED=false
 			}
-			res_succ "\t-> Success"
+			res_succ "\t-> Success: Lumina server"
 
 			# # These tests are not needed, the shared libary can be tested within the gleam frontend and backend tests.
 			# res_noti 1 "Running library tests"
@@ -230,18 +230,18 @@ else
 			if [ "$TEST_FE_TS" = true ]; then
 				cd "$LOCA/frontend-ts/" || exit 1
 				bun test || {
-					res_fail "\t--> Frontend test ran into an error."
+					res_fail "\t--> TypeScript frontend tests failed"
 					TESTS_SUCCEEDED=false
 				}
-				res_succ "\t-> Success"
+				res_succ "\t-> Success: Frontend (TypeScript)"
 			fi
 			if [ "$TEST_FE_GLEAM" = true ]; then
 				cd "$LOCA/frontend/" || exit 1
 				gleam test --target javascript || {
-					res_fail "\t--> Frontend test ran into an error."
+					res_fail "\t--> Gleam frontend tests failed."
 					TESTS_SUCCEEDED=false
 				}
-				res_succ "\t-> Success"
+				res_succ "\t-> Success: Frontend (Gleam)"
 			fi
 			if [ "$TESTS_SUCCEEDED" = false ]; then
 				res_fail "\n\nOne or more tests failed."
