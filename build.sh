@@ -23,7 +23,7 @@ if [[ "$*" == *"--run-packed"* ]]; then
 	PACK=true
 fi
 if [ "$QUIET" = true ]; then
-	echo "Quiet mode enabled."
+	# echo "Quiet mode enabled."
 	BUNFLAGS="$BUNFLAGS --silent --quiet"
 	CARGOFLAGS="$CARGOFLAGS --quiet"
 	export BUN_DEBUG_QUIET_LOGS=1
