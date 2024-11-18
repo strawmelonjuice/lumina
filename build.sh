@@ -186,7 +186,7 @@ else
 			res_succ "\t-> Success"
 			res_noti 1 "Running backend tests"
 			cd "$LOCA/backend/" || exit 1
-			gleam test --target erlang || {
+			gleam run -m backend_test --target erlang || {
 				res_fail "\t--> Backend tests ran into an error."
 				exit 1
 			}
