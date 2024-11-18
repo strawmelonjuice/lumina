@@ -7,6 +7,8 @@ TESTS=false
 PACK=false
 BUNFLAGS=""
 CARGOFLAGS=""
+TEST_FE_TS=false
+TEST_FE_GLEAM=false
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 if [[ "$*" == *"--quiet"* ]]; then
@@ -114,6 +116,7 @@ mkdir -p "$LOCA/backend/priv/generated/js"
 
 if [[ "$*" == *"--frontend-ts"* ]]; then
 	noti "Building front-end (TS)..."
+	TEST_FE_TS=true
 	cd "$LOCA/frontend-ts/" || exit 1
 	bun install $BUNFLAGS
 	noti "Transpiling and copying to Lumina server..."
@@ -123,6 +126,7 @@ else
 	if [[ "$*" == *"--frontend-gleam"* ]]; then
 		noti "Building front-end (Gleam)..."
 
+		TEST_FE_GLEAM=true
 		cd "$LOCA/frontend/" || exit 1
 		if gleam build --target js; then
 			success "\t--> Frontend build success."
@@ -136,7 +140,13 @@ else
 		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 	else
 		errnoti "Invalid or missing frontend option, expected either \"--frontend-ts\" or \"--frontend-gleam\"."
-		exit 1
+		if [ "$TESTS" = false ]; then
+			exit 1
+		else
+			noti "This option is not needed for tests, continuing..."
+			TEST_FE_TS=true
+			TEST_FE_GLEAM=true
+		fi
 	fi
 fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -216,22 +226,21 @@ else
 			# }
 			# res_succ "\t-> Success"
 			res_noti 1 "Running frontend tests"
-			if [[ "$*" == *"--frontend-ts"* ]]; then
+			if [ "$TEST_FE_TS" = true ]; then
 				cd "$LOCA/frontend-ts/" || exit 1
 				bun test || {
 					res_fail "\t--> Frontend tests ran into an error."
 					exit 1
 				}
 				res_succ "\t-> Success"
-			else
-				if [[ "$*" == *"--frontend-gleam"* ]]; then
-					cd "$LOCA/frontend/" || exit 1
-					gleam test --target javascript || {
-						res_fail "\t--> Frontend tests ran into an error."
-						exit 1
-					}
-					res_succ "\t-> Success"
-				fi
+			fi
+			if [ "$TEST_FE_GLEAM" = true ]; then
+				cd "$LOCA/frontend/" || exit 1
+				gleam test --target javascript || {
+					res_fail "\t--> Frontend tests ran into an error."
+					exit 1
+				}
+				res_succ "\t-> Success"
 			fi
 			res_succ "\n\nAll tests completed."
 		fi
