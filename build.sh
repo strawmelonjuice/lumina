@@ -33,15 +33,15 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 if [[ "$*" == *"--help"* ]]; then
-	echo "Usage: ./build.sh [options]"
-	echo "Options:"
-	echo "  --help\n\t\tDisplay this help message."
-	echo " --frontend-gleam | --frontend-ts\n\t\tSpecify the frontend to build."
-	echo "  --test\n\t\tRun tests after building."
-	echo "  --run\n\t\tRun after building."
-	echo "  --quiet\n\t\tSuppress unneccessary output."
-	echo "  --pack\n\t\tPackage for deployment."
-	echo "  --run-packed\n\t\tBuild, compile and pack, then run the packed version of Lumina."
+	printf "Usage: ./build.sh [options]\n\n"
+	printf "Options:\n\n"
+	printf "  --help\n\t\tDisplay this help message.\n"
+	printf " --frontend-gleam | --frontend-ts\n\t\tSpecify the frontend to build.\n"
+	printf "  --test\n\t\tRun tests after building.\n"
+	printf "  --run\n\t\tRun after building.\n"
+	printf "  --quiet\n\t\tSuppress unneccessary output.\n"
+	printf "  --pack\n\t\tPackage for deployment.\n"
+	printf "  --run-packed\n\t\tBuild, compile and pack, then run the packed version of Lumina.\n"
 	exit 0
 fi
 
@@ -143,7 +143,7 @@ else
 		if [ "$TESTS" = false ]; then
 			exit 1
 		else
-			noti "This option is not needed for tests, continuing..."
+			noti "This option is not needed for tests, running both frontend tests without it.""
 			TEST_FE_TS=true
 			TEST_FE_GLEAM=true
 		fi
