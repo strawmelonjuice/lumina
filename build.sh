@@ -36,7 +36,7 @@ if [[ "$*" == *"--help"* ]]; then
 	printf "Usage: ./build.sh [options]\n\n"
 	printf "Options:\n\n"
 	printf "  --help\n\t\tDisplay this help message.\n"
-	printf " --frontend={typescript | gleam}\n\t\tSpecify the frontend to build.\n"
+	printf "  --frontend={typescript | gleam}\n\t\tSpecify the frontend to build.\n"
 	printf "  --test\n\t\tRun tests after building.\n"
 	printf "  --run\n\t\tRun after building.\n"
 	printf "  --quiet\n\t\tSuppress unneccessary output.\n"
