@@ -182,8 +182,8 @@ else
 	errnoti "\t--> Compilation ran into an error!"
 	exit 1
 fi
-duration=$SECONDS
-res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
+build_duration=$SECONDS
+res_noti 1 "Build completed, took $((build_duration / 60)) minutes and $((build_duration % 60)) seconds."
 if [[ "$*" == *"--run"* ]]; then
 	noti "'--run' detected. Running Lumina directly!"
 	gleam run -- start
@@ -199,6 +199,7 @@ else
 		exit 0
 	else
 		if [[ "$*" == *"--test"* ]]; then
+			SECONDS=0
 			TESTS_SUCCEEDED=true
 			res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
 			res_noti 2 "Running tests"
@@ -246,7 +247,11 @@ else
 				res_fail "\n\nOne or more tests failed."
 				exit 1
 			else
-				res_succ "\n\nAll tests passed."
+				res_succ "\n\nAll tests passed successfully."
+				test_duration=$SECONDS
+				printf "\nTime taken for tests: %d minutes and %d seconds\n" $((test_duration / 60)) $((test_duration % 60))
+				total_duration=$((build_duration + test_duration))
+				printf "\nTime taken for tests and building: %d minutes and %d seconds\n" $((total_duration / 60)) $((total_duration % 60))
 			fi
 		fi
 	fi
