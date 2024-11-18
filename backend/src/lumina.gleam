@@ -88,7 +88,7 @@ fn start_l(in: String) -> Result(Nil, String) {
   // Check if environment exists
   use exists <- result.try(result.replace_error(
     fs.is_directory(in),
-    "Could not check wether the selected directory exists.",
+    "Could not check whether the selected directory exists.",
   ))
 
   case exists {
