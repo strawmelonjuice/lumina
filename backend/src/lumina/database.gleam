@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS users(
           Error(
             text_error_red("Error creating tables in SQLite. ")
             <> text_lime(
-              "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Does the file already exist with corrupt data?",
+              "Some tips: \r\n\t- are the environment variables set correctly?\n\t- Does the file already exist with corrupt data?\n\t- Check if the process has write permissions to the database file",
             ),
           )
         }
