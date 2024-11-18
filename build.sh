@@ -143,7 +143,7 @@ else
 		if [ "$TESTS" = false ]; then
 			exit 1
 		else
-			noti "This option is not needed for tests, running both frontend tests without it.""
+			noti "This option is not needed for tests, running both frontend tests without it."
 			TEST_FE_TS=true
 			TEST_FE_GLEAM=true
 		fi
