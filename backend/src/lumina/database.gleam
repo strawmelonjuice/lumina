@@ -88,9 +88,11 @@ pub fn c(connection: LuminaDBConnection) -> Result(Nil, String) {
       case result {
         Ok(_) -> Ok(Nil)
         Error(e) -> {
-          wisp.log_error(string.inspect(e))
           Error(
-            text_error_red("Error creating tables in PostGres. ")
+            text_error_red("PostgreSQL Table Creation Failed:\n")
+            <> string.inspect(e)
+            <> "\n"
+            <> "\n"
             <> text_lime(
               "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
             ),
