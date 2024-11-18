@@ -29,6 +29,21 @@ if [ "$QUIET" = true ]; then
 	export BUN_DEBUG_QUIET_LOGS=1
 fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+if [[ "$*" == *"--help"* ]]; then
+	echo "Usage: ./build.sh [options]"
+	echo "Options:"
+	echo "  --help\n\t\tDisplay this help message."
+	echo " --frontend-gleam | --frontend-ts\n\t\tSpecify the frontend to build."
+	echo "  --test\n\t\tRun tests after building."
+	echo "  --run\n\t\tRun after building."
+	echo "  --quiet\n\t\tSuppress unneccessary output."
+	echo "  --pack\n\t\tPackage for deployment."
+	echo "  --run-packed\n\t\tBuild, compile and pack, then run the packed version of Lumina."
+	exit 0
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 noti() {
 	if [ "$QUIET" = true ]; then
 		return
