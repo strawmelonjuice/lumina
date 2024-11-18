@@ -40,7 +40,7 @@ pub fn connect(lc: LuminaConfig, in: String) -> LuminaDBConnection {
   }
 }
 
-pub fn c(connection: LuminaDBConnection) {
+pub fn c(connection: LuminaDBConnection) -> Result(Nil, String) {
   case connection {
     POSTGRESConnection(con) -> {
       let result =
@@ -78,15 +78,15 @@ pub fn c(connection: LuminaDBConnection) {
           |> pog.execute(con)
         })
       case result {
-        Ok(_) -> Nil
+        Ok(_) -> Ok(Nil)
         Error(e) -> {
-          wisp.log_info(
+          wisp.log_error(string.inspect(e))
+          Error(
             text_error_red("Error creating tables in PostGres. ")
             <> text_lime(
               "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
             ),
           )
-          wisp.log_error(string.inspect(e))
         }
       }
     }
@@ -128,16 +128,16 @@ CREATE TABLE IF NOT EXISTS users(
         )
       {
         Ok(_) -> {
-          Nil
+          Ok(Nil)
         }
         Error(e) -> {
-          wisp.log_info(
+          wisp.log_error(string.inspect(e))
+          Error(
             text_error_red("Error creating tables in SQLite. ")
             <> text_lime(
               "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Does the file already exist with corrupt data?",
             ),
           )
-          wisp.log_error(string.inspect(e))
         }
       }
     }

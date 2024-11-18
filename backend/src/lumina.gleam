@@ -50,44 +50,56 @@ pub fn main() {
 }
 
 fn start_def() {
-  let home = case gleamyshell.home_directory() {
-    Ok(home) -> home
+  case gleamyshell.home_directory() {
+    Ok(home) -> start(string.replace(home, "\\", "/") <> "/.luminainstance/")
     Error(e) -> {
-      let a = "Could not load the user folder" <> string.inspect(e)
-      panic as a
+      { "Could not load the user folder" <> string.inspect(e) }
+      |> wisp.log_critical
     }
   }
-  start(string.replace(home, "\\", "/") <> "/.luminainstance/")
 }
 
 fn start(in: String) {
+  case start_l(in) {
+    Ok(Nil) -> Nil
+    Error(e) -> {
+      io.println_error(
+        premixed.text_dark_black(premixed.bg_error_red("FAIL")) <> ": " <> e,
+      )
+      Nil
+    }
+  }
+}
+
+fn start_l(in: String) -> Result(Nil, String) {
   use <- bool.lazy_guard(
     when: bool.and(
       os.family() == os.WindowsNt,
       bool.negate(list.contains(argv.load().arguments, "--allow-windows")),
     ),
     return: fn() {
-      io.println(premixed.text_error_red(
+      Error(premixed.text_error_red(
         "Lumina does not run correctly on Windows yet. Please use WSL for now, or be brave and use the '--allow-windows' flag.",
       ))
-      Nil
     },
   )
   // Configure erlang logger.
   wisp.configure_logger()
   // Check if environment exists
-  case fs.is_directory(in) {
-    Ok(True) -> Nil
-    Ok(False) -> {
+  use exists <- result.try(result.replace_error(
+    fs.is_directory(in),
+    "Could not check wether the selected directory exists.",
+  ))
+
+  case exists {
+    True -> Nil
+    False -> {
       case fs.create_directory(in) {
         Error(_) -> {
           wisp.log_critical("Directory '" <> in <> "' cannot be written.")
         }
         Ok(_) -> Nil
       }
-    }
-    Error(_) -> {
-      wisp.log_critical("Directory '" <> in <> "' cannot be read.")
     }
   }
   // Load environment
@@ -98,8 +110,9 @@ fn start(in: String) {
   let priv_directory = get_priv_directory()
   // Connect to database
   let dbc = database.connect(lumina_config, in)
-  // Sets up database in case of need.
-  database.c(dbc)
+
+  // Sets up database in case of need. Exits on error.
+  use _ <- result.try(database.c(dbc))
 
   // Set up session store
   let assert Ok(actor_store) = actor_store.try_create_session_store()
@@ -135,12 +148,20 @@ fn start(in: String) {
   // Add context to handler
   let handler = routing.handle_request(_, ctx)
 
-  let assert Ok(_) =
+  case
     wisp.mist_handler(handler, secret_key_base)
     |> mist.new
     |> mist.port(ctx.config.lumina_server_port)
     |> mist.start_http
-  process.sleep_forever()
+  {
+    Ok(_) -> {
+      process.sleep_forever()
+      Ok(Nil)
+    }
+    Error(_) -> {
+      Error("Failed to start server.")
+    }
+  }
 }
 
 fn get_priv_directory() -> String {
