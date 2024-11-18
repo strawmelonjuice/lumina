@@ -36,7 +36,7 @@ if [[ "$*" == *"--help"* ]]; then
 	printf "Usage: ./build.sh [options]\n\n"
 	printf "Options:\n\n"
 	printf "  --help\n\t\tDisplay this help message.\n"
-	printf " --frontend-gleam | --frontend-ts\n\t\tSpecify the frontend to build.\n"
+	printf " --frontend={typescript | gleam}\n\t\tSpecify the frontend to build.\n"
 	printf "  --test\n\t\tRun tests after building.\n"
 	printf "  --run\n\t\tRun after building.\n"
 	printf "  --quiet\n\t\tSuppress unneccessary output.\n"
@@ -114,7 +114,7 @@ res_noti 2 "Starting build process..."
 rm -rf "$LOCA/backend/priv/generated/js"
 mkdir -p "$LOCA/backend/priv/generated/js"
 
-if [[ "$*" == *"--frontend-ts"* ]]; then
+if [[ "$*" == *"--frontend=typescript"* ]]; then
 	noti "Building front-end (TS)..."
 	TEST_FE_TS=true
 	cd "$LOCA/frontend-ts/" || exit 1
@@ -123,7 +123,7 @@ if [[ "$*" == *"--frontend-ts"* ]]; then
 	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked
 	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 else
-	if [[ "$*" == *"--frontend-gleam"* ]]; then
+	if [[ "$*" == *"--frontend=gleam"* ]]; then
 		noti "Building front-end (Gleam)..."
 
 		TEST_FE_GLEAM=true
@@ -139,7 +139,7 @@ else
 		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=none
 		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
 	else
-		errnoti "Invalid or missing frontend option, expected either \"--frontend-ts\" or \"--frontend-gleam\"."
+		errnoti "Invalid or missing frontend option, expected either \"--frontend=typescript\" or \"--frontend=gleam\"."
 		if [ "$TESTS" = false ]; then
 			exit 1
 		else
