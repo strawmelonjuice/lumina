@@ -12,13 +12,13 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/string_builder
-import kirala/bbmarkdown/html_renderer
 import lumina/data/context.{type Context}
 import lumina/shared/shared_fejsonobject
 import lumina/shared/shared_users
 import lumina/users
 import lumina/web/pages
 import lumina/web/routing/fence
+import lumina_rsffi
 import lustre/element
 import wisp.{type Request, type Response}
 import wisp_kv_sessions
@@ -335,8 +335,10 @@ pub fn editor_preview_markdown(req: wisp.Request, _ctx: context.Context) {
   use <- bool.lazy_guard(data_ |> result.is_error, fn() { wisp.bad_request() })
   let assert Ok(data) = data_
   MarkdownPreviewResponse(ok: True, html: {
-    data.markdown
-    |> html_renderer.convert
+    let assert Ok(html) =
+      data.markdown
+      |> lumina_rsffi.md_render_to_html
+    html
   })
   |> pagesrverresponseencoder
 }
