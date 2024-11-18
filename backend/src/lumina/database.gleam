@@ -16,31 +16,39 @@ pub type LuminaDBConnection {
   SQLiteConnection(String)
 }
 
-pub fn connect(lc: LuminaConfig, in: String) -> LuminaDBConnection {
+pub fn connect(
+  lc: LuminaConfig,
+  in: String,
+) -> Result(LuminaDBConnection, String) {
   case lc.db_connection_info {
     LuminaDBConnectionInfoPOSTGRES(config) -> {
       wisp.log_info("Connecting to Postgres database...")
-      pog.connect(config)
-      |> POSTGRESConnection
+      Ok(
+        pog.connect(config)
+        |> POSTGRESConnection,
+      )
     }
     LuminaDBConnectionInfoSQLite(file_) -> {
       // Always relative to the instance folder.
       let file = in <> "/" <> file_
       wisp.log_info("Connecting to SQLite database...")
-      let conn = case sqlight.open(file) {
-        Ok(connection) -> connection
+      case sqlight.open(file) {
+        Ok(connection) -> {
+          use _ <- result.try(result.replace_error(
+            sqlight.close(connection),
+            "Could not close SQLite connection for later usage.",
+          ))
+          Ok(SQLiteConnection(file))
+        }
         Error(e) -> {
-          wisp.log_critical("SQLite Connection error: " <> e.message)
-          panic
+          Error("SQLite Connection error: " <> e.message)
         }
       }
-      let assert Ok(_) = sqlight.close(conn)
-      SQLiteConnection(file)
     }
   }
 }
 
-pub fn c(connection: LuminaDBConnection) {
+pub fn setup(connection: LuminaDBConnection) -> Result(Nil, String) {
   case connection {
     POSTGRESConnection(con) -> {
       let result =
@@ -78,15 +86,16 @@ pub fn c(connection: LuminaDBConnection) {
           |> pog.execute(con)
         })
       case result {
-        Ok(_) -> Nil
+        Ok(_) -> Ok(Nil)
         Error(e) -> {
-          wisp.log_info(
-            text_error_red("Error creating tables in PostGres. ")
+          Error(
+            text_error_red("PostgreSQL Table Creation Failed:\n")
+            <> string.inspect(e)
+            <> "\n\n"
             <> text_lime(
-              "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
+              "Some tips:\r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
             ),
           )
-          wisp.log_error(string.inspect(e))
         }
       }
     }
@@ -128,16 +137,16 @@ CREATE TABLE IF NOT EXISTS users(
         )
       {
         Ok(_) -> {
-          Nil
+          Ok(Nil)
         }
         Error(e) -> {
-          wisp.log_info(
+          wisp.log_error(string.inspect(e))
+          Error(
             text_error_red("Error creating tables in SQLite. ")
             <> text_lime(
-              "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Does the file already exist with corrupt data?",
+              "Some tips: \r\n\t- are the environment variables set correctly?\n\t- Does the file already exist with corrupt data?\n\t- Check if the process has write permissions to the database file",
             ),
           )
-          wisp.log_error(string.inspect(e))
         }
       }
     }
