@@ -95,7 +95,7 @@ res_succ() {
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 res_noti 2 "Starting build process..."
 rm -rf "$LOCA/backend/priv/generated/js"
-mkdir "$LOCA/backend/priv/generated/js"
+mkdir -p "$LOCA/backend/priv/generated/js"
 
 if [[ "$*" == *"--frontend-ts"* ]]; then
 	noti "Building front-end (TS)..."
@@ -129,7 +129,7 @@ noti "Front-end should be done. Continuing to generated assets."
 cd "$LOCA/backend/" || exit 1
 bun install $BUNFLAGS
 rm -rf "$LOCA/backend/priv/generated/css/"
-mkdir "$LOCA/backend/priv/generated/css/"
+mkdir -p "$LOCA/backend/priv/generated/css/"
 noti "Generating CSS... (TailwindCSS)"
 bun x postcss -o "$LOCA/backend/priv/generated/css/main.css" "$LOCA/backend/assets/styles/main.pcss" -u autoprefixer -u tailwindcss
 bun "$LOCA/tobundle.ts" -- css-1 "$LOCA/backend/priv/generated/css/main.css"
@@ -145,7 +145,7 @@ else
 	exit 1
 fi
 rm -rf "$LOCA/backend/priv/generated/libs/"
-mkdir "$LOCA/backend/priv/generated/libs/"
+mkdir -p "$LOCA/backend/priv/generated/libs/"
 noti "Copying Rust libraries to Lumina server..."
 cp "$LOCA/rsffi/target/release/librsffi.so" "$LOCA/backend/priv/generated/libs/rsffi.so"
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
