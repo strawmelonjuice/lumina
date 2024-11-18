@@ -91,10 +91,9 @@ pub fn setup(connection: LuminaDBConnection) -> Result(Nil, String) {
           Error(
             text_error_red("PostgreSQL Table Creation Failed:\n")
             <> string.inspect(e)
-            <> "\n"
-            <> "\n"
+            <> "\n\n"
             <> text_lime(
-              "Some tips: \r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
+              "Some tips:\r\n\t- are the environment variables set correctly?\n\t - Is PostGres up and running?",
             ),
           )
         }
