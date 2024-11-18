@@ -179,7 +179,7 @@ else
 			res_noti 2 "Running tests"
 			res_noti 1 "Running Cargo tests"
 			cd "$LOCA/rsffi/" || exit 1
-			cargo check || {
+			cargo test || {
 				res_fail "\t--> Cargo tests ran into an error."
 				exit 1
 			}
