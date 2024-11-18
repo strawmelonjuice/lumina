@@ -179,14 +179,14 @@ else
 			res_noti 2 "Running tests"
 			res_noti 1 "Running Cargo tests"
 			cd "$LOCA/rsffi/" || exit 1
-			cargo check || {
+			cargo test || {
 				res_fail "\t--> Cargo tests ran into an error."
 				exit 1
 			}
 			res_succ "\t-> Success"
 			res_noti 1 "Running backend tests"
 			cd "$LOCA/backend/" || exit 1
-			gleam test --target erlang || {
+			gleam run -m backend_test --target erlang || {
 				res_fail "\t--> Backend tests ran into an error."
 				exit 1
 			}

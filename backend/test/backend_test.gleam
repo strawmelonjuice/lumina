@@ -16,3 +16,8 @@ pub fn rsffi_add_test() {
   lumina_rsffi.add(1, 2)
   |> should.equal(3)
 }
+
+pub fn rsffi_md_render_to_html_test() {
+  lumina_rsffi.md_render_to_html("# Hello, world!")
+  |> should.equal(Ok("<h1>Hello, world!</h1>"))
+}
