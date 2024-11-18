@@ -1,4 +1,4 @@
-name: test-fe-ts
+name: test-fe-gleam
 on:
     push:
         branches:
@@ -26,4 +26,4 @@ jobs:
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: "1.1.30"
-            - run: bash ./build.sh --frontend-ts --test
+            - run: bash ./build.sh --test
