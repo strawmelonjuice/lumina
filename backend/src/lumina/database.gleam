@@ -48,7 +48,7 @@ pub fn connect(
   }
 }
 
-pub fn c(connection: LuminaDBConnection) -> Result(Nil, String) {
+pub fn setup(connection: LuminaDBConnection) -> Result(Nil, String) {
   case connection {
     POSTGRESConnection(con) -> {
       let result =

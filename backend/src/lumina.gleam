@@ -112,7 +112,7 @@ fn start_l(in: String) -> Result(Nil, String) {
   use dbc <- result.try(database.connect(lumina_config, in))
 
   // Sets up database in case of need. Exits on error.
-  use _ <- result.try(database.c(dbc))
+  use _ <- result.try(database.setup(dbc))
 
   // Set up session store
   let assert Ok(actor_store) = actor_store.try_create_session_store()
