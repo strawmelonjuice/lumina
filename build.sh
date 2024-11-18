@@ -199,6 +199,7 @@ else
 		exit 0
 	else
 		if [[ "$*" == *"--test"* ]]; then
+			TESTS_SUCCEEDED=true
 			clear
 			res_noti 1 "Build completed, took $((duration / 60)) minutes and $((duration % 60)) seconds."
 			res_noti 2 "Running tests"
@@ -206,14 +207,14 @@ else
 			cd "$LOCA/rsffi/" || exit 1
 			cargo test || {
 				res_fail "\t--> Cargo tests ran into an error."
-				exit 1
+				TESTS_SUCCEEDED=false
 			}
 			res_succ "\t-> Success"
 			res_noti 1 "Running backend tests"
 			cd "$LOCA/backend/" || exit 1
 			gleam run -m backend_test --target erlang || {
 				res_fail "\t--> Backend tests ran into an error."
-				exit 1
+				TESTS_SUCCEEDED=false
 			}
 			res_succ "\t-> Success"
 
@@ -229,20 +230,25 @@ else
 			if [ "$TEST_FE_TS" = true ]; then
 				cd "$LOCA/frontend-ts/" || exit 1
 				bun test || {
-					res_fail "\t--> Frontend tests ran into an error."
-					exit 1
+					res_fail "\t--> Frontend test ran into an error."
+					TESTS_SUCCEEDED=false
 				}
 				res_succ "\t-> Success"
 			fi
 			if [ "$TEST_FE_GLEAM" = true ]; then
 				cd "$LOCA/frontend/" || exit 1
 				gleam test --target javascript || {
-					res_fail "\t--> Frontend tests ran into an error."
-					exit 1
+					res_fail "\t--> Frontend test ran into an error."
+					TESTS_SUCCEEDED=false
 				}
 				res_succ "\t-> Success"
 			fi
-			res_succ "\n\nAll tests completed."
+			if [ "$TESTS_SUCCEEDED" = false ]; then
+				res_fail "\n\nOne or more tests failed."
+				exit 1
+			else
+				res_succ "\n\nAll tests passed."
+			fi
 		fi
 	fi
 fi
