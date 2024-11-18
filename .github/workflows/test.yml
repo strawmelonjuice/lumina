@@ -1,4 +1,4 @@
-name: test-fe-gleam
+name: tests
 on:
     push:
         branches:
