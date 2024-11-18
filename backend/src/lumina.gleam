@@ -91,17 +91,17 @@ fn start_l(in: String) -> Result(Nil, String) {
     "Could not check whether the selected directory exists.",
   ))
 
-  case exists {
-    True -> Nil
+  use _ <- result.try(case exists {
+    True -> Ok(Nil)
     False -> {
       case fs.create_directory(in) {
         Error(_) -> {
-          wisp.log_critical("Directory '" <> in <> "' cannot be written.")
+          Error("Failed to create directory '" <> in <> "'.")
         }
-        Ok(_) -> Nil
+        Ok(_) -> Ok(Nil)
       }
     }
-  }
+  })
   // Load environment
   let lumina_config = config.load(in)
 
