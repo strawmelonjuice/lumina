@@ -157,8 +157,8 @@ fn start_l(in: String) -> Result(Nil, String) {
     Ok(_) -> {
       Ok(process.sleep_forever())
     }
-    Error(_) -> {
-      Error("Failed to start server.")
+    Error(e) -> {
+      Error("Failed to start server: " <> string.inspect(e))
     }
   }
 }
