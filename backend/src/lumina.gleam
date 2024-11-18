@@ -155,8 +155,7 @@ fn start_l(in: String) -> Result(Nil, String) {
     |> mist.start_http
   {
     Ok(_) -> {
-      process.sleep_forever()
-      Ok(Nil)
+      Ok(process.sleep_forever())
     }
     Error(_) -> {
       Error("Failed to start server.")
