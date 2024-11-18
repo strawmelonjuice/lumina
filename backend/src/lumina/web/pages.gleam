@@ -1,8 +1,8 @@
 import gleam/string
-import kirala/bbmarkdown/html_renderer
 import lumina/data/context.{type Context}
 import lumina/users
 import lumina/web/pages/style
+import lumina_rsffi
 import lustre/attribute.{attribute}
 import lustre/element.{text}
 import lustre/element/html
@@ -25,7 +25,12 @@ fn replaceable(html: String, ctx: Context) -> String {
 pub fn index(ctx: Context) {
   // read the markdown file
   let assert Ok(md) = fs.read(ctx.priv_directory <> "/static/markdown/intro.md")
-  let md_html = html_renderer.convert(md) |> replaceable(ctx)
+  let md_html =
+    {
+      let assert Ok(html) = lumina_rsffi.md_render_to_html(md)
+      html
+    }
+    |> replaceable(ctx)
 
   // render the page
   html.html([attribute("lang", "en")], [

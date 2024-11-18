@@ -8,3 +8,4 @@ crate-type = ["dylib"]
 
 [dependencies]
 rustler = "0.35.0"
+markdown = "1.0.0-alpha.18"
