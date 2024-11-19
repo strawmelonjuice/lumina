@@ -1,21 +1,21 @@
-# FE-gleam todo list
+# FE-gleam To-do list
 
--   [ ] Client-server communication
-    -   [ ] Periodic updates (FEJSON)
-        -   [x] Fetching FEJSON from server
-        -   [ ] Applying auto-actions to FEJSON
-    -   [ ] User action reporting
-        -   [ ] New post creation
-        -   [ ] Log out
--   [ ] Sub page loading
-    -   [ ] Loading sub pages (main, side)
-    -   [ ] Loading special sub pages (editor, settings)
-    -   [ ] Sub page logic
--   [ ] Editor
-    -   [ ] Editor UI
-    -   [ ] Editor tab switching
-    -   [ ] Editor Markdown parsing
--   [ ] Sign in
-    -   [ ] Sign in logic
--   [ ] Sign up
-    -   [ ] Sign up logic
+- [ ] Client-server communication
+    - [ ] Periodic updates (FEJSON)
+        - [x] Fetching FEJSON from server
+        - [ ] Applying auto-actions to FEJSON
+    - [ ] User action reporting
+        - [ ] New post creation
+        - [ ] Log out
+- [ ] Sub page loading
+    - [ ] Loading sub pages (main, side)
+    - [ ] Loading special sub pages (editor, settings)
+    - [ ] Sub page logic
+- [ ] Editor
+    - [ ] Editor UI
+    - [ ] Editor tab switching
+    - [ ] Editor Markdown parsing
+- [ ] Sign in
+    - [ ] Sign in logic
+- [ ] Sign up
+    - [ ] Sign up logic
