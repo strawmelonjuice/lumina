@@ -30,10 +30,10 @@ pub fn main() {
   window.add_event_listener("load", fn(_) {
     let path = window.pathname()
     case path {
-      "/" -> site.index_render()
-      "/home" -> site.home_render()
-      "/login" -> login.render()
-      "/signup" -> signup.render()
+      "/" | "" -> site.index_render()
+      "/home" | "/home/" -> site.home_render()
+      "/login" | "/login/" -> login.render()
+      "/signup" | " /signup/" -> signup.render()
       _ -> web_io.println("404: Page not found")
     }
   })
