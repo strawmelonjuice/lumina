@@ -71,7 +71,6 @@ fn update_fejson() {
     |> promise.await(fn(a: Result(Response(String), FetchError)) {
       case a {
         Ok(b) -> {
-          // {"instance":{"iid":"localhost","last_sync":0},"user":{"id":-1,"username":"unset"}}
           let now = fn(_) { fejson.timestamp() |> Ok() }
           case
             json.decode(
