@@ -37,6 +37,34 @@ export function getJsonObj() {
 	};
 }
 
-export function dateToTimestamp() {
-	return Number.parseInt(Date.now());
+export function dateToTimestamp(): number {
+	return Date.now();
+}
+
+export function queueFejsonFunction(func: () => null) {
+	if (!window.fejsonqueue) {
+		window.fejsonqueue = [];
+	}
+	window.fejsonqueue.push(func);
+}
+
+interface fejsonObject {
+	pulled: number;
+	instance: {
+		iid: string;
+		lastsync: number;
+	};
+	user: { username: string; id: number; email: string };
+}
+
+declare global {
+	export interface Window {
+		mobileMenuToggle: () => void;
+		on_mobile_swipe_down: Array<(evt: TouchEvent) => void>;
+		on_mobile_swipe_up: Array<(evt: TouchEvent) => void>;
+		on_mobile_swipe_right: Array<(evt: TouchEvent) => void>;
+		on_mobile_swipe_left: Array<(evt: TouchEvent) => void>;
+		fejsonqueue: Array<() => unknown>;
+		fejson: fejsonObject;
+	}
 }
