@@ -3,6 +3,7 @@
 /target/
 backend/build
 backend/priv/generated
+frontend/prelude.mjs
 erl_crash.dump
 /test
 *.log
