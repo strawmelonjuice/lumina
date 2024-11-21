@@ -13,8 +13,8 @@ backend/node_modules/
 package-lock.json
 rsffi/target
 rsffi/test
+node_modules
 # Ignore Editor files
 .idea/
 .vscode/
 
-node_modules
