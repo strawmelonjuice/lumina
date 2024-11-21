@@ -1,7 +1,16 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
-export function setJsonObj(jsonObj) {
+import { toList, type List } from "../prelude.mjs";
+
+export function setJsonObj(jsonObj: {
+	instance_iid: string;
+	instance_lastsync: number;
+	pulled: number;
+	user_id: number;
+	user_username: string;
+	user_email: string;
+}) {
 	window.fejson = {
 		instance: {
 			iid: jsonObj.instance_iid,
@@ -21,7 +30,7 @@ export function getJsonObj() {
 		return {
 			instance_iid: -1,
 			instance_lastsync: -1,
-			pulled: -1,
+			pulled: 0,
 			user_id: -1,
 			user_username: "unset",
 			user_email: "unset",
@@ -48,6 +57,15 @@ export function queueFejsonFunction(func: () => null) {
 	window.fejsonqueue.push(func);
 }
 
+export function getQueuedFejsonFunctions(): List {
+	if (!window.fejsonqueue) {
+		queueFejsonFunction(() => {
+			return null;
+		});
+	}
+	return toList(window.fejsonqueue);
+}
+
 interface fejsonObject {
 	pulled: number;
 	instance: {
@@ -56,15 +74,14 @@ interface fejsonObject {
 	};
 	user: { username: string; id: number; email: string };
 }
-
 declare global {
 	export interface Window {
-		mobileMenuToggle: () => void;
-		on_mobile_swipe_down: Array<(evt: TouchEvent) => void>;
-		on_mobile_swipe_up: Array<(evt: TouchEvent) => void>;
-		on_mobile_swipe_right: Array<(evt: TouchEvent) => void>;
-		on_mobile_swipe_left: Array<(evt: TouchEvent) => void>;
-		fejsonqueue: Array<() => unknown>;
+		mobileMenuToggle: () => null;
+		on_mobile_swipe_down: Array<(evt: TouchEvent) => null>;
+		on_mobile_swipe_up: Array<(evt: TouchEvent) => null>;
+		on_mobile_swipe_right: Array<(evt: TouchEvent) => null>;
+		on_mobile_swipe_left: Array<(evt: TouchEvent) => null>;
+		fejsonqueue: Array<() => null>;
 		fejson: fejsonObject;
 	}
 }

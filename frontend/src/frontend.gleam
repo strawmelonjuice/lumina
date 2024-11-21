@@ -8,8 +8,11 @@ import gleam/fetch.{type FetchError}
 import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/int
+import gleam/io
 import gleam/javascript/promise
 import gleam/json
+import gleam/list
+import gleam/result
 import gleam/string
 import gleamy_lights/helper as web_io
 import gleamy_lights/premixed
@@ -43,6 +46,9 @@ pub fn main() {
     <> " frontend rewrite!",
   )
   global.set_interval(4000, update_fejson)
+  global.set_timeout(80, fn() {
+    global.set_interval(1, fn() { run_fejson_functions() })
+  })
 }
 
 fn update_fejson() {
@@ -124,4 +130,19 @@ fn update_fejson() {
   }
   use data <- f()
   fejson.set(data)
+  run_fejson_functions()
 }
+
+/// FE json usually updates every 30 seconds, that means some stuff might change. These functions are ran periodically as well, to keep the frontend in sync with the backend.
+/// They'll be fetched from the window object using FFI. Then ran here.
+fn run_fejson_functions() {
+  use <-
+    bool.guard(when: { fejson.get().pulled == 0 }, return: Nil, otherwise: _)
+  fetch_fejson_functions()
+  |> list.each(fn(f) { f() })
+
+  Nil
+}
+
+@external(javascript, "./ffi.ts", "getQueuedFejsonFunctions")
+fn fetch_fejson_functions() -> List(fn() -> Nil)
