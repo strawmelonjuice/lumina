@@ -4,7 +4,7 @@
 import plinth/browser/element.{type Element}
 
 @external(javascript, "../../elementactions_ffi.mts", "disableElement")
-pub fn disable_element(a: fn(Element) -> nil) -> nil
+pub fn disable_element(a: Element) -> nil
 
 @external(javascript, "../../elementactions_ffi.mts", "enableElement")
-pub fn enable_element(a: fn(Element) -> nil) -> nil
+pub fn enable_element(a: Element) -> nil

@@ -1,6 +1,7 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
+import frontend/other/element_actions
 import gleamy_lights/helper as web_io
 import gleamy_lights/premixed
 import plinth/browser/document
@@ -31,10 +32,10 @@ fn try_login(submitbutton: element.Element) {
   |> element.set_inner_html(
     "<div style=\"background-image: url('/spinner.svg'); background-repeat: no-repeat; background-size: cover;\" class=\"relative w-10 h-10 pl-max pr-max\"></div>",
   )
-  submitbutton |> element.set_attribute("disabled", "true")
+  submitbutton |> element_actions.disable_element
   global.set_timeout(9600, fn() {
     submitbutton |> element.set_inner_text("Retry")
-    submitbutton |> element.set_attribute("disabled", "")
+    submitbutton |> element_actions.enable_element
   })
   {
     let assert Ok(d) = document.get_element_by_id("Aaa1")
