@@ -8,11 +8,9 @@ import gleam/fetch.{type FetchError}
 import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/int
-import gleam/io
 import gleam/javascript/promise
 import gleam/json
 import gleam/list
-import gleam/result
 import gleam/string
 import gleamy_lights/helper as web_io
 import gleamy_lights/premixed
