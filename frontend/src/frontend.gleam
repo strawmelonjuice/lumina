@@ -142,5 +142,5 @@ fn run_fejson_functions() {
   Nil
 }
 
-@external(javascript, "./fejson_ffi.mts", "getQueuedFejsonFunctions")
+@external(javascript, "./fejson_ffi.ts", "getQueuedFejsonFunctions")
 fn fetch_fejson_functions() -> List(fn() -> Nil)
