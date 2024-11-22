@@ -120,8 +120,14 @@ if [[ "$*" == *"--frontend=typescript"* ]]; then
 	cd "$LOCA/frontend-ts/" || exit 1
 	bun install $BUNFLAGS
 	noti "Transpiling and copying to Lumina server..."
-	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked
-	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked || {
+		errnoti "Error while building the frontend."
+		exit 1
+	}
+	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js" || {
+		errnoti "Error while bundling the frontend."
+		exit 1
+	}
 else
 	if [[ "$*" == *"--frontend=gleam"* ]]; then
 		noti "Building front-end (Gleam)..."
@@ -136,8 +142,14 @@ else
 		fi
 		noti "Copying to Lumina server..."
 		echo "import { main } from \"./frontend.mjs\";main();" >"$LOCA/frontend/build/dev/javascript/frontend/app.js"
-		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked
-		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked || {
+			errnoti "Error while bundling the frontend."
+			exit 1
+		}
+		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js" || {
+			errnoti "Error while bundling the frontend."
+			exit 1
+		}
 	else
 		errnoti "Invalid or missing frontend option, expected either \"--frontend=typescript\" or \"--frontend=gleam\"."
 		if [ "$TESTS" = false ]; then
