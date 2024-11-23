@@ -102,7 +102,7 @@ fn try_login(submitbutton: element.Element) {
         case origin {
           "http://" <> _ -> http.Http
           "https://" <> _ -> http.Https
-          _ -> http.Http
+          _ -> http.Https
         }
       })
       |> request.set_host(element_actions.get_window_host())
