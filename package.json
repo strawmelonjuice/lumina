@@ -10,7 +10,7 @@
 		"nodemon": "^3.1.7"
 	},
 	"scripts": {
-		"build": "bash ./build.sh --frontend=ts",
+		"build": "bash ./build.sh --frontend=typescript",
 		"build-with-gleam": "bash ./build.sh --frontend=gleam",
 		"format": "bun run format:gleam && bun run format:ts && bun run minify:css",
 		"format:gleam": "echo \"Incomplete script.\"",
