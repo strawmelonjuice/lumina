@@ -6,6 +6,7 @@
 import gleam/bool
 import gleam/dynamic
 import gleam/int
+import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
@@ -79,6 +80,7 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
 }
 
 pub fn auth(req: wisp.Request, ctx: context.Context) {
+  wisp.log_info("Authentication request received.")
   use form <- wisp.require_form(req)
   case form.values {
     [#("password", password), #("username", username)] -> {
@@ -86,14 +88,27 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
       case users.auth(username, password, ctx) {
         Ok(Some(id)) -> {
           // If the user is authenticated, we can store their user ID in the session.
-          let assert Ok(_) =
-            wisp_kv_sessions.set(
-              ctx.session_config,
-              req,
-              "uid",
-              id,
-              fn(in: Int) { json.int(in) |> json.to_string },
-            )
+          let d = fn(continue: fn() -> Response) {
+            case
+              wisp_kv_sessions.set(
+                ctx.session_config,
+                req,
+                "uid",
+                id,
+                fn(in: Int) { json.int(in) |> json.to_string },
+              )
+            {
+              Ok(_) -> continue()
+              Error(e) -> {
+                wisp.log_critical(
+                  "Error in setting session: " <> string.inspect(e),
+                )
+                wisp.internal_server_error()
+              }
+            }
+          }
+
+          use <- d()
           // Then send them on
           string_builder.from_string("{\"Ok\": true, \"Errorvalue\": \"\"}")
           |> wisp.json_response(200)
@@ -135,8 +150,12 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
       }
     }
     _ -> {
+      io.println("Invalid form data in auth")
       wisp.log_warning("Invalid form data in auth")
       wisp.bad_request()
+      |> wisp.set_body(wisp.Text(
+        "Invalid form data" |> string_builder.from_string,
+      ))
     }
   }
 }
