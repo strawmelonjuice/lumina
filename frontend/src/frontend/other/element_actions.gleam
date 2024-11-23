@@ -8,3 +8,6 @@ pub fn disable_element(a: Element) -> nil
 
 @external(javascript, "../../elementactions_ffi.ts", "enableElement")
 pub fn enable_element(a: Element) -> nil
+
+@external(javascript, "../../elementactions_ffi.ts", "getWindowHost")
+pub fn get_window_host() -> String

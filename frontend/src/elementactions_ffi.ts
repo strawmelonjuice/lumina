@@ -11,3 +11,7 @@ export function disableElement(element: HTMLElement) {
 export function enableElement(element: HTMLElement) {
 	element.removeAttribute("disabled");
 }
+
+export function getWindowHost() {
+	return window.location.host;
+}
