@@ -87,7 +87,7 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
       case users.auth(username, password, ctx) {
         Ok(Some(id)) -> {
           // If the user is authenticated, we can store their user ID in the session.
-          let d = fn(continue: fn() -> Response) {
+          let handle_session_setting = fn(continue: fn() -> Response) {
             case
               wisp_kv_sessions.set(
                 ctx.session_config,
@@ -107,7 +107,7 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
             }
           }
 
-          use <- d()
+          use <- handle_session_setting()
           // Then send them on
           string_builder.from_string("{\"Ok\": true, \"Errorvalue\": \"\"}")
           |> wisp.json_response(200)
