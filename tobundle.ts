@@ -2,28 +2,22 @@ import Bun from "bun";
 switch (process.argv[2]) {
 	case "setup-prelude":
 		{
-			const fs = require("bun:fs");
-			const path = require("bun:path");
-
+			const fs = require("node:fs");
+			const path = require("node:path");
+			const target = path.join(
+				__dirname,
+				"frontend",
+				"build",
+				"dev",
+				"javascript",
+				"prelude.mjs",
+			);
+			const link = path.join(__dirname, "frontend", "prelude.mjs");
 			try {
-				const target = path.join(
-					"frontend",
-					"build",
-					"dev",
-					"javascript",
-					"prelude.mjs",
-				);
-				const link = path.join("frontend", "prelude.mjs");
-
-				if (fs.existsSync(link)) {
-					fs.unlinkSync(link);
-				}
-
 				fs.symlinkSync(target, link, "file");
 				console.log("Prelude symlink created successfully");
 			} catch (error) {
 				console.error("Failed to create prelude symlink:", error);
-				process.exit(1);
 			}
 		}
 		break;
