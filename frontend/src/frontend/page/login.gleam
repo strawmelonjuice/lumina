@@ -3,20 +3,20 @@
 
 import frontend/other/element_actions
 import frontend/other/formdata
-import gleam/dynamic
-import gleam/fetch.{type FetchError}
+import gleam/dynamic.{field}
+import gleam/fetch
 import gleam/http.{Post}
 import gleam/http/request
-import gleam/http/response.{type Response, Response}
-import gleam/io
+import gleam/http/response
 import gleam/javascript/promise
-import gleam/string
+import gleam/result
 import gleamy_lights/helper as web_io
 import gleamy_lights/premixed
 import plinth/browser/document
 import plinth/browser/element
 import plinth/browser/window
 import plinth/javascript/global
+import plinth/javascript/storage
 
 // import plinth/browser/event.{type Event}
 
@@ -29,7 +29,36 @@ pub fn render() {
     try_login(submitbutton)
     Nil
   })
-  // Just to show we now can use the element.
+  // Convert this to Gleam.
+  // if (localStorage.getItem("AutologinUsername") !== null) {
+  // 	console.log("trying autologin...");
+  //
+  // 	document.forms[0]["username"].value =
+  // 		localStorage.getItem("AutologinUsername");
+  //
+  // 	document.forms[0]["password"].value =
+  // 		localStorage.getItem("AutologinMethod");
+  // 	authtry();
+  // }
+  // window.on_mobile_swipe_down.push(() => {
+  // 	window.mobileMenuToggle();
+  // });
+  let assert Ok(local_storage) = storage.local()
+  case storage.get_item(local_storage, "AutologinUsername") {
+    Ok(username) -> {
+      case storage.get_item(local_storage, "AutologinPassword") {
+        Ok(password) -> {
+          let assert Ok(d) = document.get_element_by_id("Aaa1")
+          d
+          |> element.set_inner_text("Loging in automatically...")
+          authentication_request(username, password, True)
+          Nil
+        }
+        _ -> Nil
+      }
+    }
+    _ -> Nil
+  }
   Nil
 }
 
@@ -55,20 +84,6 @@ fn try_login(submitbutton: element.Element) {
 
   // timeout to allow spinner to show up
   global.set_timeout(500, fn() {
-    // Translate the following to Gleam:
-    // > let body_form_data = new FormData();
-    // > bodyFormData.set("username", document.forms[0]["username"].value);
-    // > bodyFormData.set("password", document.forms[0]["password"].value);
-    // > axios({
-    // > method: "post",
-    // > url: "",
-    // > data: bodyFormData,
-    // > headers: { "Content-Type": "multipart/form-data" },
-    // > })
-    // > .then(c)
-    // > .catch((error) => {
-    // > console.log(error);
-    // > });
     let username = {
       let assert Ok(d) = document.get_element_by_id("username")
       let assert Ok(v) = d |> element.value
@@ -79,51 +94,149 @@ fn try_login(submitbutton: element.Element) {
       let assert Ok(v) = d |> element.value
       v
     }
-    let data =
-      formdata.encode([#("username", username), #("password", password)])
-    let data_body = case data {
-      #(data_body, _) -> {
-        data_body
-      }
-    }
-
-    let data_boundary = case data {
-      #(_, boundary) -> {
-        boundary
-      }
-    }
-
-    let req =
-      request.new()
-      |> request.set_method(Post)
-      // |> request.set_host(window.origin())
-      |> request.set_scheme({
-        let origin = window.origin()
-        case origin {
-          "http://" <> _ -> http.Http
-          "https://" <> _ -> http.Https
-          _ -> http.Https
-        }
-      })
-      |> request.set_host(element_actions.get_window_host())
-      |> request.set_path("/api/fe/auth/")
-      // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
-      |> request.prepend_header(
-        "content-type",
-        "multipart/form-data; boundary=" <> data_boundary,
-      )
-      |> request.set_body(data_body)
-
-    fetch.send(req)
-    |> promise.try_await(fetch.read_json_body)
-    |> promise.await(fn(resp) {
-      let assert Ok(resp) = resp
-      let assert 200 = resp.status
-      let assert Ok("application/json") =
-        response.get_header(resp, "content-type")
-      let body = dynamic.string(resp.body)
-      io.println(string.inspect(body))
-      promise.resolve(Ok(Nil))
-    })
+    authentication_request(username, password, False)
   })
+}
+
+fn authentication_request(
+  username: String,
+  password: String,
+  is_autologin: Bool,
+) {
+  let data = formdata.encode([#("username", username), #("password", password)])
+  let data_body = case data {
+    #(data_body, _) -> {
+      data_body
+    }
+  }
+
+  let data_boundary = case data {
+    #(_, boundary) -> {
+      boundary
+    }
+  }
+
+  let req =
+    request.new()
+    |> request.set_method(Post)
+    // |> request.set_host(window.origin())
+    |> request.set_scheme({
+      let origin = window.origin()
+      case origin {
+        "http://" <> _ -> http.Http
+        "https://" <> _ -> http.Https
+        _ -> http.Https
+      }
+    })
+    |> request.set_host(element_actions.get_window_host())
+    |> request.set_path("/api/fe/auth/")
+    // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
+    |> request.prepend_header(
+      "content-type",
+      "multipart/form-data; boundary=" <> data_boundary,
+    )
+    |> request.set_body(data_body)
+
+  fetch.send(req)
+  |> promise.try_await(fetch.read_json_body)
+  |> promise.await(fn(resp) {
+    let assert Ok(resp) = resp
+    // We don't care about the status code, we just want to know if the request was successful.
+    // let assert 200 = resp.status
+    let assert Ok("application/json; charset=utf-8") =
+      response.get_header(resp, "content-type")
+    let assert Ok(authorisation_response) =
+      resp.body
+      |> dynamic.decode2(
+        AuthResponse,
+        field("Ok", of: dynamic.bool),
+        field("Errorvalue", of: dynamic.string),
+      )
+    authorisation_response |> continue_after_login(is_autologin)
+    promise.resolve(Ok(Nil))
+  })
+}
+
+/// This function is called after the user has send a login request. It checks if the login was successful and continues the user to the next page.
+/// If the login was not successful, it will show an error message.
+/// If the user checked the "Remember me" checkbox, it will save the login data in the local storage.
+fn continue_after_login(
+  authorisation_response: AuthResponse,
+  is_autologin: Bool,
+) {
+  case authorisation_response {
+    AuthResponse(True, _) -> {
+      let timeout = case is_autologin {
+        True -> {
+          0
+        }
+        False -> {
+          let assert Ok(d) = document.get_element_by_id("Aaa1")
+          d
+          |> element.set_inner_text(
+            "Login successful, you will be forwarded now.",
+          )
+          2000
+        }
+      }
+
+      case
+        {
+          let assert Ok(autologincheckbox) =
+            document.get_element_by_id("autologin")
+          autologincheckbox |> element.get_checked
+        }
+      {
+        True -> {
+          let username = {
+            let assert Ok(d) = document.get_element_by_id("username")
+            let assert Ok(v) = d |> element.value
+            v
+          }
+          let password = {
+            let assert Ok(d) = document.get_element_by_id("password")
+            let assert Ok(v) = d |> element.value
+            v
+          }
+          let assert Ok(storage) = storage.local()
+          let assert Ok(_) =
+            [
+              storage.set_item(storage, "AutologinUsername", username),
+              storage.set_item(storage, "AutologinPassword", password),
+            ]
+            |> result.all()
+          Nil
+        }
+        False -> {
+          Nil
+        }
+      }
+      global.set_timeout(timeout, fn() {
+        window.set_location(
+          window.self(),
+          "/home/"
+            <> {
+            case window.get_hash() {
+              // const loginPageList = ["home", "notifications", "test"];
+              Ok("home") -> "#home"
+              Ok("notifications") -> "#notifications"
+              Ok("test") -> "#test"
+              _ -> ""
+            }
+          },
+        )
+      })
+    }
+    AuthResponse(False, error) -> {
+      let assert Ok(d) = document.get_element_by_id("Aaa1")
+      d |> element.set_inner_text("Login failed: " <> error)
+      let assert Ok(submitbutton) = document.get_element_by_id("submitbutton")
+      submitbutton |> element.set_inner_text("Retry")
+      submitbutton |> element_actions.enable_element
+    }
+  }
+}
+
+type AuthResponse {
+  AuthResponse(ok: Bool, error_value: String)
 }
