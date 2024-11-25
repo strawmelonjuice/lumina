@@ -3,6 +3,7 @@
 	"packageManager": "bun@1.1.30+",
 	"devDependencies": {
 		"@biomejs/biome": "latest",
+		"@types/bun": "latest",
 		"bun": "latest"
 	},
 	"dependencies": {

@@ -1,4 +1,3 @@
-// @ts-ignore
 import { expect, test } from "bun:test";
 
 test("2 + 2", () => {

@@ -113,6 +113,7 @@ res_succ() {
 res_noti 2 "Starting build process..."
 rm -rf "$LOCA/backend/priv/generated/js"
 mkdir -p "$LOCA/backend/priv/generated/js"
+bun install $BUNFLAGS
 
 if [[ "$*" == *"--frontend=typescript"* ]]; then
 	noti "Building front-end (TS)..."

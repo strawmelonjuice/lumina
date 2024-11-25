@@ -1,4 +1,3 @@
-// @ts-ignore
 import Bun from "bun";
 switch (process.argv[2]) {
 	case "js-1":
