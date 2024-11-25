@@ -116,7 +116,9 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
         Error(e) ->
           case e {
             users.PasswordIncorrect -> {
-              string_builder.from_string("{\"Ok\": false}")
+              string_builder.from_string(
+                "{\"Ok\": false, \"Errorvalue\": \"No user known with that username-password combination.\"}",
+              )
               |> wisp.json_response(401)
             }
             users.InvalidIdentifier -> {
@@ -125,7 +127,9 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
             }
             users.NonexistentUser -> {
               wisp.log_warning("Nonexistent user in auth")
-              string_builder.from_string("{\"Ok\": false}")
+              string_builder.from_string(
+                "{\"Ok\": false, \"Errorvalue\": \"No user known with that username-password combination.\"}",
+              )
               |> wisp.json_response(401)
             }
             users.Unspecified -> {
