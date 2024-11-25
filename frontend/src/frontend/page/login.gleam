@@ -103,19 +103,6 @@ fn authentication_request(
   password: String,
   is_autologin: Bool,
 ) {
-  let data = formdata.encode([#("username", username), #("password", password)])
-  let data_body = case data {
-    #(data_body, _) -> {
-      data_body
-    }
-  }
-
-  let data_boundary = case data {
-    #(_, boundary) -> {
-      boundary
-    }
-  }
-
   let req =
     request.new()
     |> request.set_method(Post)
@@ -130,12 +117,8 @@ fn authentication_request(
     })
     |> request.set_host(element_actions.get_window_host())
     |> request.set_path("/api/fe/auth/")
-    // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
-    |> request.prepend_header(
-      "content-type",
-      "multipart/form-data; boundary=" <> data_boundary,
-    )
-    |> request.set_body(data_body)
+    |> formdata.encode([#("username", username), #("password", password)])
+  // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
 
   fetch.send(req)
   |> promise.try_await(fetch.read_json_body)

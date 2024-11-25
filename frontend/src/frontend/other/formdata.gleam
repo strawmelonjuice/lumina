@@ -1,26 +1,33 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
+import gleam/http/request.{type Request}
 import gleam/int
 import gleam/list
 
 /// Encode a list of key-value pairs into a multipart form data string.
 /// 
-/// Returns:
-/// `#(String a, String b)` where a is the encoded form data string and b is the boundary used.
-pub fn encode(data: List(#(String, String))) -> #(String, String) {
+/// This function replaces the body and content-type header of a request with the encoded form data.
+pub fn encode(
+  req: Request(String),
+  data: List(#(String, String)),
+) -> Request(String) {
   let boundary =
     "---------------------------"
     <> int.to_string(int.random(1_000_000_000_000_000))
-  #(
+  req
+  |> request.set_body(
     encoder(
       data,
       // |> dict.to_list
       boundary,
       "--" <> boundary,
     )
-      <> "--\r\n",
-    boundary,
+    <> "--\r\n",
+  )
+  |> request.prepend_header(
+    "content-type",
+    "multipart/form-data; boundary=" <> boundary,
   )
 }
 
