@@ -2,8 +2,8 @@ import Bun from "bun";
 switch (process.argv[2]) {
 	case "setup-prelude":
 		{
-			const fs = require("node:fs");
-			const path = require("node:path");
+			const fs = require("bun:fs");
+			const path = require("bun:path");
 			const target = path.join(
 				__dirname,
 				"frontend",
