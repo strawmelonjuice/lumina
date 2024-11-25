@@ -6,7 +6,6 @@
 import gleam/bool
 import gleam/dynamic
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
@@ -154,7 +153,6 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
       }
     }
     _ -> {
-      io.println("Invalid form data in auth")
       wisp.log_warning("Invalid form data in auth")
       wisp.bad_request()
       |> wisp.set_body(wisp.Text(
