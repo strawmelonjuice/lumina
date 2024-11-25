@@ -20,3 +20,4 @@
     -   [x] Sign in logic
 -   [ ] Sign up
     -   [ ] Sign up logic
+-   [ ] Mobile navigation enhancements
