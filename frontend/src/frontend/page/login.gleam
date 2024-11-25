@@ -29,20 +29,6 @@ pub fn render() {
     try_login(submitbutton)
     Nil
   })
-  // Convert this to Gleam.
-  // if (localStorage.getItem("AutologinUsername") !== null) {
-  // 	console.log("trying autologin...");
-  //
-  // 	document.forms[0]["username"].value =
-  // 		localStorage.getItem("AutologinUsername");
-  //
-  // 	document.forms[0]["password"].value =
-  // 		localStorage.getItem("AutologinMethod");
-  // 	authtry();
-  // }
-  // window.on_mobile_swipe_down.push(() => {
-  // 	window.mobileMenuToggle();
-  // });
   let assert Ok(local_storage) = storage.local()
   case storage.get_item(local_storage, "AutologinUsername") {
     Ok(username) -> {
@@ -63,9 +49,6 @@ pub fn render() {
 }
 
 fn try_login(submitbutton: element.Element) {
-  //
-  //
-  //
   web_io.println("Trying authentication...")
   submitbutton
   |> element.set_inner_html(
@@ -106,7 +89,6 @@ fn authentication_request(
   let req =
     request.new()
     |> request.set_method(Post)
-    // |> request.set_host(window.origin())
     |> request.set_scheme({
       let origin = window.origin()
       case origin {

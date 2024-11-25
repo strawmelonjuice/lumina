@@ -7,12 +7,14 @@ import gleamy_lights/premixed/gleam_colours
 
 pub fn home_render() {
   web_io.println(
-	"Detected you are on the " <> premixed.text_pink("home page") <> ".",
-	)
+    "Detected you are on the " <> premixed.text_pink("home page") <> ".",
+  )
 }
 
 pub fn index_render() {
-	web_io.println(
-	"Detected you are on the " <> gleam_colours.text_faff_pink("first page") <> ".",
-	)
+  web_io.println(
+    "Detected you are on the "
+    <> gleam_colours.text_faff_pink("first page")
+    <> ".",
+  )
 }
