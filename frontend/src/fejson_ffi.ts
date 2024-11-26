@@ -53,20 +53,21 @@ export function dateToTimestamp(): number {
 	return Date.now();
 }
 
+const MAX_QUEUE_SIZE = 1000;
+
 export function queueFejsonFunction(func: () => null) {
 	if (!window.fejsonqueue) {
 		window.fejsonqueue = [];
+	}
+	if (window.fejsonqueue.length >= MAX_QUEUE_SIZE) {
+		console.warn('Function queue size limit reached');
+		return;
 	}
 	window.fejsonqueue.push(func);
 }
 
 export function getQueuedFejsonFunctions(): List {
-	if (!window.fejsonqueue) {
-		queueFejsonFunction(() => {
-			return null;
-		});
-	}
-	return toList(window.fejsonqueue);
+	return toList(window.fejsonqueue || []);
 }
 
 interface fejsonObject {
