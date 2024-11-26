@@ -1,7 +1,7 @@
 # FE-gleam To-do list
 
--   [ ] Client-server communication
-    -   [ ] Periodic updates (FEJSON)
+-   [x] Client-server communication
+    -   [x] Periodic updates (FEJSON)
         -   [x] Fetching FEJSON from server
         -   [x] Applying auto-actions to FEJSON
         -   [ ] Verify compile moment thru FEJSON
@@ -18,6 +18,7 @@
     -   [ ] Editor Markdown parsing
 -   [x] Sign in
     -   [x] Sign in logic
--   [ ] Sign up
-    -   [ ] Sign up logic
+-   [x] Sign up
+    -   [x] Sign up logic
+    -   [ ] Username check
 -   [ ] Mobile navigation enhancements
