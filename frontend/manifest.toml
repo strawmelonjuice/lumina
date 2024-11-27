@@ -13,7 +13,7 @@ packages = [
   { name = "gleamy_lights", version = "2.3.0", build_tools = ["gleam"], requirements = ["envoy", "gleam_community_colour", "gleam_stdlib"], otp_app = "gleamy_lights", source = "hex", outer_checksum = "8A3D43BCA0D935F7CC787F4D0D1771F822B3366114C08B93CC8D00747618499A" },
   { name = "gleeunit", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "F7A7228925D3EE7D0813C922E062BFD6D7E9310F0BEE585D3A42F3307E3CFD13" },
   { name = "plinth", version = "0.5.3", build_tools = ["gleam"], requirements = ["conversation", "gleam_javascript", "gleam_json", "gleam_stdlib"], otp_app = "plinth", source = "hex", outer_checksum = "6EDE6EFE2EFB304DA32574A89A9088032278A346156E7C3D824B997378A8D44D" },
-  { name = "shared", version = "0.1.0", build_tools = ["gleam"], requirements = [], source = "local", path = "../shared" },
+  { name = "shared", version = "1.0.0", build_tools = ["gleam"], requirements = [], source = "local", path = "../shared" },
   { name = "thoas", version = "1.2.1", build_tools = ["rebar3"], requirements = [], otp_app = "thoas", source = "hex", outer_checksum = "E38697EDFFD6E91BD12CEA41B155115282630075C2A727E7A6B2947F5408B86A" },
 ]
 
