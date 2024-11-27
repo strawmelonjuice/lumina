@@ -17,6 +17,7 @@ import gleamy_lights/premixed
 import gleamy_lights/premixed/gleam_colours
 import lumina/shared/shared_fejsonobject
 import lumina/shared/shared_users
+import plinth/browser/document
 import plinth/browser/window
 import plinth/javascript/global
 
@@ -43,9 +44,38 @@ pub fn main() {
     <> gleam_colours.text_faff_pink("Gleam")
     <> " frontend rewrite!",
   )
-  global.set_interval(4000, update_fejson)
-  global.set_timeout(80, fn() {
-    global.set_interval(80, fn() { run_fejson_functions() })
+  document.add_event_listener("DOMContentLoaded", fn(_) {
+    // window.mobileMenuToggle = () => {
+    // 	const mobilemenu = document.getElementById("mobile-menu");
+    // 	if (mobilemenu.classList.contains("hidden")) {
+    // 		mobilemenu.classList.remove("hidden");
+    // 		document
+    // 			.getElementById("btn-mobile-menu-open")
+    // 			.classList.add("hidden");
+    // 		document
+    // 			.getElementById("btn-mobile-menu-close")
+    // 			.classList.remove("hidden");
+    // 	} else {
+    // 		mobilemenu.classList.add("hidden");
+    // 		document
+    // 			.getElementById("btn-mobile-menu-open")
+    // 			.classList.remove("hidden");
+    // 		document
+    // 			.getElementById("btn-mobile-menu-close")
+    // 			.classList.add("hidden");
+    // 	}
+    // };
+    //
+    // window.mobileMenuToggle();
+    // document
+    // 	.getElementById("btn-mobile-menu")
+    // 	.setAttribute("onClick", "window.mobileMenuToggle()");
+    //
+    // })
+    //  global.set_interval(4000, update_fejson)
+    //  global.set_timeout(80, fn() {
+    //    global.set_interval(80, fn() { run_fejson_functions() })
+    todo
   })
 }
 
