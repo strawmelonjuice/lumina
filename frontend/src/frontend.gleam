@@ -45,7 +45,7 @@ pub fn main() {
   )
   global.set_interval(4000, update_fejson)
   global.set_timeout(80, fn() {
-    global.set_interval(1, fn() { run_fejson_functions() })
+    global.set_interval(80, fn() { run_fejson_functions() })
   })
 }
 
