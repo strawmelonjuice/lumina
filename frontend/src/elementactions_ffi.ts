@@ -13,10 +13,23 @@ export function disableElement(element: HTMLElement) {
 	element.setAttribute("disabled", "");
 }
 
+export function elementHidden(element: HTMLElement): boolean {
+	return element.classList.contains("hidden");
+}
+
 export function enableElement(element: HTMLElement) {
 	element.removeAttribute("disabled");
 }
-
+export function unHideElement(element: HTMLElement) {
+	if (element.classList.contains("hidden")) {
+		element.classList.remove("hidden");
+	}
+}
+export function hideElement(element: HTMLElement) {
+	if (!element.classList.contains("hidden")) {
+		element.classList.add("hidden");
+	}
+}
 export function getWindowHost() {
 	return window.location.host;
 }
