@@ -9,6 +9,7 @@ import gleam/fetch.{type FetchError}
 import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/int
+import gleam/javascript/array
 import gleam/javascript/promise
 import gleam/json
 import gleam/list
@@ -47,6 +48,105 @@ pub fn main() {
     <> " frontend rewrite!",
   )
   global.set_interval(4000, update_fejson)
+  global.set_timeout(0, update_fejson)
+  // fejson.register_fejson_function(fn() {
+  //   console.log(
+  //     "FEJson instance info: "
+  //     <> premixed.text_lightblue(string.inspect(fejson.get().instance))
+  //     <> ", last sync: "
+  //     <> premixed.text_lightblue(string.inspect(fejson.get().pulled))
+  //     <> ".",
+  //   )
+  // })
+  fejson.register_fejson_function(fn() {
+    let src = "/user/avatar/" <> int.to_string(fejson.get().user.id)
+    document.query_selector_all(".ownuseravatarsrc")
+    |> array.to_list
+    |> list.each(fn(a) {
+      use <-
+        bool.guard(
+          when: { fejson.get().user.id == -1 },
+          return: Nil,
+          otherwise: _,
+        )
+
+      use <-
+        bool.guard(
+          when: { a |> element.get_attribute("src") == Ok(src) },
+          return: Nil,
+          otherwise: _,
+        )
+      a
+      |> element.set_attribute("src", src)
+    })
+  })
+  fejson.register_fejson_function(fn() {
+    let href = "/user/" <> fejson.get().user.username <> "/me"
+    document.query_selector_all(".ownuserprofilelink")
+    |> array.to_list
+    |> list.each(fn(a) {
+      use <-
+        bool.guard(
+          when: { fejson.get().user.id == -1 },
+          return: Nil,
+          otherwise: _,
+        )
+
+      use <-
+        bool.guard(
+          when: { a |> element.get_attribute("href") == Ok(href) },
+          return: Nil,
+          otherwise: _,
+        )
+      a
+      |> element.set_attribute("href", href)
+    })
+  })
+
+  fejson.register_fejson_function(fn() {
+    let username = fejson.get().user.username
+    document.query_selector_all(".ownusernametext")
+    |> array.to_list
+    |> list.each(fn(a) {
+      use <-
+        bool.guard(
+          when: { fejson.get().user.id == -1 },
+          return: Nil,
+          otherwise: _,
+        )
+
+      use <-
+        bool.guard(
+          when: { a |> element.inner_text() == username },
+          return: Nil,
+          otherwise: _,
+        )
+      a |> element.set_inner_text(username)
+    })
+  })
+
+  fejson.register_fejson_function(fn() {
+    let display_name = fejson.get().user.username
+    document.query_selector_all(".settodisplayname")
+    |> array.to_list
+    |> list.each(fn(a) {
+      use <-
+        bool.guard(
+          when: { fejson.get().user.id == -1 },
+          return: Nil,
+          otherwise: _,
+        )
+      use <-
+        bool.guard(
+          when: { a |> element.inner_text() == display_name },
+          return: Nil,
+          otherwise: _,
+        )
+
+      console.warn("Display names not implemented yet, using username instead.")
+      a |> element.set_inner_text(display_name)
+    })
+  })
   global.set_timeout(80, fn() {
     global.set_interval(80, fn() { run_fejson_functions() })
   })
@@ -82,6 +182,7 @@ fn mobile_menu_toggle() {
 
 fn update_fejson() {
   let origi = fejson.get()
+  let first_pull = origi.pulled == 0
   use <- bool.guard(
     when: {
       { fejson.timestamp() - origi.pulled } |> int.absolute_value
@@ -159,7 +260,12 @@ fn update_fejson() {
   }
   use data <- f()
   fejson.set(data)
-  run_fejson_functions()
+  // run_fejson_functions()
+  // instead:
+  case first_pull {
+    True -> run_fejson_functions()
+    False -> Nil
+  }
 }
 
 /// FE json usually updates every 30 seconds, that means some stuff might change. These functions are ran periodically as well, to keep the frontend in sync with the backend.
