@@ -1,6 +1,7 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
+import frontend/other/element_actions
 import frontend/other/fejson
 import gleam/bool
 import gleam/dynamic
@@ -12,12 +13,13 @@ import gleam/javascript/promise
 import gleam/json
 import gleam/list
 import gleam/string
-import gleamy_lights/helper as web_io
+import gleamy_lights/console
 import gleamy_lights/premixed
 import gleamy_lights/premixed/gleam_colours
 import lumina/shared/shared_fejsonobject
 import lumina/shared/shared_users
 import plinth/browser/document
+import plinth/browser/element
 import plinth/browser/window
 import plinth/javascript/global
 
@@ -36,47 +38,46 @@ pub fn main() {
       "/home" | "/home/" -> site.home_render()
       "/login" | "/login/" -> login.render()
       "/signup" | "/signup/" -> signup.render()
-      _ -> web_io.println("404: Page not found")
+      _ -> console.error("404: Page not found")
     }
   })
-  web_io.println(
+  console.log(
     "Hello from the "
     <> gleam_colours.text_faff_pink("Gleam")
     <> " frontend rewrite!",
   )
-  document.add_event_listener("DOMContentLoaded", fn(_) {
-    // window.mobileMenuToggle = () => {
-    // 	const mobilemenu = document.getElementById("mobile-menu");
-    // 	if (mobilemenu.classList.contains("hidden")) {
-    // 		mobilemenu.classList.remove("hidden");
-    // 		document
-    // 			.getElementById("btn-mobile-menu-open")
-    // 			.classList.add("hidden");
-    // 		document
-    // 			.getElementById("btn-mobile-menu-close")
-    // 			.classList.remove("hidden");
-    // 	} else {
-    // 		mobilemenu.classList.add("hidden");
-    // 		document
-    // 			.getElementById("btn-mobile-menu-open")
-    // 			.classList.remove("hidden");
-    // 		document
-    // 			.getElementById("btn-mobile-menu-close")
-    // 			.classList.add("hidden");
-    // 	}
-    // };
-    //
-    // window.mobileMenuToggle();
-    // document
-    // 	.getElementById("btn-mobile-menu")
-    // 	.setAttribute("onClick", "window.mobileMenuToggle()");
-    //
-    // })
-    //  global.set_interval(4000, update_fejson)
-    //  global.set_timeout(80, fn() {
-    //    global.set_interval(80, fn() { run_fejson_functions() })
-    todo
+  global.set_interval(4000, update_fejson)
+  global.set_timeout(80, fn() {
+    global.set_interval(80, fn() { run_fejson_functions() })
   })
+  document.add_event_listener("DOMContentLoaded", fn(_) {
+    mobile_menu_toggle()
+    let assert Ok(button) = document.get_element_by_id("btn-mobile-menu")
+    button
+    |> element.add_event_listener("click", fn(_) { mobile_menu_toggle() })
+    Nil
+  })
+}
+
+fn mobile_menu_toggle() {
+  console.info("Toggling mobile menu")
+  let assert Ok(mobile_menu) = document.get_element_by_id("mobile-menu")
+  let assert Ok(mobile_menu_button_open) =
+    document.get_element_by_id("btn-mobile-menu-open")
+  let assert Ok(mobile_menu_button_close) =
+    document.get_element_by_id("btn-mobile-menu-close")
+  case mobile_menu |> element_actions.element_hidden {
+    True -> {
+      element_actions.show_element(mobile_menu)
+      element_actions.hide_element(mobile_menu_button_open)
+      element_actions.show_element(mobile_menu_button_close)
+    }
+    False -> {
+      element_actions.hide_element(mobile_menu)
+      element_actions.show_element(mobile_menu_button_open)
+      element_actions.hide_element(mobile_menu_button_close)
+    }
+  }
 }
 
 fn update_fejson() {
@@ -134,7 +135,7 @@ fn update_fejson() {
           {
             Ok(c) -> then(c)
             Error(e) ->
-              web_io.println(
+              console.warn(
                 premixed.text_lightblue("FEJson fetch ")
                 <> premixed.text_error_red(" decoding failed")
                 <> ", error:\n"
@@ -146,7 +147,7 @@ fn update_fejson() {
           }
         }
         Error(e) ->
-          web_io.println(
+          console.error(
             premixed.text_lightblue("FEJson fetch ")
             <> premixed.text_error_red(" fetch failed")
             <> ", error:\n"
