@@ -37,15 +37,15 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
       None
     }
   }
-  let username = case uid {
+  let user = case uid {
     Some(id) -> {
       case users.fetch(ctx, id) {
-        Some(user) -> user.username
-        None -> "unset"
+        Some(user) -> user |> users.to_safe_user
+        None -> shared_users.SafeUser(id: -1, username: "unset", email: "unset")
       }
     }
     None -> {
-      "unset"
+      shared_users.SafeUser(id: -1, username: "unset", email: "unset")
     }
   }
   let clientdata =
@@ -55,7 +55,11 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
         iid: "localhost",
         last_sync: 0,
       ),
-      user: shared_users.SafeUser(id: -1, username: username, email: "unset"),
+      user: shared_users.SafeUser(
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      ),
     )
   json.object([
     #(
