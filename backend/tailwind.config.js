@@ -1,13 +1,6 @@
-/*
- * Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
- *
- * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
- */
-
-/** @type {import('tailwindcss').LuminaConfig} */
 module.exports = {
 	content: [
-		"./src-frontend/**/*.{handlebars,ts}",
+		"../*frontend/**/*.{handlebars,ts,gleam}",
 		"./src/lumina/web/**/*.gleam",
 	],
 	theme: {
