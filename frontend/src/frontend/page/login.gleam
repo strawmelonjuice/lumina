@@ -1,6 +1,7 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
+import gleamy_lights/console
 import frontend/other/element_actions
 import frontend/other/formdata
 import gleam/dynamic.{field}
@@ -10,7 +11,6 @@ import gleam/http/request
 import gleam/http/response
 import gleam/javascript/promise
 import gleam/result
-import gleamy_lights/helper as web_io
 import gleamy_lights/premixed
 import plinth/browser/document
 import plinth/browser/element
@@ -21,7 +21,7 @@ import plinth/javascript/storage
 // import plinth/browser/event.{type Event}
 
 pub fn render() {
-  web_io.println(
+  console.log(
     "Detected you are on the " <> premixed.text_lime("login page") <> ".",
   )
   let assert Ok(submitbutton) = document.get_element_by_id("submitbutton")
@@ -36,7 +36,7 @@ pub fn render() {
         Ok(password) -> {
           let assert Ok(d) = document.get_element_by_id("Aaa1")
           d
-          |> element.set_inner_text("Loging in automatically...")
+          |> element.set_inner_text("Logging in automatically...")
           authentication_request(username, password, True)
           Nil
         }
@@ -49,7 +49,7 @@ pub fn render() {
 }
 
 fn try_login(submitbutton: element.Element) {
-  web_io.println("Trying authentication...")
+  console.log("Trying authentication...")
   submitbutton
   |> element.set_inner_html(
     "<div style=\"background-image: url('/spinner.svg'); background-repeat: no-repeat; background-size: cover;\" class=\"relative w-10 h-10 pl-max pr-max\"></div>",
