@@ -14,6 +14,10 @@ import gleam/string
 import gleam/string_builder
 import lumina/data/context.{type Context}
 import lumina/shared/shared_fejsonobject
+import lumina/shared/shared_fepage_com.{
+  type FEPageServeRequest, type FEPageServeResponse, FEPageServeRequest,
+  FEPageServeResponse,
+}
 import lumina/shared/shared_users
 import lumina/users
 import lumina/web/pages
@@ -222,14 +226,6 @@ pub fn create_user(req: wisp.Request, ctx: context.Context) {
       wisp.unprocessable_entity()
     }
   }
-}
-
-type FEPageServeRequest {
-  FEPageServeRequest(location: String)
-}
-
-type FEPageServeResponse {
-  FEPageServeResponse(main: String, side: String, message: List(Int))
 }
 
 pub fn pagesrverresponder(req: wisp.Request, ctx: context.Context) {
