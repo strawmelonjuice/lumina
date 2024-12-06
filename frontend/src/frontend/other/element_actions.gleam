@@ -1,6 +1,6 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
-
+import gleam/string
 import plinth/browser/element.{type Element}
 
 @external(javascript, "../../elementactions_ffi.ts", "disableElement")
@@ -20,3 +20,22 @@ pub fn element_hidden(a: Element) -> bool
 
 @external(javascript, "../../elementactions_ffi.ts", "getWindowHost")
 pub fn get_window_host() -> String
+
+@external(javascript, "../../elementactions_ffi.ts", "goWindowBack")
+pub fn go_back() -> nil
+
+@external(javascript, "../../elementactions_ffi.ts", "setWindowLocationHash")
+pub fn set_window_location_hash(new: String) -> nil
+
+@external(javascript, "../../elementactions_ffi.ts", "getWindowLocationHash")
+fn int_get_window_location_hash() -> String
+
+pub fn get_window_location_hash() -> String {
+  // Remove the leading '#' from the hash if it exists
+
+  let s = int_get_window_location_hash()
+  case string.starts_with(s, "#") {
+    True -> s |> string.drop_start(1)
+    False -> s
+  }
+}

@@ -1,7 +1,6 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
-import gleamy_lights/console
 import frontend/other/element_actions
 import frontend/other/formdata
 import gleam/dynamic.{field}
@@ -11,6 +10,7 @@ import gleam/http/request
 import gleam/http/response
 import gleam/javascript/promise
 import gleam/result
+import gleamy_lights/console
 import gleamy_lights/premixed
 import plinth/browser/document
 import plinth/browser/element

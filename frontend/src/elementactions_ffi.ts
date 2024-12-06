@@ -12,11 +12,9 @@
 export function disableElement(element: HTMLElement) {
 	element.setAttribute("disabled", "");
 }
-
 export function elementHidden(element: HTMLElement): boolean {
 	return element.classList.contains("hidden");
 }
-
 export function enableElement(element: HTMLElement) {
 	element.removeAttribute("disabled");
 }
@@ -32,4 +30,13 @@ export function hideElement(element: HTMLElement) {
 }
 export function getWindowHost() {
 	return window.location.host;
+}
+export function goWindowBack() {
+	return window.history.back();
+}
+export function setWindowLocationHash(to: string) {
+	return (window.location.hash = to);
+}
+export function getWindowLocationHash() {
+	return window.location.hash;
 }
