@@ -14,6 +14,10 @@ import gleam/string
 import gleam/string_builder
 import lumina/data/context.{type Context}
 import lumina/shared/shared_fejsonobject
+import lumina/shared/shared_fepage_com.{
+  type FEPageServeRequest, type FEPageServeResponse, FEPageServeRequest,
+  FEPageServeResponse,
+}
 import lumina/shared/shared_users
 import lumina/users
 import lumina/web/pages
@@ -37,15 +41,15 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
       None
     }
   }
-  let username = case uid {
+  let user = case uid {
     Some(id) -> {
       case users.fetch(ctx, id) {
-        Some(user) -> user.username
-        None -> "unset"
+        Some(user) -> user |> users.to_safe_user
+        None -> shared_users.SafeUser(id: -1, username: "unset", email: "unset")
       }
     }
     None -> {
-      "unset"
+      shared_users.SafeUser(id: -1, username: "unset", email: "unset")
     }
   }
   let clientdata =
@@ -55,7 +59,11 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
         iid: "localhost",
         last_sync: 0,
       ),
-      user: shared_users.SafeUser(id: -1, username: username, email: "unset"),
+      user: shared_users.SafeUser(
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      ),
     )
   json.object([
     #(
@@ -79,6 +87,7 @@ pub fn get_update(req: Request, ctx: Context) -> Response {
 }
 
 pub fn auth(req: wisp.Request, ctx: context.Context) {
+  wisp.log_info("Authentication request received.")
   use form <- wisp.require_form(req)
   case form.values {
     [#("password", password), #("username", username)] -> {
@@ -86,14 +95,27 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
       case users.auth(username, password, ctx) {
         Ok(Some(id)) -> {
           // If the user is authenticated, we can store their user ID in the session.
-          let assert Ok(_) =
-            wisp_kv_sessions.set(
-              ctx.session_config,
-              req,
-              "uid",
-              id,
-              fn(in: Int) { json.int(in) |> json.to_string },
-            )
+          let handle_session_setting = fn(continue: fn() -> Response) {
+            case
+              wisp_kv_sessions.set(
+                ctx.session_config,
+                req,
+                "uid",
+                id,
+                fn(in: Int) { json.int(in) |> json.to_string },
+              )
+            {
+              Ok(_) -> continue()
+              Error(e) -> {
+                wisp.log_critical(
+                  "Error in setting session: " <> string.inspect(e),
+                )
+                wisp.internal_server_error()
+              }
+            }
+          }
+
+          use <- handle_session_setting()
           // Then send them on
           string_builder.from_string("{\"Ok\": true, \"Errorvalue\": \"\"}")
           |> wisp.json_response(200)
@@ -101,7 +123,9 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
         Error(e) ->
           case e {
             users.PasswordIncorrect -> {
-              string_builder.from_string("{\"Ok\": false}")
+              string_builder.from_string(
+                "{\"Ok\": false, \"Errorvalue\": \"No user known with that username-password combination.\"}",
+              )
               |> wisp.json_response(401)
             }
             users.InvalidIdentifier -> {
@@ -110,7 +134,9 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
             }
             users.NonexistentUser -> {
               wisp.log_warning("Nonexistent user in auth")
-              string_builder.from_string("{\"Ok\": false}")
+              string_builder.from_string(
+                "{\"Ok\": false, \"Errorvalue\": \"No user known with that username-password combination.\"}",
+              )
               |> wisp.json_response(401)
             }
             users.Unspecified -> {
@@ -137,6 +163,9 @@ pub fn auth(req: wisp.Request, ctx: context.Context) {
     _ -> {
       wisp.log_warning("Invalid form data in auth")
       wisp.bad_request()
+      |> wisp.set_body(wisp.Text(
+        "Invalid form data" |> string_builder.from_string,
+      ))
     }
   }
 }
@@ -197,14 +226,6 @@ pub fn create_user(req: wisp.Request, ctx: context.Context) {
       wisp.unprocessable_entity()
     }
   }
-}
-
-type FEPageServeRequest {
-  FEPageServeRequest(location: String)
-}
-
-type FEPageServeResponse {
-  FEPageServeResponse(main: String, side: String, message: List(Int))
 }
 
 pub fn pagesrverresponder(req: wisp.Request, ctx: context.Context) {

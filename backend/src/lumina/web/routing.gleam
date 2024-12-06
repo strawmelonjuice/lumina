@@ -121,7 +121,11 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         ["api", "fe", "fetch-page"] -> api_fe.pagesrverresponder(req, ctx)
         ["api", "fe", "editor_fetch_markdownpreview"] ->
           api_fe.editor_preview_markdown(req, ctx)
-        _ -> wisp.bad_request()
+        _ ->
+          wisp.not_found()
+          |> wisp.set_body(wisp.Text(
+            "Invalid POST request" |> string_builder.from_string,
+          ))
       }
     }
     _ -> {
