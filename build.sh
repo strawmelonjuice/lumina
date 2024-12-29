@@ -143,7 +143,7 @@ else
 		fi
 		noti "Copying to Lumina server..."
 		echo "import { main } from \"./frontend.mjs\";main();" >"$LOCA/frontend/build/dev/javascript/frontend/app.js"
-		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked || {
+		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked || {
 			errnoti "Error while bundling the frontend."
 			exit 1
 		}
