@@ -83,7 +83,7 @@ pub fn home_render() {
           let assert Ok(a) = document.query_selector("#mobile-home-nav")
           a
         },
-        editor_unfold,
+        fn() { editor_unfold() },
         "editor",
         False,
       ),
@@ -132,7 +132,7 @@ pub fn home_render() {
       Nil
     })
   }
-
+  // TODO: Add keyboard shortcuts
   // document.addEventListener("keydown", (event) => {
   // 	if (document.body.dataset.editorOpen !== "true") {
   // 		if (event.key === "e") {
@@ -154,6 +154,21 @@ pub fn home_render() {
 }
 
 fn editor_unfold() {
+  let assert Ok(mobiletimelineswitcher) =
+    document.query_selector("#mobiletimelineswitcher")
+  let assert Ok(posteditor) = document.query_selector("div#posteditor")
+  let errormsg =
+    "<p class=\"w-full h-full text-black bg-white dark:text-white dark:bg-black\">Failed to load post editor.</p>"
+  mobiletimelineswitcher |> element_actions.hide_element()
+  posteditor |> element_actions.show_element()
+  case document.body() |> element.dataset_get("editorOpen") {
+    Ok("initial") -> {
+      fetch_editor()
+      Nil
+    }
+    _ -> Nil
+  }
+
   todo
 }
 
@@ -236,8 +251,8 @@ fn fetch_page(page: String, then: fn(Result(FEPageServeResponse, Nil)) -> Nil) {
   })
 }
 
-fn fetch_editor(page: String) {
-  use presp <- fetch_page(page, _)
+fn fetch_editor() {
+  use presp <- fetch_page("editor", _)
   case presp {
     Ok(resp) -> {
       console.log("Page: " <> premixed.text_lightblue(string.inspect(resp)))
