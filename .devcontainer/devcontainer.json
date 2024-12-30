@@ -1,8 +1,11 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "ghcr.io/devcontainers-extra/features/gleam:1": {},
-    "ghcr.io/prulloac/devcontainer-features/bun:1": {},
-    "ghcr.io/itsmechlark/features/postgresql:1": {}
+    "ghcr.io/devcontainers-extra/features/gleam:1": {
+      "version": "1.6.2"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {},
+    "ghcr.io/itsmechlark/features/postgresql:1": {},
+    "ghcr.io/lumenpink/devcontainer-features/bun:0": {}
   }
 }
