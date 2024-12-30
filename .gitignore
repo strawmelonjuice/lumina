@@ -1,9 +1,18 @@
 *.beam
 *.ez
 /target/
+
+# Ignore Gleam backend build artifacts
 backend/build
 backend/priv/generated
+
+# Ignore Rust backend build artifacts
+backend-rs/target
+backend-rs/generated
+
+# Ignore Gleam frontend build artifacts
 frontend/prelude.mjs
+
 erl_crash.dump
 /test
 *.log

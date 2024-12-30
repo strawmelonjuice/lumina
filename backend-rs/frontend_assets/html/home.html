@@ -1,0 +1,431 @@
+<!--
+  ~ Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+  ~
+  ~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+  -->
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Home - Lumina(@{{iid}})</title>
+		<meta charset="UTF-8" />
+		<style></style>
+		<script src="/app.js" type="module"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
+
+	<body
+		class="p-0 m-0 w-screen h-screen overflow-clip max-h-[10VH] bg-brown-100 dark:bg-neutral-700"
+	>
+		<nav
+			class="rounded-b-lg bg-emerald-200 lg:rounded-b-none dark:bg-teal-800"
+		>
+			<div class="px-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
+				<div class="relative flex items-center justify-between h-16">
+					<div
+						class="absolute inset-y-0 left-0 flex items-center sm:hidden"
+					>
+						<!-- Mobile menu button-->
+						<button
+							type="button"
+							class="relative inline-flex items-center justify-center p-2 text-gray-400 rounded-md hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-inset focus:ring-white focus:outline-none"
+							aria-controls="mobile-menu"
+							aria-expanded="false"
+							id="btn-mobile-menu"
+						>
+							<span class="absolute -inset-0.5"></span>
+							<span class="sr-only">Open main menu</span>
+							<svg
+								class="block w-6 h-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke-width="1.5"
+								stroke="currentColor"
+								aria-hidden="true"
+								id="btn-mobile-menu-open"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+								/>
+							</svg>
+							<svg
+								class="w-6 h-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke-width="1.5"
+								stroke="currentColor"
+								aria-hidden="true"
+								id="btn-mobile-menu-close"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M6 18L18 6M6 6l12 12"
+								/>
+							</svg>
+						</button>
+					</div>
+					<div
+						class="flex items-center justify-center flex-1 sm:justify-start sm:items-stretch"
+					>
+						<div class="flex items-center flex-shrink-0">
+							<img
+								class="w-auto h-10 rounded-md bg-opacity-60 border-amber-600 bg-stone-100 dark:bg-stone-100"
+								src="/logo.svg"
+								alt="Lumina Instance"
+							/>
+						</div>
+						<div class="hidden sm:block sm:ml-6">
+							<div class="flex space-x-4">
+								<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+								<a
+									href="javascript:void(0)"
+									class="px-3 py-2 text-sm font-medium text-white bg-gray-900 border-2 rounded-md"
+									aria-current="page"
+									id="home-nav"
+									>Home</a
+								>
+								<a
+									href="javascript:void(0)"
+									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
+									id="test-nav"
+									>Tests for post rendering</a
+								>
+								<a
+									href="javascript:void(0)"
+									class="px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
+									id="notifications-nav"
+									><svg
+										xmlns="http://www.w3.org/2000/svg"
+										id="svg1"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="1.5"
+										aria-hidden="true"
+										class="inline w-6 h-6"
+										viewBox="0 0 24 24"
+									>
+										<path
+											id="path1"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+										/>
+										<ellipse
+											style="
+												stroke-opacity: 1;
+												stroke-dasharray: none;
+												stroke-width: 0.9;
+												stroke: #000;
+												fill-rule: evenodd;
+												fill: red;
+											"
+											id="path2"
+											cx="16.526"
+											cy="19.078"
+											class="svg_activenotification"
+											rx="1.919"
+											ry="1.817"
+										/></svg
+									>&nbsp;Notifications</a
+								>
+							</div>
+						</div>
+					</div>
+					<div
+						class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:pr-0 sm:ml-6"
+					>
+						<button
+							type="button"
+							class="relative p-1 text-gray-400 bg-red-400 rounded-full lg:hidden dark:bg-red-900 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
+							id="switchpageNotificationsTrigger"
+						>
+							<span class="absolute -inset-1.5"></span>
+							<span class="sr-only">View notifications</span>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								id="svg1"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+								aria-hidden="true"
+								class="inline w-6 h-6"
+								viewBox="0 0 24 24"
+							>
+								<path
+									id="path1"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+								/>
+								<ellipse
+									style="
+										stroke-opacity: 1;
+										stroke-dasharray: none;
+										stroke-width: 0.9;
+										stroke: #000;
+										fill-rule: evenodd;
+										fill: red;
+									"
+									id="path2"
+									cx="16.526"
+									cy="19.078"
+									class="svg_activenotification"
+									rx="1.919"
+									ry="1.817"
+								/>
+							</svg>
+						</button>
+
+						<!-- Profile dropdown -->
+						<div class="relative ml-3">
+							<div>
+								<button
+									type="button"
+									class="relative flex text-sm bg-red-400 rounded-full dark:bg-red-900 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
+									id="user-menu-button"
+									aria-expanded="false"
+									aria-haspopup="true"
+								>
+									<span class="absolute -inset-1.5"></span>
+									<span class="sr-only">Open user menu</span>
+									<img
+										class="w-8 h-8 rounded-full ownuseravatarsrc"
+										src=""
+										id="userimg"
+										alt=""
+									/>
+								</button>
+							</div>
+							<div
+								class="absolute right-0 z-10 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+								role="menu"
+								aria-orientation="vertical"
+								aria-labelledby="user-menu-button"
+								id="user-menu"
+								tabindex="-1"
+							>
+								<div
+									class="block px-4 py-2 text-sm text-gray-700"
+								>
+									Hi,
+									<span
+										class="p-1 text-sm italic bg-orange-700 rounded-md bg-opacity-20 settodisplayname"
+										style="
+											overflow: hidden;
+											white-space: nowrap;
+										"
+										>unset</span
+									>
+								</div>
+								<hr />
+								<a
+									href="javascript:void(0)"
+									class="block px-4 py-2 text-sm text-gray-700"
+									role="menuitem"
+									tabindex="-1"
+									id="user-menu-item-0"
+									>User settings</a
+								>
+								<a
+									href="javascript:void(0)"
+									class="block px-4 py-2 text-sm text-gray-700"
+									role="menuitem"
+									tabindex="-1"
+									id="user-menu-item-1"
+									>Contact instance support</a
+								>
+								<a
+									class="block px-4 py-2 text-sm text-gray-700 cursor-pointer logoutbutton"
+									role="menuitem"
+									tabindex="-1"
+									id="user-menu-item-2"
+									>Sign out</a
+								>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="z-50 sm:hidden" id="mobile-menu">
+				<div class="px-2 pt-2 pb-4 space-y-1">
+					<!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+					<a
+						href="javascript:void(0)"
+						class=""
+						aria-current="page"
+						id="mobile-home-nav"
+						>Home</a
+					>
+					<a href="javascript:void(0)" class="" id="mobile-test-nav"
+						>Tests for post rendering</a
+					>
+					<a
+						href="javascript:void(0)"
+						class="hidden"
+						style="display: none"
+						id="mobile-notifications-nav"
+					></a>
+				</div>
+			</div>
+		</nav>
+		<main
+			class="monthclass-month dayclass-day w-screen h-screen text-fuchsia-900 lg:grid lg:grid-cols-5 lg:grid-flow-col dark:text-violet-200 not:max-h-[89VH] overflow-clip"
+		>
+			<div
+				id="mainleft"
+				class="hidden h-full lg:block bg-brown-200 overflow-clip dark:bg-neutral-600"
+			></div>
+			<div
+				class="h-full col-span-4 overflow-auto contentkeeper no:lg:p-12 bg-brown-100 dark:bg-neutral-700"
+			>
+				<div
+					id="mainright"
+					class="w-full p-4 rounded-md lg:p-8 lg:w-11/12 bg-brown-200 dark:bg-neutral-600 disabled:lg:h-10/12 lg:m-12"
+				></div>
+			</div>
+			<div
+				class="fixed flex items-center justify-center w-12 h-12 p-0 text-sm bg-red-400 rounded-full shadow-2xl cursor-pointer bottom-3 lg:bottom-6 right-3 dark:bg-red-900 lg:w-20 lg:h-20 z-[70]"
+				id="editorTrigger"
+			>
+				<svg
+					width="120"
+					height="120"
+					version="1.1"
+					viewBox="0 0 120 120"
+					xml:space="preserve"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<g
+						transform="matrix(3.0862 0 0 3.0862 24.842 20.186)"
+						display="none"
+						fill="none"
+						stroke="#1c274c"
+						stroke-width="1.5"
+					>
+						<path
+							d="m15.287 3.1518-0.9268 0.92688-8.5213 8.5212h-1e-5c-0.57715 0.5772-0.86573 0.8657-1.1139 1.1839-0.29277 0.3754-0.54376 0.7815-0.74856 1.2112-0.17361 0.3643-0.30266 0.7515-0.56078 1.5258l-1.3611 4.0834c-0.12702 0.381-0.02785 0.8011 0.25618 1.0852 0.28403 0.284 0.70415 0.3832 1.0852 0.2562l0.80208-0.2674 3.2813-1.0938h1e-5c0.77434-0.2581 1.1615-0.3871 1.5258-0.5607 0.42971-0.2048 0.83584-0.4558 1.2112-0.7486 0.3182-0.2482 0.6067-0.5368 1.1839-1.1139l8.5212-8.5213 0.9269-0.92687c1.5357-1.5357 1.5357-4.0256 0-5.5613-1.5357-1.5357-4.0256-1.5357-5.5613 0z"
+						/>
+						<path
+							d="m14.36 4.0781s0.1159 1.9696 1.8538 3.7075 3.7075 1.8538 3.7075 1.8538m-15.723 12.038-1.8761-1.8762"
+							opacity=".5"
+						/>
+					</g>
+					<g stroke-linecap="round" stroke-linejoin="round">
+						<ellipse
+							cx="60.481"
+							cy="59.218"
+							rx="53.378"
+							ry="53.18"
+							fill-opacity=".098814"
+							opacity=".854"
+							stroke="currentColor"
+							stroke-width="2.8898"
+						/>
+						<g stroke="currentColor">
+							<path
+								transform="matrix(.18738 .032737 -.032737 .18738 32.779 64.063)"
+								d="m23.999 84.377 8.5638-61.703 49.155 38.268z"
+								stroke-width="2.7789"
+							/>
+							<path
+								transform="matrix(.43357 .44112 -.79833 .78466 94.362 -13.574)"
+								d="m24.951 75.234c-2.5778-3.0222-0.16522-33.42 2.857-35.998 3.0222-2.5778 33.42-0.16522 35.998 2.857 2.5778 3.0222 0.16522 33.42-2.857 35.998s-33.42 0.16522-35.998-2.857z"
+								stroke-width="2.7789"
+							/>
+							<path
+								d="m44.869 57.785-6.2376 12.805"
+								stroke-width="2.2881"
+							/>
+							<path
+								d="m44.009 77.824 13.937-2.9366"
+								stroke-width="2.2881"
+							/>
+						</g>
+					</g>
+					<ellipse
+						transform="rotate(-33.998)"
+						cx="46.958"
+						cy="77.102"
+						rx="5.2378"
+						ry="10.761"
+						opacity=".85"
+						stroke="currentColor"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2.7789"
+					/>
+				</svg>
+			</div>
+		</main>
+		<div
+			id="mobiletimelineswitcher"
+			class="fixed inset-y-0 z-10 block w-12 h-12 p-1 mt-auto mb-auto text-sm bg-red-400 rounded-full left-1 lg:hidden dark:bg-red-900 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none"
+		>
+			<!-- Shows the switcher allowing timeline travel on mobile. -->
+			<button>
+				<svg
+					class="w-10 h-10"
+					id="arrowright"
+					width="50"
+					height="50"
+					fill="none"
+					stroke="none"
+					stroke-linecap="square"
+					stroke-miterlimit="10"
+					viewBox="0 0 50 50"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<defs id="defs20">
+						<clipPath>
+							<path
+								d="M 0,0 H 960 V 720 H 0 Z"
+								clip-rule="nonzero"
+							/>
+						</clipPath>
+						<clipPath id="p.0-1-4">
+							<path
+								id="path1-2-0"
+								d="M 0,0 H 960 V 720 H 0 Z"
+								clip-rule="nonzero"
+							/>
+						</clipPath>
+					</defs>
+					<clipPath id="p.0">
+						<path
+							id="path1"
+							d="M 0,0 H 960 V 720 H 0 Z"
+							clip-rule="nonzero"
+						/>
+					</clipPath>
+					<path
+						style="
+							fill: currentColor;
+							fill-opacity: 1;
+							stroke: currentColor;
+							stroke-width: 2.848;
+							stroke-linecap: round;
+							stroke-linejoin: round;
+							stroke-dasharray: none;
+							paint-order: fill markers stroke;
+						"
+						d="m 30.152807,9.1863138 a 7.7145349,0.13753011 41.944235 0 0 5.615234,5.2304682 7.7145349,0.13753011 41.944235 0 0 5.859375,5.082031 7.7145349,0.13753011 41.944235 0 0 -5.613281,-5.230468 7.7145349,0.13753011 41.944235 0 0 -5.861328,-5.0820312 z M 45.035619,22.438267 a 0.42024437,0.94349396 0 0 0 -0.419922,0.943359 0.42024437,0.94349396 0 0 0 0.419922,0.945313 0.42024437,0.94349396 0 0 0 0.419922,-0.945313 0.42024437,0.94349396 0 0 0 -0.419922,-0.943359 z M 18.87351,23.049595 A 14.878937,0.26167485 0 0 0 3.9946033,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.573032 14.878937,0.26167485 0 0 0 33.752416,23.311313 14.878937,0.26167485 0 0 0 18.87351,23.049595 Z m 22.796875,4.263672 a 0.13753011,7.7145349 48.055765 0 0 -5.859375,5.082031 0.13753011,7.7145349 48.055765 0 0 -5.615234,5.230469 0.13753011,7.7145349 48.055765 0 0 5.859374,-5.082032 0.13753011,7.7145349 48.055765 0 0 5.615235,-5.230468 z"
+					/>
+				</svg>
+			</button>
+		</div>
+		<!-- Added an inline style to this element because for some reason it doesnt work otherwise, I'll figure that out later. -->
+		<div
+			class="fixed w-screen md:w-[85VH] lg:w-[70VH] h-[70VH] top-[15VH] bottom-[15VH] right-0 left-0 lg:right-[calc(50VW-30VH)] lg:left-[calc(50VW-30VH)] z-[60] resize backdrop-blur-sm"
+			id="posteditor"
+			style="backdrop-filter: blur(8px)"
+		>
+			<p
+				class="w-full h-full text-black bg-white dark:text-white dark:bg-black"
+			>
+				Failed to load post editor.
+			</p>
+		</div>
+	</body>
+</html>
