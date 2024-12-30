@@ -16,5 +16,15 @@
 			"version": "latest",
 			"pluginRepo": "https://github.com/asdf-vm/asdf-erlang.git"
 		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"gleam.gleam",
+				"ms-ossdata.vscode-postgresql",
+				"rust-lang.rust-analyzer",
+				"Yasuo-Higano.gleam-qol"
+			]
+		}
 	}
 }
