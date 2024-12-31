@@ -10,7 +10,7 @@ use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
 use crate::{database, LuminaConfig};
 
-use super::{BasicUserInfo};
+use super::BasicUserInfo;
 /// The minimum length of a username.
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
 
@@ -172,7 +172,7 @@ pub(crate) mod auth {
         let config: crate::LuminaConfig = server_vars.clone().config.clone();
         let mcrypt = new_magic_crypt!(config.clone().db_custom_salt, 256);
         let errorresponse = |e| {
-            error!("Auth: \n\t\tRan into an error:\n {}", e);
+            error!("{}: \n\t\tRan into an error:\n {}", "Auth".purple(), e);
             AuthResponse::Fail(FailReason::Unspecified)
         };
         let onusername =
@@ -193,13 +193,15 @@ pub(crate) mod auth {
             Some(u) => {
                 if u.password == mcrypt.encrypt_str_to_base64(password) {
                     server_vars.tell(format!(
-                        "Auth\t\t\t{}",
+                        "{}\t\t\t{}",
+                        "Auth".purple(),
                         format!("User {} successfully authorised.", u.username.blue()).green()
                     ));
                     AuthResponse::Success(u.id)
                 } else {
                     server_vars.tell(format!(
-                        "Auth\t\t\t{}",
+                        "{}\t\t\t{}",
+                        "Auth".purple(),
                         format!("User {}: Wrong password entered.", identifyer.blue()).bright_red()
                     ));
                     AuthResponse::Fail(FailReason::PasswordIncorrect)
@@ -207,7 +209,8 @@ pub(crate) mod auth {
             }
             None => {
                 server_vars.tell(format!(
-                    "Auth\t\t\t{}",
+                    "{}\t\t\t{}",
+                    "Auth".purple(),
                     format!("User {} does not exist.", identifyer.blue()).bright_yellow()
                 ));
                 AuthResponse::UserNoneExistant
