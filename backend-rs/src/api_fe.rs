@@ -170,13 +170,14 @@ pub(crate) async fn auth(
                 .unwrap();
             HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
-                .body(r#"{"Ok": true}"#)
+                .body(r#"{"Ok": true, "Errorvalue": ""}"#)
         }
         _ => HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false}"#),
     }
 }
+
 #[derive(Deserialize)]
 pub(super) struct AuthCreateUserReqData {
     username: String,
