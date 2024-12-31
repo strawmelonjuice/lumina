@@ -2,14 +2,14 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
 import frontend/other/element_actions
-import frontend/other/formdata
 import gleam/dynamic.{field}
 import gleam/fetch
 import gleam/http.{Post}
 import gleam/http/request
 import gleam/http/response
 import gleam/javascript/promise
-import gleamy_lights/helper as web_io
+import gleam/json
+import gleamy_lights/console
 import gleamy_lights/premixed
 import plinth/browser/document
 import plinth/browser/element
@@ -17,7 +17,7 @@ import plinth/browser/window
 import plinth/javascript/global
 
 pub fn render() -> Nil {
-  web_io.println(
+  console.log(
     "Detected you are on the " <> premixed.text_lilac("signup page") <> ".",
   )
   let assert Ok(usernamebox) = document.get_element_by_id("username")
@@ -39,17 +39,17 @@ pub fn render() -> Nil {
 fn checkusername(usernamebox) -> Nil {
   let assert Ok(entered_username) = usernamebox |> element.value()
   // This is not yet implemented in the backend
-  web_io.println(
+  console.log(
     "Checking if the username " <> entered_username <> " is available...",
   )
-  web_io.println(premixed.text_error_red(
+  console.log(premixed.text_error_red(
     "Username check feature is not yet implemented. Also see <https://github.com/strawmelonjuice/lumina/issues/48> for this.",
   ))
   Nil
 }
 
 fn try_signup(submitbutton: element.Element) {
-  web_io.println("Trying registration...")
+  console.log("Trying registration...")
   submitbutton
   |> element.set_inner_html(
     "<div style=\"background-image: url('/spinner.svg'); background-repeat: no-repeat; background-size: cover;\" class=\"relative w-10 h-10 pl-max pr-max\"></div>",
@@ -100,11 +100,15 @@ fn registration_request(username: String, email: String, password: String) {
     })
     |> request.set_host(element_actions.get_window_host())
     |> request.set_path("/api/fe/auth-create/")
-    |> formdata.encode([
-      #("username", username),
-      #("email", email),
-      #("password", password),
-    ])
+    |> request.set_body(
+      json.object([
+        #("username", json.string(username)),
+        #("password", json.string(password)),
+        #("email", json.string(email)),
+      ])
+      |> json.to_string,
+    )
+    |> request.set_header("Content-Type", "application/json")
   // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
 
   fetch.send(req)

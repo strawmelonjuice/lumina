@@ -9,6 +9,7 @@ import gleam/http.{Post}
 import gleam/http/request
 import gleam/http/response
 import gleam/javascript/promise
+import gleam/json
 import gleam/result
 import gleamy_lights/console
 import gleamy_lights/premixed
@@ -99,7 +100,16 @@ fn authentication_request(
     })
     |> request.set_host(element_actions.get_window_host())
     |> request.set_path("/api/fe/auth/")
-    |> formdata.encode([#("username", username), #("password", password)])
+    |> request.set_body(
+      json.object([
+        #("username", json.string(username)),
+        #("password", json.string(password)),
+      ])
+      |> json.to_string,
+    )
+    |> request.set_header("Content-Type", "application/json")
+
+  // |> formdata.encode([#("username", username), #("password", password)])
   // |> request.prepend_header("accept", "application/vnd.hmrc.1.0+json")
 
   fetch.send(req)
