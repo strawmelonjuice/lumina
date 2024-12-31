@@ -144,7 +144,7 @@ async fn main() {
         );
         process::exit(1);
     }
-    
+
     let erun: ERun = {
         let sty_f = v.clone().join("./custom-styles.css");
         if (!sty_f.is_file()) || (!sty_f.exists()) {
@@ -243,11 +243,10 @@ async fn main() {
             File::create(&logsets.logfile).unwrap(),
         ),
     ])
-        .unwrap();
-    
+    .unwrap();
+
     let config: LuminaConfig = LuminaConfig::new(erun.clone());
-    
-    
+
     let server_p: ServerVars = ServerVars {
         config: config.clone(),
     };
@@ -300,7 +299,9 @@ async fn main() {
                 web::post().to(api_fe::render_editor_articlepost),
             )
             .route("/api/fe/update", web::get().to(api_fe::update))
+            .route("/api/fe/auth/", web::post().to(api_fe::auth))
             .route("/api/fe/auth", web::post().to(api_fe::auth))
+            .route("/api/fe/auth-create/", web::post().to(api_fe::newaccount))
             .route("/api/fe/auth-create", web::post().to(api_fe::newaccount))
             .route(
                 "/api/fe/auth-create/check-username",
@@ -320,7 +321,7 @@ async fn main() {
     {
         Ok(o) => {
             server_p.tell(format!(
-                "Running on {0}:{1}, which should be bound to {2}://{3}",
+                "Running on http://{0}:{1}, which should be bound to {2}://{3}",
                 config.lumina_server_addr,
                 config.lumina_server_port,
                 if config.lumina_server_https {
