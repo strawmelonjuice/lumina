@@ -2,15 +2,14 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
 import frontend/other/element_actions
-import frontend/other/formdata
 import gleam/dynamic.{field}
 import gleam/fetch
 import gleam/http.{Post}
 import gleam/http/request
-import gleam/http/response
 import gleam/javascript/promise
 import gleam/json
 import gleam/result
+import gleam/string
 import gleamy_lights/console
 import gleamy_lights/premixed
 import plinth/browser/document
@@ -18,6 +17,7 @@ import plinth/browser/element
 import plinth/browser/window
 import plinth/javascript/global
 import plinth/javascript/storage
+import pprint
 
 // import plinth/browser/event.{type Event}
 
@@ -118,16 +118,29 @@ fn authentication_request(
     let assert Ok(resp) = resp
     // We don't care about the status code, we just want to know if the request was successful.
     // let assert 200 = resp.status
-    let assert Ok("application/json; charset=utf-8") =
-      response.get_header(resp, "content-type")
-    let assert Ok(authorisation_response) =
+    // let assert Ok("application/json; charset=utf-8") =
+    //   response.get_header(resp, "content-type")
+    case
       resp.body
       |> dynamic.decode2(
         AuthResponse,
         field("Ok", of: dynamic.bool),
         field("Errorvalue", of: dynamic.string),
       )
-    authorisation_response |> continue_after_login(is_autologin)
+    {
+      Error(e) -> {
+        console.error(
+          "Error decoding server auth response: "
+          <> string.inspect(e)
+          <> "\n\nGot: "
+          <> pprint.format(resp.body),
+        )
+        panic
+      }
+      Ok(authorisation_response) -> {
+        continue_after_login(authorisation_response, is_autologin)
+      }
+    }
     promise.resolve(Ok(Nil))
   })
 }
@@ -139,8 +152,10 @@ fn continue_after_login(
   authorisation_response: AuthResponse,
   is_autologin: Bool,
 ) {
+  console.log("Login answer was received, let's unpack it.")
   case authorisation_response {
     AuthResponse(True, _) -> {
+      console.info("Spoiler alert: Login is succesful.")
       let timeout = case is_autologin {
         True -> {
           0
