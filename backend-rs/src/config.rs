@@ -1,6 +1,6 @@
 use crate::ERun;
-use std::path::PathBuf;
 use colored::Colorize;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct LuminaConfig {
@@ -58,8 +58,8 @@ impl LuminaConfig {
             {
                 "POSTGRES" => DBType::POSTGRES,
                 _ => {
-                    println!("{}", "Using SQLITE database, this is not recommended for production as it is not scalable.".yellow());
-                    println!("{}","To use a different database, set the '_LUMINA_DB_TYPE_' environment variable to 'POSTGRES'.".purple());
+                    warn!("{}", "Using SQLITE database, this is not recommended for production as it is not scalable.".yellow());
+                    info!("{}","To use a different database, set the '_LUMINA_DB_TYPE_' environment variable to 'POSTGRES'.".purple());
                     DBType::SQLITE
                 }
             }
@@ -92,31 +92,31 @@ impl LuminaConfig {
                     }
                 }
                 match std::env::var("_LUMINA_POSTGRES_HOST_") {
-                        Ok(val) => {
-                            pg_config.host(&val);
-                        }
-                        Err(_) => {
-                            warn!("No Postgres database host provided under environment variable '_LUMINA_POSTGRES_HOST_'. Using default value 'localhost'.");
-                            pg_config.host("localhost");
-                        }
-                    };
+                    Ok(val) => {
+                        pg_config.host(&val);
+                    }
+                    Err(_) => {
+                        warn!("No Postgres database host provided under environment variable '_LUMINA_POSTGRES_HOST_'. Using default value 'localhost'.");
+                        pg_config.host("localhost");
+                    }
+                };
                 match std::env::var("_LUMINA_POSTGRES_PASSWORD_") {
-                        Ok(val) => {
-                            pg_config.password(&val);
-                        }
-                        Err(_) => {
-                            info!("No Postgres database password provided under environment variable '_LUMINA_POSTGRES_PASSWORD_'. Using passwordless connection.");
-                        }
-                    };
+                    Ok(val) => {
+                        pg_config.password(&val);
+                    }
+                    Err(_) => {
+                        info!("No Postgres database password provided under environment variable '_LUMINA_POSTGRES_PASSWORD_'. Using passwordless connection.");
+                    }
+                };
                 match std::env::var("_LUMINA_POSTGRES_DATABASE_") {
-                        Ok(val) => {
-                            pg_config.dbname(&val);
-                        }
-                        Err(_) => {
-                            error!("No Postgres database name provided under environment variable '_LUMINA_POSTGRES_DATABASE_'. Exiting.");
-                            std::process::exit(1);
-                        }
-                    };
+                    Ok(val) => {
+                        pg_config.dbname(&val);
+                    }
+                    Err(_) => {
+                        error!("No Postgres database name provided under environment variable '_LUMINA_POSTGRES_DATABASE_'. Exiting.");
+                        std::process::exit(1);
+                    }
+                };
                 {
                     match std::env::var("_LUMINA_POSTGRES_PORT_") {
                         Ok(val) => match val.parse::<u16>() {
@@ -138,7 +138,6 @@ impl LuminaConfig {
                 LuminaDBConnectionInfo::LuminaDBConnectionInfoPOSTGRES(pg_config)
             }
         };
-
 
         LuminaConfig {
             lumina_server_port: {
