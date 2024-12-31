@@ -5,15 +5,16 @@
  */
 #![allow(dead_code)]
 
+use crate::config::LuminaDBConnectionInfo;
+use crate::post::PostInfo;
+use crate::{LuminaConfig, SynclistItem};
+use colored::Colorize;
+use rusqlite::{params, Connection};
+use serde::{Deserialize, Serialize};
 use std::any::type_name;
 use std::io::Error;
 use std::process;
-
-use rusqlite::{params, Connection};
-use serde::{Deserialize, Serialize};
-
-use crate::post::PostInfo;
-use crate::LuminaConfig;
+use LuminaDBConnectionInfo::{LuminaDBConnectionInfoPOSTGRES, LuminaDBConnectionInfoSQLite};
 
 /// Basic exchangable user information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,24 +44,470 @@ impl BasicUserInfo {
         IIExchangedUserInfo {
             id: self.id,
             username: self.username.clone(),
-            instance: config.interinstance.iid.clone(),
+            instance: config.lumina_synchronisation_iid.clone(),
         }
     }
 }
 
-/// Create a database connection
-pub(crate) fn create_con(config: &LuminaConfig) -> Connection {
-    match Connection::open(
-        config
-            .clone()
-            .run
-            .cd
-            .join(config.clone().database.sqlite.unwrap().file),
-    ) {
-        Ok(d) => d,
-        Err(_e) => {
-            error!("Could not create a database connection!");
+impl LuminaConfig {
+    /// Create a database connection to either SQLite or POSTGRES.
+    pub(crate) fn db_connect(&self) -> LuminaDBConnection {
+        match self.db_connection_info.clone() {
+            LuminaDBConnectionInfoSQLite(file) => match Connection::open(file.clone()) {
+                Ok(d) => LuminaDBConnection::SQLite(d),
+                Err(_e) => {
+                    error!(
+                        "Could not create a database connection to <{}>",
+                        file.display().to_string().yellow()
+                    );
+                    process::exit(1);
+                }
+            },
+            LuminaDBConnectionInfoPOSTGRES(pg_config) => {
+                let f = pg_config.connect(postgres::tls::NoTls).unwrap();
+                LuminaDBConnection::POSTGRES(f)
+            }
+        }
+    }
+}
+
+pub enum LuminaDBConnection {
+    SQLite(Connection),
+    POSTGRES(postgres::Client),
+}
+
+impl LuminaDBConnection {
+    pub(crate) fn initial_dbconf(&mut self) {
+        fn emergencyabort() {
+            error!("Could not configure the database correctly!");
             process::exit(1);
+        }
+        let qs = [
+            "CREATE TABLE IF NOT EXISTS external_posts(
+                host_id INTEGER PRIMARY KEY,
+                source_id INTEGER NOT NULL,
+                source_instance TEXT NOT NULL
+            );",
+            "CREATE TABLE IF NOT EXISTS interinstance_relations(
+                instance_id TEXT PRIMARY KEY,
+                synclevel TEXT NOT NULL,
+                last_contact INTEGER NOT NULL
+            );",
+            "CREATE TABLE IF NOT EXISTS local_posts(
+                host_id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                privacy INTEGER NOT NULL
+            );",
+            "CREATE TABLE IF NOT EXISTS posts_pool(
+                postid INTEGER PRIMARY KEY,
+                kind TEXT NOT NULL,
+                content TEXT NOT NULL,
+                from_local INTEGER NOT NULL
+            );",
+            "CREATE TABLE IF NOT EXISTS users(
+                id INTEGER PRIMARY KEY,
+                username TEXT NOT NULL,
+                password TEXT NOT NULL,
+                email TEXT NOT NULL
+            );",
+        ];
+
+        for query in qs {
+            match self.execute0(query) {
+                Ok(_) => {}
+                Err(_e) => emergencyabort(),
+            }
+        }
+    }
+    pub(crate) fn execute0(&mut self, query: &str) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => {
+                conn.execute(query, ()).map(|_r| ()).map_err(|_e| ())
+            }
+            LuminaDBConnection::POSTGRES(client) => {
+                client.execute(query, &[]).map(|_r| ()).map_err(|_e| ())
+            }
+        }
+    }
+    pub(crate) fn execute1(&mut self, query: &str, param: impl AsRef<str>) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(query, &[&param.as_ref()])
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(query, &[&param.as_ref()])
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub(crate) fn execute2(
+        &mut self,
+        query: &str,
+        params: (impl AsRef<str>, impl AsRef<str>),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(query, &[&params.0.as_ref(), &params.1.as_ref()])
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(query, &[&params.0.as_ref(), &params.1.as_ref()])
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub(crate) fn execute3(
+        &mut self,
+        query: &str,
+        params: (impl AsRef<str>, impl AsRef<str>, impl AsRef<str>),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub(crate) fn execute4(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub(crate) fn execute5(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub fn execute6(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+
+    pub fn execute7(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub fn execute8(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub fn execute9(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                        &(params.8.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                        &(params.8.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+        }
+    }
+    pub fn execute10(
+        &mut self,
+        query: &str,
+        params: (
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+            impl AsRef<str>,
+        ),
+    ) -> Result<(), ()> {
+        match self {
+            LuminaDBConnection::SQLite(conn) => conn
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                        &(params.8.as_ref()),
+                        &(params.9.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
+            LuminaDBConnection::POSTGRES(client) => client
+                .execute(
+                    query,
+                    &[
+                        &(params.0.as_ref()),
+                        &(params.1.as_ref()),
+                        &(params.2.as_ref()),
+                        &(params.3.as_ref()),
+                        &(params.4.as_ref()),
+                        &(params.5.as_ref()),
+                        &(params.6.as_ref()),
+                        &(params.7.as_ref()),
+                        &(params.8.as_ref()),
+                        &(params.9.as_ref()),
+                    ],
+                )
+                .map(|_r| ())
+                .map_err(|_e| ()),
         }
     }
 }
@@ -78,7 +525,7 @@ pub enum UniversalFetchAnswer {
 impl UniversalFetchAnswer {
     /// Unwraps a post from a fetch answer.
     /// # Panics
-    /// Panics if the fetch answer is not a post.
+    /// Will panic if the fetch answer is not a post.
     /// # Returns
     /// * `PostInfo` - The post metadata.
     pub fn unwrap_post(self) -> PostInfo {
@@ -162,73 +609,33 @@ pub fn unifetch<T: DatabaseItem>(
         process::exit(1);
     }
 }
-fn dbconf(conn: &Connection) {
-    fn emergencyabort() {
-        error!("Could not configure the database correctly!");
-        process::exit(1);
-    }
-
-    match conn.execute(
-        "
-CREATE TABLE if not exists Users (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-    username  TEXT NOT NULL,
-    password  TEXT NOT NULL,
-    email     TEXT NOT NULL
-)
-",
-        (),
-    ) {
-        Ok(_) => {}
-        Err(_e) => emergencyabort(),
-    };
-    match conn.execute(
-        "
-CREATE TABLE if not exists PostsStore (
-    lpid            INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-    pid             INTEGER,
-    instance        TEXT,
-    author_id      INTEGER NOT NULL,
-    timestamp      INTEGER NOT NULL,
-    content_type    INTEGER NOT NULL,
-    content        TEXT NOT NULL,
-    tags            TEXT NOT NULL
-)
-",
-        (),
-    ) {
-        Ok(_) => {}
-        Err(_e) => emergencyabort(),
-    }
-}
 
 pub fn fetch_posts_in_range(
     config: &LuminaConfig,
     start: i64,
     end: i64,
 ) -> Result<Vec<PostInfo>, Error> {
-    if config.database.method.as_str() != "sqlite" {
-        error!("Unknown or unsupported database type! Only SQLITE is supported as of now.");
-        process::exit(1);
+    match config.db_connect() {
+        LuminaDBConnection::SQLite(conn) => {
+            let mut stmt = conn
+                .prepare("SELECT * FROM PostsStore WHERE timestamp BETWEEN ?1 AND ?2")
+                .unwrap();
+
+            let post_rows = stmt
+                .query_map(params![start, end], |row| Ok(row_to_post_info(row)))
+                .unwrap();
+
+            let mut posts = Vec::new();
+            for post_row in post_rows {
+                posts.push(post_row.unwrap());
+            }
+
+            Ok(posts)
+        }
+        LuminaDBConnection::POSTGRES(_) => {
+            todo!("Postgres not implemented yet.");
+        }
     }
-
-    let conn = create_con(config);
-    dbconf(&conn);
-
-    let mut stmt = conn
-        .prepare("SELECT * FROM PostsStore WHERE timestamp BETWEEN ?1 AND ?2")
-        .unwrap();
-
-    let post_rows = stmt
-        .query_map(params![start, end], |row| Ok(row_to_post_info(row)))
-        .unwrap();
-
-    let mut posts = Vec::new();
-    for post_row in post_rows {
-        posts.push(post_row.unwrap());
-    }
-
-    Ok(posts)
 }
 
 fn row_to_post_info(row: &rusqlite::Row) -> PostInfo {
@@ -246,3 +653,46 @@ fn row_to_post_info(row: &rusqlite::Row) -> PostInfo {
 
 pub(crate) mod fetch;
 pub(crate) mod users;
+
+pub fn get_instance_sync_list(config: &LuminaConfig) -> Result<Vec<SynclistItem>, Error> {
+    match config.db_connect() {
+        LuminaDBConnection::SQLite(conn) => {
+            let mut stmt = conn
+                .prepare("SELECT * FROM interinstance_relations")
+                .unwrap();
+
+            let sync_list_rows = stmt
+                .query_map((), |row| {
+                    Ok(SynclistItem {
+                        name: row.get(0).unwrap(),
+                        level: row.get(1).unwrap(),
+                        last_contact: row.get(2).unwrap(),
+                    })
+                })
+                .unwrap();
+
+            let mut sync_list = Vec::new();
+            for sync_list_row in sync_list_rows {
+                sync_list.push(sync_list_row.unwrap());
+            }
+
+            Ok(sync_list)
+        }
+        LuminaDBConnection::POSTGRES(mut client) => {
+            let rows = client
+                .query("SELECT * FROM interinstance_relations", &[])
+                .unwrap();
+
+            let mut sync_list = Vec::new();
+            for row in rows {
+                sync_list.push(SynclistItem {
+                    name:  row.get(0),
+                    level: row.get(1),
+                    last_contact: row.get(2),
+                });
+            }
+
+            Ok(sync_list)
+        }
+    }
+}

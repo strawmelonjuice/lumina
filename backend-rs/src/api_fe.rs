@@ -79,7 +79,7 @@ pub(crate) fn checksessionvalidity(id: i64, session: &Session, config: &LuminaCo
     match id {
         -100 => false,
         _ => match session.get::<i64>("validity") {
-            Ok(s) => matches!(s, Some(a) if a == config.clone().run.session_valid),
+            Ok(s) => matches!(s, Some(a) if a == config.clone().erun.session_valid),
             Err(_) => false,
         },
     }
@@ -112,7 +112,7 @@ pub(crate) async fn update(
         instance: JSClientInstance {
             config: JSClientConfig {
                 interinstance: JSClientInterinstance {
-                    iid: config.clone().interinstance.iid,
+                    iid: config.clone().lumina_synchronisation_iid,
                     lastsync: 0,
                 },
             },
@@ -166,7 +166,7 @@ pub(crate) async fn auth(
             session.insert("userid", user.id).unwrap();
             session.insert("username", username).unwrap();
             session
-                .insert("validity", config.clone().run.session_valid)
+                .insert("validity", config.clone().erun.session_valid)
                 .unwrap();
             HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
@@ -209,7 +209,7 @@ pub(crate) async fn newaccount(
             session.insert("userid", user.id).unwrap();
             session.insert("username", username).unwrap();
             session
-                .insert("validity", config.clone().run.session_valid)
+                .insert("validity", config.clone().erun.session_valid)
                 .unwrap();
             server_vars.tell(format!(
                 "User creation request: approved for {} @ {}",

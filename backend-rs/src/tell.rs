@@ -12,7 +12,7 @@ use std::time::SystemTime;
 use colored::Colorize;
 use time::{format_description, OffsetDateTime};
 
-use crate::{Logging, ServerVars};
+use crate::{config::LuminaLogConfig, ServerVars};
 
 const DATE_FORMAT_STR: &str = "[hour]:[minute]:[second]";
 
@@ -42,7 +42,7 @@ impl ServerVars {
         format!("{} {} {}", times, "[LOG] ".magenta(), msg)
     }
 }
-impl Logging {
+impl LuminaLogConfig {
     fn tell(self, rmsg: impl AsRef<str>) {
         let msg = rmsg.as_ref();
         let a = self;

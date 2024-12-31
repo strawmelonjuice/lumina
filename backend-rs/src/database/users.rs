@@ -10,7 +10,7 @@ use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
 use crate::{database, LuminaConfig};
 
-use super::{create_con, BasicUserInfo};
+use super::{BasicUserInfo};
 /// The minimum length of a username.
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
 
@@ -92,8 +92,8 @@ pub(crate) fn add(
     if password.len() < 8 {
         return Err(Error::new(ErrorKind::Other, "Password is too short."));
     }
-    let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
-    let conn = create_con(&config.clone());
+    let mcrypt = new_magic_crypt!(config.clone().db_custom_salt, 256);
+    let conn = &config.clone();
     let onusername = database::fetch::user(&config.clone(), ("username", username.clone()))?;
     let onemail = database::fetch::user(&config.clone(), ("email", email.clone()))?;
     let res: Option<BasicUserInfo> = match onusername {
@@ -104,7 +104,7 @@ pub(crate) fn add(
     match res {
         Some(_) => Err(Error::new(ErrorKind::Other, "User already exists!")),
         None => {
-            match conn.execute(
+            match conn.db_connect().execute3(
                 "INSERT INTO `users` (username, password, email) VALUES (?1,?2,?3)",
                 (username.clone(), password_encrypted, email),
             ) {
@@ -117,8 +117,8 @@ pub(crate) fn add(
                         )),
                     }
                 }
-                Err(e) => {
-                    error!("Unknown database write error: {}", e);
+                Err(_) => {
+                    error!("Unknown database write error!");
                     Err(Error::new(
                         ErrorKind::Other,
                         "Unknown database write error.",
@@ -170,7 +170,7 @@ pub(crate) mod auth {
             return AuthResponse::Fail(FailReason::InvalidUsername);
         }
         let config: crate::LuminaConfig = server_vars.clone().config.clone();
-        let mcrypt = new_magic_crypt!(config.clone().database.key, 256);
+        let mcrypt = new_magic_crypt!(config.clone().db_custom_salt, 256);
         let errorresponse = |e| {
             error!("Auth: \n\t\tRan into an error:\n {}", e);
             AuthResponse::Fail(FailReason::Unspecified)

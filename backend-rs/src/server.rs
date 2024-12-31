@@ -3,13 +3,10 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-const CURRENT_CONFIG_VERSION: &str = "0.3-a";
-#[macro_use]
-extern crate build_const;
+
 #[macro_use]
 extern crate log;
 extern crate simplelog;
-// use console::Term;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -27,14 +24,12 @@ use actix_web::{
 };
 use colored::Colorize;
 use rand::prelude::*;
-use serde::{Deserialize, Serialize};
 use simplelog::*;
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::config::{LuminaConfig, LuminaLogConfig};
 use crate::serve::notfound;
-use assets::{
-    fonts, vec_string_assets_anons_svg, STR_CLEAN_CONFIG_TOML, STR_CLEAN_CUSTOMSTYLES_CSS,
-};
+use assets::{fonts, vec_string_assets_anons_svg, STR_CLEAN_CUSTOMSTYLES_CSS};
 
 /// ## API's to the front-end.
 mod api_fe;
@@ -52,8 +47,14 @@ mod tell;
 
 #[derive(Clone)]
 struct ServerVars {
-    config: LuminaConfig,
-    // console: Term,
+    config: crate::config::LuminaConfig,
+}
+
+#[derive(Clone)]
+pub struct SynclistItem {
+    pub name: String, // The name of the instance to sync with, equal to the domain name it is public on.
+    pub level: String, // The level of syncing to do. "full" is the only one being implemented right now.
+    pub last_contact: i64, // The last time the instance was contacted.
 }
 impl ServerVars {
     /// This function grabs the server variables from the provided mutex.
@@ -92,125 +93,18 @@ impl ServerVars {
         vars.clone()
     }
 }
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientData {
-    config: JSClientConfig,
-}
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientConfig {
-    interinstance: JSClientConfigInterInstance,
-}
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientConfigInterInstance {
-    iid: String,
-}
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct PrePreConfig {
-    version: Option<String>,
-}
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PreConfig {
-    pub version: String,
-    pub server: Server,
-    pub interinstance: InterInstance,
-    pub database: Database,
-    pub logging: Option<Logging>,
-}
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LuminaConfig {
-    pub version: String,
-    pub server: Server,
-    pub interinstance: InterInstance,
-    pub database: Database,
-    pub logging: Option<Logging>,
-    pub run: ERun,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct ERun {
     pub cd: PathBuf,
     pub customcss: String,
     pub session_valid: i64,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Logging {
-    #[serde(alias = "file-loglevel")]
-    #[serde(alias = "file-log-level")]
-    pub file_loglevel: Option<u8>,
-    #[serde(alias = "term-loglevel")]
-    #[serde(alias = "term-log-level")]
-    #[serde(alias = "console-loglevel")]
-    #[serde(alias = "console-log-level")]
-    pub term_loglevel: Option<u8>,
-
-    #[serde(alias = "file")]
-    #[serde(alias = "filename")]
-    pub logfile: Option<String>,
-}
 pub struct LogSets {
     pub file_loglevel: LevelFilter,
     pub term_loglevel: LevelFilter,
     pub logfile: PathBuf,
-}
-
-fn default_as_true() -> bool {
-    true
-}
-
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Server {
-    pub port: u16,
-    pub adress: String,
-    #[serde(alias = "cookiekey")]
-    pub cookie_key: String,
-    #[serde(default = "default_as_true")]
-    pub secure: bool,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InterInstance {
-    pub iid: String,
-    pub synclist: Vec<SynclistItem>,
-    pub ignorelist: Vec<String>,
-    pub syncing: Syncing,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct SynclistItem {
-    pub name: String, // The name of the instance to sync with, equal to the domain name it is public on.
-    pub level: String, // The level of syncing to do. "full" is the only one being implemented right now.
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Syncing {
-    pub syncintervall: u64,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Database {
-    pub method: String,
-    pub sqlite: Option<SQLite>,
-    #[serde(alias = "cryptkey")]
-    pub key: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SQLite {
-    pub file: String,
 }
 
 #[tokio::main]
@@ -224,6 +118,7 @@ async fn main() {
             None => PathBuf::from(Path::new(".")),
         }
     })();
+
     let vs = v
         .canonicalize()
         .unwrap_or(v.to_path_buf())
@@ -249,33 +144,8 @@ async fn main() {
         );
         process::exit(1);
     }
-    let config: LuminaConfig = {
-        println!("Loading configuration from {}", vs);
-        let va = v.clone().join("./config.toml");
-        let confp = Path::new(&va);
-        if (!confp.is_file()) || (!confp.exists()) {
-            let mut output = match File::create(confp) {
-                Ok(p) => p,
-                Err(a) => {
-                    eprintln!(
-                        "Error: Could not create blank config file. The system returned: {}",
-                        a
-                    );
-                    process::exit(1);
-                }
-            };
-
-            match write!(output, "{}", STR_CLEAN_CONFIG_TOML) {
-                Ok(p) => p,
-                Err(a) => {
-                    eprintln!(
-                        "Error: Could not create blank config file. The system returned: {}",
-                        a
-                    );
-                    process::exit(1);
-                }
-            };
-        }
+    
+    let erun: ERun = {
         let sty_f = v.clone().join("./custom-styles.css");
         if (!sty_f.is_file()) || (!sty_f.exists()) {
             let mut output = match File::create(sty_f.clone()) {
@@ -299,66 +169,23 @@ async fn main() {
                     process::exit(1);
                 }
             };
-        }
-        let o = v.clone();
-        let config_version_up_to_date: bool = match fs::read_to_string(confp) {
-            Ok(g) => match toml::from_str(&g) {
-                Ok(p) => {
-                    let p: PrePreConfig = p;
-                    p.version.unwrap_or(String::from("Unset")) == *CURRENT_CONFIG_VERSION
-                }
-                _ => false,
-            },
-            _ => false,
         };
-        if !config_version_up_to_date {
-            eprintln!("ERROR! The config file Lumina tried to load, doesn't match the configuration version Lumina supports. (Expected: {})", CURRENT_CONFIG_VERSION);
-            process::exit(1);
-        };
-
-        match fs::read_to_string(confp) {
-            Ok(g) => match toml::from_str(&g) {
-                Ok(p) => {
-                    let mut rng = thread_rng();
-                    let p: PreConfig = p;
-                    LuminaConfig {
-                        version: p.version,
-                        server: p.server,
-                        interinstance: p.interinstance,
-                        database: p.database,
-                        logging: p.logging,
-                        run: ERun {
-                            cd: o,
-                            customcss: fs::read_to_string(sty_f)
-                                .unwrap_or(String::from(r"/* Failed loading custom css */")),
-                            session_valid: rng.gen_range(1..=900000),
-                        },
-                    }
-                }
-                Err(e) => {
-                    eprintln!(
-                        "ERROR: Could not interpret server configuration at `{}`!\n\n\t{}",
-                        confp
-                            .canonicalize()
-                            .unwrap_or(confp.to_path_buf())
-                            .to_string_lossy()
-                            .replace("\\\\?\\", ""),
-                        e.message()
-                    );
-                    process::exit(1);
-                }
-            },
-            Err(_) => {
+        // read the styf file to a string
+        let styf = match fs::read_to_string(sty_f.clone()) {
+            Ok(p) => p,
+            Err(a) => {
                 eprintln!(
-                    "Error: Could not read server configuration at `{}`!",
-                    confp
-                        .canonicalize()
-                        .unwrap_or(confp.to_path_buf())
-                        .to_string_lossy()
-                        .replace("\\\\?\\", "")
+                    "Error: Could not read custom style file. The system returned: {}",
+                    a
                 );
                 process::exit(1);
             }
+        };
+
+        ERun {
+            cd: v.clone(),
+            customcss: styf,
+            session_valid: rand::thread_rng().gen_range(0..1000000),
         }
     };
     let logsets: LogSets = {
@@ -380,11 +207,12 @@ async fn main() {
                 }
             }
         }
-        match config.clone().logging {
+        let temp: Option<LuminaLogConfig> = None;
+        match temp {
             None => LogSets {
                 file_loglevel: LevelFilter::Info,
                 term_loglevel: LevelFilter::Warn,
-                logfile: config.run.cd.join("./instance.log"),
+                logfile: erun.cd.join("./instance.log"),
             },
             Some(d) => LogSets {
                 file_loglevel: match d.file_loglevel {
@@ -396,8 +224,8 @@ async fn main() {
                     None => LevelFilter::Warn,
                 },
                 logfile: match d.logfile {
-                    Some(s) => config.run.cd.join(s.as_str()),
-                    None => config.run.cd.join("./instance.log"),
+                    Some(s) => erun.cd.join(s.as_str()),
+                    None => erun.cd.join("./instance.log"),
                 },
             },
         }
@@ -415,10 +243,13 @@ async fn main() {
             File::create(&logsets.logfile).unwrap(),
         ),
     ])
-    .unwrap();
+        .unwrap();
+    
+    let config: LuminaConfig = LuminaConfig::new(erun.clone());
+    
+    
     let server_p: ServerVars = ServerVars {
         config: config.clone(),
-        // console: Term::stdout(),
     };
     let server_q: Data<Mutex<ServerVars>> = Data::new(Mutex::new(server_p.clone()));
     server_p.tell(format!(
@@ -430,12 +261,13 @@ async fn main() {
             .to_string_lossy()
             .replace("\\\\?\\", "")
     ));
-    let keydouble = config.server.cookie_key.repeat(2);
+    config.db_connect().initial_dbconf();
+    let keydouble = config.db_custom_salt.repeat(10);
     let keybytes = keydouble.as_bytes();
     if keybytes.len() < 32 {
         error!(
             "Error: Cookie key must be at least 32 (doubled) bytes long. \"{}\" yields only {} bytes.",
-            config.server.cookie_key.blue(),
+            config.db_custom_salt.blue(),
             format!("{}",keybytes.len()).blue()
         );
         process::exit(1);
@@ -484,26 +316,26 @@ async fn main() {
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
     })
-    .bind((config.server.adress.clone(), config.server.port))
+    .bind((config.lumina_server_addr.clone(), config.lumina_server_port))
     {
         Ok(o) => {
             server_p.tell(format!(
                 "Running on {0}:{1}, which should be bound to {2}://{3}",
-                config.server.adress,
-                config.server.port,
-                if config.server.secure {
+                config.lumina_server_addr,
+                config.lumina_server_port,
+                if config.lumina_server_https {
                     "https"
                 } else {
                     "http"
                 },
-                config.interinstance.iid
+                config.lumina_synchronisation_iid
             ));
             o
         }
         Err(s) => {
             error!(
                 "Could not bind to {}:{}, error message: {}",
-                config.server.adress, config.server.port, s
+                config.lumina_server_addr, config.lumina_server_port, s
             );
             process::exit(1);
         }
@@ -584,6 +416,7 @@ async fn close() {
     // }
 }
 
+mod config;
 mod serve;
 
 #[doc = r"Font file server"]

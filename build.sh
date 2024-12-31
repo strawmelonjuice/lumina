@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 LOCA=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 GEN_ASSETS="$LOCA/backend/priv/generated"
 SECONDS=0
@@ -8,6 +9,7 @@ TESTS=false
 PACK=false
 BUNFLAGS=""
 CARGOFLAGS=""
+BCARGOFLAGS=""
 TEST_FE_TS=false
 TEST_FE_GLEAM=false
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,9 +27,11 @@ if [[ "$*" == *"--test"* ]]; then
 fi
 if [[ "$*" == *"--pack"* ]]; then
 	PACK=true
+	BCARGOFLAGS="--release"
 fi
 if [[ "$*" == *"--run-packed"* ]]; then
 	PACK=true
+	BCARGOFLAGS="--release"
 fi
 if [ "$QUIET" = true ]; then
 	echo "[quiet mode]" >&2
@@ -182,7 +186,7 @@ bun x cleancss -O1 specialComments:all --inline none "$GEN_ASSETS/css/main.css" 
 if [[ "$*" == *"--backend=rust"* ]]; then
 	noti "Building Rust backend..."
 	cd "$LOCA/backend-rs/" || exit 1
-	if cargo build --release; then
+	if cargo build $BCARGOFLAGS; then
 		success "\t--> Rust backend build success."
 	else
 		errnoti "\t--> Rust backend compilation ran into an error."
@@ -225,7 +229,11 @@ res_noti 1 "Build completed, took $((build_duration / 60)) minutes and $((build_
 if [[ "$*" == *"--run"* ]]; then
 	noti "'--run' detected. Running Lumina directly!"
 	if [[ "$*" == *"--backend=rust"* ]]; then
+	  if [ "$PACK" = true ]; then
 		"$LOCA/backend-rs/target/release/lumina-server" || exit 1
+		else
+		  "$LOCA/backend-rs/target/debug/lumina-server" || exit 1
+		  fi
 	else
 		cd "$LOCA/backend/" || exit 1
 		gleam run -- start

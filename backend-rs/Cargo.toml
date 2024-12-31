@@ -53,7 +53,7 @@ futures = "0.3.30"
 async-std = "1.12.0"
 colored = "2.0.4"
 log = "0.4.21"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
+rusqlite = { version = "0.32.1", features = ["bundled"] }
 time = "0.3.34"
 password-hash = "0.5.0"
 tokio = { version = "1.38.0", features = [
@@ -63,17 +63,19 @@ tokio = { version = "1.38.0", features = [
 	"time",
 ] }
 pbkdf2 = "0.12.2"
-actix-session = { version = "0.9.0", features = ["cookie-session"] }
-actix-identity = "0.7.1"
+actix-session = { version = "0.10.1", features = ["cookie-session"] }
+actix-identity = "0.8.0"
 actix-web = "4.7.0"
-handlebars = "5.1.0"
+handlebars = "6.2.0"
+postgres = "0.19.9"
 home = "0.5.9"
-magic-crypt = "3.1.13"
+magic-crypt = "4.0.1"
 rand = "0.8.5"
 build_const = "0.2.2"
 markdown = "1.0.0-alpha.18"
 chrono = "0.4.38"
 simplelog = "0.12.2"
+dotenv = "0.15.0"
 indicatif = "0.17.8"
 console = "0.15.8"
 [build-dependencies]

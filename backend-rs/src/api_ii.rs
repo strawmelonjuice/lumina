@@ -8,7 +8,7 @@
 
 use std::time::Duration;
 
-use crate::{LuminaConfig, ServerVars, SynclistItem};
+use crate::{database, LuminaConfig, ServerVars, SynclistItem};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use tokio::time::sleep;
 
@@ -16,7 +16,7 @@ pub(crate) async fn main(vars: ServerVars) {
     let progressbars = MultiProgress::new();
     let config: LuminaConfig = vars.config.clone();
     let mut round = 0;
-    let mut sync_interval = config.interinstance.syncing.syncintervall;
+    let mut sync_interval = config.lumina_synchronisation_interval;
     if sync_interval < 30 {
         sync_interval = 120
     };
@@ -44,7 +44,8 @@ pub(crate) async fn main(vars: ServerVars) {
             .set_message(vars.format_tell(format!("{} seconds left.", remaining_waiting_time)));
         sleep(Duration::from_secs(1)).await;
     }
-    let number_of_instances: u64 = config.interinstance.synclist.len() as u64;
+    
+    let number_of_instances: u64 = database::get_instance_sync_list(&config).unwrap_or(vec![]).len() as u64;
     if number_of_instances == 0 {
         waiting_counter.println(vars.format_tell("Syncer: No instances to sync from are listed. Syncer will close until further notice to preserve CPU threads."));
         waiting_counter.finish_and_clear();
@@ -66,7 +67,7 @@ pub(crate) async fn main(vars: ServerVars) {
                 .unwrap()
                 .progress_chars("██░"),
         );
-        for instance in config.interinstance.synclist.iter() {
+        for instance in database::get_instance_sync_list(&config).unwrap_or_default().into_iter() {
             sync_progress_through_instances.inc(1);
             sync_progress_through_instances
                 .set_message(vars.format_tell(format!("Syncing: {}", instance.name)));

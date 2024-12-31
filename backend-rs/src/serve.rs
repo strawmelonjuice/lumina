@@ -3,7 +3,6 @@
  *
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
-//noinspection ALL
 const SPECIALDATES: &str = r#"
 /*Pride month banner*/
 body:has(.monthclass-6)::before {
@@ -189,14 +188,18 @@ fn replaceable(string: &str, server_vars: &ServerVars) -> String {
     stylesheet.push_str("\n\n\n/* --- Main stylesheet --- */\n\n\n");
     stylesheet.push_str(crate::assets::STR_GENERATED_MAIN_MIN_CSS);
     stylesheet.push_str("\n\n\n/* --- Custom instance-specific CSS content --- */\n\n\n");
-    stylesheet.push_str(&server_vars.config.run.customcss.clone());
+    stylesheet.push_str(&server_vars.config.clone().erun.customcss.clone());
     stylesheet.push_str("\n\n\n/* --- CSS content for special events --- */\n\n\n");
     stylesheet.push_str(specialdates.as_str());
     stylesheet.push_str("</style>");
     let s = string
         .replace(
             "{{iid}}",
-            &server_vars.clone().config.interinstance.iid.clone(),
+            &server_vars
+                .clone()
+                .config
+                .lumina_synchronisation_iid
+                .clone(),
         )
         .replace(
             "monthclass-month",

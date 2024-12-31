@@ -76,7 +76,7 @@ impl PostInfo {
             instance: self
                 .instance
                 .clone()
-                .unwrap_or(config.interinstance.iid.clone()),
+                .unwrap_or(config.lumina_synchronisation_iid.clone()),
         };
         let content;
 
