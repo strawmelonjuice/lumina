@@ -13,46 +13,29 @@ use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex};
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
-use crate::database::users::add;
 use crate::database::users::auth::{check, AuthResponse};
+use crate::database::users::{add, SafeUser};
 use crate::database::{self};
 use crate::{LuminaConfig, ServerVars};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientData {
-    pub instance: JSClientInstance,
-    pub user: JSClientUser,
+#[serde(rename_all = "snake_case")]
+struct FEJSonObj {
+    // pub pulled: i128,
+    pub instance: FEJsonObjInstanceInfo,
+    pub user: SafeUser,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientInstance {
-    pub config: JSClientConfig,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientConfig {
-    pub interinstance: JSClientInterinstance,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientInterinstance {
+#[serde(rename_all = "snake_case")]
+struct FEJsonObjInstanceInfo {
     pub iid: String,
-    pub lastsync: i64,
+    pub last_sync: i64,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JSClientUser {
-    pub username: String,
-    pub id: i64,
-}
 pub enum ShieldValue {
     Notsafe(HttpResponse),
     Safe,
@@ -108,25 +91,24 @@ pub(crate) async fn update(
         ip.yellow(),
         username_c
     );
-    let mut d: JSClientData = JSClientData {
-        instance: JSClientInstance {
-            config: JSClientConfig {
-                interinstance: JSClientInterinstance {
-                    iid: config.clone().lumina_synchronisation_iid,
-                    lastsync: 0,
-                },
-            },
+    let mut d: FEJSonObj = FEJSonObj {
+        // pulled: -1,
+        instance: FEJsonObjInstanceInfo {
+            iid: config.lumina_synchronisation_iid.clone(),
+            last_sync: -1,
         },
-        user: JSClientUser {
+        user: SafeUser {
             username: "unset".to_string(),
             id: -1,
+            email: "unset".to_string(),
         },
     };
     let userd_maybe = database::fetch::user(&config, ("username", username_b)).unwrap_or(None);
     if let Some(userd) = userd_maybe {
-        d.user = JSClientUser {
+        d.user = SafeUser {
             username: userd.username,
             id: userd.id,
+            email: userd.email,
         };
     };
     return HttpResponse::build(StatusCode::OK)

@@ -7,10 +7,10 @@
 use std::io::{Error, ErrorKind};
 
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
-
+use serde::{Deserialize, Serialize};
 use crate::{database, LuminaConfig};
 
-use super::BasicUserInfo;
+use super::{DatabaseItem, IIExchangedUserInfo};
 /// The minimum length of a username.
 pub const MINIMUM_USERNAME_LENGTH: usize = 3;
 
@@ -96,7 +96,7 @@ pub(crate) fn add(
     let conn = &config.clone();
     let onusername = database::fetch::user(&config.clone(), ("username", username.clone()))?;
     let onemail = database::fetch::user(&config.clone(), ("email", email.clone()))?;
-    let res: Option<BasicUserInfo> = match onusername {
+    let res: Option<User> = match onusername {
         Some(s) => Some(s),
         None => onemail,
     };
@@ -130,7 +130,7 @@ pub(crate) fn add(
 }
 
 pub(crate) mod auth {
-    use crate::database::BasicUserInfo;
+    use crate::database::users::User;
     use crate::ServerVars;
     use actix_web::web::Data;
     use colored::Colorize;
@@ -185,7 +185,7 @@ pub(crate) mod auth {
                 Ok(a) => a,
                 Err(e) => return errorresponse(e),
             };
-        let a_some: Option<BasicUserInfo> = match onusername {
+        let a_some: Option<User> = match onusername {
             Some(s) => Some(s),
             None => onemail,
         };
@@ -218,3 +218,36 @@ pub(crate) mod auth {
         }
     }
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct SafeUser {
+    pub id: i64,
+    pub username: String,
+    pub email: String,
+}
+
+/// Basic user-identifying information.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    /// User ID
+    pub(crate) id: i64,
+    /// Known username
+    pub(crate) username: String,
+    /// Hashed password
+    pub(crate) password: String,
+    /// Given email
+    pub(crate) email: String,
+}
+
+impl User {
+    pub fn to_exchangable(&self, config: &LuminaConfig) -> IIExchangedUserInfo {
+        IIExchangedUserInfo {
+            id: self.id,
+            username: self.username.clone(),
+            instance: config.lumina_synchronisation_iid.clone(),
+        }
+    }
+}
+
+impl DatabaseItem for User {}

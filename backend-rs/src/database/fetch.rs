@@ -4,16 +4,17 @@
  * Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
  */
 
-use crate::database::{BasicUserInfo, LuminaDBConnection};
+use crate::database::{LuminaDBConnection};
 use crate::post::PostInfo;
 use crate::{database, LuminaConfig};
 use std::io::{Error, ErrorKind};
+use crate::database::users::User;
 
 /// Fetches user from database
 pub fn user(
     config: &LuminaConfig,
     discriminator: (impl AsRef<str>, impl AsRef<str>),
-) -> Result<Option<BasicUserInfo>, Error> {
+) -> Result<Option<User>, Error> {
     match config.db_connect() {
         LuminaDBConnection::SQLite(conn) => {
             let mut stmt = conn
@@ -30,7 +31,7 @@ pub fn user(
             let mut res = stmt
                 .query_map((), |row| {
                     Ok({
-                        serde_json::to_string(&BasicUserInfo {
+                        serde_json::to_string(&User {
                             id: row.get(0)?,
                             username: row.get(1)?,
                             password: row.get(2)?,
@@ -45,7 +46,7 @@ pub fn user(
                 None => Ok(None),
                 Some(r) => match r {
                     Ok(s) => {
-                        let res: BasicUserInfo = serde_json::from_str(&s).unwrap();
+                        let res: User = serde_json::from_str(&s).unwrap();
                         Ok(Some(res))
                     }
                     Err(f) => {

@@ -127,9 +127,10 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
 
-use crate::database::{self, BasicUserInfo, IIExchangedUserInfo};
+use crate::database::{self, IIExchangedUserInfo};
 use crate::{LuminaConfig, ServerVars};
 use chrono::Datelike;
+use crate::database::users::User;
 
 pub(super) async fn notfound(
     server_vars_mutex: Data<Mutex<ServerVars>>,
@@ -468,7 +469,7 @@ pub(crate) async fn fence(
             .append_header((LOCATION, "/login"))
             .finish()
     } else {
-        let user: BasicUserInfo = database::fetch::user(&config, ("id", id.to_string()))
+        let user: User = database::fetch::user(&config, ("id", id.to_string()))
             .unwrap()
             .unwrap();
 

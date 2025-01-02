@@ -117,8 +117,7 @@ fn registration_request(username: String, email: String, password: String) {
     let assert Ok(resp) = resp
     // We don't care about the status code, we just want to know if the request was successful.
     // let assert 200 = resp.status
-    let assert Ok("application/json; charset=utf-8") =
-      response.get_header(resp, "content-type")
+//    let assert Ok("application/json; charset=utf-8") =      response.get_header(resp, "content-type")
     let assert Ok(registration_response) =
       resp.body
       |> dynamic.decode2(

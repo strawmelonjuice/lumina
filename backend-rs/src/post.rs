@@ -8,7 +8,8 @@ use handlebars::*;
 use serde::{Deserialize, Serialize};
 
 use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
-use crate::database::{unifetch, BasicUserInfo, IIExchangedUserInfo};
+use crate::database::{unifetch, IIExchangedUserInfo};
+use crate::database::users::User;
 use crate::LuminaConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,7 +18,7 @@ pub struct PostInfo {
     pub lpid: i64,
     /// Post ID
     pub pid: i64,
-    /// Instance ID - Might not be necessary on local posts. Hence being Option<>;
+    /// Instance ID - Might not be necessary on local posts. Hence, being Option<>;
     pub instance: Option<String>,
     /// Author ID
     pub author_id: i64,
@@ -66,8 +67,8 @@ impl PostPreRenderData {
 
 impl PostInfo {
     pub fn to_formatted(&self, config: &LuminaConfig) -> PostPreRenderData {
-        let author_u: BasicUserInfo =
-            unifetch::<BasicUserInfo>(config, ("id", self.author_id.to_string().as_str()))
+        let author_u: User =
+            unifetch::<User>(config, ("id", self.author_id.to_string().as_str()))
                 .unwrap_user();
 
         let author = IIExchangedUserInfo {

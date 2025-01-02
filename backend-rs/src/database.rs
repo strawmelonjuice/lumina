@@ -15,6 +15,7 @@ use std::any::type_name;
 use std::io::Error;
 use std::process;
 use LuminaDBConnectionInfo::{LuminaDBConnectionInfoPOSTGRES, LuminaDBConnectionInfoSQLite};
+use users::User;
 
 /// Basic exchangable user information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -25,28 +26,6 @@ pub struct IIExchangedUserInfo {
     pub(crate) username: String,
     /// Instance ID
     pub(crate) instance: String,
-}
-
-/// Basic user-identifying information.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct BasicUserInfo {
-    /// User ID
-    pub(crate) id: i64,
-    /// Known username
-    pub(crate) username: String,
-    /// Hashed password
-    pub(crate) password: String,
-    /// Given email
-    pub(crate) email: String,
-}
-impl BasicUserInfo {
-    pub fn to_exchangable(&self, config: &LuminaConfig) -> IIExchangedUserInfo {
-        IIExchangedUserInfo {
-            id: self.id,
-            username: self.username.clone(),
-            instance: config.lumina_synchronisation_iid.clone(),
-        }
-    }
 }
 
 impl LuminaConfig {
@@ -514,11 +493,10 @@ impl LuminaDBConnection {
 
 pub trait DatabaseItem {}
 impl DatabaseItem for PostInfo {}
-impl DatabaseItem for BasicUserInfo {}
 
 pub enum UniversalFetchAnswer {
     Post(PostInfo),
-    User(BasicUserInfo),
+    User(User),
     None,
     Err(Error),
 }
@@ -547,7 +525,7 @@ impl UniversalFetchAnswer {
     /// Panics if the fetch answer is not a user.
     /// # Returns
     /// * `BasicUserInfo` - The user metadata.
-    pub fn unwrap_user(self) -> BasicUserInfo {
+    pub fn unwrap_user(self) -> User {
         match self {
             UniversalFetchAnswer::User(s) => s,
             UniversalFetchAnswer::None => {
@@ -594,7 +572,7 @@ pub fn unifetch<T: DatabaseItem>(
             Some(s) => UniversalFetchAnswer::Post(s),
             None => UniversalFetchAnswer::None,
         }
-    } else if type_name::<T>() == type_name::<BasicUserInfo>() {
+    } else if type_name::<T>() == type_name::<User>() {
         let sres = fetch::user(config, discriminator);
         let res = match sres {
             Ok(s) => s,
