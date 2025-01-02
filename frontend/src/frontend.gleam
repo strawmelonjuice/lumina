@@ -9,7 +9,7 @@ import gleam/fetch.{type FetchError}
 import gleam/http/request
 import gleam/http/response.{type Response}
 import gleam/int
-import gleam/javascript/array
+import gleam/javascript/array.{type Array}
 import gleam/javascript/promise
 import gleam/json
 import gleam/list
@@ -274,10 +274,11 @@ fn run_fejson_functions() {
   use <-
     bool.guard(when: { fejson.get().pulled == 0 }, return: Nil, otherwise: _)
   fetch_fejson_functions()
+  |> array.to_list
   |> list.each(fn(f) { f() })
 
   Nil
 }
 
 @external(javascript, "./fejson_ffi.ts", "getQueuedFejsonFunctions")
-fn fetch_fejson_functions() -> List(fn() -> Nil)
+fn fetch_fejson_functions() -> Array(fn() -> Nil)

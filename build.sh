@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 LOCA=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 GEN_ASSETS="$LOCA/backend/priv/generated"
 SECONDS=0
@@ -229,11 +228,11 @@ res_noti 1 "Build completed, took $((build_duration / 60)) minutes and $((build_
 if [[ "$*" == *"--run"* ]]; then
 	noti "'--run' detected. Running Lumina directly!"
 	if [[ "$*" == *"--backend=rust"* ]]; then
-	  if [ "$PACK" = true ]; then
-		"$LOCA/backend-rs/target/release/lumina-server" || exit 1
+		if [ "$PACK" = true ]; then
+			"$LOCA/backend-rs/target/release/lumina-server" || exit 1
 		else
-		  "$LOCA/backend-rs/target/debug/lumina-server" || exit 1
-		  fi
+			"$LOCA/backend-rs/target/debug/lumina-server" || exit 1
+		fi
 	else
 		cd "$LOCA/backend/" || exit 1
 		gleam run -- start

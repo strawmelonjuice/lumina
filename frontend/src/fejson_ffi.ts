@@ -4,8 +4,6 @@
  *
  */
 
-import { toList, type List } from "../prelude.mjs";
-
 export function setJsonObj(jsonObj: {
 	instance_iid: string;
 	instance_lastsync: number;
@@ -60,14 +58,14 @@ export function queueFejsonFunction(func: () => null) {
 		window.fejsonqueue = [];
 	}
 	if (window.fejsonqueue.length >= MAX_QUEUE_SIZE) {
-		console.warn('Function queue size limit reached');
+		console.warn("Function queue size limit reached");
 		return;
 	}
 	window.fejsonqueue.push(func);
 }
 
-export function getQueuedFejsonFunctions(): List {
-	return toList(window.fejsonqueue || []);
+export function getQueuedFejsonFunctions(): Array<() => null> {
+	return window.fejsonqueue || [];
 }
 
 interface fejsonObject {
