@@ -2,6 +2,9 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 import gleam/string
 import plinth/browser/element.{type Element}
+import plinth/browser/window
+import gleam/http/request.{type Request}
+import gleam/http
 
 @external(javascript, "../../elementactions_ffi.ts", "disableElement")
 pub fn disable_element(a: Element) -> nil
@@ -38,4 +41,18 @@ pub fn get_window_location_hash() -> String {
     True -> s |> string.drop_start(1)
     False -> s
   }
+}
+
+pub fn phone_home() -> Request(String) {
+	request.new()
+    |> request.set_scheme({
+      let origin = window.origin()
+      case origin {
+        "http://" <> _ -> http.Http
+        "https://" <> _ -> http.Https
+        _ -> http.Https
+      }
+    })
+    
+    |> request.set_host(get_window_host())
 }

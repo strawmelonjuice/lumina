@@ -3,12 +3,14 @@
 
 import frontend/other/element_actions
 import gleam/dynamic.{field}
+import gleam/dynamic/decode
 import gleam/fetch
 import gleam/http.{Post}
 import gleam/http/request
-import gleam/http/response
 import gleam/javascript/promise
 import gleam/json
+import gleam/option.{type Option, None, Some}
+import gleam/string
 import gleamy_lights/console
 import gleamy_lights/premixed
 import plinth/browser/document
@@ -26,7 +28,7 @@ pub fn render() -> Nil {
 
   let assert Ok(passwordbox) = document.get_element_by_id("password")
   passwordbox
-  |> element.add_event_listener("change", fn(_) { checkusername(passwordbox) })
+  |> element.add_event_listener("change", fn(_) { checkpassword(passwordbox) })
   let assert Ok(submitbutton) = document.get_element_by_id("submitbutton")
   element.add_event_listener(submitbutton, "click", fn(_) {
     try_signup(submitbutton)
@@ -38,12 +40,91 @@ pub fn render() -> Nil {
 
 fn checkusername(usernamebox) -> Nil {
   let assert Ok(entered_username) = usernamebox |> element.value()
-  // This is not yet implemented in the backend
   console.log(
     "Checking if the username " <> entered_username <> " is available...",
   )
+  element_actions.phone_home()
+  |> request.set_method(Post)
+  |> request.set_path("/api/fe/auth-create/check-username")
+  |> request.set_body(
+    json.object([#("u", json.string(entered_username))])
+    |> json.to_string,
+  )
+  |> request.set_header("Content-Type", "application/json")
+  |> fetch.send()
+  |> promise.try_await(fetch.read_json_body)
+  |> promise.await(fn(resp) {
+    let assert Ok(resp) = resp
+    let assert 200 = resp.status
+    let check_response = case
+      resp.body
+      |> decode.run(username_check_response_decoder())
+    {
+      Ok(v) -> v
+      Error(e) -> {
+        console.error(
+          {
+            "Error decoding the response: "
+            <> string.inspect(e) |> premixed.text_error_red
+          }
+          <> "\n\n"
+          <> string.inspect(resp.body),
+        )
+        UsernameCheckResponse(False, None)
+      }
+    }
+    case check_response {
+      UsernameCheckResponse(True, _) -> {
+        let assert Ok(user_name_label) =
+          document.get_element_by_id("usernameLabel")
+        element.set_inner_html(
+          user_name_label,
+          "Username&emsp;&emsp;<span class=\"text-green-300\">⬅ Username is available!&nbsp;<img src=\"/green-check.svg\" class=\"inline\"></span>",
+        )
+      }
+      UsernameCheckResponse(False, Some(why)) -> {
+        let assert Ok(user_name_label) =
+          document.get_element_by_id("usernameLabel")
+        element.set_inner_html(user_name_label, {
+          case why {
+            "InvalidChars" ->
+              "Username&emsp;&emsp;<span class=\"text-red-300\">⬅ There are characters in this username that are not allowed!&nbsp;<img src=\"/red-cross.svg\" class=\"inline\"></span>"
+            "TooShort" ->
+              "Username&emsp;&emsp;<span class=\"text-red-300\">⬅ That username is too short!&nbsp;<img src=\"/red-cross.svg\" class=\"inline\"></span>"
+            "userExists" ->
+              "Username&emsp;&emsp;<span class=\"text-red-300\">⬅ Someone already claimed that username!&nbsp;<img src=\"/red-cross.svg\" class=\"inline\" alt=\"X\"></span>"
+            _ ->
+              "Username&emsp;&emsp;<span class=\"text-red-300\">⬅ Username is not available!&nbsp;<img src=\"/red-cross.svg\" class=\"inline\" alt=\"X\"></span>"
+          }
+        })
+      }
+      _ -> {
+        Nil
+      }
+    }
+    promise.resolve(Ok(Nil))
+  })
+  Nil
+}
+
+type UsernameCheckResponse {
+  UsernameCheckResponse(ok: Bool, why: Option(String))
+}
+
+fn username_check_response_decoder() -> decode.Decoder(UsernameCheckResponse) {
+  use ok <- decode.field("Ok", decode.bool)
+  use why <- decode.optional_field("Why", None, decode.optional(decode.string))
+  decode.success(UsernameCheckResponse(ok:, why:))
+}
+
+fn checkpassword(passwordbox) -> Nil {
+  let assert Ok(entered_username) = passwordbox |> element.value()
+  // This is not yet implemented in the backend
+  console.log(
+    "Checking if the password " <> entered_username <> " is available...",
+  )
   console.log(premixed.text_error_red(
-    "Username check feature is not yet implemented. Also see <https://github.com/strawmelonjuice/lumina/issues/48> for this.",
+    "Password check feature is not yet implemented. Also see <https://github.com/strawmelonjuice/lumina/issues/48> for this.",
   ))
   Nil
 }
@@ -88,17 +169,8 @@ fn try_signup(submitbutton: element.Element) {
 
 fn registration_request(username: String, email: String, password: String) {
   let req =
-    request.new()
+    element_actions.phone_home()
     |> request.set_method(Post)
-    |> request.set_scheme({
-      let origin = window.origin()
-      case origin {
-        "http://" <> _ -> http.Http
-        "https://" <> _ -> http.Https
-        _ -> http.Https
-      }
-    })
-    |> request.set_host(element_actions.get_window_host())
     |> request.set_path("/api/fe/auth-create/")
     |> request.set_body(
       json.object([
@@ -117,7 +189,7 @@ fn registration_request(username: String, email: String, password: String) {
     let assert Ok(resp) = resp
     // We don't care about the status code, we just want to know if the request was successful.
     // let assert 200 = resp.status
-//    let assert Ok("application/json; charset=utf-8") =      response.get_header(resp, "content-type")
+    //    let assert Ok("application/json; charset=utf-8") =      response.get_header(resp, "content-type")
     let assert Ok(registration_response) =
       resp.body
       |> dynamic.decode2(

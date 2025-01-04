@@ -88,17 +88,8 @@ fn authentication_request(
   is_autologin: Bool,
 ) {
   let req =
-    request.new()
+    element_actions.phone_home()
     |> request.set_method(Post)
-    |> request.set_scheme({
-      let origin = window.origin()
-      case origin {
-        "http://" <> _ -> http.Http
-        "https://" <> _ -> http.Https
-        _ -> http.Https
-      }
-    })
-    |> request.set_host(element_actions.get_window_host())
     |> request.set_path("/api/fe/auth/")
     |> request.set_body(
       json.object([
