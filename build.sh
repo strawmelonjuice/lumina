@@ -172,7 +172,7 @@ else
 fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 noti "Front-end should be done. Continuing to generated assets."
-cd "$LOCA/backend/" || exit 1
+cd "$LOCA/" || exit 1
 bun install $BUNFLAGS
 rm -rf "$GEN_ASSETS/css/"
 mkdir -p "$GEN_ASSETS/css/"

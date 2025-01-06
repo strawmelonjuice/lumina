@@ -1,7 +1,8 @@
 module.exports = {
 	content: [
-		"../*frontend/**/*.{handlebars,ts,gleam}",
-		"./src/lumina/web/**/*.gleam",
+		"./*frontend/**/*.{handlebars,ts,gleam}",
+		"./backend/src/lumina/web/**/*.gleam",
+		"./backend-rs/src/**/*.rs",
 	],
 	theme: {
 		fontFamily: {
