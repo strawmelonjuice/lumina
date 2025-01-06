@@ -9,7 +9,8 @@
         - [ ] New post creation
         - [ ] Log out
 - [ ] Sub page loading
-    - [ ] Loading sub pages (main, side)
+    - [x] Loading sub pages (main, side)
+        - [ ] Migrating to Handlebars parsing on the client side, instead of server-leveraged strings.
     - [ ] Loading special sub pages (editor, settings)
     - [ ] Sub page logic
 - [ ] Editor
