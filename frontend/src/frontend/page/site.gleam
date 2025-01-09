@@ -1,6 +1,7 @@
 // Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
+import frontend/other/rendering
 import gleam/bool
 import gleam/list
 import lumina/shared/shared_fepage_com.{
@@ -392,7 +393,8 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
         Error(_) -> {
           error_out()
         }
-        Ok(respons) -> {
+        Ok(responza) -> {
+          let respons = responza |> rendering.renders()
           let msg_list = respons.message
           case msg_list |> list.contains(1) {
             False -> {
