@@ -13,7 +13,7 @@ use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{Mutex};
+use tokio::sync::Mutex;
 
 use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::auth::{check, AuthResponse};
@@ -218,6 +218,18 @@ pub struct FEPageServeRequest {
 struct FEPageServeResponse {
     main: String,
     side: String,
+    /*
+     * Message Numbers and Corresponding Messages:
+     *
+     * 1: "It seems your session has expired."
+     * 2: "This page does not exist according to the instance server."
+     * 33: "Notification centre - special page."
+     * 34: Content from `STR_ASSETS_EDITOR_WINDOW_HTML`
+     *
+     * 9** messages notify the client to use certain templates to parse the data in. These are always
+     * accompanied by a 899 code.
+     * 900: "Homepage left+right"
+     */
     message: Vec<i64>,
 }
 pub(crate) async fn pageservresponder(
