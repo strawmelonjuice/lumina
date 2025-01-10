@@ -241,7 +241,7 @@ struct FEPageServeResponse {
 pub(crate) async fn pageservresponder(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
-    req: HttpRequest,
+    _req: HttpRequest,
     data: actix_web::web::Json<FEPageServeRequest>,
 ) -> HttpResponse {
     match shield(
