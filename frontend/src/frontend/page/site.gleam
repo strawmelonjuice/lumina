@@ -3,13 +3,12 @@
 
 import frontend/other/rendering
 import gleam/bool
-import gleam/io
 import gleam/javascript/array
 import gleam/list
 import lumina/shared/shared_fepage_com.{
-  type FEPageServeRequest, type FEPageServeResponse, FEPageServeRequest,
-  FEPageServeResponse,
+  type FEPageServeResponse, FEPageServeResponse,
 }
+import plinth/browser/event
 import plinth/javascript/global
 import plinth/javascript/storage
 
@@ -116,8 +115,9 @@ pub fn home_render() {
   console.log(
     "Subpage list: " <> premixed.text_lightblue(string.inspect(sub_page_list)),
   )
-  let hash = element_actions.get_window_location_hash()
-  switch_subpage(hash, "Initial load", sub_page_list)
+  global.set_interval(60, fn() {
+    check_if_page_needs_to_be_switched(sub_page_list)
+  })
   editor_fold()
   {
     let assert Ok(a) =
@@ -150,24 +150,25 @@ pub fn home_render() {
       })
     })
   }
-  // TODO: Add keyboard shortcuts
-  // document.addEventListener("keydown", (event) => {
-  // 	if (document.body.dataset.editorOpen !== "true") {
-  // 		if (event.key === "e") {
-  // 			event.preventDefault();
-  // 			triggerEditor();
-  // 		}
-  // 		if (event.key === "h") {
-  // 			event.preventDefault();
-  // 			window.location.hash = "home";
-  // 		}
-  // 		if (event.key === "n") {
-  // 			event.preventDefault();
-  // 			window.location.hash = "notifications";
-  // 		}
-  // 	}
-  // });
-
+  {
+    document.add_event_listener("keydown", fn(event) {
+      case event |> event.key() |> string.lowercase() {
+        "e" -> {
+          event |> event.prevent_default()
+          trigger_editor()
+        }
+        "h" -> {
+          event |> event.prevent_default()
+          window.set_location(window.self(), "#home")
+        }
+        "n" -> {
+          event |> event.prevent_default()
+          window.set_location(window.self(), "#notifications")
+        }
+        _ -> Nil
+      }
+    })
+  }
   Nil
 }
 
@@ -335,14 +336,31 @@ type SubPageMeta {
   )
 }
 
-fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
-  let error_out = fn() {
-    let assert Ok(a) = document.query_selector("main div#mainright")
-    a |> element.set_inner_html("There was an error loading this page.")
-    let assert Ok(a) = document.query_selector("main div#mainleft")
-    a |> element.set_inner_html("")
-    Nil
+fn check_if_page_needs_to_be_switched(sub_page_list: SubPageList) {
+  let hash = element_actions.get_window_location_hash()
+  let p = document.body() |> element.get_attribute("data-current-page")
+  case p {
+    Ok(a) -> {
+      case a == hash {
+        True -> {
+          // Do nothing.
+          Nil
+        }
+        False -> {
+          switch_subpage(hash, "URL change", sub_page_list)
+          Nil
+        }
+      }
+    }
+    Error(_) -> {
+      // If we get this, that means the initial page load has not been done yet.
+      switch_subpage(hash, "Initial load", sub_page_list)
+      Nil
+    }
   }
+}
+
+fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
   let to = case to_page {
     "" -> {
       // The next line might cause some errors.
@@ -351,7 +369,18 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
       element_actions.set_window_location_hash("home")
       "home"
     }
-    _ -> to_page
+    _ -> {
+      element_actions.set_window_location_hash(to_page)
+      to_page
+    }
+  }
+  let error_out = fn() {
+    let assert Ok(a) = document.query_selector("main div#mainright")
+    a |> element.set_inner_html("There was an error loading this page.")
+    let assert Ok(a) = document.query_selector("main div#mainleft")
+    a |> element.set_inner_html("")
+    document.body() |> element.set_attribute("data-current-page", to)
+    Nil
   }
   console.info("Switching page to " <> to <> ". Reason: " <> reason)
   dict.each(sub_page_list, fn(k, v) {
@@ -408,6 +437,7 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
       use resp <- fetch_page(location)
       case resp {
         Error(_) -> {
+          console.error("Failed to fetch page." |> premixed.text_error_red())
           error_out()
         }
         Ok(responza) -> {
