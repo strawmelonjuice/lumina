@@ -1,7 +1,6 @@
 name = "frontend"
 version = "1.0.0"
 target = "javascript"
-runtime = "bun"
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
 #
@@ -27,3 +26,8 @@ pprint = ">= 1.0.4 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
+
+[javascript]
+sourcemaps = true
+typescript_declarations = true
+runtime = "bun"
