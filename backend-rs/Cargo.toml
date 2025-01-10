@@ -11,7 +11,7 @@ authors = ['MLC "Strawmelonjuice" Bloeiman']
 license = "BSD-3-Clause"
 repository = "https://github.com/strawmelonjuice/lumina"
 edition = "2021"
-license-file = "./LICENSE"
+license-file = "../LICENSE"
 
 [package]
 name = "strawmelonjuice-lumina"
@@ -51,7 +51,7 @@ toml = { workspace = true }
 lumina-urls = { path = "libs/lumina-urls" }
 futures = "0.3.30"
 async-std = "1.12.0"
-colored = "2.0.4"
+colored = "3.0.0"
 log = "0.4.21"
 rusqlite = { version = "0.32.1", features = ["bundled"] }
 time = "0.3.34"
@@ -78,6 +78,3 @@ simplelog = "0.12.2"
 dotenv = "0.15.0"
 indicatif = "0.17.8"
 console = "0.15.8"
-[build-dependencies]
-build_const = "0.2.2"
-markdown = "1.0.0-alpha.18"
