@@ -127,10 +127,10 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 use colored::Colorize;
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::database::users::User;
 use crate::database::{self, IIExchangedUserInfo};
 use crate::{LuminaConfig, ServerVars};
 use chrono::Datelike;
-use crate::database::users::User;
 
 pub(super) async fn notfound(
     server_vars_mutex: Data<Mutex<ServerVars>>,
@@ -443,7 +443,21 @@ pub(super) async fn logout(
     }
 }
 
-/// Fence is a function serving kind of like middleware usually would. But actix middleware kinda sucks balls. So.
+/// Fence is a function serving kind of like middleware usually would. But actix middleware sucks balls.
+///
+/// This function checks the validity of the user session. If the session is invalid, it purges the session and redirects to the login page.
+/// If the session is valid, it fetches the user information from the database and calls the next function in the chain with the necessary parameters.
+///
+/// # Arguments
+///
+/// * `session` - The current user session.
+/// * `server_vars_mutex` - A mutex guarding the server variables.
+/// * `req` - The incoming HTTP request.
+/// * `next` - The next function to call if the session is valid.
+///
+/// # Returns
+///
+/// An `HttpResponse` indicating the result of the session validation and the next function call.
 pub(crate) async fn fence(
     session: Session,
     server_vars_mutex: Data<Mutex<ServerVars>>,
