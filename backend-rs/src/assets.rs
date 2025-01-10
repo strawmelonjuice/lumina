@@ -8,7 +8,6 @@ pub const STR_ASSETS_INDEX_HTML: &str = include_str!("../frontend_assets/html/in
 pub const STR_ASSETS_LOGIN_HTML: &str = include_str!("../frontend_assets/html/login.html");
 pub const STR_ASSETS_SIGNUP_HTML: &str = include_str!("../frontend_assets/html/signup.html");
 pub const STR_ASSETS_HOME_HTML: &str = include_str!("../frontend_assets/html/home.html");
-pub const STR_CLEAN_CONFIG_TOML: &str = include_str!("../frontend_assets/toml/initial_config.toml");
 pub const STR_CLEAN_CUSTOMSTYLES_CSS: &str =
     include_str!("../frontend_assets/styles/initial_customstyles.css");
 
@@ -68,7 +67,5 @@ pub const BYTES_ASSETS_LOGO_PNG: &[u8] = include_bytes!("../frontend_assets/png/
 
 pub const STR_ASSETS_EDITOR_WINDOW_HTML: &str = include_str!("../frontend_assets/html/writer.html");
 
-pub const STR_ASSETS_HOME_SIDE_HANDLEBARS: &str =
-    include_str!("../frontend_assets/handlebars/home-side.handlebars");
 pub const STR_ASSETS_POST_RENDERS_HANDLEBARS: &str =
     include_str!("../frontend_assets/handlebars/postrender.handlebars");

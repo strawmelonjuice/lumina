@@ -2,12 +2,15 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
 import frontend/other/element_actions
+import frontend/other/funnyrandomusername.{funnyrandomusername}
 import gleam/dynamic.{field}
 import gleam/fetch
 import gleam/http.{Post}
 import gleam/http/request
+import gleam/javascript/array
 import gleam/javascript/promise
 import gleam/json
+import gleam/list
 import gleam/result
 import gleam/string
 import gleamy_lights/console
@@ -46,6 +49,11 @@ pub fn render() {
     }
     _ -> Nil
   }
+  document.query_selector_all("#username")
+  |> array.to_list()
+  |> list.each(fn(e) {
+    e |> element.set_attribute("placeholder", funnyrandomusername())
+  })
   Nil
 }
 

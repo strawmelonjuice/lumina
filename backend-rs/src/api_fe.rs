@@ -8,14 +8,14 @@
 //! This module contains the API endpoints for the frontend, most of them being Actix request factories.
 
 use actix_session::Session;
+use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{HttpRequest, HttpResponse};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, MutexGuard};
 
-use crate::assets::STR_ASSETS_HOME_SIDE_HANDLEBARS;
 use crate::database::users::auth::{check, AuthResponse};
 use crate::database::users::{add, SafeUser};
 use crate::database::{self};
@@ -112,6 +112,7 @@ pub(crate) async fn update(
         };
     };
     return HttpResponse::build(StatusCode::OK)
+        .insert_header(CacheControl(vec![CacheDirective::NoCache]))
         .content_type("text/json; charset=utf-8")
         .body(serde_json::to_string(&d).unwrap());
 }
@@ -151,10 +152,12 @@ pub(crate) async fn auth(
                 .insert("validity", config.clone().erun.session_valid)
                 .unwrap();
             HttpResponse::build(StatusCode::OK)
+                .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                 .content_type("text/json; charset=utf-8")
                 .body(r#"{"Ok": true, "Errorvalue": ""}"#)
         }
         _ => HttpResponse::build(StatusCode::UNAUTHORIZED)
+            .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .content_type("text/json; charset=utf-8")
             .body(r#"{"Ok": false}"#),
     }
@@ -199,12 +202,14 @@ pub(crate) async fn newaccount(
                 user.id, ip
             ));
             HttpResponse::build(StatusCode::OK)
+                .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                 .content_type("text/json; charset=utf-8")
                 .body(r#"{"Ok": true}"#)
         }
         Err(e) => {
             server_vars.tell(format!("User creation request:  denied - {e}"));
             HttpResponse::build(StatusCode::EXPECTATION_FAILED)
+                .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                 .content_type("text/json; charset=utf-8")
                 .body(format!(r#"{{"Ok": false, "Errorvalue": "{}"}}"#, e))
         }
@@ -228,20 +233,22 @@ struct FEPageServeResponse {
      *
      * 9** messages notify the client to use certain templates to parse the data in. These are always
      * accompanied by a 899 code.
-     * 900: "Homepage left+right"
+     * 901: "Homepage/timelines left+right"
+     * 909: "Notification centre"
      */
     message: Vec<i64>,
 }
 pub(crate) async fn pageservresponder(
     server_vars_mutex: Data<Mutex<ServerVars>>,
     session: Session,
-    // req: HttpRequest,
+    req: HttpRequest,
     data: actix_web::web::Json<FEPageServeRequest>,
 ) -> HttpResponse {
     match shield(
-        session,
+        session.clone(),
         &server_vars_mutex,
         HttpResponse::build(StatusCode::OK)
+            .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .content_type("text/json; charset=utf-8")
             .body(
                 serde_json::to_string(&FEPageServeResponse {
@@ -256,24 +263,29 @@ pub(crate) async fn pageservresponder(
     {
         ShieldValue::Notsafe(o) => o,
         ShieldValue::Safe => {
+            let config = {
+                let server_vars: MutexGuard<ServerVars> = server_vars_mutex.lock().await;
+                server_vars.clone().config.clone()
+            };
             // These three WILL be used in the future, when pages actually get dynamic.
             let location = data.location.clone();
+            let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
+            let id = id_.unwrap_or(-100);
+            let user: database::users::User =
+                database::fetch::user(&config, ("id", id.to_string()))
+                    .unwrap()
+                    .unwrap();
             let server_vars = server_vars_mutex.lock().await.clone();
             let config: LuminaConfig = server_vars.clone().config;
             let o: FEPageServeResponse = match location.as_str() {
                 "home" => FEPageServeResponse {
-                    main: String::from(
-                        r#"
-<h1>welcome to instance <code class="placeholder-iid"></code></h1>
-			<p>
-				as you can see, there is no such thing as a homepage. lumina is
-				not ready for anything yet.
-			</p>
-
-                               "#,
-                    ),
-                    side: String::from(STR_ASSETS_HOME_SIDE_HANDLEBARS),
-                    message: vec![],
+                    main: serde_json::to_string(&subpagedata::HomePageData {
+                        username: user.username,
+                        instance_name: config.lumina_synchronisation_iid,
+                    })
+                    .unwrap(),
+                    side: String::new(),
+                    message: vec![899, 901],
                 },
                 "test" => FEPageServeResponse {
                     message: vec![],
@@ -304,6 +316,7 @@ pub(crate) async fn pageservresponder(
 
                 _ => {
                     return HttpResponse::build(StatusCode::OK)
+                        .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                         .content_type("text/json; charset=utf-8")
                         .body(
                             serde_json::to_string(&FEPageServeResponse {
@@ -319,6 +332,7 @@ pub(crate) async fn pageservresponder(
             };
             HttpResponse::build(StatusCode::OK)
                 .content_type("text/json; charset=utf-8")
+                .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                 .body(serde_json::to_string(&o).unwrap())
         }
     }
@@ -338,11 +352,13 @@ pub(crate) async fn check_username(
     if database::users::char_check_username(username.clone()) {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
+            .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "InvalidChars"}"#.to_string());
     }
     if username.len() < 4 {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
+            .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
     if database::fetch::user(&config.clone(), ("username", username.clone()))
@@ -351,10 +367,12 @@ pub(crate) async fn check_username(
     {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
+            .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
     };
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
+        .insert_header(CacheControl(vec![CacheDirective::NoCache]))
         .body(r#"{"Ok": true}"#);
 }
 
@@ -383,6 +401,7 @@ pub(crate) async fn render_editor_articlepost(
             Err(_) => {
                 return HttpResponse::build(StatusCode::OK)
                     .content_type("text/json; charset=utf-8")
+                    .insert_header(CacheControl(vec![CacheDirective::NoCache]))
                     .body(
                         serde_json::to_string(&EditorResponse {
                             ok: false,
@@ -398,6 +417,7 @@ pub(crate) async fn render_editor_articlepost(
         .replace(r#"<code>"#, r#"<code class="m-1 text-stone-500 bg-slate-200 dark:text-stone-200 dark:bg-slate-600">"#)
         .replace(r#"<blockquote>"#, r#"<blockquote class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800">"#);
     return HttpResponse::build(StatusCode::OK)
+        .insert_header(CacheControl(vec![CacheDirective::NoCache]))
         .content_type("text/json; charset=utf-8")
         .body(
             serde_json::to_string(&EditorResponse {
@@ -406,6 +426,17 @@ pub(crate) async fn render_editor_articlepost(
             })
             .unwrap(),
         );
+}
+
+mod subpagedata {
+    use serde::Serialize;
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "snake_case")]
+    pub(super) struct HomePageData {
+        pub(super) username: String,
+        pub(super) instance_name: String,
+    }
 }
 
 mod media;

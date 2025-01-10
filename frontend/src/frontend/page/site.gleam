@@ -3,12 +3,15 @@
 
 import frontend/other/rendering
 import gleam/bool
+import gleam/io
+import gleam/javascript/array
 import gleam/list
 import lumina/shared/shared_fepage_com.{
   type FEPageServeRequest, type FEPageServeResponse, FEPageServeRequest,
   FEPageServeResponse,
 }
 import plinth/javascript/global
+import plinth/javascript/storage
 
 import frontend/other/element_actions
 import gleam/dict.{type Dict}
@@ -131,6 +134,20 @@ pub fn home_render() {
     |> element.add_event_listener("click", fn(_) {
       trigger_editor()
       Nil
+    })
+  }
+  {
+    let a = document.query_selector_all(".logoutbutton")
+    a
+    |> array.to_list
+    |> list.each(fn(b) {
+      b
+      |> element.add_event_listener("click", fn(_) {
+        let assert Ok(stor) = storage.local()
+        storage.clear(stor)
+        window.set_location(window.self(), "/session/logout")
+        Nil
+      })
     })
   }
   // TODO: Add keyboard shortcuts
@@ -394,7 +411,9 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
           error_out()
         }
         Ok(responza) -> {
-          let respons = responza |> rendering.renders()
+          let respons =
+            responza
+            |> rendering.renders()
           let msg_list = respons.message
           case msg_list |> list.contains(1) {
             False -> {
