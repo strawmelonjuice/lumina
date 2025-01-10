@@ -1,5 +1,15 @@
 # Lumina(/peonies) server
 
+## Currently behind:
+As Lumina is a monorepo with pluggable parts, some of them sometimes lag behind and are broken by the latest changes. The current state of the project is:
+### Up to date
+- Server (Rust)
+
+### behind
+- Server (Gleam) (changes in Gleam client)
+- Client (TypeScript) (changes in Rust server)
+- Client (Gleam) (in progress)
+
 ## Requirements
 - [The Gleam compiler, `Erlang` and `rebar3`](https://gleam.run/getting-started/installing/)
 - A PostGres database (or a SQLite one if you want to be QD!)
