@@ -7,14 +7,14 @@
         - [ ] Verify compile moment thru FEJSON
     - [ ] User action reporting
         - [ ] New post creation
-        - [ ] Log out
+        - [x] Log out
 - [ ] Sub page loading
     - [x] Loading sub pages (main, side)
         - [ ] Migrating to Handlebars parsing on the client side, instead of server-leveraged strings.
     - [ ] Loading special sub pages (editor, settings)
-    - [ ] Sub page logic
+    - [x] Sub page logic
 - [ ] Editor
-    - [ ] Editor UI
+    - [x] Editor UI
     - [ ] Editor tab switching
     - [ ] Editor Markdown parsing
 - [x] Sign in
