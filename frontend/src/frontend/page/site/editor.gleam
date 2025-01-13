@@ -1,6 +1,7 @@
 import frontend/other/element_actions
 import frontend/page/site/subpages
 import gleam/bool
+import gleam/javascript/map
 import gleam/list
 import gleam/string
 import gleamy_lights/console
@@ -81,17 +82,14 @@ pub fn unfold() {
     }
     _ -> Nil
   }
-  global.set_timeout(100, fn() {
-    let assert Ok(div_post_editor) = document.query_selector("div#posteditor")
-    element.set_attribute(
-      div_post_editor,
-      "style",
-      "width: 70vh; height: calc(-30vh + 50vw);",
-    )
-    todo as "Editor post unfold unimplemented"
-  })
+  global.set_timeout(100, fn() { post_fold_out() })
   Nil
 }
+
+@external(javascript, "../../../editor_ffi.mjs", "postfoldout")
+fn post_fold_out() -> nil
+
+
 
 pub fn trigger() {
   let hash = element_actions.get_window_location_hash()
@@ -122,3 +120,4 @@ pub fn trigger() {
     }
   }
 }
+
