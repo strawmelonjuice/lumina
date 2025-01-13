@@ -1,8 +1,30 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "ghcr.io/devcontainers-extra/features/gleam:1": {},
-    "ghcr.io/prulloac/devcontainer-features/bun:1": {},
-    "ghcr.io/itsmechlark/features/postgresql:1": {}
-  }
+	"image": "mcr.microsoft.com/devcontainers/universal:2",
+	"features": {
+		"ghcr.io/devcontainers-extra/features/gleam:1": {
+			"version": "v1.7.0-rc2"
+		},
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "latest"
+		},
+		"ghcr.io/itsmechlark/features/postgresql:1": {
+			"version": "latest"
+		},
+		"ghcr.io/lumenpink/devcontainer-features/bun:0": {},
+		"ghcr.io/devcontainers-extra/features/asdf-package:1": {
+			"plugin": "erlang",
+			"version": "latest",
+			"pluginRepo": "https://github.com/asdf-vm/asdf-erlang.git"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"gleam.gleam",
+				"ms-ossdata.vscode-postgresql",
+				"rust-lang.rust-analyzer",
+				"Yasuo-Higano.gleam-qol"
+			]
+		}
+	}
 }

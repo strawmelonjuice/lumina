@@ -1,0 +1,25 @@
+# FE-gleam To-do list
+
+- [x] Client-server communication
+    - [x] Periodic updates (FEJSON)
+        - [x] Fetching FEJSON from server
+        - [x] Applying auto-actions to FEJSON
+        - [ ] Verify compile moment thru FEJSON
+    - [ ] User action reporting
+        - [ ] New post creation
+        - [ ] Log out
+- [ ] Sub page loading
+    - [x] Loading sub pages (main, side)
+        - [ ] Migrating to Handlebars parsing on the client side, instead of server-leveraged strings.
+    - [ ] Loading special sub pages (editor, settings)
+    - [ ] Sub page logic
+- [ ] Editor
+    - [ ] Editor UI
+    - [ ] Editor tab switching
+    - [ ] Editor Markdown parsing
+- [x] Sign in
+    - [x] Sign in logic
+- [x] Sign up
+    - [x] Sign up logic
+    - [x] Username check
+- [ ] Mobile navigation enhancements

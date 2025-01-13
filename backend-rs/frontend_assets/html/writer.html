@@ -1,0 +1,142 @@
+<!--
+~ Copyright (c) 2024, MLC 'Strawmelonjuice' Bloeiman
+~
+~ Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
+-->
+<!doctype html>
+<div
+	id="editorwindow"
+	class="relative w-full h-full border-2 rounded-lg bg-emerald-200 bg-opacity-60 dark:bg-teal-800 overflow-clip border-fuchsia-900 dark:border-violet-200"
+>
+	<div
+		id="editorwindowh"
+		class="absolute top-0 w-full h-12 bg-teal-800 dark:bg-emerald-200 cursor-move md:h-[2cm]"
+	>
+		<header
+			class="absolute top-0 flex items-center justify-center w-full text-orange-100 special h-1/2 dark:text-neutral-800"
+		>
+			Post editor
+		</header>
+		<nav
+			id="editormodepicker"
+			class="absolute h-1/2 bottom-0 grid grid-flow-col justify-stretch w-[calc(90%-2.25rem)] lg:w-[calc(90%-1cm)] pl-1"
+		>
+			<div
+				class="editor-switcher flex items-center justify-center p-0 bg-orange-100 border-2 border-b-0 rounded-md rounded-b-none cursor-default border-emerald-600 dark:text-orange-100 dark:bg-neutral-800 text-brown-800 dark:border-zinc-400"
+				data-mode-opener="short"
+			>
+				Text post mode
+			</div>
+			<div
+				class="editor-switcher flex items-center justify-center p-0 border-2 rounded-md cursor-pointer bg-emerald-200 dark:bg-teal-800 border-emerald-600 dark:text-orange-100 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
+				data-mode-opener="long"
+			>
+				Article mode
+			</div>
+			<div
+				class="editor-switcher flex items-center justify-center p-0 border-2 rounded-md cursor-pointer bg-emerald-200 dark:bg-teal-800 border-emerald-600 dark:text-orange-100 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400"
+				data-mode-opener="embed"
+			>
+				Embed mode
+			</div>
+		</nav>
+		<div
+			class="absolute top-0.5 right-0.5 w-9 h-9 lg:top-1 lg:right-1 lg:h-[1cm] lg:w-[1cm] flex justify-center items-center"
+		>
+			<button
+				class="flex items-center justify-center w-full h-full text-3xl text-center text-white bg-red-600 rounded-full hover:text-black hover:bg-red-400"
+				id="bttn_closeeditor"
+			>
+				&times;
+			</button>
+		</div>
+	</div>
+	<div
+		id="editorwindowm"
+		class="top-12 h-[calc(100%-2.5rem)] md:top-[2cm] absolute w-full md:h-[calc(100%-2cm)] bg-orange-100 dark:bg-neutral-800 dark:text-orange-100 text-brown-800"
+	>
+		<div data-mode-field="short" class="block h-[inherit] w-[inherit]">
+			<label for="editor-short-input">Mode: Post</label>
+			<div
+				tabindex="1"
+				title="Enter text here!"
+				id="editor-short-container"
+				class="w-11/12 ml-auto mr-auto text-black lg:w-9/12 min-h-10 h-fit editor-container bg-slate-50 dark:bg-slate-600 dark:text-slate-100 outline-cyan-50 focus-within:outline-cyan-100 outline-2"
+			>
+				<div
+					id="editor-short-preview"
+					class="w-full h-full p-0 overflow-auto leading-10 text-center whitespace-pre-wrap"
+				></div>
+				<input
+					type="text"
+					id="editor-short-input"
+					class="hidden w-full h-full p-1 overflow-auto overflow-x-auto leading-3 resize-none font-inherit text-black"
+					value="Enter markdown like *italic* or **bold**"
+				/>
+			</div>
+			<details>
+				<summary>
+					The post editor supports <em>simple MarkDown</em>
+				</summary>
+				<blockquote
+					class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800"
+				>
+					<ul>
+						<li>Use * or _ to make text italic</li>
+						<li>Use ** to make text bold</li>
+						<li>Use ` to use a code block</li>
+						<!-- <li>Use [text](url) to make a link</li> -->
+					</ul>
+					<p>The article editor supports more advanced MarkDown.</p>
+				</blockquote>
+			</details>
+		</div>
+		<div data-mode-field="long" class="hidden h-[inherit] w-[inherit]">
+			<label for="editor-long-input">Mode: Article</label
+			><button
+				class="absolute px-3 py-2 text-sm font-medium bg-orange-200 border-2 rounded-md top-1 right-1 border-emerald-600 dark:text-orange-200 dark:bg-yellow-700 hover:text-white hover:bg-gray-700 text-brown-800 dark:border-zinc-400 outline-cyan-50 focus-within:outline-cyan-100 outline-2"
+				onclick="document.activeElement.blur()"
+			>
+				Preview
+			</button>
+			<div
+				tabindex="1"
+				title="Enter text here!"
+				id="editor-long-container"
+				class="w-11/12 h-full ml-auto mr-auto text-black leading-2 lg:w-9/12 editor-container bg-slate-50 dark:bg-slate-600 dark:text-slate-100"
+			>
+				<div
+					id="editor-long-preview"
+					class="w-full h-full p-1 overflow-auto whitespace-pre-wrap leading-2"
+				></div>
+				<textarea
+					name=""
+					id="editor-long-input"
+					cols="30"
+					rows="10"
+					class="hidden w-full h-full p-1 overflow-auto overflow-x-auto resize-none bg-inherit text-inherit font-inherit"
+					placeholder="Enter markdown like _italic_ or *bold*!"
+				></textarea>
+			</div>
+			<p>
+				The article editor supports
+				<a
+					href="https://github.github.com/gfm/"
+					target="_blank"
+					class="text-blue-300 dark:text-blue-200"
+					>GitHub-flavoured MarkDown</a
+				>. See the
+				<a
+					href="https://gist.github.com/roshith-balendran/d50b32f8f7d900c34a7dc00766bcfb9c"
+					target="_blank"
+					class="text-blue-300 dark:text-blue-200"
+					>cheatsheet</a
+				>
+				for help.
+			</p>
+		</div>
+		<div data-mode-field="embed" class="hidden h-[inherit]">
+			Mode: Embed
+		</div>
+	</div>
+</div>
