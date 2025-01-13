@@ -72,8 +72,6 @@ pub fn unfold() {
   let assert Ok(mobiletimelineswitcher) =
     document.query_selector("#mobiletimelineswitcher")
   let assert Ok(posteditor) = document.query_selector("div#posteditor")
-  let errormsg =
-    "<p class=\"w-full h-full text-black bg-white dark:text-white dark:bg-black\">Failed to load post editor.</p>"
   mobiletimelineswitcher |> element_actions.hide_element()
   posteditor |> element_actions.show_element()
   case document.body() |> element.dataset_get("editorOpen") {
@@ -83,7 +81,16 @@ pub fn unfold() {
     }
     _ -> Nil
   }
-  todo as "Post unfold unimplemented"
+  global.set_timeout(100, fn() {
+    let assert Ok(div_post_editor) = document.query_selector("div#posteditor")
+    element.set_attribute(
+      div_post_editor,
+      "style",
+      "width: 70vh; height: calc(-30vh + 50vw);",
+    )
+    todo as "Editor post unfold unimplemented"
+  })
+  Nil
 }
 
 pub fn trigger() {
