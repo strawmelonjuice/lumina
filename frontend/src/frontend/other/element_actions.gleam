@@ -55,3 +55,6 @@ pub fn phone_home() -> Request(String) {
   })
   |> request.set_host(get_window_host())
 }
+
+@external(javascript, "../../elementactions_ffi.ts", "getValue")
+pub fn get_value(a: Element) -> String

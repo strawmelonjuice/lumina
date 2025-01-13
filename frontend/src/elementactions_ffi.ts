@@ -40,3 +40,6 @@ export function setWindowLocationHash(to: string) {
 export function getWindowLocationHash() {
 	return window.location.hash;
 }
+export function getValue(elem: HTMLInputElement) {
+	return elem.value;
+}
