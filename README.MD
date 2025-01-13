@@ -12,7 +12,7 @@ As Lumina is a monorepo with pluggable parts, some of them sometimes lag behind 
 
 ## Requirements
 - [The Gleam compiler, `Erlang` and `rebar3`](https://gleam.run/getting-started/installing/)
-- A PostGres database (or a SQLite one if you want to be QD!)
+- A [PostGres](https://www.postgresql.org/) database (or just set up an SQLite one if you want to be QD!)
 - The [Bun](https://bun.sh/) TypeScript ecosystem
 
 ## Running Lumina
