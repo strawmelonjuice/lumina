@@ -45,11 +45,14 @@ pub fn set(obj: FEJsonObj) -> nil {
   ))
 }
 
-@external(javascript, "../../ffi.mjs", "getJsonObj")
+@external(javascript, "../../fejson_ffi.ts", "getJsonObj")
 fn get_flat() -> FEJsonObjFlat
 
-@external(javascript, "../../ffi.mjs", "setJsonObj")
+@external(javascript, "../../fejson_ffi.ts", "setJsonObj")
 fn set_flat(obj: FEJsonObjFlat) -> nil
 
-@external(javascript, "../../ffi.mjs", "dateToTimestamp")
+@external(javascript, "../../fejson_ffi.ts", "dateToTimestamp")
 pub fn timestamp() -> Int
+
+@external(javascript, "../../fejson_ffi.ts", "queueFejsonFunction")
+pub fn register_fejson_function(a: fn() -> nil) -> nil

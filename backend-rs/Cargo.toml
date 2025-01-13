@@ -1,0 +1,80 @@
+[workspace]
+members = ["libs/lumina-urls"]
+[workspace.dependencies]
+serde = { version = "1.0.204", features = ["derive"] }
+toml = "0.8.14"
+reqwest = { version = "0.12.5", features = ["blocking"] }
+serde_json = "1.0.120"
+regex = "1.10.5"
+[workspace.package]
+authors = ['MLC "Strawmelonjuice" Bloeiman']
+license = "BSD-3-Clause"
+repository = "https://github.com/strawmelonjuice/lumina"
+edition = "2021"
+license-file = "../LICENSE"
+
+[package]
+name = "strawmelonjuice-lumina"
+authors.workspace = true
+publish = false
+license.workspace = true
+# license-file.workspace = true
+repository.workspace = true
+version = "0.1.0"
+edition.workspace = true
+[[bin]]
+name = "lumina-server"
+path = "./src/server.rs"
+
+[profile.dev]
+opt-level = 3
+debug = true
+strip = "none"
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = 'abort'
+
+[dependencies]
+regex = { workspace = true }
+serde = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+serde_json = { workspace = true }
+toml = { workspace = true }
+lumina-urls = { path = "libs/lumina-urls" }
+futures = "0.3.30"
+async-std = "1.12.0"
+colored = "3.0.0"
+log = "0.4.21"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+time = "0.3.34"
+password-hash = "0.5.0"
+tokio = { version = "1.38.0", features = [
+	"rt",
+	"rt-multi-thread",
+	"macros",
+	"time",
+] }
+pbkdf2 = "0.12.2"
+actix-session = { version = "0.10.1", features = ["cookie-session"] }
+actix-identity = "0.8.0"
+actix-web = "4.7.0"
+handlebars = "6.2.0"
+postgres = "0.19.9"
+home = "0.5.9"
+magic-crypt = "4.0.1"
+rand = "0.8.5"
+build_const = "0.2.2"
+markdown = "1.0.0-alpha.18"
+chrono = "0.4.38"
+simplelog = "0.12.2"
+dotenv = "0.15.0"
+indicatif = "0.17.8"
+console = "0.15.8"

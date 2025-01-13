@@ -1,0 +1,4 @@
+
+* text=auto
+*.svg linguist-detectable
+*_ffi.ts linguist-language=Gleam

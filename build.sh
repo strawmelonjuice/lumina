@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 
 LOCA=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+GEN_ASSETS="$LOCA/backend/priv/generated"
 SECONDS=0
 QUIET=false
 TESTS=false
 PACK=false
 BUNFLAGS=""
 CARGOFLAGS=""
+BCARGOFLAGS=""
 TEST_FE_TS=false
 TEST_FE_GLEAM=false
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+if [[ "$*" == *"--backend=rust"* ]]; then
+	GEN_ASSETS="$LOCA/backend-rs/generated"
+fi
 
 if [[ "$*" == *"--quiet"* ]]; then
 	QUIET=true
@@ -20,9 +26,11 @@ if [[ "$*" == *"--test"* ]]; then
 fi
 if [[ "$*" == *"--pack"* ]]; then
 	PACK=true
+	BCARGOFLAGS="--release"
 fi
 if [[ "$*" == *"--run-packed"* ]]; then
 	PACK=true
+	BCARGOFLAGS="--release"
 fi
 if [ "$QUIET" = true ]; then
 	echo "[quiet mode]" >&2
@@ -111,8 +119,9 @@ res_succ() {
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 res_noti 2 "Starting build process..."
-rm -rf "$LOCA/backend/priv/generated/js"
-mkdir -p "$LOCA/backend/priv/generated/js"
+rm -rf "$GEN_ASSETS/js"
+mkdir -p "$GEN_ASSETS/js"
+bun install $BUNFLAGS
 
 if [[ "$*" == *"--frontend=typescript"* ]]; then
 	noti "Building front-end (TS)..."
@@ -120,8 +129,14 @@ if [[ "$*" == *"--frontend=typescript"* ]]; then
 	cd "$LOCA/frontend-ts/" || exit 1
 	bun install $BUNFLAGS
 	noti "Transpiling and copying to Lumina server..."
-	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=linked
-	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+	bun $BUNFLAGS build "$LOCA/frontend-ts/app.ts" --minify --target=browser --outdir "$GEN_ASSETS/js/" --sourcemap=linked || {
+		errnoti "Error while building the frontend."
+		exit 1
+	}
+	bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$GEN_ASSETS/js/app.js" || {
+		errnoti "Error while bundling the frontend."
+		exit 1
+	}
 else
 	if [[ "$*" == *"--frontend=gleam"* ]]; then
 		noti "Building front-end (Gleam)..."
@@ -136,8 +151,14 @@ else
 		fi
 		noti "Copying to Lumina server..."
 		echo "import { main } from \"./frontend.mjs\";main();" >"$LOCA/frontend/build/dev/javascript/frontend/app.js"
-		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$LOCA/backend/priv/generated/js/" --sourcemap=none
-		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$LOCA/backend/priv/generated/js/app.js"
+		bun $BUNFLAGS build "$LOCA/frontend/build/dev/javascript/frontend/app.js" --minify --target=browser --outdir "$GEN_ASSETS/js/" --sourcemap=linked || {
+			errnoti "Error while bundling the frontend."
+			exit 1
+		}
+		bun $BUNFLAGS "$LOCA/tobundle.ts" -- js-1 "$GEN_ASSETS/js/app.js" || {
+			errnoti "Error while bundling the frontend."
+			exit 1
+		}
 	else
 		errnoti "Invalid or missing frontend option, expected either \"--frontend=typescript\" or \"--frontend=gleam\"."
 		if [ "$TESTS" = false ]; then
@@ -151,42 +172,71 @@ else
 fi
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 noti "Front-end should be done. Continuing to generated assets."
-cd "$LOCA/backend/" || exit 1
+cd "$LOCA/" || exit 1
 bun install $BUNFLAGS
-rm -rf "$LOCA/backend/priv/generated/css/"
-mkdir -p "$LOCA/backend/priv/generated/css/"
+rm -rf "$GEN_ASSETS/css/"
+mkdir -p "$GEN_ASSETS/css/"
 noti "Generating CSS... (TailwindCSS)"
-bun x postcss -o "$LOCA/backend/priv/generated/css/main.css" "$LOCA/backend/assets/styles/main.pcss" -u autoprefixer -u tailwindcss
-bun "$LOCA/tobundle.ts" -- css-1 "$LOCA/backend/priv/generated/css/main.css"
+bun x postcss -o "$GEN_ASSETS/css/main.css" "$LOCA/backend/assets/styles/main.pcss" -u autoprefixer -u tailwindcss
+bun "$LOCA/tobundle.ts" -- css-1 "$GEN_ASSETS/css/main.css"
 noti "Minifying CSS and copying to Lumina server..."
-bun x cleancss -O1 specialComments:all --inline none "$LOCA/backend/priv/generated/css/main.css" -o "$LOCA/backend/priv/generated/css/main.min.css"
+bun x cleancss -O1 specialComments:all --inline none "$GEN_ASSETS/css/main.css" -o "$GEN_ASSETS/css/main.min.css"
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-noti "Compiling Rust libraries..."
-cd "$LOCA/rsffi/" || exit 1
-if cargo build --release; then
-	success "\t--> Rust libraries build success."
+if [[ "$*" == *"--backend=rust"* ]]; then
+	noti "Building Rust backend..."
+	cd "$LOCA/backend-rs/" || exit 1
+	if cargo build $BCARGOFLAGS; then
+		success "\t--> Rust backend build success."
+	else
+		errnoti "\t--> Rust backend compilation ran into an error."
+		exit 1
+	fi
 else
-	errnoti "\t--> Rust libraries compilation ran into an error."
-	exit 1
-fi
-rm -rf "$LOCA/backend/priv/generated/libs/"
-mkdir -p "$LOCA/backend/priv/generated/libs/"
-noti "Copying Rust libraries to Lumina server..."
-cp "$LOCA/rsffi/target/release/librsffi.so" "$LOCA/backend/priv/generated/libs/rsffi.so"
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-noti "Starting on Lumina server compilation"
-cd "$LOCA/backend/" || exit 1
-if gleam build --target erlang; then
-	success "\t--> Back-end build success."
-else
-	errnoti "\t--> Compilation ran into an error!"
-	exit 1
+	if [[ "$*" == *"--backend=gleam"* ]]; then
+		noti "Compiling Rust libraries..."
+		cd "$LOCA/rsffi/" || exit 1
+		if cargo build --release; then
+			success "\t--> Rust libraries build success."
+		else
+			errnoti "\t--> Rust libraries compilation ran into an error."
+			exit 1
+		fi
+		rm -rf "$GEN_ASSETS/libs/"
+		mkdir -p "$GEN_ASSETS/libs/"
+		noti "Copying Rust libraries to Lumina server..."
+		cp "$LOCA/rsffi/target/release/librsffi.so" "$GEN_ASSETS/libs/rsffi.so"
+		# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		noti "Starting on Lumina server compilation"
+		cd "$LOCA/backend/" || exit 1
+		if gleam build --target erlang; then
+			success "\t--> Back-end build success."
+		else
+			errnoti "\t--> Compilation ran into an error!"
+			exit 1
+		fi
+	else
+		errnoti "Invalid or missing backend option, expected either \"--backend=gleam\" or \"--backend=rust\"."
+		if [ "$TESTS" = false ]; then
+			exit 1
+		else
+			noti "This option is not needed for tests, running both backend tests without it."
+		fi
+	fi
 fi
 build_duration=$SECONDS
 res_noti 1 "Build completed, took $((build_duration / 60)) minutes and $((build_duration % 60)) seconds."
 if [[ "$*" == *"--run"* ]]; then
 	noti "'--run' detected. Running Lumina directly!"
-	gleam run -- start
+	if [[ "$*" == *"--backend=rust"* ]]; then
+		if [ "$PACK" = true ]; then
+			"$LOCA/backend-rs/target/release/lumina-server" || exit 1
+		else
+			"$LOCA/backend-rs/target/debug/lumina-server" || exit 1
+		fi
+	else
+		cd "$LOCA/backend/" || exit 1
+		gleam run -- start
+	fi
 else
 	if [[ "$*" == *"--pack"* ]]; then
 		noti "'--pack' detected. Packaging for deployment."
