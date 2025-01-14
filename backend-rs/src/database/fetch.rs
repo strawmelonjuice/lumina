@@ -11,14 +11,14 @@ use std::io::{Error, ErrorKind};
 use crate::database::users::User;
 
 pub enum UserDataDiscriminator {
-    ID(String),
+    Id(String),
     Username(String),
     Email(String),
 }
 impl UserDataDiscriminator {
     pub fn from_str(a: (impl AsRef<str>, impl AsRef<str>)) -> Self {
         match a.0.as_ref() {
-            "id" => UserDataDiscriminator::ID(a.1.as_ref().to_string()),
+            "id" => UserDataDiscriminator::Id(a.1.as_ref().to_string()),
             "username" => UserDataDiscriminator::Username(a.1.as_ref().to_string()),
             "email" => UserDataDiscriminator::Email(a.1.as_ref().to_string()),
             _ => panic!("Invalid discriminator"),
@@ -32,7 +32,7 @@ pub fn user(
     discriminator: UserDataDiscriminator,
 ) -> Result<Option<User>, Error> {
     let (discriminator_col, discriminator_1) = match discriminator {
-        UserDataDiscriminator::ID(id) => ("id", id),
+        UserDataDiscriminator::Id(id) => ("id", id),
         UserDataDiscriminator::Username(username) => ("username", username),
         UserDataDiscriminator::Email(email) => ("email", email),
     };
@@ -65,7 +65,7 @@ pub fn user(
                 None => Ok(None),
                 Some(r) => match r {
                     Ok(s) => {
-                        let res: User = serde_json::from_str(&s).unwrap();
+                        let res: User = serde_json::from_str(&s)?;
                         Ok(Some(res))
                     }
                     Err(f) => {

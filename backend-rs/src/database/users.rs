@@ -94,8 +94,8 @@ pub(crate) fn add(
     }
     let mcrypt = new_magic_crypt!(config.clone().db_custom_salt, 256);
     let conn = &config.clone();
-    let onusername = database::fetch::user(&config.clone(), UserDataDiscriminator::Username(username.clone()))?;
-    let onemail = database::fetch::user(&config.clone(), UserDataDiscriminator::Email( email.clone()))?;
+    let onusername = database::fetch::user(&config.clone(), database::fetch::UserDataDiscriminator::Username(username.clone()))?;
+    let onemail = database::fetch::user(&config.clone(), database::fetch::UserDataDiscriminator::Email( email.clone()))?;
     let res: Option<User> = match onusername {
         Some(s) => Some(s),
         None => onemail,
@@ -109,7 +109,7 @@ pub(crate) fn add(
                 (username.clone(), password_encrypted, email),
             ) {
                 Ok(_) => {
-                    match database::fetch::user(&config.clone(), UserDataDiscriminator::Username(username.clone()))? {
+                    match database::fetch::user(&config.clone(), database::fetch::UserDataDiscriminator::Username(username.clone()))? {
                         Some(q) => Ok(q.id),
                         None => Err(Error::new(
                             ErrorKind::Other,
@@ -176,12 +176,12 @@ pub(crate) mod auth {
             AuthResponse::Fail(FailReason::Unspecified)
         };
         let onusername =
-            match super::database::fetch::user(&config.clone(), UserDataDiscriminator::Username(identifyer.clone())) {
+            match super::database::fetch::user(&config.clone(), crate::database::fetch::UserDataDiscriminator::Username(identifyer.clone())) {
                 Ok(a) => a,
                 Err(e) => return errorresponse(e),
             };
         let onemail =
-            match super::database::fetch::user(&config.clone(), UserDataDiscriminator::Email( identifyer.clone())) {
+            match super::database::fetch::user(&config.clone(), crate::database::fetch::UserDataDiscriminator::Email( identifyer.clone())) {
                 Ok(a) => a,
                 Err(e) => return errorresponse(e),
             };

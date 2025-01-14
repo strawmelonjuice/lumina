@@ -20,7 +20,6 @@ use crate::database::users::auth::{check, AuthResponse};
 use crate::database::users::{add, SafeUser};
 use crate::database::{self};
 use crate::{LuminaConfig, ServerVars};
-use crate::database::fetch::UserDataDiscriminator;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -104,7 +103,7 @@ pub(crate) async fn update(
             email: "unset".to_string(),
         },
     };
-    let userd_maybe = database::fetch::user(&config, UserDataDiscriminator::Username(username_b)).unwrap_or(None);
+    let userd_maybe = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Username(username_b)).unwrap_or(None);
     if let Some(userd) = userd_maybe {
         d.user = SafeUser {
             username: userd.username,
@@ -112,10 +111,10 @@ pub(crate) async fn update(
             email: userd.email,
         };
     };
-    return HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(StatusCode::OK)
         .insert_header(CacheControl(vec![CacheDirective::NoCache]))
         .content_type("text/json; charset=utf-8")
-        .body(serde_json::to_string(&d).unwrap());
+        .body(serde_json::to_string(&d).unwrap())
 }
 #[derive(Deserialize)]
 pub(super) struct AuthReqData {
@@ -142,7 +141,7 @@ pub(crate) async fn auth(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         AuthResponse::Success(user_id) => {
-            let user = database::fetch::user(&config, UserDataDiscriminator::Id( user_id.to_string()))
+            let user = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( user_id.to_string()))
                 .unwrap()
                 .unwrap();
             let username = user.username;
@@ -189,7 +188,7 @@ pub(crate) async fn newaccount(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         Ok(user_id) => {
-            let user = database::fetch::user(&config, UserDataDiscriminator::Id( user_id.to_string()))
+            let user = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( user_id.to_string()))
                 .unwrap()
                 .unwrap();
             let username = user.username;
@@ -273,7 +272,7 @@ pub(crate) async fn pageservresponder(
             let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
             let id = id_.unwrap_or(-100);
             let user: database::users::User =
-                database::fetch::user(&config, UserDataDiscriminator::Id( id.to_string()))
+                database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( id.to_string()))
                     .unwrap()
                     .unwrap();
             let server_vars = server_vars_mutex.lock().await.clone();
@@ -288,13 +287,10 @@ pub(crate) async fn pageservresponder(
                     side: String::new(),
                     message: vec![899, 901],
                 },
-                "test" => FEPageServeResponse {
-                    message: vec![],
-                    side: String::new(),
-                    main: {
+                "test" => FEPageServeResponse { message: vec![], side: String::new(), main: {
                         let mut s = format!(
                             "<h1>Post fetched from DB (dynamically rendered using HandleBars)</h1>\n{}\n",
-                            &database::fetch::post(&config, ("pid", "1".to_string()))
+                            &database::fetch::post(&config, 1)
                                 .unwrap()
                                 .unwrap()
                                 .to_formatted(&config)
@@ -302,8 +298,7 @@ pub(crate) async fn pageservresponder(
                         );
                         s.push_str(include_str!("../frontend_assets/html/examplepost.html"));
                         s
-                    },
-                },
+                    }, },
                 "notifications-centre" => FEPageServeResponse {
                     main: String::from("Notifications should show up here!"),
                     side: String::from(""),
@@ -362,7 +357,7 @@ pub(crate) async fn check_username(
             .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    if database::fetch::user(&config.clone(), UserDataDiscriminator::Username(username.clone()))
+    if database::fetch::user(&config.clone(), database::fetch::UserDataDiscriminator::Username(username.clone()))
         .unwrap_or(None)
         .is_some()
     {
@@ -371,10 +366,10 @@ pub(crate) async fn check_username(
             .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "userExists"}"#.to_string());
     };
-    return HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
         .insert_header(CacheControl(vec![CacheDirective::NoCache]))
-        .body(r#"{"Ok": true}"#);
+        .body(r#"{"Ok": true}"#)
 }
 
 #[derive(Deserialize)]
@@ -417,7 +412,7 @@ pub(crate) async fn render_editor_articlepost(
         .replace(r#"<a "#, r#"<a class="text-blue-400" "#)
         .replace(r#"<code>"#, r#"<code class="m-1 text-stone-500 bg-slate-200 dark:text-stone-200 dark:bg-slate-600">"#)
         .replace(r#"<blockquote>"#, r#"<blockquote class="p-0 [&>*]:pl-2 ml-3 mr-3 border-gray-300 border-s-4 bg-gray-50 dark:border-gray-500 dark:bg-gray-800">"#);
-    return HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(StatusCode::OK)
         .insert_header(CacheControl(vec![CacheDirective::NoCache]))
         .content_type("text/json; charset=utf-8")
         .body(
@@ -426,7 +421,7 @@ pub(crate) async fn render_editor_articlepost(
                 html_content: readied_html,
             })
             .unwrap(),
-        );
+        )
 }
 
 mod subpagedata {

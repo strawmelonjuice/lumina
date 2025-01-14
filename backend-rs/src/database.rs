@@ -5,6 +5,8 @@
  */
 #![allow(dead_code)]
 
+// noinspection DuplicatedCode
+
 use crate::config::LuminaDBConnectionInfo;
 use crate::post::PostInfo;
 use crate::{LuminaConfig, SynclistItem};
@@ -16,7 +18,6 @@ use std::io::Error;
 use std::process;
 use LuminaDBConnectionInfo::{LuminaDBConnectionInfoPOSTGRES, LuminaDBConnectionInfoSQLite};
 use users::User;
-use crate::database::fetch::UserDataDiscriminator;
 
 /// Basic exchangable user information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -334,6 +335,8 @@ impl LuminaDBConnection {
                 .map_err(|_e| ()),
         }
     }
+    //noinspection DuplicatedCode
+    //noinspection DuplicatedCode
     pub fn execute8(
         &mut self,
         query: &str,
@@ -383,6 +386,7 @@ impl LuminaDBConnection {
                 .map_err(|_e| ()),
         }
     }
+    //noinspection ALL
     pub fn execute9(
         &mut self,
         query: &str,
@@ -435,6 +439,8 @@ impl LuminaDBConnection {
                 .map_err(|_e| ()),
         }
     }
+    //noinspection DuplicatedCode
+    //noinspection DuplicatedCode
     pub fn execute10(
         &mut self,
         query: &str,
@@ -521,9 +527,9 @@ impl UniversalFetchAnswer {
             }
         }
     }
-    /// Unwraps a user from a fetch answer.
+    /// Unwraps a user from an unifetch answer.
     /// # Panics
-    /// Panics if the fetch answer is not a user.
+    /// Will panic when the fetch answer is not a user.
     /// # Returns
     /// * `BasicUserInfo` - The user metadata.
     pub fn unwrap_user(self) -> User {
@@ -551,7 +557,7 @@ impl UniversalFetchAnswer {
 /// # Returns
 /// * `UniversalFetchAnswer` - The fetched data. Wrapped in an enum that can be unwrapped to the specific type.
 /// # Panics
-/// Panics if the database type is not supported.
+/// Will panic if the database type is not supported.
 /// # Note
 /// **Discouraged: Use the specific fetch functions instead.**
 /// # Example
@@ -576,7 +582,7 @@ pub fn unifetch<T: DatabaseItem>(
             None => UniversalFetchAnswer::None,
         }
     } else if type_name::<T>() == type_name::<User>() {
-        let sres = fetch::user(config, UserDataDiscriminator::from_str(discriminator));
+        let sres = fetch::user(config, fetch::UserDataDiscriminator::from_str(discriminator));
         let res = match sres {
             Ok(s) => s,
             Err(e) => return UniversalFetchAnswer::Err(e),
@@ -672,7 +678,6 @@ pub fn get_instance_sync_list(config: &LuminaConfig) -> Result<Vec<SynclistItem>
                     last_contact: row.get(2),
                 });
             }
-
             Ok(sync_list)
         }
     }
