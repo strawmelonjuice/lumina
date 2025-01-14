@@ -2,27 +2,20 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 
 import frontend/other/element_actions
+import frontend/other/fejson
 import frontend/other/rendering
+import frontend/other/rust_kind_of_unwrap.{unwrap}
 import frontend/page/site/editor
 import frontend/page/site/subpages
 import gleam/bool
 import gleam/dict.{type Dict}
-import gleam/dynamic
-import gleam/fetch
-import gleam/http
-import gleam/http/request
-import gleam/http/response
 import gleam/javascript/array
 import gleam/javascript/promise
-import gleam/json
 import gleam/list
 import gleam/string
 import gleamy_lights/console
 import gleamy_lights/premixed
 import gleamy_lights/premixed/gleam_colours
-import lumina/shared/shared_fepage_com.{
-  type FEPageServeResponse, FEPageServeResponse,
-}
 import plinth/browser/document
 import plinth/browser/element
 import plinth/browser/event
@@ -118,6 +111,51 @@ pub fn home_render() {
   )
   global.set_interval(60, fn() {
     check_if_page_needs_to_be_switched(sub_page_list)
+  })
+  user_menu_toggle()
+
+  document.query_selector("main")
+  |> rust_kind_of_unwrap.unwrap
+  |> element.add_event_listener("click", fn(_) {
+    case document.get_element_by_id("user-menu") {
+      Ok(user_menu) -> {
+        let classes =
+          user_menu
+          |> element.get_attribute("class")
+          |> unwrap
+        user_menu |> element.set_attribute("class", classes <> " hidden")
+      }
+      Error(_) -> {
+        console.error("Failed to find user menu.")
+      }
+    }
+  })
+
+  case document.get_element_by_id("user-menu-button") {
+    Ok(user_menu_button) -> {
+      element.add_event_listener(user_menu_button, "click", fn(_) {
+        console.log("User menu button clicked.")
+        user_menu_toggle()
+      })
+      Nil
+    }
+    _ -> {
+      console.error("Failed to find user menu button.")
+      Nil
+    }
+  }
+  fejson.register_fejson_function(fn() {
+    let d = fejson.get()
+    case document.get_element_by_id("userimg") {
+      Ok(f) -> {
+        f |> element.set_attribute("alt", d.user.username)
+      }
+      _ -> Nil
+    }
+
+    document.query_selector_all(".settodisplayname")
+    |> array.to_list
+    |> list.each(fn(a) { a |> element.set_inner_text(d.user.username) })
   })
   editor.fold()
   {
@@ -342,5 +380,41 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
       f()
     }
     Error(_) -> promise.resolve(error_out())
+  }
+}
+
+fn user_menu_toggle() {
+  let assert Ok(user_menu_button) =
+    document.get_element_by_id("user-menu-button")
+  user_menu_button |> element.set_attribute("aria-haspopup", "true")
+
+  case document.get_element_by_id("user-menu") {
+    Ok(user_menu) -> {
+      let classes =
+        user_menu
+        |> element.get_attribute("class")
+        |> rust_kind_of_unwrap.unwrap
+      case classes |> string.contains("hidden") {
+        True -> {
+          user_menu
+          |> element.set_attribute(
+            "class",
+            string.replace(classes, "hidden", ""),
+          )
+        }
+        False -> {
+          user_menu |> element.set_attribute("class", classes <> " hidden")
+        }
+      }
+      classes
+      |> string.contains("hidden")
+      // |> bool.negate
+      |> bool.to_string
+      |> string.lowercase()
+      |> element.set_attribute(user_menu_button, "aria-expanded", _)
+    }
+    Error(_) -> {
+      console.error("Failed to find user menu.")
+    }
   }
 }
