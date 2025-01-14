@@ -384,6 +384,10 @@ fn switch_subpage(to_page: String, reason: String, sub_page_list: SubPageList) {
 }
 
 fn user_menu_toggle() {
+  let assert Ok(user_menu_button) =
+    document.get_element_by_id("user-menu-button")
+  user_menu_button |> element.set_attribute("aria-haspopup", "true")
+
   case document.get_element_by_id("user-menu") {
     Ok(user_menu) -> {
       let classes =
@@ -402,6 +406,12 @@ fn user_menu_toggle() {
           user_menu |> element.set_attribute("class", classes <> " hidden")
         }
       }
+      classes
+      |> string.contains("hidden")
+      // |> bool.negate
+      |> bool.to_string
+      |> string.lowercase()
+      |> element.set_attribute(user_menu_button, "aria-expanded", _)
     }
     Error(_) -> {
       console.error("Failed to find user menu.")
