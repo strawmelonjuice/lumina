@@ -28,7 +28,7 @@ use simplelog::*;
 use tokio::sync::{Mutex, MutexGuard};
 
 use crate::config::{LuminaConfig, LuminaLogConfig};
-use crate::serve::notfound;
+use crate::pages::notfound;
 use assets::{fonts, vec_string_assets_anons_svg, STR_CLEAN_CUSTOMSTYLES_CSS};
 
 /// ## API's to the front-end.
@@ -279,17 +279,17 @@ async fn main() {
                 secret_key.clone(),
             ))
             .default_service(web::to(notfound))
-            .route("/", web::get().to(serve::root))
-            .route("/home", web::get().to(serve::homepage))
-            .route("/login", web::get().to(serve::login))
-            .route("/signup", web::get().to(serve::signup))
-            .route("/session/logout", web::get().to(serve::logout))
-            .route("/home/", web::get().to(serve::homepage))
-            .route("/login/", web::get().to(serve::login))
-            .route("/signup/", web::get().to(serve::signup))
-            .route("/session/logout/", web::get().to(serve::logout))
-            .route("/app.js", web::get().to(serve::appjs))
-            .route("/app.js.map", web::get().to(serve::appjsmap))
+            .route("/", web::get().to(pages::root))
+            .route("/home", web::get().to(pages::homepage))
+            .route("/login", web::get().to(pages::login))
+            .route("/signup", web::get().to(pages::signup))
+            .route("/session/logout", web::get().to(pages::logout))
+            .route("/home/", web::get().to(pages::homepage))
+            .route("/login/", web::get().to(pages::login))
+            .route("/signup/", web::get().to(pages::signup))
+            .route("/session/logout/", web::get().to(pages::logout))
+            .route("/app.js", web::get().to(pages::appjs))
+            .route("/app.js.map", web::get().to(pages::appjsmap))
             .route(
                 "/api/fe/fetch-page",
                 web::post().to(api_fe::pageservresponder),
@@ -307,12 +307,12 @@ async fn main() {
                 "/api/fe/auth-create/check-username",
                 web::post().to(api_fe::check_username),
             )
-            .route("/red-cross.svg", web::get().to(serve::red_cross_svg))
-            .route("/spinner.svg", web::get().to(serve::spinner_svg))
-            .route("/green-check.svg", web::get().to(serve::green_check_svg))
-            .route("/logo.svg", web::get().to(serve::logo_svg))
-            .route("/favicon.ico", web::get().to(serve::logo_png))
-            .route("/logo.png", web::get().to(serve::logo_png))
+            .route("/red-cross.svg", web::get().to(pages::red_cross_svg))
+            .route("/spinner.svg", web::get().to(pages::spinner_svg))
+            .route("/green-check.svg", web::get().to(pages::green_check_svg))
+            .route("/logo.svg", web::get().to(pages::logo_svg))
+            .route("/favicon.ico", web::get().to(pages::logo_png))
+            .route("/logo.png", web::get().to(pages::logo_png))
             .service(avatar)
             .service(serve_fonts)
             .app_data(web::Data::clone(&server_q))
@@ -418,7 +418,7 @@ async fn close() {
 }
 
 mod config;
-mod serve;
+mod pages;
 
 #[doc = r"Font file server"]
 #[get("/fonts/{a:.*}")]
