@@ -35,31 +35,31 @@ pub fn fonts() -> Fonts {
     }
 }
 
-pub const STR_ASSETS_LOGO_SVG: &str = include_str!("../frontend_assets/svg/luminalogo-1.svg");
+pub const STR_ASSETS_LOGO_SVG: &str = include_str!("../../backend/priv/static/svg/luminalogo-1.svg");
 
-pub const STR_ASSETS_BTN_NEW_SVG: &str = include_str!("../frontend_assets/svg/add.svg");
+pub const STR_ASSETS_BTN_NEW_SVG: &str = include_str!("../../backend/priv/static/svg/add.svg");
 
-pub const STR_ASSETS_BTN_PUSH_SVG: &str = include_str!("../frontend_assets/svg/push.svg");
+pub const STR_ASSETS_BTN_PUSH_SVG: &str = include_str!("../../backend/priv/static/svg/push.svg");
 
-pub const STR_ASSETS_BTN_COMMENT_SVG: &str = include_str!("../frontend_assets/svg/comment.svg");
+pub const STR_ASSETS_BTN_COMMENT_SVG: &str = include_str!("../../backend/priv/static/svg/comment.svg");
 
-pub const STR_ASSETS_BTN_BOOST_SVG: &str = include_str!("../frontend_assets/svg/boost.svg");
+pub const STR_ASSETS_BTN_BOOST_SVG: &str = include_str!("../../backend/priv/static/svg/boost.svg");
 
-pub const STR_ASSETS_GREEN_CHECK_SVG: &str = include_str!("../frontend_assets/svg/green_check.svg");
+pub const STR_ASSETS_GREEN_CHECK_SVG: &str = include_str!("../../backend/priv/static/svg/green_check.svg");
 
-pub const STR_ASSETS_SPINNER_SVG: &str = include_str!("../frontend_assets/svg/spinner.svg");
+pub const STR_ASSETS_SPINNER_SVG: &str = include_str!("../../backend/priv/static/svg/spinner.svg");
 
-pub const STR_ASSETS_RED_CROSS_SVG: &str = include_str!("../frontend_assets/svg/red_cross.svg");
-pub const STR_ASSETS_ANON_SVG: &str = include_str!("../frontend_assets/svg/avatar1.svg");
+pub const STR_ASSETS_RED_CROSS_SVG: &str = include_str!("../../backend/priv/static/svg/red_cross.svg");
+pub const STR_ASSETS_ANON_SVG: &str = include_str!("../../backend/priv/static/svg/avatar1.svg");
 
 pub fn vec_string_assets_anons_svg() -> Vec<String> {
     vec![
         STR_ASSETS_ANON_SVG.to_string(),
-        include_str!("../frontend_assets/svg/avatar2.svg").to_string(),
-        include_str!("../frontend_assets/svg/avatar3.svg").to_string(),
-        include_str!("../frontend_assets/svg/avatar4.svg").to_string(),
-        include_str!("../frontend_assets/svg/avatar5.svg").to_string(),
-        include_str!("../frontend_assets/svg/avatar6.svg").to_string(),
+        include_str!("../../backend/priv/static/svg/avatar2.svg").to_string(),
+        include_str!("../../backend/priv/static/svg/avatar3.svg").to_string(),
+        include_str!("../../backend/priv/static/svg/avatar4.svg").to_string(),
+        include_str!("../../backend/priv/static/svg/avatar5.svg").to_string(),
+        include_str!("../../backend/priv/static/svg/avatar6.svg").to_string(),
     ]
 }
 
