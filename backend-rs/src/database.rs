@@ -16,6 +16,7 @@ use std::io::Error;
 use std::process;
 use LuminaDBConnectionInfo::{LuminaDBConnectionInfoPOSTGRES, LuminaDBConnectionInfoSQLite};
 use users::User;
+use crate::database::fetch::UserDataDiscriminator;
 
 /// Basic exchangable user information.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -543,6 +544,7 @@ impl UniversalFetchAnswer {
 
 /// # `storage::unifetch<>()`
 /// Fetches well-known data types from the database.
+/// Prefer using the specific fetch functions instead.
 /// # Arguments
 /// * `config` - A reference to the LuminaConfig struct.
 /// * `discriminator` - A tuple containing the discriminator and the value to search for.
@@ -563,7 +565,8 @@ pub fn unifetch<T: DatabaseItem>(
     discriminator: (impl AsRef<str>, impl AsRef<str>),
 ) -> UniversalFetchAnswer {
     if type_name::<T>() == type_name::<PostInfo>() {
-        let sres = fetch::post(config, discriminator);
+        let f= format!("{}", discriminator.1.as_ref());
+        let sres = fetch::post(config, f.parse().unwrap());
         let res = match sres {
             Ok(s) => s,
             Err(e) => return UniversalFetchAnswer::Err(e),
@@ -573,7 +576,7 @@ pub fn unifetch<T: DatabaseItem>(
             None => UniversalFetchAnswer::None,
         }
     } else if type_name::<T>() == type_name::<User>() {
-        let sres = fetch::user(config, discriminator);
+        let sres = fetch::user(config, UserDataDiscriminator::from_str(discriminator));
         let res = match sres {
             Ok(s) => s,
             Err(e) => return UniversalFetchAnswer::Err(e),

@@ -483,7 +483,7 @@ pub(crate) async fn fence(
             .append_header((LOCATION, "/login"))
             .finish()
     } else {
-        let user: User = database::fetch::user(&config, ("id", id.to_string()))
+        let user: User = database::fetch::user(&config, UserDataDiscriminator::Id( id.to_string()))
             .unwrap()
             .unwrap();
 

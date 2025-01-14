@@ -20,6 +20,7 @@ use crate::database::users::auth::{check, AuthResponse};
 use crate::database::users::{add, SafeUser};
 use crate::database::{self};
 use crate::{LuminaConfig, ServerVars};
+use crate::database::fetch::UserDataDiscriminator;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -103,7 +104,7 @@ pub(crate) async fn update(
             email: "unset".to_string(),
         },
     };
-    let userd_maybe = database::fetch::user(&config, ("username", username_b)).unwrap_or(None);
+    let userd_maybe = database::fetch::user(&config, UserDataDiscriminator::Username(username_b)).unwrap_or(None);
     if let Some(userd) = userd_maybe {
         d.user = SafeUser {
             username: userd.username,
@@ -141,7 +142,7 @@ pub(crate) async fn auth(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         AuthResponse::Success(user_id) => {
-            let user = database::fetch::user(&config, ("id", user_id.to_string()))
+            let user = database::fetch::user(&config, UserDataDiscriminator::Id( user_id.to_string()))
                 .unwrap()
                 .unwrap();
             let username = user.username;
@@ -188,7 +189,7 @@ pub(crate) async fn newaccount(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         Ok(user_id) => {
-            let user = database::fetch::user(&config, ("id", user_id.to_string()))
+            let user = database::fetch::user(&config, UserDataDiscriminator::Id( user_id.to_string()))
                 .unwrap()
                 .unwrap();
             let username = user.username;
@@ -272,7 +273,7 @@ pub(crate) async fn pageservresponder(
             let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
             let id = id_.unwrap_or(-100);
             let user: database::users::User =
-                database::fetch::user(&config, ("id", id.to_string()))
+                database::fetch::user(&config, UserDataDiscriminator::Id( id.to_string()))
                     .unwrap()
                     .unwrap();
             let server_vars = server_vars_mutex.lock().await.clone();
@@ -361,7 +362,7 @@ pub(crate) async fn check_username(
             .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    if database::fetch::user(&config.clone(), ("username", username.clone()))
+    if database::fetch::user(&config.clone(), UserDataDiscriminator::Username(username.clone()))
         .unwrap_or(None)
         .is_some()
     {

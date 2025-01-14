@@ -10,26 +10,45 @@ use crate::{database, LuminaConfig};
 use std::io::{Error, ErrorKind};
 use crate::database::users::User;
 
+pub enum UserDataDiscriminator {
+    ID(String),
+    Username(String),
+    Email(String),
+}
+impl UserDataDiscriminator {
+    pub fn from_str(a: (impl AsRef<str>, impl AsRef<str>)) -> Self {
+        match a.0.as_ref() {
+            "id" => UserDataDiscriminator::ID(a.1.as_ref().to_string()),
+            "username" => UserDataDiscriminator::Username(a.1.as_ref().to_string()),
+            "email" => UserDataDiscriminator::Email(a.1.as_ref().to_string()),
+            _ => panic!("Invalid discriminator"),
+        }
+    }
+}
+
 /// Fetches user from database
 pub fn user(
     config: &LuminaConfig,
-    discriminator: (impl AsRef<str>, impl AsRef<str>),
+    discriminator: UserDataDiscriminator,
 ) -> Result<Option<User>, Error> {
+    let (discriminator_col, discriminator_1) = match discriminator {
+        UserDataDiscriminator::ID(id) => ("id", id),
+        UserDataDiscriminator::Username(username) => ("username", username),
+        UserDataDiscriminator::Email(email) => ("email", email),
+    };
     match config.db_connect() {
         LuminaDBConnection::SQLite(conn) => {
             let mut stmt = conn
                 .prepare(
-                    format!(
-                        r#"select * from Users where {0} = '{1}'"#,
-                        discriminator.0.as_ref(),
-                        discriminator.1.as_ref()
+
+                        r#"SELECT * FROM Users WHERE ? = '?'"#,
                     )
-                    .trim(),
-                )
-                .unwrap();
+
+                .unwrap()
+                ;
             debug!("{:?}", stmt);
             let mut res = stmt
-                .query_map((), |row| {
+                .query_map((discriminator_col,discriminator_1.as_str()), |row| {
                     Ok({
                         serde_json::to_string(&User {
                             id: row.get(0)?,
@@ -65,25 +84,21 @@ pub fn user(
 /// Fetches post from database
 pub fn post(
     config: &LuminaConfig,
-    discriminator: (impl AsRef<str>, impl AsRef<str>),
+    id: u128,
 ) -> Result<Option<PostInfo>, Error> {
     match config.db_connect() {
         LuminaDBConnection::SQLite(conn) => {
-            
-
             let mut stmt = conn
                 .prepare(
-                    format!(
-                        r#"select * from PostsStore where {0} = '{1}'"#,
-                        discriminator.0.as_ref(),
-                        discriminator.1.as_ref()
-                    )
-                    .trim(),
+
+                        r#"SELECT * FROM posts_pool WHERE `postid` = ?"#,
+
+                    
                 )
                 .unwrap();
             debug!("{:?}", stmt);
             let mut res = stmt
-                .query_map((), |row| {
+                .query_map([id.to_string()], |row| {
                     Ok({
                         let s = database::row_to_post_info(row);
                         serde_json::to_string(&s).unwrap()

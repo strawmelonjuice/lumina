@@ -68,7 +68,7 @@ impl PostPreRenderData {
 impl PostInfo {
     pub fn to_formatted(&self, config: &LuminaConfig) -> PostPreRenderData {
         let author_u: User =
-            unifetch::<User>(config, ("id", self.author_id.to_string().as_str()))
+            unifetch::<User>(config, UserDataDiscriminator::Id( self.author_id.to_string().as_str()))
                 .unwrap_user();
 
         let author = IIExchangedUserInfo {
