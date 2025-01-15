@@ -11,6 +11,9 @@ module.exports = {
 		},
 		extend: {
 			colors: {
+				darkish: {
+					550: "#1f1e25",
+				},
 				brown: {
 					25: "#E9F7F6",
 					50: "#fdf8f6",
@@ -27,5 +30,5 @@ module.exports = {
 			},
 		},
 	},
-	plugins: [],
+	plugins: [require("daisyui")],
 };

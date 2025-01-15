@@ -4,13 +4,14 @@
 	"devDependencies": {
 		"@biomejs/biome": "latest",
 		"@types/bun": "latest",
-		"tailwindcss": "latest",
 		"autoprefixer": "latest",
-		"postcss": "latest",
-		"typescript": "^5.6.3",
-		"postcss-cli": "^11.0.0",
+		"bun": "latest",
 		"clean-css-cli": "^5.6.3",
-		"bun": "latest"
+		"daisyui": "^4.12.23",
+		"postcss": "latest",
+		"postcss-cli": "^11.0.0",
+		"tailwindcss": "latest",
+		"typescript": "^5.6.3"
 	},
 	"dependencies": {
 		"axios": "^1.7.7",

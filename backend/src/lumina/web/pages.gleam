@@ -459,9 +459,7 @@ pub fn login(ctx: Context) {
                     html.input([
                       attribute.type_("password"),
                       attribute.required(True),
-                      attribute.placeholder(
-                        "••••••••••••",
-                      ),
+                      attribute.placeholder("••••••••••••"),
                       attribute.id("password"),
                       attribute.class(
                         "py-2 px-4 w-full rounded-lg border focus:ring-blue-500 form-input text-slate-600",
@@ -996,7 +994,7 @@ pub fn dash(ctx: Context, _user: users.SafeUser) {
             html.div(
               [
                 attribute.class(
-                  "h-full col-span-4 overflow-auto contentkeeper no:lg:p-12 bg-brown-100 dark:bg-neutral-700",
+                  "h-full col-span-4 overflow-auto contentkeeper no:lg:p-12 bg-fuchsia-50 dark:bg-darkish-550",
                 ),
               ],
               [

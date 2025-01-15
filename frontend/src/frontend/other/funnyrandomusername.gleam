@@ -2,12 +2,12 @@
 // Licensed under the BSD 3-Clause License. See the LICENSE file for more info.
 const both = [
   "strawberry", "hat", "burger", "flat", "orange", "toothpaste", "nerd", "koala",
-  "sample",
+  "sample", "boss",
 ]
 
 const first = [
   "straw", "hacker", "hat", "strawberry", "apple", "rotten", "shrimp", "feared-",
-  "smelly",
+  "smelly", "girl",
 ]
 
 const last = [
@@ -30,7 +30,11 @@ pub fn funnyrandomusername() {
     |> list.append(both)
     |> list.shuffle()
     |> list.first()
-  start
-  <> end
-  |> string.replace("--", "-")
+  case end == start {
+    True -> funnyrandomusername()
+    False ->
+      start
+      <> end
+      |> string.replace("--", "-")
+  }
 }
