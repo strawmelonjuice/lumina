@@ -8,8 +8,8 @@ use handlebars::*;
 use serde::{Deserialize, Serialize};
 
 use crate::assets::STR_ASSETS_POST_RENDERS_HANDLEBARS;
-use crate::database::{fetch, IIExchangedUserInfo};
 use crate::database::users::User;
+use crate::database::{fetch, IIExchangedUserInfo};
 use crate::LuminaConfig;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,8 +67,7 @@ impl PostPreRenderData {
 
 impl PostInfo {
     pub fn to_formatted(&self, config: &LuminaConfig) -> PostPreRenderData {
-        let author_u: User =
-            fetch::user(config, fetch::UserDataDiscriminator::Id( self.author_id.to_string())).unwrap().unwrap();
+        let author_u: User = fetch::user_by_id(config, self.author_id).unwrap();
 
         let author = IIExchangedUserInfo {
             id: self.author_id,

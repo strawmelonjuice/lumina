@@ -16,6 +16,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, MutexGuard};
 
+use crate::database::fetch::user_by_id;
 use crate::database::users::auth::{check, AuthResponse};
 use crate::database::users::{add, SafeUser};
 use crate::database::{self};
@@ -103,7 +104,11 @@ pub(crate) async fn update(
             email: "unset".to_string(),
         },
     };
-    let userd_maybe = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Username(username_b)).unwrap_or(None);
+    let userd_maybe = database::fetch::user(
+        &config,
+        database::fetch::UserDataDiscriminator::Username(username_b),
+    )
+    .unwrap_or(None);
     if let Some(userd) = userd_maybe {
         d.user = SafeUser {
             username: userd.username,
@@ -141,9 +146,7 @@ pub(crate) async fn auth(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         AuthResponse::Success(user_id) => {
-            let user = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( user_id.to_string()))
-                .unwrap()
-                .unwrap();
+            let user = user_by_id(&config, user_id).unwrap();
             let username = user.username;
             info!("User '{0}' logged in succesfully from {1}", username, ip);
             session.insert("userid", user.id).unwrap();
@@ -188,9 +191,7 @@ pub(crate) async fn newaccount(
     let ip = coninfo.realip_remote_addr().unwrap_or("<unknown IP>");
     match result {
         Ok(user_id) => {
-            let user = database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( user_id.to_string()))
-                .unwrap()
-                .unwrap();
+            let user = database::fetch::user_by_id(&config, user_id).unwrap();
             let username = user.username;
             session.insert("userid", user.id).unwrap();
             session.insert("username", username).unwrap();
@@ -271,10 +272,7 @@ pub(crate) async fn pageservresponder(
             let location = data.location.clone();
             let id_ = session.get::<i64>("userid").unwrap_or(Some(-100));
             let id = id_.unwrap_or(-100);
-            let user: database::users::User =
-                database::fetch::user(&config, database::fetch::UserDataDiscriminator::Id( id.to_string()))
-                    .unwrap()
-                    .unwrap();
+            let user: database::users::User = database::fetch::user_by_id(&config, id).unwrap();
             let server_vars = server_vars_mutex.lock().await.clone();
             let config: LuminaConfig = server_vars.clone().config;
             let o: FEPageServeResponse = match location.as_str() {
@@ -287,7 +285,10 @@ pub(crate) async fn pageservresponder(
                     side: String::new(),
                     message: vec![899, 901],
                 },
-                "test" => FEPageServeResponse { message: vec![], side: String::new(), main: {
+                "test" => FEPageServeResponse {
+                    message: vec![],
+                    side: String::new(),
+                    main: {
                         let mut s = format!(
                             "<h1>Post fetched from DB (dynamically rendered using HandleBars)</h1>\n{}\n",
                             &database::fetch::post(&config, 1)
@@ -298,7 +299,8 @@ pub(crate) async fn pageservresponder(
                         );
                         s.push_str(include_str!("../frontend_assets/html/examplepost.html"));
                         s
-                    }, },
+                    },
+                },
                 "notifications-centre" => FEPageServeResponse {
                     main: String::from("Notifications should show up here!"),
                     side: String::from(""),
@@ -357,9 +359,12 @@ pub(crate) async fn check_username(
             .insert_header(CacheControl(vec![CacheDirective::NoCache]))
             .body(r#"{"Ok": false, "Why": "TooShort"}"#.to_string());
     }
-    if database::fetch::user(&config.clone(), database::fetch::UserDataDiscriminator::Username(username.clone()))
-        .unwrap_or(None)
-        .is_some()
+    if database::fetch::user(
+        &config.clone(),
+        database::fetch::UserDataDiscriminator::Username(username.clone()),
+    )
+    .unwrap_or(None)
+    .is_some()
     {
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/json; charset=utf-8")
