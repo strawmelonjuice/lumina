@@ -3,6 +3,7 @@ module.exports = {
 		"./*frontend/**/*.{handlebars,ts,gleam}",
 		"./backend/src/lumina/web/**/*.gleam",
 		"./backend-rs/src/**/*.rs",
+		"./backend-rs/frontend_assets/html/*.html",
 	],
 	theme: {
 		fontFamily: {
