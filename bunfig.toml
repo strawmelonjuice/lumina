@@ -1,8 +1,0 @@
-# Bun configuration file
-
-smol = true
-
-[run]
-bun = true
-silent = true
-shell = "bun"
