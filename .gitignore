@@ -4,7 +4,7 @@
 
 # Ignore Gleam backend build artifacts
 backend/build
-backend/priv/generated
+client/priv/generated
 
 # Ignore Rust backend build artifacts
 backend-rs/target
@@ -25,3 +25,8 @@ node_modules
 .idea/
 .vscode/
 
+
+
+# Added by cargo
+
+/target
