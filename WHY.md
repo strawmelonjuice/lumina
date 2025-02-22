@@ -3,19 +3,23 @@
 > This file aims to explain my choices. Not that I need to explain myself
 > but hey, we all feel accountable for our stupid actions sometimes.
 
-## The `rsffi` Rust NIF library
+## The 25 branch
 
-I am just very attached to the love of my life Rust. And I think
-the Rust way of doing things might come in handy somewhere down the road.
-Plus, on JavaScript, FFI'ing is fairly easy, I almost write more JS/TS in my
-life than Rust and Gleam...
-Erlang on the other hand is kind of a scary thing. Rust is comfy! 🥰
+Few days after the Rust 2024 edition release, having new experiences with gleam Lustre and a really messy repository...
+Three great reasons for a clean slate.
+Git branch 25 is yet another restart for me writing on Lumina. With past experiences and a clear vision, `master` does a good job, so this one will do even better.
 
-### Markdown to HTML rendering in Rust instead of natively in Gleam
+### Choices made
 
-I think it's a good idea to have a Rust NIF for rendering markdown to HTML.
-I've had it work with `kirala` (Gleam), but I think it's a good idea to have
-the kind of control over it that I had in the pure Rust version.
+- **Gleam** as the main language on frontend.
+  Not having multiple language branches about this.
+    - **TailwindCSS** as the main CSS framework.
+    - **Lustre** for building the UI.
+- **Rust** as the main language on backend.
+    - More specifically, the `axum` library instead of `actix-web`.
+    - Rust 2024 edition from the start.
+- **PostgreSQL** as the main database. **SQLite** for testing.
+- **WebSockets** for real-time communication between the client and the server.
 
 ## The `gleam` language
 
