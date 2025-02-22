@@ -1,4 +1,0 @@
-{
-	"ext": "ts,rs,gleam,svg,handlebars,hb,pcss,css",
-	"ignore": ["./*/build/**", "./backend/priv/generated/**"]
-}
