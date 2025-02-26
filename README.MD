@@ -1,38 +1,10 @@
 # Lumina(/peonies) server
 
-## Currently behind:
-As Lumina is a monorepo with pluggable parts, some of them sometimes lag behind and are broken by the latest changes. The current state of the project is:
-### Up to date
-- Server (Rust)
+## -> Rewrite '25'
 
-### behind
-- Server (Gleam) (changes in Gleam client)
-- Client (TypeScript) (changes in Rust server)
-- Client (Gleam) (in progress)
-
-## Requirements
-- [The Gleam compiler, `Erlang` and `rebar3`](https://gleam.run/getting-started/installing/)
-- A [PostGres](https://www.postgresql.org/) database (or just set up an SQLite one if you want to be QD!)
-- The [Bun](https://bun.sh/) TypeScript ecosystem
-
-## Running Lumina
-
-#### Clone it!
-
-```shell
-git clone https://github.com/strawmelonjuice/lumina.git
-```
-
-#### Run it!
-
-Warning ya -- Lumina loads and logs in `$HOME/.luminainstance/` unless specified otherwise as argument. If you'd like to keep it in the
-workspace, use:
-
-```bash
-bun run dev start-in ./
-```
-
-otherwise, just use `bun run dev` or `bun run build && gleam start` and have Lumina start in its default.
+> Completely rewriting this project. I am relatively new
+> to Lustre and to websockets and to Axum, but wanna try
+> all of them out and make them succeed in this rewrite.
 
 
 ### Environment variables

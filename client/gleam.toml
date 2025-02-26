@@ -3,11 +3,11 @@ version = "1.0.0"
 target = "javascript"
 
 [dependencies]
-gleam_json = "1.0.1"
-gleam_stdlib = "0.43.0"
+gleam_json = "2.3.0"
+gleam_stdlib = "0.55.0"
 lustre = "4.6.3"
 lustre_ui = "~> 0.4"
-lustre_http = "~> 0.5.2"
+lustre_websocket = ">= 0.7.6 and < 1.0.0"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"
