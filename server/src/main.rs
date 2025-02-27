@@ -17,7 +17,7 @@ async fn main() {
         // `GET /` goes to `root`
         .route("/", get(|| async { Html(include_str!("../../client/index.html")) }))
         .route("/static/lumina.min.mjs", get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], include_str!("../../client/priv/static/lumina_client.min.mjs")) }))
-		.route("/static/lumina.css", get(|| async { ([(header::CONTENT_TYPE, "text/css")], include_str!("../../client/build/dev/javascript/lustre_ui/priv/static/lustre-ui.css")) }));
+		.route("/static/lumina.css", get(|| async { ([(header::CONTENT_TYPE, "text/css")], include_str!("../../client/priv/static/lumina_client.min.css")) }));
 
     // run our app with hyper, listening globally on port 3000
 	println!("Listening on http://localhost:3000");

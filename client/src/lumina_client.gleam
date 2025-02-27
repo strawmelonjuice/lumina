@@ -2,6 +2,7 @@
 //// Once I get time to work on the actual project, I'll adapt them further to original code fitting the project's needs.
 
 import gleam/option.{type Option, None, Some}
+import lumina_client/model.{type Model, Model}
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -14,7 +15,7 @@ import lustre/event
 // here: https://hexdocs.pm/lustre_http/index.html
 import lustre/ui
 import lustre/ui/aside
-import lustre_websocket as ws
+import lustre_websocket
 
 // MAIN ------------------------------------------------------------------------
 
@@ -23,36 +24,34 @@ pub fn main() {
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 }
 
-// MODEL -----------------------------------------------------------------------
-
-type Model {
-  Model(quote: Option(Quote))
-}
-
-type Quote {
-  Quote(author: String, content: String)
-}
+// INIT ------------------------------------------------------------------------
 
 fn init(_flags: a) -> #(Model, Effect(Msg)) {
-  #(Model(None), ws.init("/path", WsWrapper))
+  #(
+    Model(model.Login("", ""), None, None),
+    lustre_websocket.init("/path", WsWrapper),
+  )
 }
 
 // UPDATE ----------------------------------------------------------------------
 
 pub opaque type Msg {
-  WsWrapper(ws.WebSocketEvent)
+  WsWrapper(lustre_websocket.WebSocketEvent)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    WsWrapper(InvalidUrl) -> panic
-    WsWrapper(OnOpen(socket)) -> #(
-      Model(..model, ws: Some(socket)),
-      ws.send(socket, "client-init"),
+    WsWrapper(lustre_websocket.InvalidUrl) -> panic
+    WsWrapper(lustre_websocket.OnTextMessage(msg)) -> todo
+    WsWrapper(lustre_websocket.OnBinaryMessage(msg)) -> todo as "either-or"
+    WsWrapper(lustre_websocket.OnClose(_reason)) -> #(
+      Model(..model, ws: None),
+      effect.none(),
     )
-    WsWrapper(OnTextMessage(msg)) -> todo
-    WsWrapper(OnBinaryMessage(msg)) -> todo as "either-or"
-    WsWrapper(OnClose(reason)) -> #(Model(..model, ws: None), effect.none())
+    WsWrapper(lustre_websocket.OnOpen(socket)) -> #(
+      Model(..model, ws: Some(socket)),
+      lustre_websocket.send(socket, "client-init"),
+    )
   }
 }
 
@@ -65,19 +64,19 @@ fn view(model: Model) -> Element(Msg) {
     [attribute.style(styles)],
     ui.aside(
       [aside.min_width(70), attribute.style([#("width", "60ch")])],
-      view_quote(model.quote),
+      view_quote(None),
       ui.button([], [element.text("New quote")]),
     ),
   )
 }
 
-fn view_quote(quote: Option(Quote)) -> Element(msg) {
+fn view_quote(quote: Option(#(String, String))) -> Element(msg) {
   case quote {
     Some(quote) ->
       ui.stack([], [
-        element.text(quote.author <> " once said..."),
+        element.text(quote.0 <> " once said..."),
         html.p([attribute.style([#("font-style", "italic")])], [
-          element.text(quote.content),
+          element.text(quote.1),
         ]),
       ])
     None -> html.p([], [element.text("Click the button to get a quote!")])

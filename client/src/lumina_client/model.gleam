@@ -2,11 +2,12 @@
 //// The Model is about to be huge, I'm just preselecting for that.
 
 import gleam/option.{type Option}
+import lustre_websocket
 
 /// # Model
 /// blablabla
 pub type Model {
-  Model(page: Page, user: Option(User))
+  Model(page: Page, user: Option(User), ws: Option(lustre_websocket.WebSocket))
 }
 
 /// # Page
