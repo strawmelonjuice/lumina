@@ -1,26 +1,76 @@
-use axum::{
-    routing::{get, post},
-    http::StatusCode,
-    Json, Router,
-	response::{Html, IntoResponse},
-};
-use axum::http::header;
-use serde::{Deserialize, Serialize};
+#[macro_use]
+extern crate rocket;
+use rocket::response;
+use rocket::response::content::{RawCss, RawHtml, RawJavaScript};
+use std::path::{Path, PathBuf};
+use ws::Message;
 
-#[tokio::main]
+#[get("/")]
+async fn index() -> RawHtml<String> {
+    RawHtml(include_str!("../../client/index.html").to_string())
+}
+
+#[get("/static/lumina.min.mjs")]
+async fn lumina_js() -> RawJavaScript<String> {
+    RawJavaScript(include_str!("../../client/priv/static/lumina_client.min.mjs").to_string())
+}
+
+#[get("/static/lumina.css")]
+async fn lumina_css() -> RawCss<String> {
+    RawCss(include_str!("../../client/priv/static/lumina_client.min.css").to_string())
+}
+
+#[rocket::main]
 async fn main() {
-    // initialize tracing
-    tracing_subscriber::fmt::init();
+    let should_start_server = true; // for now
+    if should_start_server {
+        let result = rocket::build()
+            .mount("/", routes![index, lumina_js, lumina_css, wsconnection])
+            .launch()
+            .await;
+        match result {
+            Ok(_) => {
+                println!("Server started successfully");
+            }
+            Err(e) => {
+                println!("Error starting server: {:?}", e);
+            }
+        }
+    } else {
+        // do something else
+    }
+}
 
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(|| async { Html(include_str!("../../client/index.html")) }))
-        .route("/static/lumina.min.mjs", get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], include_str!("../../client/priv/static/lumina_client.min.mjs")) }))
-		.route("/static/lumina.css", get(|| async { ([(header::CONTENT_TYPE, "text/css")], include_str!("../../client/priv/static/lumina_client.min.css")) }));
+#[get("/connection")]
+fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
+    use rocket::futures::{SinkExt, StreamExt};
 
-    // run our app with hyper, listening globally on port 3000
-	println!("Listening on http://localhost:3000");
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    ws.channel(move |mut stream| {
+        Box::pin(async move {
+            while let Some(message) = stream.next().await {
+                println!("Received message: {:?}", message);
+                match message? {
+                    ws::Message::Text(msg) => match msg.as_str() {
+                        "ping" => {
+                            let _ = stream.send(ws::Message::Text("pong".to_string())).await;
+                        }
+                        "close" => {
+                            break;
+                        }
+                        "client-init" => {
+                            let _ = stream.send(Message::from("client-init")).await;
+                        }
+                        _ => {
+                            let _ = stream.send(Message::from("unknown")).await;
+                        }
+                    },
+                    _ => {
+                        let _ = stream.send(Message::from("unknown")).await;
+                    }
+                }
+            }
+
+            Ok(())
+        })
+    })
 }

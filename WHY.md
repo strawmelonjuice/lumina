@@ -16,7 +16,7 @@ Git branch 25 is yet another restart for me writing on Lumina. With past experie
     - **TailwindCSS** as the main CSS framework.
     - **Lustre** for building the UI.
 - **Rust** as the main language on backend.
-    - More specifically, the `axum` library instead of `actix-web`.
+    - More specifically, the `rocket` library instead of `actix-web`.
     - Rust 2024 edition from the start.
 - **PostgreSQL** as the main database. **SQLite** for testing.
 - **WebSockets** for real-time communication between the client and the server.

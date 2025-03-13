@@ -2,6 +2,8 @@
 //// Once I get time to work on the actual project, I'll adapt them further to original code fitting the project's needs.
 
 import gleam/option.{type Option, None, Some}
+import gleamy_lights/console
+import gleamy_lights/premixed
 import lumina_client/model.{type Model, Model}
 import lustre
 import lustre/attribute
@@ -29,7 +31,7 @@ pub fn main() {
 fn init(_flags: a) -> #(Model, Effect(Msg)) {
   #(
     Model(model.Login("", ""), None, None),
-    lustre_websocket.init("/path", WsWrapper),
+    lustre_websocket.init("/connection", WsWrapper),
   )
 }
 
@@ -42,8 +44,18 @@ pub opaque type Msg {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     WsWrapper(lustre_websocket.InvalidUrl) -> panic
-    WsWrapper(lustre_websocket.OnTextMessage(msg)) -> todo
-    WsWrapper(lustre_websocket.OnBinaryMessage(msg)) -> todo as "either-or"
+    WsWrapper(lustre_websocket.OnTextMessage(notice)) ->
+      case notice {
+        "client-init" -> {
+          console.log(
+            "The server echoed my initialisation message! (client-init)",
+          )
+          #(model, effect.none())
+        }
+        _ -> todo as "unknown message"
+      }
+    WsWrapper(lustre_websocket.OnBinaryMessage(msg)) ->
+      todo as "bitarray incoming, what to do?"
     WsWrapper(lustre_websocket.OnClose(_reason)) -> #(
       Model(..model, ws: None),
       effect.none(),
