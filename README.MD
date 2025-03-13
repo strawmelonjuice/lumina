@@ -3,7 +3,7 @@
 ## -> Rewrite '25'
 
 > Completely rewriting this project. I am relatively new
-> to Lustre and to websockets and to Axum, but wanna try
+> to Lustre and to websockets and to Rocket, but wanna try
 > all of them out and make them succeed in this rewrite.
 
 

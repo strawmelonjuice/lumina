@@ -2,7 +2,7 @@
 name = "lumina-server"
 version = "0.1.0"
 edition = "2024"
-build="../build.rs"
+build = "../build.rs"
 
 [[bin]]
 name = "lumina-server"
@@ -10,8 +10,9 @@ path = "src/main.rs"
 
 
 [dependencies]
-axum = {version = "0.8.1", features = ["form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tower-log", "tracing", "ws"]}
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rocket = "0.5.1"
+ws = { package = "rocket_ws", version = "0.1.1" }
