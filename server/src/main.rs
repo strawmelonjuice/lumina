@@ -29,9 +29,7 @@ async fn main() {
             .launch()
             .await;
         match result {
-            Ok(_) => {
-                println!("Server started successfully");
-            }
+            Ok(_) => {}
             Err(e) => {
                 println!("Error starting server: {:?}", e);
             }
