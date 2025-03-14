@@ -4,18 +4,14 @@ const MINIMUM_BUN_VERSION: (u32, u32, u32) = (1, 2, 4);
 fn main() {
     // The build script will be ran from the server directory, so we need to go up one directory to get to the root
     let root_path = match std::env::var("CARGO_MANIFEST_DIR") {
-        Ok(path) => path + "/..",
+        Ok(path) => (path + "/..").replace("/server/..", "/"),
         Err(_) => panic!("Failed to get root path"),
     };
     // Tell cargo to rerun the build script if the client directory changes
-    println!("cargo::rerun-if-changed={}client/src", root_path);
-
+    println!("cargo::rerun-if-changed={}client/src/", root_path);
     // Check if Bun is installed and is the correct version
     println!("Checking for Bun...");
-    let bun_version = match std::process::Command::new("bun")
-        .arg("--version")
-        .output()
-    {
+    let bun_version = match std::process::Command::new("bun").arg("--version").output() {
         Ok(output) => output,
         Err(_) => {
             let minimum_bun_version = MINIMUM_BUN_VERSION.0.to_string()
@@ -62,7 +58,8 @@ fn main() {
     let install_result = std::process::Command::new("bun")
         .current_dir(root_path.clone() + "/client")
         .args(&["install"])
-        .output().expect("Failed to install Bun dependencies");
+        .output()
+        .expect("Failed to install Bun dependencies");
     if !install_result.status.success() {
         println!(
             "cargo:error={}",
@@ -71,7 +68,6 @@ fn main() {
         panic!("Failed to install Bun dependencies.");
     }
     println!("Bun dependencies installed.");
-
 
     // Check if Gleam is installed and is the correct version
     println!("Checking for Gleam...");
