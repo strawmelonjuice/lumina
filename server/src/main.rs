@@ -1,9 +1,11 @@
+pub mod errors;
+
 #[macro_use]
 extern crate rocket;
 use rocket::response;
 use rocket::response::content::{RawCss, RawHtml, RawJavaScript};
 use std::path::{Path, PathBuf};
-use ws::Message;
+use ws;
 
 #[get("/")]
 async fn index() -> RawHtml<String> {
@@ -56,19 +58,56 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
                             break;
                         }
                         "client-init" => {
-                            let _ = stream.send(Message::from("client-init")).await;
+                            let _ = stream
+                                .send(ws::Message::from(msgtojson(Message::Greeting {
+                                    greeting: "Hello from server!".to_string(),
+                                })))
+                                .await;
                         }
-                        _ => {
-                            let _ = stream.send(Message::from("unknown")).await;
-                        }
+                        possibly_json => match serde_json::from_str::<Message>(possibly_json) {
+                            Ok(jsonmsg) => {
+                                todo!("Handle message: {:?}", jsonmsg);
+                            }
+                            Err(e) => {
+                                let _ = stream.send(ws::Message::from("unknown")).await;
+                            }
+                        },
                     },
                     _ => {
-                        let _ = stream.send(Message::from("unknown")).await;
+                        let _ = stream.send(ws::Message::from("unknown")).await;
                     }
                 }
             }
 
             Ok(())
+        })
+    })
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+// An example of a JSON message that the client might send to the server:
+// {"type": "client-init", "data": "hi"}
+enum Message {
+    #[serde(rename = "client-init")]
+    ClientInit { data: String },
+    #[serde(rename = "greeting")]
+    Greeting { greeting: String },
+    #[serde(rename = "serialisation_error")]
+    SerialisationError { error: String },
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+fn msgtojson(msg: Message) -> String {
+    serde_json::to_string(&msg).unwrap_or_else(|e| {
+        serde_json::to_string(&Message::SerialisationError {
+            error: format!("{:?}", e),
+        })
+        .unwrap_or_else(|e| {
+            format!(
+                "{{\"type\": \"serialisation_error\", \"error\": \"{}\"}}",
+                e
+            )
         })
     })
 }
