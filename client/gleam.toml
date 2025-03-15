@@ -6,7 +6,6 @@ target = "javascript"
 gleam_json = "2.3.0"
 gleam_stdlib = "0.55.0"
 lustre = "4.6.3"
-lustre_ui = "~> 0.4"
 lustre_websocket = ">= 0.7.6 and < 1.0.0"
 gleamy_lights = ">= 2.3.0 and < 3.0.0"
 

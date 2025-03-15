@@ -19,7 +19,7 @@ async fn lumina_js() -> RawJavaScript<String> {
 
 #[get("/static/lumina.css")]
 async fn lumina_css() -> RawCss<String> {
-    RawCss(include_str!("../../client/priv/static/lumina_client.min.css").to_string())
+    RawCss(include_str!("../../client/priv/static/lumina_client.css").to_string())
 }
 
 #[rocket::main]
@@ -54,9 +54,6 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
                         "ping" => {
                             let _ = stream.send(ws::Message::Text("pong".to_string())).await;
                         }
-                        "close" => {
-                            break;
-                        }
                         "client-init" => {
                             let _ = stream
                                 .send(ws::Message::from(msgtojson(Message::Greeting {
@@ -73,6 +70,10 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
                             }
                         },
                     },
+                    ws::Message::Close(_) => {
+                        let _ = stream.send(ws::Message::Close(None)).await;
+                        break;
+                    }
                     _ => {
                         let _ = stream.send(ws::Message::from("unknown")).await;
                     }

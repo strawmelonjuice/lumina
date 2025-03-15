@@ -16,8 +16,23 @@ pub type Model {
 /// In this model, Login and Dashboard would be equal. The model keeps track of the current page and the user's authentication status.
 /// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
 pub type Page {
-  Login(usernamefield: String, passwordfield: String)
+  Landing
+  Register(fields: RegisterPageFields)
+  Login(fields: LoginFields)
   HomeTimeline(timeline_id: String)
+}
+
+pub type RegisterPageFields {
+  RegisterPageFields(
+    usernamefield: String,
+    emailfield: String,
+    passwordfield: String,
+    passwordconfirmfield: String,
+  )
+}
+
+pub type LoginFields {
+  LoginFields(emailfield: String, passwordfield: String)
 }
 
 /// # User
