@@ -9,6 +9,8 @@ fn main() {
     };
     // Tell cargo to rerun the build script if the client directory changes
     println!("cargo::rerun-if-changed={}client/src/", root_path);
+    println!("cargo::rerun-if-changed={}client/app.css", root_path);
+    println!("cargo::rerun-if-changed={}server/src/", root_path);
     // Check if Bun is installed and is the correct version
     println!("Checking for Bun...");
     let bun_version = match std::process::Command::new("bun").arg("--version").output() {
@@ -118,11 +120,32 @@ fn main() {
     }
     println!("Gleam version is correct.");
 
+    println!("Checking Gleam client code...");
+    let lustre_result = std::process::Command::new("gleam")
+        .current_dir(root_path.clone() + "/client")
+        .args(&["check"])
+        .output()
+        .expect("Failed to check Gleam code");
+    if !lustre_result.status.success() {
+        println!(
+            "cargo:error={}",
+            String::from_utf8_lossy(&lustre_result.stderr)
+        );
+        panic!("Gleam code check failed.");
+    }
+
     // Compile the Gleam code: gleam run -m lustre/dev build --minify=true
     println!("Compiling Gleam client code...");
     let lustre_result = std::process::Command::new("gleam")
         .current_dir(root_path.clone() + "/client")
-        .args(&["run", "-m", "lustre/dev", "build", "--minify=true"])
+        .args(&[
+            "run",
+            "-m",
+            "lustre/dev",
+            "build",
+            "--minify=true",
+            "--detect-tailwind=false",
+        ])
         .output()
         .expect("Failed to compile Gleam code");
     if !lustre_result.status.success() {
@@ -131,5 +154,26 @@ fn main() {
             String::from_utf8_lossy(&lustre_result.stderr)
         );
         panic!("Failed to compile Gleam code.");
+    }
+    // Transpile tailwind styles
+    println!("Transpiling Tailwind styles...");
+    let tailwind_result = std::process::Command::new("bun")
+        .current_dir(root_path.clone() + "/client")
+        .args(&[
+            "x",
+            "@tailwindcss/cli",
+            "-i",
+            "./app.css",
+            "-o",
+            "./priv/static/lumina_client.css",
+        ])
+        .output()
+        .expect("Failed to transpile Tailwind styles");
+    if !tailwind_result.status.success() {
+        println!(
+            "cargo:error={}",
+            String::from_utf8_lossy(&tailwind_result.stderr)
+        );
+        panic!("Failed to transpile Tailwind styles.");
     }
 }

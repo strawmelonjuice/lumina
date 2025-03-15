@@ -30,5 +30,5 @@ node_modules
 # Added by cargo
 
 /target
-/client/priv/static/lumina_client.min.css
-/client/priv/static/lumina_client.min.mjs
+/client/priv/static/lumina_client*.css
+/client/priv/static/lumina_client*.mjs
