@@ -215,7 +215,7 @@ fn view_landing() -> List(Element(Msg)) {
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
           html.img([
-            attribute.src("https://lumina.app/assets/logo.svg"),
+            attribute.src("/static/logo.svg"),
             attribute.alt("Lumina logo"),
             attribute.class("h-8"),
           ]),
@@ -269,7 +269,7 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
           html.img([
-            attribute.src("https://lumina.app/assets/logo.svg"),
+            attribute.src("/static/logo.svg"),
             attribute.alt("Lumina logo"),
             attribute.class("h-8"),
           ]),

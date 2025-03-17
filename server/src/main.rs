@@ -2,9 +2,8 @@ pub mod errors;
 
 #[macro_use]
 extern crate rocket;
-use rocket::response;
+use rocket::http::ContentType;
 use rocket::response::content::{RawCss, RawHtml, RawJavaScript};
-use std::path::{Path, PathBuf};
 use ws;
 
 #[get("/")]
@@ -22,12 +21,23 @@ async fn lumina_css() -> RawCss<String> {
     RawCss(include_str!("../../client/priv/static/lumina_client.css").to_string())
 }
 
+#[get("/static/logo.svg")]
+async fn logo_svg() -> (ContentType, &'static str) {
+    (
+        ContentType::SVG,
+        include_str!("../../client/priv/static/logo.svg"),
+    )
+}
+
 #[rocket::main]
 async fn main() {
     let should_start_server = true; // for now
     if should_start_server {
         let result = rocket::build()
-            .mount("/", routes![index, lumina_js, lumina_css, wsconnection])
+            .mount(
+                "/",
+                routes![index, lumina_js, lumina_css, wsconnection, logo_svg],
+            )
             .launch()
             .await;
         match result {
