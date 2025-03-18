@@ -181,8 +181,11 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
           #(model_, effect.none())
         }
       }
-    lustre_websocket.OnBinaryMessage(_msg) ->
-      todo as "bitarray incoming, what to do?"
+    lustre_websocket.OnBinaryMessage(_msg) -> {
+      // Ignore this. We don't expect binary messages, as we cannot tag them. We only expect text messages, with base64-encoded bitarrays in their fields. This makes it easier to handle them in the decoder.
+      // So, continue with the model as is:
+      #(model_, effect.none())
+    }
     lustre_websocket.OnClose(_reason) -> #(
       Model(..model_, ws: None),
       effect.none(),
@@ -481,7 +484,7 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
           html.img([
-            attribute.src("/assets/logo.svg"),
+            attribute.src("/static/logo.svg"),
             attribute.alt("Lumina logo"),
             attribute.class("h-8"),
           ]),
