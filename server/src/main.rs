@@ -1,4 +1,5 @@
 pub mod errors;
+mod tests;
 
 #[macro_use]
 extern crate rocket;
