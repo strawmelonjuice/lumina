@@ -41,7 +41,9 @@ fn init(_flags: a) -> #(Model, Effect(Msg)) {
 pub opaque type Msg {
   WsWrapper(lustre_websocket.WebSocketEvent)
   ToLoginPage
+  SubmitLogin
   ToRegisterPage
+  SubmitSignup
   ToLandingPage
   // Can be re-used for both login and register pages
   UpdateEmailField(String)
@@ -148,6 +150,46 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           effect.none(),
         )
         _ -> #(model_, effect.none())
+      }
+    }
+    SubmitLogin -> {
+      let assert model.Login(fields) = model_.page
+      let values_ok = login_view_checker(fields)
+      case values_ok {
+        True -> {
+          todo
+        }
+        False -> {
+          console.error("Form not ready to submit")
+          #(model_, effect.none())
+        }
+      }
+    }
+    SubmitSignup -> {
+      let assert model.Register(fields) = model_.page
+
+      let values_ok = register_view_checker(fields)
+
+      case values_ok.0 {
+        True -> {
+          console.log("Submitting signup form")
+          let json =
+            encode_ws_msg(RegisterRequest(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+          let assert Some(socket) = model_.ws
+          #(
+            Model(..model_, ws: Some(socket)),
+            lustre_websocket.send(socket, json),
+          )
+        }
+        False -> {
+          console.error("Form not ready to submit")
+          #(model_, effect.none())
+        }
       }
     }
   }
@@ -263,10 +305,7 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
   // We know that the model is a Login page, so we can safely unwrap it
   let assert model.Login(fieldvalues) = model_.page
 
-  let values_ok = {
-    [{ fieldvalues.passwordfield != "" }, { fieldvalues.emailfield != "" }]
-    |> list.all(fn(x) { x })
-  }
+  let values_ok = login_view_checker(fieldvalues)
   [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
@@ -320,45 +359,56 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
                 ),
               ],
               [
-                html.div([attribute.class("card-body m-4")], [
-                  html.fieldset([attribute.class("fieldset")], [
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Email or username"),
-                    ]),
-                    html.input([
-                      attribute.placeholder("me@mymail.com"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("text"),
-                      attribute.value(fieldvalues.emailfield),
-                      event.on_input(UpdateEmailField),
-                    ]),
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Password"),
-                    ]),
-                    html.input([
-                      attribute.value(fieldvalues.passwordfield),
-                      event.on_input(UpdatePasswordField),
-                      attribute.placeholder("Password"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("password"),
-                    ]),
-                    html.div([], [
-                      html.a([attribute.class("link link-hover")], [
-                        html.text("Forgot password?"),
+                html.form(
+                  [
+                    attribute.class("card-body m-4"),
+                    event.on_submit(SubmitLogin),
+                  ],
+                  [
+                    html.fieldset([attribute.class("fieldset")], [
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Email or username"),
                       ]),
+                      html.input([
+                        attribute.placeholder("me@mymail.com"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("text"),
+                        attribute.value(fieldvalues.emailfield),
+                        event.on_input(UpdateEmailField),
+                      ]),
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Password"),
+                      ]),
+                      html.input([
+                        attribute.value(fieldvalues.passwordfield),
+                        event.on_input(UpdatePasswordField),
+                        attribute.placeholder("Password"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("password"),
+                      ]),
+                      html.div([], [
+                        html.a([attribute.class("link link-hover")], [
+                          html.text("Forgot password?"),
+                        ]),
+                      ]),
+                      html.button(
+                        case values_ok {
+                          True -> [
+                            attribute.class("btn btn-base-400 mt-4"),
+                            attribute.type_("submit"),
+                          ]
+                          False -> [
+                            attribute.class(
+                              "btn btn-base-400 mt-4 btn-disabled",
+                            ),
+                            attribute.disabled(True),
+                          ]
+                        },
+                        [html.text("Login")],
+                      ),
                     ]),
-                    html.button(
-                      case values_ok {
-                        True -> [attribute.class("btn btn-base-400 mt-4")]
-                        False -> [
-                          attribute.class("btn btn-base-400 mt-4 btn-disabled"),
-                          attribute.disabled(True),
-                        ]
-                      },
-                      [html.text("Login")],
-                    ),
-                  ]),
-                ]),
+                  ],
+                ),
               ],
             ),
           ],
@@ -371,114 +421,8 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
 fn view_register(model_: Model) -> List(Element(Msg)) {
   // We know that the model is a Login page, so we can safely unwrap it
   let assert model.Register(fieldvalues): model.Page = model_.page
+  let values_ok = register_view_checker(fieldvalues)
   // Check if the password and password confirmation fields match and if the email and username fields are not empty
-  let values_ok: #(Bool, String) = {
-    [
-      #({ fieldvalues.emailfield != "" }, "Email field cannot be empty"),
-      #(
-        {
-          [
-            fieldvalues.emailfield |> string.contains("@"),
-            {
-              let f = fieldvalues.emailfield |> string.split("@")
-              case f {
-                [a, b] -> { string.length(a) > 3 } && { string.length(b) > 5 }
-                _ -> False
-              }
-            },
-            fieldvalues.emailfield |> string.contains("."),
-            {
-              case fieldvalues.emailfield |> string.split("@") {
-                [_, c] ->
-                  case string.split(c, ".") {
-                    [a, b] ->
-                      { string.length(a) > 1 } && { string.length(b) > 1 }
-                    [a, "co", "uk"] -> {
-                      string.length(a) > 1
-                    }
-                    _ -> False
-                  }
-                _ -> False
-              }
-            },
-          ]
-          |> list.all(fn(x) { x })
-        },
-        "Must be a valid email address",
-      ),
-      #({ fieldvalues.usernamefield != "" }, "Username field cannot be empty"),
-      #(
-        { fieldvalues.passwordfield |> string.length() > 7 },
-        "Password must be at least 8 characters, are "
-          <> fieldvalues.passwordfield |> string.length() |> int.to_string(),
-      ),
-      #(
-        {
-          [
-            { fieldvalues.passwordfield |> string.contains("0") },
-            { fieldvalues.passwordfield |> string.contains("1") },
-            { fieldvalues.passwordfield |> string.contains("2") },
-            { fieldvalues.passwordfield |> string.contains("3") },
-            { fieldvalues.passwordfield |> string.contains("4") },
-            { fieldvalues.passwordfield |> string.contains("5") },
-            { fieldvalues.passwordfield |> string.contains("6") },
-            { fieldvalues.passwordfield |> string.contains("7") },
-            { fieldvalues.passwordfield |> string.contains("8") },
-            { fieldvalues.passwordfield |> string.contains("9") },
-          ]
-          |> list.any(fn(x) { x })
-        },
-        "Password must contain at least one number",
-      ),
-      #(
-        {
-          [
-            { fieldvalues.passwordfield |> string.contains("!") },
-            { fieldvalues.passwordfield |> string.contains("@") },
-            { fieldvalues.passwordfield |> string.contains("#") },
-            { fieldvalues.passwordfield |> string.contains("$") },
-            { fieldvalues.passwordfield |> string.contains("%") },
-            { fieldvalues.passwordfield |> string.contains("^") },
-            { fieldvalues.passwordfield |> string.contains("&") },
-            { fieldvalues.passwordfield |> string.contains("*") },
-            { fieldvalues.passwordfield |> string.contains("(") },
-            { fieldvalues.passwordfield |> string.contains(")") },
-            { fieldvalues.passwordfield |> string.contains("-") },
-            { fieldvalues.passwordfield |> string.contains("_") },
-            { fieldvalues.passwordfield |> string.contains("=") },
-            { fieldvalues.passwordfield |> string.contains("+") },
-            { fieldvalues.passwordfield |> string.contains("[") },
-            { fieldvalues.passwordfield |> string.contains("]") },
-            { fieldvalues.passwordfield |> string.contains("{") },
-            { fieldvalues.passwordfield |> string.contains("}") },
-            { fieldvalues.passwordfield |> string.contains(":") },
-            { fieldvalues.passwordfield |> string.contains(";") },
-            { fieldvalues.passwordfield |> string.contains("<") },
-            { fieldvalues.passwordfield |> string.contains(">") },
-            { fieldvalues.passwordfield |> string.contains(",") },
-            { fieldvalues.passwordfield |> string.contains(".") },
-            { fieldvalues.passwordfield |> string.contains("?") },
-            { fieldvalues.passwordfield |> string.contains("/") },
-            { fieldvalues.passwordfield |> string.contains("|") },
-            { fieldvalues.passwordfield |> string.contains("`") },
-            { fieldvalues.passwordfield |> string.contains("~") },
-            { fieldvalues.passwordfield |> string.contains("\"") },
-            { fieldvalues.passwordfield |> string.contains("'") },
-            { fieldvalues.passwordfield |> string.contains("\\") },
-            { fieldvalues.passwordfield |> string.contains(" ") },
-          ]
-          |> list.any(fn(x) { x })
-        },
-        "Password must contain at least one special character",
-      ),
-      #(
-        { fieldvalues.passwordfield == fieldvalues.passwordconfirmfield },
-        "Passwords do not match",
-      ),
-    ]
-    |> list.find(fn(x) { x.0 == False })
-    |> result.unwrap(#(True, ""))
-  }
   [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
@@ -522,119 +466,132 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
                 ),
               ],
               [
-                html.div([attribute.class("card-body  m-4")], [
-                  html.fieldset([attribute.class("fieldset")], [
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Email"),
-                    ]),
-                    html.input([
-                      attribute.placeholder("Email"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("email"),
-                      attribute.value(fieldvalues.emailfield),
-                      event.on_input(UpdateEmailField),
-                    ]),
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Username"),
-                    ]),
-                    html.input([
-                      attribute.placeholder("Username"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("email"),
-                      attribute.value(fieldvalues.usernamefield),
-                      event.on_input(UpdateUsernameField),
-                    ]),
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Password"),
-                    ]),
-                    html.input([
-                      attribute.value(fieldvalues.passwordfield),
-                      event.on_input(UpdatePasswordField),
-                      attribute.placeholder("Password"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("password"),
-                    ]),
-                    html.label([attribute.class("fieldset-label")], [
-                      html.text("Confirm Password"),
-                    ]),
-                    html.input([
-                      attribute.value(fieldvalues.passwordconfirmfield),
-                      event.on_input(UpdatePasswordConfirmField),
-                      attribute.placeholder("Re-type password"),
-                      attribute.class("input input-primary bg-primary"),
-                      attribute.type_("password"),
-                    ]),
-                    html.br([]),
-                    html.div(
-                      [attribute.class("bg-base-200 card shadow-md p-4 w-full")],
-                      [
+                html.form(
+                  [
+                    attribute.class("card-body  m-4"),
+                    event.on_submit(SubmitSignup),
+                  ],
+                  [
+                    html.fieldset([attribute.class("fieldset")], [
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Email"),
+                      ]),
+                      html.input([
+                        attribute.placeholder("Email"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("email"),
+                        attribute.value(fieldvalues.emailfield),
+                        event.on_input(UpdateEmailField),
+                      ]),
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Username"),
+                      ]),
+                      html.input([
+                        attribute.placeholder("Username"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("string"),
+                        attribute.value(fieldvalues.usernamefield),
+                        event.on_input(UpdateUsernameField),
+                      ]),
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Password"),
+                      ]),
+                      html.input([
+                        attribute.value(fieldvalues.passwordfield),
+                        event.on_input(UpdatePasswordField),
+                        attribute.placeholder("Password"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("password"),
+                      ]),
+                      html.label([attribute.class("fieldset-label")], [
+                        html.text("Confirm Password"),
+                      ]),
+                      html.input([
+                        attribute.value(fieldvalues.passwordconfirmfield),
+                        event.on_input(UpdatePasswordConfirmField),
+                        attribute.placeholder("Re-type password"),
+                        attribute.class("input input-primary bg-primary"),
+                        attribute.type_("password"),
+                      ]),
+                      html.br([]),
+                      html.div(
+                        [
+                          attribute.class(
+                            "bg-base-200 card shadow-md p-4 w-full",
+                          ),
+                        ],
+                        [
+                          case values_ok.0 {
+                            False ->
+                              html.div([attribute.class("w-full")], [
+                                html.div(
+                                  [
+                                    attribute.class(
+                                      "inline-grid *:[grid-area:1/1]",
+                                    ),
+                                  ],
+                                  [
+                                    html.div(
+                                      [
+                                        attribute.class(
+                                          "status status-error animate-ping",
+                                        ),
+                                      ],
+                                      [],
+                                    ),
+                                    html.div(
+                                      [attribute.class("status status-error")],
+                                      [],
+                                    ),
+                                  ],
+                                ),
+                                html.text(" " <> values_ok.1),
+                              ])
+                            True ->
+                              html.div([attribute.class("w-full")], [
+                                html.div(
+                                  [
+                                    attribute.class(
+                                      "inline-grid *:[grid-area:1/1]",
+                                    ),
+                                  ],
+                                  [
+                                    html.div(
+                                      [
+                                        attribute.class(
+                                          "status status-success animate-ping",
+                                        ),
+                                      ],
+                                      [],
+                                    ),
+                                    html.div(
+                                      [attribute.class("status status-success")],
+                                      [],
+                                    ),
+                                  ],
+                                ),
+                                html.text(" Ready to go!"),
+                              ])
+                          },
+                        ],
+                      ),
+                      html.button(
                         case values_ok.0 {
-                          False ->
-                            html.div([attribute.class("w-full")], [
-                              html.div(
-                                [
-                                  attribute.class(
-                                    "inline-grid *:[grid-area:1/1]",
-                                  ),
-                                ],
-                                [
-                                  html.div(
-                                    [
-                                      attribute.class(
-                                        "status status-error animate-ping",
-                                      ),
-                                    ],
-                                    [],
-                                  ),
-                                  html.div(
-                                    [attribute.class("status status-error")],
-                                    [],
-                                  ),
-                                ],
-                              ),
-                              html.text(" " <> values_ok.1),
-                            ])
-                          True ->
-                            html.div([attribute.class("w-full")], [
-                              html.div(
-                                [
-                                  attribute.class(
-                                    "inline-grid *:[grid-area:1/1]",
-                                  ),
-                                ],
-                                [
-                                  html.div(
-                                    [
-                                      attribute.class(
-                                        "status status-success animate-ping",
-                                      ),
-                                    ],
-                                    [],
-                                  ),
-                                  html.div(
-                                    [attribute.class("status status-success")],
-                                    [],
-                                  ),
-                                ],
-                              ),
-                              html.text(" Ready to go!"),
-                            ])
+                          True -> [
+                            attribute.class("btn btn-base-400 mt-4"),
+                            attribute.type_("submit"),
+                          ]
+                          False -> [
+                            attribute.class("btn btn-sucess mt-4 btn-disabled"),
+                            // attribute.title(values_ok.1),
+                            attribute.disabled(True),
+                          ]
                         },
-                      ],
-                    ),
-                    html.button(
-                      case values_ok.0 {
-                        True -> [attribute.class("btn btn-base-400 mt-4")]
-                        False -> [
-                          attribute.class("btn btn-sucess mt-4 btn-disabled"),
-                          // attribute.title(values_ok.1),
-                          attribute.disabled(True),
-                        ]
-                      },
-                      [html.text("Sign up")],
-                    ),
-                  ]),
-                ]),
+                        [html.text("Sign up")],
+                      ),
+                    ]),
+                  ],
+                ),
               ],
             ),
             html.div([attribute.class("text-center lg:text-right")], [
@@ -664,11 +621,139 @@ fn get_color_scheme(_model_) -> attribute.Attribute(Msg) {
   }
 }
 
+fn login_view_checker(fieldvalues: model.LoginFields) {
+  [{ fieldvalues.passwordfield != "" }, { fieldvalues.emailfield != "" }]
+  |> list.all(fn(x) { x })
+}
+
+fn register_view_checker(
+  fieldvalues: model.RegisterPageFields,
+) -> #(Bool, String) {
+  [
+    #({ fieldvalues.emailfield != "" }, "Email field cannot be empty"),
+    #(
+      {
+        [
+          fieldvalues.emailfield |> string.contains("@"),
+          {
+            let f = fieldvalues.emailfield |> string.split("@")
+            case f {
+              [a, b] -> { string.length(a) > 3 } && { string.length(b) > 5 }
+              _ -> False
+            }
+          },
+          fieldvalues.emailfield |> string.contains("."),
+          {
+            case fieldvalues.emailfield |> string.split("@") {
+              [_, c] ->
+                case string.split(c, ".") {
+                  [a, b] -> { string.length(a) > 1 } && { string.length(b) > 1 }
+                  [a, "co", "uk"] -> {
+                    string.length(a) > 1
+                  }
+                  _ -> False
+                }
+              _ -> False
+            }
+          },
+        ]
+        |> list.all(fn(x) { x })
+      },
+      "Must be a valid email address",
+    ),
+    #({ fieldvalues.usernamefield != "" }, "Username field cannot be empty"),
+    #(
+      { fieldvalues.passwordfield |> string.length() > 7 },
+      "Password must be at least 8 characters, are "
+        <> fieldvalues.passwordfield |> string.length() |> int.to_string(),
+    ),
+    #(
+      {
+        [
+          { fieldvalues.passwordfield |> string.contains("0") },
+          { fieldvalues.passwordfield |> string.contains("1") },
+          { fieldvalues.passwordfield |> string.contains("2") },
+          { fieldvalues.passwordfield |> string.contains("3") },
+          { fieldvalues.passwordfield |> string.contains("4") },
+          { fieldvalues.passwordfield |> string.contains("5") },
+          { fieldvalues.passwordfield |> string.contains("6") },
+          { fieldvalues.passwordfield |> string.contains("7") },
+          { fieldvalues.passwordfield |> string.contains("8") },
+          { fieldvalues.passwordfield |> string.contains("9") },
+        ]
+        |> list.any(fn(x) { x })
+      },
+      "Password must contain at least one number",
+    ),
+    #(
+      {
+        [
+          { fieldvalues.passwordfield |> string.contains("!") },
+          { fieldvalues.passwordfield |> string.contains("@") },
+          { fieldvalues.passwordfield |> string.contains("#") },
+          { fieldvalues.passwordfield |> string.contains("$") },
+          { fieldvalues.passwordfield |> string.contains("%") },
+          { fieldvalues.passwordfield |> string.contains("^") },
+          { fieldvalues.passwordfield |> string.contains("&") },
+          { fieldvalues.passwordfield |> string.contains("*") },
+          { fieldvalues.passwordfield |> string.contains("(") },
+          { fieldvalues.passwordfield |> string.contains(")") },
+          { fieldvalues.passwordfield |> string.contains("-") },
+          { fieldvalues.passwordfield |> string.contains("_") },
+          { fieldvalues.passwordfield |> string.contains("=") },
+          { fieldvalues.passwordfield |> string.contains("+") },
+          { fieldvalues.passwordfield |> string.contains("[") },
+          { fieldvalues.passwordfield |> string.contains("]") },
+          { fieldvalues.passwordfield |> string.contains("{") },
+          { fieldvalues.passwordfield |> string.contains("}") },
+          { fieldvalues.passwordfield |> string.contains(":") },
+          { fieldvalues.passwordfield |> string.contains(";") },
+          { fieldvalues.passwordfield |> string.contains("<") },
+          { fieldvalues.passwordfield |> string.contains(">") },
+          { fieldvalues.passwordfield |> string.contains(",") },
+          { fieldvalues.passwordfield |> string.contains(".") },
+          { fieldvalues.passwordfield |> string.contains("?") },
+          { fieldvalues.passwordfield |> string.contains("/") },
+          { fieldvalues.passwordfield |> string.contains("|") },
+          { fieldvalues.passwordfield |> string.contains("`") },
+          { fieldvalues.passwordfield |> string.contains("~") },
+          { fieldvalues.passwordfield |> string.contains("\"") },
+          { fieldvalues.passwordfield |> string.contains("'") },
+          { fieldvalues.passwordfield |> string.contains("\\") },
+          { fieldvalues.passwordfield |> string.contains(" ") },
+        ]
+        |> list.any(fn(x) { x })
+      },
+      "Password must contain at least one special character",
+    ),
+    #(
+      { fieldvalues.passwordfield == fieldvalues.passwordconfirmfield },
+      "Passwords do not match",
+    ),
+  ]
+  |> list.find(fn(x) { x.0 == False })
+  |> result.unwrap(#(True, ""))
+}
+
 // WS Message decoding ---------------------------------------------------------
 
 type WsMsg {
   Greeting(greeting: String)
+  RegisterRequest(email: String, username: String, password: String)
   Undecodable
+}
+
+fn encode_ws_msg(message: WsMsg) -> json.Json {
+  case message {
+    RegisterRequest(email, username, password) ->
+      json.object([
+        #("type", json.string("register_request")),
+        #("email", json.string(email)),
+        #("username", json.string(username)),
+        #("password", json.string(password)),
+      ])
+    _ -> json.object([#("type", json.string("unknown"))])
+  }
 }
 
 fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
