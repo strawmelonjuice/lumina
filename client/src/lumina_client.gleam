@@ -157,7 +157,18 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let values_ok = login_view_checker(fields)
       case values_ok {
         True -> {
-          todo
+          console.log("Submitting login form")
+          let json =
+            encode_ws_msg(LoginAuthenticationRequest(
+              fields.emailfield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+          let assert Some(socket) = model_.ws as "Socket not connected"
+          #(
+            Model(..model_, ws: Some(socket)),
+            lustre_websocket.send(socket, json),
+          )
         }
         False -> {
           console.error("Form not ready to submit")
@@ -180,7 +191,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               fields.passwordfield,
             ))
             |> json.to_string()
-          let assert Some(socket) = model_.ws
+          let assert Some(socket) = model_.ws as "Socket not connected"
           #(
             Model(..model_, ws: Some(socket)),
             lustre_websocket.send(socket, json),
@@ -740,11 +751,18 @@ fn register_view_checker(
 type WsMsg {
   Greeting(greeting: String)
   RegisterRequest(email: String, username: String, password: String)
+  LoginAuthenticationRequest(email_username: String, password: String)
   Undecodable
 }
 
 fn encode_ws_msg(message: WsMsg) -> json.Json {
   case message {
+    LoginAuthenticationRequest(email_username, password) ->
+      json.object([
+        #("type", json.string("login_authentication_request")),
+        #("email_username", json.string(email_username)),
+        #("password", json.string(password)),
+      ])
     RegisterRequest(email, username, password) ->
       json.object([
         #("type", json.string("register_request")),
@@ -752,7 +770,8 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("username", json.string(username)),
         #("password", json.string(password)),
       ])
-    _ -> json.object([#("type", json.string("unknown"))])
+    Greeting(_) | Undecodable ->
+      json.object([#("type", json.string("unknown"))])
   }
 }
 

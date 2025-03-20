@@ -74,6 +74,7 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
                         }
                         possibly_json => match serde_json::from_str::<Message>(possibly_json) {
                             Ok(jsonmsg) => {
+                                let _ = stream.send(ws::Message::from("unknown")).await;
                                 todo!("Handle message: {:?}", jsonmsg);
                             }
                             Err(e) => {
@@ -96,7 +97,7 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
     })
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 // An example of a JSON message that the client might send to the server:
 // {"type": "client-init", "data": "hi"}
@@ -107,6 +108,17 @@ enum Message {
     Greeting { greeting: String },
     #[serde(rename = "serialisation_error")]
     SerialisationError { error: String },
+	#[serde(rename = "login_authentication_request")]
+	LoginAuthenticationRequest {
+		email_username: String,
+		password: String
+	}
+    #[serde(rename = "register_request")]
+    RegisterRequest {
+        email: String,
+        username: String,
+        password: String,
+    },
     #[serde(rename = "unknown")]
     Unknown,
 }
