@@ -17,3 +17,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rocket = "0.5.1"
 ws = { package = "rocket_ws", version = "0.1.1" }
 serde_json = "1.0.140"
+uuid = { version = "1.16.0", features = ["v4", "serde"] }
+cynthia_con = "0.1.1"

@@ -777,6 +777,18 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
 
 fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
   case variant {
+    "unknown" -> decode.success(Undecodable)
+    "login_authentication_request" -> {
+      use email_username <- decode.field("email_username", decode.string)
+      use password <- decode.field("password", decode.string)
+      decode.success(LoginAuthenticationRequest(email_username, password))
+    }
+    "register_request" -> {
+      use email <- decode.field("email", decode.string)
+      use username <- decode.field("username", decode.string)
+      use password <- decode.field("password", decode.string)
+      decode.success(RegisterRequest(email, username, password))
+    }
     "greeting" -> {
       use greeting <- decode.field("greeting", decode.string)
       decode.success(Greeting(greeting:))
