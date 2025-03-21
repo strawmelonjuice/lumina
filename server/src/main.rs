@@ -3,8 +3,10 @@ mod tests;
 
 #[macro_use]
 extern crate rocket;
+use cynthia_con::CynthiaColors;
 use rocket::http::ContentType;
 use rocket::response::content::{RawCss, RawHtml, RawJavaScript};
+use uuid::Uuid;
 use ws;
 
 #[get("/")]
@@ -58,6 +60,7 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
+            let mut client_session_data = SessionData { user: None };
             while let Some(message) = stream.next().await {
                 println!("Received message: {:?}", message);
                 match message? {
@@ -73,9 +76,20 @@ fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
                                 .await;
                         }
                         possibly_json => match serde_json::from_str::<Message>(possibly_json) {
+                            Ok(Message::RegisterRequest {
+                                email,
+                                username,
+                                password,
+                            }) => {
+                                // TODO: Register the user
+                                let _ = stream.send(ws::Message::from("unknown")).await;
+                            }
                             Ok(jsonmsg) => {
                                 let _ = stream.send(ws::Message::from("unknown")).await;
-                                todo!("Handle message: {:?}", jsonmsg);
+                                eprintln!(
+                                    "todo: {}",
+                                    format!("Handle message: {:?}", jsonmsg).color_error_red()
+                                );
                             }
                             Err(e) => {
                                 let _ = stream.send(ws::Message::from("unknown")).await;
@@ -108,11 +122,11 @@ enum Message {
     Greeting { greeting: String },
     #[serde(rename = "serialisation_error")]
     SerialisationError { error: String },
-	#[serde(rename = "login_authentication_request")]
-	LoginAuthenticationRequest {
-		email_username: String,
-		password: String
-	}
+    #[serde(rename = "login_authentication_request")]
+    LoginAuthenticationRequest {
+        email_username: String,
+        password: String,
+    },
     #[serde(rename = "register_request")]
     RegisterRequest {
         email: String,
@@ -123,7 +137,7 @@ enum Message {
     Unknown,
 }
 fn msgtojson(msg: Message) -> String {
-    serde_json::to_string(&msg).unwrap_or_else(|e| {
+    serde_json::to_string(&msg).unwrap_or_else(|e| -> String {
         serde_json::to_string(&Message::SerialisationError {
             error: format!("{:?}", e),
         })
@@ -134,4 +148,14 @@ fn msgtojson(msg: Message) -> String {
             )
         })
     })
+}
+
+struct SessionData {
+    user: Option<User>,
+}
+
+struct User {
+    id: Uuid,
+    email: String,
+    username: String,
 }
