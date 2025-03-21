@@ -1,161 +1,83 @@
+mod client_communication;
 pub mod errors;
+mod staticroutes;
+
+mod database;
 mod tests;
 
 #[macro_use]
 extern crate rocket;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+mod user;
+use tokio_postgres as postgres;
+use tokio_sqlite as sqlite;
+struct AppState(Arc<(ServerConfig, Mutex<DbConn>)>);
+
+use database::DbConn;
+use rocket::request::FromRequest;
+
+#[derive(Debug, Clone)]
+struct ServerConfig {
+    port: u16,
+    host: String,
+}
+
+extern crate dotenv;
+
+use crate::errors::LuminaError;
 use cynthia_con::CynthiaColors;
-use rocket::http::ContentType;
-use rocket::response::content::{RawCss, RawHtml, RawJavaScript};
-use uuid::Uuid;
-use ws;
-
-#[get("/")]
-async fn index() -> RawHtml<String> {
-    RawHtml(include_str!("../../client/index.html").to_string())
-}
-
-#[get("/static/lumina.min.mjs")]
-async fn lumina_js() -> RawJavaScript<String> {
-    RawJavaScript(include_str!("../../client/priv/static/lumina_client.min.mjs").to_string())
-}
-
-#[get("/static/lumina.css")]
-async fn lumina_css() -> RawCss<String> {
-    RawCss(include_str!("../../client/priv/static/lumina_client.css").to_string())
-}
-
-#[get("/static/logo.svg")]
-async fn logo_svg() -> (ContentType, &'static str) {
-    (
-        ContentType::SVG,
-        include_str!("../../client/priv/static/logo.svg"),
-    )
-}
+use dotenv::dotenv;
 
 #[rocket::main]
 async fn main() {
-    let should_start_server = true; // for now
+    dotenv().ok();
+
+    let config = ServerConfig {
+        port: 8000,
+        host: "localhost".to_string(),
+    };
+    let db = match database::setup(config.clone()).await {
+        Ok(db) => db,
+        Err(LuminaError::ConfMissing(a)) => panic!(
+            "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+            a.color_bright_orange()
+        ),
+        Err(LuminaError::ConfInvalid(a)) => {
+            panic!("Invalid environment variable: {}", a.color_bright_orange())
+        }
+        Err(LuminaError::Sqlite(a)) => panic!("Error opening sqlite database: {}", a),
+        Err(LuminaError::Postgres(a)) => panic!("Error connecting to postgres database: {}", a),
+        Err(_) => panic!("Unknown error: could not setup database connection."),
+    };
+    let appstate = AppState(Arc::from((config, Mutex::from(db))));
+    let should_start_server = true;
     if should_start_server {
         let result = rocket::build()
             .mount(
                 "/",
-                routes![index, lumina_js, lumina_css, wsconnection, logo_svg],
+                routes![
+                    staticroutes::index,
+                    staticroutes::lumina_js,
+                    staticroutes::lumina_css,
+                    client_communication::wsconnection,
+                    staticroutes::logo_svg
+                ],
             )
+            .manage(appstate)
             .launch()
-            .await;
+            .await
+            .map_err(LuminaError::RocketFaillure);
         match result {
             Ok(_) => {}
-            Err(e) => {
+            Err(LuminaError::RocketFaillure(e)) => {
                 println!("Error starting server: {:?}", e);
+            }
+            Err(_) => {
+                println!("Unknown error starting server.");
             }
         }
     } else {
         // do something else
     }
-}
-
-#[get("/connection")]
-fn wsconnection(ws: ws::WebSocket) -> ws::Channel<'static> {
-    use rocket::futures::{SinkExt, StreamExt};
-
-    ws.channel(move |mut stream| {
-        Box::pin(async move {
-            let mut client_session_data = SessionData { user: None };
-            while let Some(message) = stream.next().await {
-                println!("Received message: {:?}", message);
-                match message? {
-                    ws::Message::Text(msg) => match msg.as_str() {
-                        "ping" => {
-                            let _ = stream.send(ws::Message::Text("pong".to_string())).await;
-                        }
-                        "client-init" => {
-                            let _ = stream
-                                .send(ws::Message::from(msgtojson(Message::Greeting {
-                                    greeting: "Hello from server!".to_string(),
-                                })))
-                                .await;
-                        }
-                        possibly_json => match serde_json::from_str::<Message>(possibly_json) {
-                            Ok(Message::RegisterRequest {
-                                email,
-                                username,
-                                password,
-                            }) => {
-                                // TODO: Register the user
-                                let _ = stream.send(ws::Message::from("unknown")).await;
-                            }
-                            Ok(jsonmsg) => {
-                                let _ = stream.send(ws::Message::from("unknown")).await;
-                                eprintln!(
-                                    "todo: {}",
-                                    format!("Handle message: {:?}", jsonmsg).color_error_red()
-                                );
-                            }
-                            Err(e) => {
-                                let _ = stream.send(ws::Message::from("unknown")).await;
-                            }
-                        },
-                    },
-                    ws::Message::Close(_) => {
-                        let _ = stream.send(ws::Message::Close(None)).await;
-                        break;
-                    }
-                    _ => {
-                        let _ = stream.send(ws::Message::from("unknown")).await;
-                    }
-                }
-            }
-
-            Ok(())
-        })
-    })
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(tag = "type", rename_all = "snake_case")]
-// An example of a JSON message that the client might send to the server:
-// {"type": "client-init", "data": "hi"}
-enum Message {
-    #[serde(rename = "client-init")]
-    ClientInit { data: String },
-    #[serde(rename = "greeting")]
-    Greeting { greeting: String },
-    #[serde(rename = "serialisation_error")]
-    SerialisationError { error: String },
-    #[serde(rename = "login_authentication_request")]
-    LoginAuthenticationRequest {
-        email_username: String,
-        password: String,
-    },
-    #[serde(rename = "register_request")]
-    RegisterRequest {
-        email: String,
-        username: String,
-        password: String,
-    },
-    #[serde(rename = "unknown")]
-    Unknown,
-}
-fn msgtojson(msg: Message) -> String {
-    serde_json::to_string(&msg).unwrap_or_else(|e| -> String {
-        serde_json::to_string(&Message::SerialisationError {
-            error: format!("{:?}", e),
-        })
-        .unwrap_or_else(|e| {
-            format!(
-                "{{\"type\": \"serialisation_error\", \"error\": \"{}\"}}",
-                e
-            )
-        })
-    })
-}
-
-struct SessionData {
-    user: Option<User>,
-}
-
-struct User {
-    id: Uuid,
-    email: String,
-    username: String,
 }
