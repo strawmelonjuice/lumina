@@ -28,3 +28,16 @@ pub(crate) async fn logo_svg() -> (ContentType, &'static str) {
         include_str!("../../client/priv/static/logo.svg"),
     )
 }
+
+#[get("/favicon.ico")]
+pub(crate) async fn favicon() -> (ContentType, &'static [u8]) {
+    logo_png().await
+}
+
+#[get("/static/logo.png")]
+pub(crate) async fn logo_png() -> (ContentType, &'static [u8]) {
+    (
+        ContentType::PNG,
+        include_bytes!("../../client/priv/static/logo.png"),
+    )
+}
