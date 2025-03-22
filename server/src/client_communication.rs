@@ -15,16 +15,6 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                 client_type: None,
                 user: None,
             };
-            {
-                // Just to show that we can access the state xD
-                let appstate = state.0.clone();
-                let config = &appstate.0;
-                println!(
-                    "New connection from {}:{}",
-                    config.host.clone().color_blue(),
-                    config.port
-                );
-            }
             while let Some(message) = stream.next().await {
                 println!("Received message: {:?}", message);
                 match message? {
@@ -54,14 +44,32 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                         match User::create_user(email, username, password, db).await
                                         {
                                             Ok(user) => {
-                                                let _ = stream
-                                                    .send(ws::Message::from(msgtojson(
-                                                        Message::AuthSuccess {
-                                                            username: user.clone().username,
-                                                        },
-                                                    )))
-                                                    .await;
-                                                client_session_data.user = Some(user);
+                                                match User::create_session_token(user, db).await {
+                                                    Ok((token, user)) => {
+                                                        client_session_data.user =
+                                                            Some(user.clone());
+                                                        let _ = stream
+                                                            .send(ws::Message::from(msgtojson(
+                                                                Message::AuthSuccess {
+                                                                    token,
+                                                                    username: user.username,
+                                                                },
+                                                            )))
+                                                            .await;
+                                                    }
+                                                    Err(_e) => {
+                                                        // I would return a more specific error message
+                                                        // to the client here, but if the server knows the
+                                                        // error, the client should know the error twice as
+                                                        // well.
+
+                                                        let _ = stream
+                                                            .send(ws::Message::from(msgtojson(
+                                                                Message::AuthFailure,
+                                                            )))
+                                                            .await;
+                                                    }
+                                                }
                                             }
 
                                             Err(_e) => {
@@ -131,10 +139,7 @@ pub(crate) enum Message {
         password: String,
     },
     #[serde(rename = "auth_success")]
-    AuthSuccess {
-        // token: String,
-        username: String,
-    },
+    AuthSuccess { token: String, username: String },
     #[serde(rename = "auth_failure")]
     AuthFailure,
     #[serde(rename = "unknown")]

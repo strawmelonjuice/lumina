@@ -94,4 +94,76 @@ impl User {
             }
         }
     }
+    pub async fn get_user_by_identifier(
+        identifier: String,
+        db: &DbConn,
+    ) -> Result<User, LuminaError> {
+        let identifyer_type = if identifier.contains('@') {
+            "email"
+        } else {
+            "username"
+        };
+        match db {
+            DbConn::PgsqlConnection(client) => {
+                let user = client
+                    .query_one(
+                        &format!("SELECT * FROM users WHERE {} = $1", identifyer_type),
+                        &[&identifier],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                Ok(User {
+                    id: user.get(0),
+                    email: user.get(1),
+                    username: user.get(2),
+                })
+            }
+            DbConn::SqliteConnection(_) => {
+                todo!()
+            }
+        }
+    }
+    pub async fn create_session_token(
+        user: User,
+        db: &DbConn,
+    ) -> Result<(String, User), LuminaError> {
+        let user_id = user.id;
+        match db {
+            DbConn::PgsqlConnection(client) => {
+                let session_key = Uuid::new_v4().to_string();
+                client
+                    .execute(
+                        "INSERT INTO sessions (user_id, session_key) VALUES ($1, $2)",
+                        &[&user_id, &session_key],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                Ok((session_key, user))
+            }
+            DbConn::SqliteConnection(_) => {
+                todo!()
+            }
+        }
+    }
+    pub async fn revive_session_from_token(
+        token: String,
+        db: &DbConn,
+    ) -> Result<User, LuminaError> {
+        match db {
+            DbConn::PgsqlConnection(client) => {
+                let user = client
+					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
+					.await
+					.map_err(LuminaError::Postgres)?;
+                Ok(User {
+                    id: user.get(0),
+                    email: user.get(1),
+                    username: user.get(2),
+                })
+            }
+            DbConn::SqliteConnection(_) => {
+                todo!()
+            }
+        }
+    }
 }
