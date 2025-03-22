@@ -1,5 +1,7 @@
 use crate::{LuminaError, database::DbConn};
+use cynthia_con::CynthiaColors;
 use std::str::FromStr;
+use tracing::info;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -15,17 +17,51 @@ impl User {
         password: String,
         db: &DbConn,
     ) -> Result<User, LuminaError> {
-        if {
+        match {
             let mut check_results = vec![];
             {
-                check_results.push(username.len() > 4);
-                check_results.push(username.len() < 20);
-                check_results.push(username.chars().all(char::is_alphanumeric));
-                check_results.push(username.chars().all(char::is_lowercase));
+                check_results.push((
+                    username.len() > 4,
+                    "Username must be at least 5 characters long",
+                ));
+                check_results.push((
+                    username.len() < 20,
+                    "Username must be less than 20 characters long",
+                ));
+                // Make sure the username does not contain any special characters, but underscores or dashes are allowed
+                check_results.push((!username.contains('@'), "Username cannot contain '@'"));
+                check_results.push((!username.contains('!'), "Username cannot contain '!'"));
+                check_results.push((!username.contains('#'), "Username cannot contain '#'"));
+                check_results.push((!username.contains('$'), "Username cannot contain '$'"));
+                check_results.push((!username.contains('%'), "Username cannot contain '%'"));
+                check_results.push((!username.contains('^'), "Username cannot contain '^'"));
+                check_results.push((!username.contains('&'), "Username cannot contain '&'"));
+                check_results.push((!username.contains('*'), "Username cannot contain '*'"));
+                check_results.push((!username.contains('('), "Username cannot contain '('"));
+                check_results.push((!username.contains(')'), "Username cannot contain ')'"));
+                // check_results.push((
+                //     username.chars().all(char::is_lowercase),
+                //     "Username must be all lowercase",
+                // ));
+                // This false-positive's on the last check, so it's commented out for now, replacing it with a replacement check
+                check_results.push((
+                    username.chars().all(|x| {
+                        // No case check on special
+                        if !x.is_alphabetic() {
+                            return true;
+                        } else {
+                            return x.is_lowercase();
+                        }
+                    }),
+                    "Username must be alphanumeric, with underscores and dashes allowed",
+                ));
             }
-            check_results.contains(&false)
+            check_results.iter().find(|x| x.0 == false).map(|x| x.1)
         } {
-            return Err(LuminaError::RegisterUsernameInvalid);
+            Some(v) => {
+                return Err(LuminaError::RegisterUsernameInvalid(v.to_string()));
+            }
+            None => {}
         }
         // Check if the email is valid
         if {
@@ -53,8 +89,45 @@ impl User {
             }
             check_results.contains(&false)
         } {
-            return Err(LuminaError::EmailNotValid);
+            return Err(LuminaError::RegisterEmailNotValid);
         }
+        // Now do that again but with reasons, like for username:
+        match {
+            let mut check_results = vec![];
+            {
+                check_results.push((
+                    password.len() > 7,
+                    "Password must be at least 8 characters long",
+                ));
+                check_results.push((
+                    password.len() < 100,
+                    "Password must be less than 100 characters long",
+                ));
+                check_results.push((
+                    password.chars().any(char::is_uppercase),
+                    "Password must contain at least one uppercase letter",
+                ));
+                check_results.push((
+                    password.chars().any(char::is_lowercase),
+                    "Password must contain at least one lowercase letter",
+                ));
+                check_results.push((
+                    password.chars().any(char::is_numeric),
+                    "Password must contain at least one number",
+                ));
+                check_results.push((
+                    !password.chars().all(char::is_alphanumeric),
+                    "Password must contain at least one special character",
+                ));
+            }
+            check_results.iter().find(|x| x.0 == false).map(|x| x.1)
+        } {
+            Some(v) => {
+                return Err(LuminaError::RegisterPasswordNotValid(v.to_string()));
+            }
+            None => {}
+        }
+
         // hash the password
         let password =
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
@@ -147,9 +220,22 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnectionPool(_) => {
-                todo!()
-            }
+            DbConn::SqliteConnectionPool(pool) => pool
+                .get()
+                .map_err(LuminaError::SqlitePool)?
+                .query_row(
+                    &format!("SELECT * FROM users WHERE {} = ?1", identifyer_type),
+                    &[&identifier],
+                    |row| {
+                        let a: String = row.get(0)?;
+                        Ok(User {
+                            id: Uuid::from_str(a.as_str()).unwrap(),
+                            email: row.get(1)?,
+                            username: row.get(2)?,
+                        })
+                    },
+                )
+                .map_err(LuminaError::Sqlite),
         }
     }
     pub async fn create_session_token(
@@ -167,6 +253,10 @@ impl User {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
+                info!(
+                    "New session created by {}",
+                    user.clone().username.color_bright_cyan()
+                );
                 Ok((session_key, user))
             }
             DbConn::SqliteConnectionPool(_) => {

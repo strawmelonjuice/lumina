@@ -13,9 +13,9 @@ pub(crate) enum LuminaError {
     BcryptError(bcrypt::BcryptError),
     RegisterEmailInUse,
     RegisterUsernameInUse,
-    EmailNotValid,
-    RegisterUsernameInvalid,
-    PasswordNotValid,
+    RegisterEmailNotValid,
+    RegisterUsernameInvalid(String),
+    RegisterPasswordNotValid(String),
     LoginInvalid,
     UUidError(uuid::Error),
 }

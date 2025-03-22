@@ -1,8 +1,9 @@
-use crate::AppState;
 use crate::user::User;
+use crate::{AppState, LuminaError};
 use cynthia_con::CynthiaColors;
 extern crate rocket;
 use rocket::State;
+use tracing::info;
 use ws;
 
 #[get("/connection")]
@@ -16,7 +17,6 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                 user: None,
             };
             while let Some(message) = stream.next().await {
-                println!("Received message: {:?}", message);
                 match message? {
                     ws::Message::Text(msg) => {
                         match msg.as_str() {
@@ -37,13 +37,23 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                     username,
                                     password,
                                 }) => {
+                                    println!(
+                                        "Register request: {} {}",
+                                        email.clone().color_orange(),
+                                        username.clone().color_bright_cyan()
+                                    );
+
                                     // register the user
                                     {
                                         let appstate = state.0.clone();
                                         let db = &appstate.1.lock().await;
-                                        match User::create_user(email, username, password, db).await
+                                        match User::create_user(email.clone(), username.clone(), password, db).await
                                         {
                                             Ok(user) => {
+                                                info!(
+                                                    "User created: {}",
+                                                    user.clone().username.color_bright_cyan()
+                                                );
                                                 match User::create_session_token(user, db).await {
                                                     Ok((token, user)) => {
                                                         client_session_data.user =
@@ -57,7 +67,17 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                             )))
                                                             .await;
                                                     }
-                                                    Err(_e) => {
+                                                    Err(e) => {
+                                                    	match e {
+                                                     															LuminaError::Postgres(e) => 
+																error!("Error creating session token: {:?}", e),
+																
+																LuminaError::SqlitePool(e) => 
+																	warn!("Error creating session token: {:?}", e)
+																,
+																_ => {}
+                                                     }
+                                                    
                                                         // I would return a more specific error message
                                                         // to the client here, but if the server knows the
                                                         // error, the client should know the error twice as
@@ -72,7 +92,43 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                 }
                                             }
 
-                                            Err(_e) => {
+                                            Err(e) => {
+                                                match e {
+                                                    LuminaError::RegisterUsernameInUse => {
+                                                        warn!(
+                                                            "{} User {} already exists",
+                                                            "[RegistrationError]"
+                                                                .color_bright_red(),
+                                                            username.clone().color_bright_cyan()
+                                                        );
+                                                    }
+                                                    LuminaError::RegisterEmailNotValid => {
+                                                        warn!( 
+                                                            "{} Email {} is not valid",
+                                                            "[RegistrationError]"
+                                                                .color_bright_red(),
+                                                            email.clone().color_bright_cyan()
+                                                        );
+                                                    }
+                                                    LuminaError::RegisterUsernameInvalid(why) => {
+                                                        warn!(
+                                                            "{} Username {} is not valid: {}",
+                                                            "[RegistrationError]"
+                                                                .color_bright_red(),
+                                                            username.clone().color_bright_cyan(),
+                                                            why
+                                                        );
+                                                    }
+                                                    LuminaError::RegisterPasswordNotValid(why) => {
+														warn!(
+															"{} Password is not valid: {}",
+															"[RegistrationError]".color_bright_red(),
+															why
+														);
+													}
+                                                    _ => {}
+                                                }
+
                                                 // I would return a more specific error message
                                                 // to the client here, but if the server knows the
                                                 // error, the client should know the error twice as
@@ -90,12 +146,10 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                 }
                                 Ok(jsonmsg) => {
                                     let _ = stream.send(ws::Message::from("unknown")).await;
-                                    eprintln!(
-                                        "todo: {}",
-                                        format!("Handle message: {:?}", jsonmsg).color_error_red()
-                                    );
+                                    todo!("Handle message: {:?}", jsonmsg);
                                 }
-                                Err(_e) => {
+                                Err(e) => {
+                                    error!("Error deserialising message: {:?}", e);
                                     let _ = stream.send(ws::Message::from("unknown")).await;
                                 }
                             },
