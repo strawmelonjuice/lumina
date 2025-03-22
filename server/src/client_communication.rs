@@ -1,5 +1,5 @@
+use crate::AppState;
 use crate::user::User;
-use crate::{AppState, FromRequest};
 use cynthia_con::CynthiaColors;
 extern crate rocket;
 use rocket::State;
@@ -160,7 +160,7 @@ pub(crate) struct SessionData {
     pub(crate) user: Option<User>,
 }
 
-enum ClientType {
+pub enum ClientType {
     Web,
     NativeApp,
 }
