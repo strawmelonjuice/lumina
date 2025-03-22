@@ -21,5 +21,6 @@ uuid = { version = "1.16.0", features = ["v4", "serde"] }
 cynthia_con = "0.1.1"
 dotenv = "0.15.0"
 tokio-postgres = { version = "0.7.13", features = ["with-uuid-1"] }
-tokio-sqlite = { version = "0.1.5", features = ["bundled"] }
 bcrypt = "0.17.0"
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.27.0"

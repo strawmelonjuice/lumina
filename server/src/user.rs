@@ -1,7 +1,5 @@
-use crate::sqlite::Connection;
 use crate::{LuminaError, database::DbConn};
 use std::str::FromStr;
-use tokio_sqlite::Value;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -17,6 +15,49 @@ impl User {
         password: String,
         db: &DbConn,
     ) -> Result<User, LuminaError> {
+        if {
+            let mut check_results = vec![];
+            {
+                check_results.push(username.len() > 4);
+                check_results.push(username.len() < 20);
+                check_results.push(username.chars().all(char::is_alphanumeric));
+                check_results.push(username.chars().all(char::is_lowercase));
+            }
+            check_results.contains(&false)
+        } {
+            return Err(LuminaError::RegisterUsernameInvalid);
+        }
+        // Check if the email is valid
+        if {
+            let mut check_results = vec![];
+            {
+                check_results.push(email.contains('@'));
+                check_results.push(email.contains('.'));
+                let mut splemail = email.split("@");
+                check_results.push(match splemail.nth(0) {
+                    Some(v) => v.len() > 4,
+                    None => false,
+                });
+                check_results.push(match splemail.nth(1) {
+                    Some(v) => {
+                        v.len() > 4
+                            && v.contains('.')
+                            && v.split('.').last().unwrap().len() > 1
+                            && v.split('.').last().unwrap().len() < 5
+                            && v == splemail.last().unwrap()
+                    }
+                    None => false,
+                });
+
+                check_results.push(email.len() > 8);
+            }
+            check_results.contains(&false)
+        } {
+            return Err(LuminaError::EmailNotValid);
+        }
+        // hash the password
+        let password =
+            bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
         match db {
             DbConn::PgsqlConnection(client) => {
                 // Some username and email validation should be done here
@@ -36,49 +77,7 @@ impl User {
                 if !username_exists.is_empty() {
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
-                if {
-                    let mut check_results = vec![];
-                    {
-                        check_results.push(username.len() > 4);
-                        check_results.push(username.len() < 20);
-                        check_results.push(username.chars().all(char::is_alphanumeric));
-                        check_results.push(username.chars().all(char::is_lowercase));
-                    }
-                    check_results.contains(&false)
-                } {
-                    return Err(LuminaError::RegisterUsernameInvalid);
-                }
-                // Check if the email is valid
-                if {
-                    let mut check_results = vec![];
-                    {
-                        check_results.push(email.contains('@'));
-                        check_results.push(email.contains('.'));
-                        let mut splemail = email.split("@");
-                        check_results.push(match splemail.nth(0) {
-                            Some(v) => v.len() > 4,
-                            None => false,
-                        });
-                        check_results.push(match splemail.nth(1) {
-                            Some(v) => {
-                                v.len() > 4
-                                    && v.contains('.')
-                                    && v.split('.').last().unwrap().len() > 1
-                                    && v.split('.').last().unwrap().len() < 5
-                                    && v == splemail.last().unwrap()
-                            }
-                            None => false,
-                        });
 
-                        check_results.push(email.len() > 8);
-                    }
-                    check_results.contains(&false)
-                } {
-                    return Err(LuminaError::EmailNotValid);
-                }
-                // hash the password
-                let password = bcrypt::hash(password, bcrypt::DEFAULT_COST)
-                    .map_err(LuminaError::BcryptError)?;
                 let id = client
                     .query_one("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &[&email, &username, &password])
                     .await
@@ -89,8 +88,38 @@ impl User {
                     username,
                 })
             }
-            DbConn::SqliteConnection(_) => {
-                todo!()
+            DbConn::SqliteConnectionPool(pool) => {
+                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let username_exists = conn
+                    .prepare("SELECT * FROM users WHERE username = ?1")
+                    .map_err(LuminaError::Sqlite)?
+                    .exists(&[&username])
+                    .map_err(LuminaError::Sqlite)?;
+                if username_exists {
+                    return Err(LuminaError::RegisterUsernameInUse);
+                }
+                let email_exists = conn
+                    .prepare("SELECT * FROM users WHERE email = ?1")
+                    .map_err(LuminaError::Sqlite)?
+                    .exists(&[&email])
+                    .map_err(LuminaError::Sqlite)?;
+                if email_exists {
+                    return Err(LuminaError::RegisterEmailInUse);
+                }
+                let id = conn
+					.prepare("INSERT INTO users (email, username, password) VALUES (?1, ?2, ?3) RETURNING id")
+					.map_err(LuminaError::Sqlite)?
+					.query_row(&[&email, &username, &password], |row| {
+						let a: String = row.get(0)?;
+						// Unwrap: Not entirely safe. If the database is corrupted, this will panic.
+						Ok(Uuid::from_str(a.as_str()).unwrap())
+					}).map_err(LuminaError::Sqlite)
+					?;
+                Ok(User {
+                    id,
+                    email,
+                    username,
+                })
             }
         }
     }
@@ -118,7 +147,7 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnection(_) => {
+            DbConn::SqliteConnectionPool(_) => {
                 todo!()
             }
         }
@@ -140,7 +169,7 @@ impl User {
                     .map_err(LuminaError::Postgres)?;
                 Ok((session_key, user))
             }
-            DbConn::SqliteConnection(_) => {
+            DbConn::SqliteConnectionPool(_) => {
                 todo!()
             }
         }
@@ -161,7 +190,7 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnection(_) => {
+            DbConn::SqliteConnectionPool(_) => {
                 todo!()
             }
         }

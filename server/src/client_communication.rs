@@ -95,7 +95,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                         format!("Handle message: {:?}", jsonmsg).color_error_red()
                                     );
                                 }
-                                Err(e) => {
+                                Err(_e) => {
                                     let _ = stream.send(ws::Message::from("unknown")).await;
                                 }
                             },
