@@ -19,53 +19,62 @@ pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaE
     let pg_config = {
         let mut pg_config = postgres::Config::new();
         pg_config.user(&{
-            std::env::var("_LUMINA_POSTGRES_USERNAME_")
-                .map_err(|_| ConfMissing("_LUMINA_POSTGRES_USERNAME_".to_string()))?
+            std::env::var("LUMINA_POSTGRES_USERNAME")
+                .map_err(|_| ConfMissing("LUMINA_POSTGRES_USERNAME".to_string()))?
         });
         pg_config.dbname(&{
-            std::env::var("_LUMINA_POSTGRES_DATABASE_")
-                .map_err(|_| ConfMissing("_LUMINA_POSTGRES_DATABASE_".to_string()))?
+            std::env::var("LUMINA_POSTGRES_DATABASE")
+                .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?
         });
-        pg_config.port(std::env::var("_LUMINA_POSTGRES_PORT_").unwrap_or_else(|_| {
+        pg_config.port(std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
                     warn!("No Postgres database port provided under environment variable '_LUMINA_POSTGRES_PORT_'. Using default value '5432'.");
                     "5432".to_string()
-                }).parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("_LUMINA_POSTGRES_PORT_ is not a valid integer number".to_string()) })?);
-        match std::env::var("_LUMINA_POSTGRES_HOST_") {
+                }).parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("LUMINA_POSTGRES_PORT is not a valid integer number".to_string()) })?);
+        match std::env::var("LUMINA_POSTGRES_HOST") {
             Ok(val) => {
                 pg_config.host(&val);
             }
             Err(_) => {
                 warn!(
-                    "No Postgres database host provided under environment variable '_LUMINA_POSTGRES_HOST_'. Using default value 'localhost'."
+                    "No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
                 );
                 pg_config.host("localhost");
             }
         };
-        match std::env::var("_LUMINA_POSTGRES_PASSWORD_") {
+        match std::env::var("LUMINA_POSTGRES_PASSWORD") {
             Ok(val) => {
                 pg_config.password(&val);
             }
             Err(_) => {
                 info!(
-                    "No Postgres database password provided under environment variable '_LUMINA_POSTGRES_PASSWORD_'. Trying passwordless authentication."
+                    "No Postgres database password provided under environment variable 'LUMINA_POSTGRES_PASSWORD'. Trying passwordless authentication."
                 );
             }
         };
         pg_config
     };
+    // Connect to the database
     let conn: (Client, Connection<Socket, NoTlsStream>) = pg_config
         .connect(postgres::tls::NoTls)
         .await
         .map_err(LuminaError::Postgres)?;
     let _ = tokio::spawn(conn.1);
+    // Create a second connection to the database for spawning the maintain function
+    let conn_two: (Client, Connection<Socket, NoTlsStream>) = pg_config
+        .connect(postgres::tls::NoTls)
+        .await
+        .map_err(LuminaError::Postgres)?;
+    let _ = tokio::spawn(conn_two.1);
     {
-        // Set up the database
+        // Set up the database tables
+        //
+        // Users table
         let _ = conn
             .0
             .execute(
                 "CREATE TABLE IF NOT EXISTS users (
 						id UUID DEFAULT gen_random_uuid (),
-						email VARCHAR NOT NULL,
+						email VARCHAR NOT NULL UNIQUE,
 						username VARCHAR NOT NULL UNIQUE,
 						password VARCHAR NOT NULL
 					)",
@@ -73,7 +82,22 @@ pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaE
             )
             .await
             .map_err(LuminaError::Postgres)?;
-    }
+        // Sessions table
+        let _ = conn
+            .0
+            .execute(
+                "CREATE TABLE IF NOT EXISTS sessions (
+						id UUID DEFAULT gen_random_uuid (),
+						user_id UUID NOT NULL,
+						session_key VARCHAR NOT NULL,
+						created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+					)",
+                &[],
+            )
+            .await
+            .map_err(LuminaError::Postgres)?;
+    };
+    let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(conn_two.0)));
     Ok(DbConn::PgsqlConnection(conn.0))
     //     }
     //     _ => {
@@ -91,4 +115,26 @@ pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaE
 pub enum DbConn {
     PgsqlConnection(postgres::Client),
     SqliteConnection(()),
+}
+
+// This function will be used to maintain the database, such as deleting old sessions
+pub async fn maintain(db: DbConn) {
+    match db {
+        DbConn::PgsqlConnection(client) => {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                // Delete any sessions older than 20 days
+                let _ = client
+                    .execute(
+                        "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
+                        &[],
+                    )
+                    .await;
+            }
+        }
+        DbConn::SqliteConnection(_) => {
+            todo!()
+        }
+    }
 }
