@@ -61,7 +61,9 @@ async fn main() {
                     staticroutes::lumina_js,
                     staticroutes::lumina_css,
                     client_communication::wsconnection,
-                    staticroutes::logo_svg
+                    staticroutes::logo_svg,
+                    staticroutes::logo_png,
+                    staticroutes::favicon,
                 ],
             )
             .manage(appstate)
