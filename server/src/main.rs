@@ -9,6 +9,7 @@ mod tests;
 extern crate rocket;
 use std::{
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    process,
     sync::Arc,
 };
 use tokio::sync::Mutex;
@@ -28,7 +29,7 @@ struct ServerConfig {
 extern crate dotenv;
 
 use crate::errors::LuminaError;
-use cynthia_con::CynthiaColors;
+use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
 
 fn config_get() -> Result<ServerConfig, LuminaError> {
@@ -53,23 +54,41 @@ async fn main() {
         Ok(config) => {
             let db = match database::setup(config.clone()).await {
                 Ok(db) => db,
-                Err(LuminaError::ConfMissing(a)) => panic!(
-                    "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-                    a.color_bright_orange()
-                ),
+                Err(LuminaError::ConfMissing(a)) => {
+                    eprintln!(
+                        "{} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                        "[ERROR]".color_error_red().style_bold(),
+                        a.color_bright_orange()
+                    );
+                    process::exit(1);
+                }
                 Err(LuminaError::ConfInvalid(a)) => {
-                    panic!("Invalid environment variable: {}", a.color_bright_orange())
+                    eprintln!(
+                        "{} Invalid environment variable: {}",
+                        "[ERROR]".color_error_red().style_bold(),
+                        a.color_bright_orange()
+                    );
+                    process::exit(1);
                 }
-                Err(LuminaError::Sqlite(a)) => panic!("Error opening sqlite database: {}", a),
+                Err(LuminaError::Sqlite(a)) => {
+                    eprintln!("{} While opening sqlite database: {}", "[ERROR]".color_error_red().style_bold(),a);
+                    process::exit(1);
+                }
                 Err(LuminaError::Postgres(a)) => {
-                    panic!("Error connecting to postgres database: {}", a)
+                    eprintln!("{} While connecting to postgres database: {}", "[ERROR]".color_error_red().style_bold(), a);
+                    process::exit(1);
                 }
-                Err(_) => panic!("Unknown error: could not setup database connection."),
+                Err(_) => {
+                    eprintln!("{} Unknown error: could not setup database connection.", "[ERROR]".color_error_red().style_bold());
+                    process::exit(1);
+                }
             };
             let appstate = AppState(Arc::from((config.clone(), Mutex::from(db))));
-            let mut def = rocket::Config::default();
-            def.port = config.port;
-            def.address = config.host;
+            let def = rocket::Config {
+                port: config.port,
+                address: config.host,
+                ..rocket::Config::default()
+            };
             let result = rocket::build()
                 .configure(def)
                 .mount(
@@ -91,20 +110,29 @@ async fn main() {
             match result {
                 Ok(_) => {}
                 Err(LuminaError::RocketFaillure(e)) => {
-                    println!("Error starting server: {:?}", e);
+                    eprintln!("{} Error starting server: {:?}", "[ERROR]".color_error_red().style_bold(), e);
                 }
                 Err(_) => {
-                    println!("Unknown error starting server.");
+                    eprintln!("{} Unknown error starting server.", "[ERROR]".color_error_red().style_bold());
                 }
             }
         }
-        Err(LuminaError::ConfMissing(a)) => panic!(
-            "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-            a.color_bright_orange()
-        ),
-        Err(LuminaError::ConfInvalid(a)) => {
-            panic!("Invalid environment variable: {}", a.color_bright_orange())
+        Err(LuminaError::ConfMissing(a)) => {
+            eprintln!(
+                "{} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+            "[ERROR]".color_error_red().style_bold()
+                ,
+                a.color_bright_orange()
+            );
+            process::exit(1);
         }
-        Err(_) => panic!("Unknown error: could not setup server configuration."),
+        Err(LuminaError::ConfInvalid(a)) => {
+            eprintln!("{} Invalid environment variable: {}", "[ERROR]".color_error_red().style_bold(),a.color_bright_orange());
+            process::exit(1);
+        }
+        Err(_) => {
+            eprintln!("{} Unknown error: could not setup server configuration.", "[ERROR]".color_error_red().style_bold());
+            process::exit(1);
+        }
     };
 }
