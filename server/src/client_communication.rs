@@ -1,15 +1,16 @@
 use crate::user::User;
 use crate::{AppState, LuminaError};
-use cynthia_con::CynthiaColors;
+use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
 use tracing::info;
-use ws;
 
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
     use rocket::futures::{SinkExt, StreamExt};
-
+    // Just a few log prefixes
+    let incoming = "[INCOMING]".color_lilac().style_bold();
+    let registrationerror = "[RegistrationError]".color_bright_red().style_bold();
     ws.channel(move |mut stream| {
         Box::pin(async move {
             let mut client_session_data: SessionData = SessionData {
@@ -38,7 +39,8 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                     password,
                                 }) => {
                                     println!(
-                                        "Register request: {} {}",
+                                        "{incoming} {} {} {}",
+                                        "Register request"
                                         email.clone().color_orange(),
                                         username.clone().color_bright_cyan()
                                     );
@@ -95,34 +97,28 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                             Err(e) => {
                                                 match e {
                                                     LuminaError::RegisterUsernameInUse => {
-                                                        warn!(
-                                                            "{} User {} already exists",
-                                                            "[RegistrationError]"
-                                                                .color_bright_red(),
+                                                        println!(
+                                                            "{registrationerror} User {} already exists",
                                                             username.clone().color_bright_cyan()
                                                         );
                                                     }
                                                     LuminaError::RegisterEmailNotValid => {
-                                                        warn!( 
-                                                            "{} Email {} is not valid",
-                                                            "[RegistrationError]"
-                                                                .color_bright_red(),
+                                                        println!(
+                                                            "{registrationerror} Email {} is not valid",
+                                                            
                                                             email.clone().color_bright_cyan()
                                                         );
                                                     }
                                                     LuminaError::RegisterUsernameInvalid(why) => {
-                                                        warn!(
-                                                            "{} Username {} is not valid: {}",
-                                                            "[RegistrationError]"
-                                                                .color_bright_red(),
+                                                        println!(
+                                                            "{registrationerror} Username '{}' is not valid: {}",
                                                             username.clone().color_bright_cyan(),
                                                             why
                                                         );
                                                     }
                                                     LuminaError::RegisterPasswordNotValid(why) => {
-														warn!(
-															"{} Password is not valid: {}",
-															"[RegistrationError]".color_bright_red(),
+														println!(
+															"{registrationerror} Password is not valid: {}",
 															why
 														);
 													}
