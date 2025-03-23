@@ -71,15 +71,26 @@ async fn main() {
                     process::exit(1);
                 }
                 Err(LuminaError::Sqlite(a)) => {
-                    eprintln!("{} While opening sqlite database: {}", "[ERROR]".color_error_red().style_bold(),a);
+                    eprintln!(
+                        "{} While opening sqlite database: {}",
+                        "[ERROR]".color_error_red().style_bold(),
+                        a
+                    );
                     process::exit(1);
                 }
                 Err(LuminaError::Postgres(a)) => {
-                    eprintln!("{} While connecting to postgres database: {}", "[ERROR]".color_error_red().style_bold(), a);
+                    eprintln!(
+                        "{} While connecting to postgres database: {}",
+                        "[ERROR]".color_error_red().style_bold(),
+                        a
+                    );
                     process::exit(1);
                 }
                 Err(_) => {
-                    eprintln!("{} Unknown error: could not setup database connection.", "[ERROR]".color_error_red().style_bold());
+                    eprintln!(
+                        "{} Unknown error: could not setup database connection.",
+                        "[ERROR]".color_error_red().style_bold()
+                    );
                     process::exit(1);
                 }
             };
@@ -110,28 +121,41 @@ async fn main() {
             match result {
                 Ok(_) => {}
                 Err(LuminaError::RocketFaillure(e)) => {
-                    eprintln!("{} Error starting server: {:?}", "[ERROR]".color_error_red().style_bold(), e);
+                    eprintln!(
+                        "{} Error starting server: {:?}",
+                        "[ERROR]".color_error_red().style_bold(),
+                        e
+                    );
                 }
                 Err(_) => {
-                    eprintln!("{} Unknown error starting server.", "[ERROR]".color_error_red().style_bold());
+                    eprintln!(
+                        "{} Unknown error starting server.",
+                        "[ERROR]".color_error_red().style_bold()
+                    );
                 }
             }
         }
         Err(LuminaError::ConfMissing(a)) => {
             eprintln!(
                 "{} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-            "[ERROR]".color_error_red().style_bold()
-                ,
+                "[ERROR]".color_error_red().style_bold(),
                 a.color_bright_orange()
             );
             process::exit(1);
         }
         Err(LuminaError::ConfInvalid(a)) => {
-            eprintln!("{} Invalid environment variable: {}", "[ERROR]".color_error_red().style_bold(),a.color_bright_orange());
+            eprintln!(
+                "{} Invalid environment variable: {}",
+                "[ERROR]".color_error_red().style_bold(),
+                a.color_bright_orange()
+            );
             process::exit(1);
         }
         Err(_) => {
-            eprintln!("{} Unknown error: could not setup server configuration.", "[ERROR]".color_error_red().style_bold());
+            eprintln!(
+                "{} Unknown error: could not setup server configuration.",
+                "[ERROR]".color_error_red().style_bold()
+            );
             process::exit(1);
         }
     };

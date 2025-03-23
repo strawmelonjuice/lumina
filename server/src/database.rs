@@ -1,7 +1,6 @@
-use cynthia_con::{CynthiaColors, CynthiaStyles};
 use crate::errors::LuminaError::{self, ConfMissing};
+use cynthia_con::{CynthiaColors, CynthiaStyles};
 use r2d2::Pool;
-use r2d2_sqlite;
 use r2d2_sqlite::SqliteConnectionManager;
 use tokio_postgres as postgres;
 use tokio_postgres::tls::NoTlsStream;
@@ -130,10 +129,10 @@ pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaE
 
         c => {
             println!("{:?}", c);
-            Err(LuminaError::ConfInvalid(
-format!("LUMINA_DB_TYPE does not contain a valid value, only 'sqlite' or 'postgres' are allowed. Found: {}", c)
-                    
-            ))
+            Err(LuminaError::ConfInvalid(format!(
+                "LUMINA_DB_TYPE does not contain a valid value, only 'sqlite' or 'postgres' are allowed. Found: {}",
+                c
+            )))
         }
     }
 }
