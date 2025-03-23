@@ -4,7 +4,7 @@ const MINIMUM_BUN_VERSION: (u32, u32, u32) = (1, 2, 4);
 fn main() {
     // The build script will be ran from the server directory, so we need to go up one directory to get to the root
     let root_path = match std::env::var("CARGO_MANIFEST_DIR") {
-        Ok(path) => (path + "/..").replace("/server/..", "/"),
+        Ok(path) => (path + "/..").replace("\\", "/").replace("/server/..", "/"),
         Err(_) => panic!("Failed to get root path"),
     };
     // Tell cargo to rerun the build script if the client directory changes
