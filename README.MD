@@ -19,5 +19,5 @@ Environment variables can be set in the _environment_ before run, but Lumina pre
 | `LUMINA_SERVER_PORT`              | `"8085"`                                    | Port for Lumina to accept HTTP requests on.                  |
 | `LUMINA_SERVER_ADDR`              | `127.0.0.1`                               | Address for Lumina to accept HTTP requests on. (usually `127.0.0.1` or `0.0.0.0`)               |
 | `LUMINA_SERVER_HTTPS`             | `"false"`                                   | Wether to use 'https' rather than 'http' in links, etc. (please do!) |
-| `LUMINA_SYNCHRONISATION_IID`      | `"localhost"`                               | A name Lumina uses when communicating with other instances, must be equal to where it's http is facing the public internet |
-| `LUMINA_SYNCHRONISATION_INTERVAL` | `"30"`                                      | Specifies the interval between syncs. Minimum is 30.         |
+| `LUMINA_SYNC_IID`      | `"localhost"`                               | A name Lumina uses when communicating with other instances, must be equal to where it's http is facing the public internet |
+| `LUMINA_SYNC_INTERVAL` | `"30"`                                      | Specifies the interval between syncs. Minimum is 30.         |

@@ -1,7 +1,6 @@
 use crate::{LuminaError, database::DbConn};
-use cynthia_con::CynthiaColors;
+use cynthia_con::{CynthiaColors, CynthiaStyles};
 use std::str::FromStr;
-use tracing::info;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -242,6 +241,7 @@ impl User {
         user: User,
         db: &DbConn,
     ) -> Result<(String, User), LuminaError> {
+        let info = "[INFO]".color_green().style_bold();
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(client) => {
@@ -253,8 +253,8 @@ impl User {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
-                info!(
-                    "New session created by {}",
+                println!(
+                    "{info} New session created by {}",
                     user.clone().username.color_bright_cyan()
                 );
                 Ok((session_key, user))
