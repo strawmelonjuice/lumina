@@ -100,7 +100,6 @@ async fn main() {
                         port: config.port,
                         address: config.host,
                         ident: rocket::config::Ident::try_new(me.clone()).unwrap_or_default(),
-                        log_level: rocket::config::LogLevel::Off,
                         ..rocket::Config::default()
                     };
                     let result = rocket::build()
