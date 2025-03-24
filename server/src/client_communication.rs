@@ -3,14 +3,15 @@ use crate::{AppState, LuminaError};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
-use tracing::info;
 
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
     use rocket::futures::{SinkExt, StreamExt};
     // Just a few log prefixes
+    let info = "[INFO]".color_green().style_bold();
     let incoming = "[INCOMING]".color_lilac().style_bold();
     let registrationerror = "[RegistrationError]".color_bright_red().style_bold();
+    // End of log prefixes
     ws.channel(move |mut stream| {
         Box::pin(async move {
             let mut client_session_data: SessionData = SessionData {
@@ -39,8 +40,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                     password,
                                 }) => {
                                     println!(
-                                        "{incoming} {} {} {}",
-                                        "Register request"
+                                        "{incoming} Register request: {} {}",
                                         email.clone().color_orange(),
                                         username.clone().color_bright_cyan()
                                     );
@@ -52,8 +52,8 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                         match User::create_user(email.clone(), username.clone(), password, db).await
                                         {
                                             Ok(user) => {
-                                                info!(
-                                                    "User created: {}",
+                                                println!(
+                                                    "{info} User created: {}",
                                                     user.clone().username.color_bright_cyan()
                                                 );
                                                 match User::create_session_token(user, db).await {

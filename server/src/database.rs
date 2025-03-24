@@ -6,7 +6,7 @@ use tokio_postgres as postgres;
 use tokio_postgres::tls::NoTlsStream;
 use tokio_postgres::{Client, Connection, Socket};
 
-pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaError> {
+pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let warn = "[WARN]".color_bright_orange().style_bold();
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
@@ -53,7 +53,7 @@ pub(crate) async fn setup(config: crate::ServerConfig) -> Result<DbConn, LuminaE
                         .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?
                 });
                 pg_config.port(std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
-                    eprintln!("{warn} No Postgres database port provided under environment variable '_LUMINA_POSTGRES_PORT_'. Using default value '5432'.");
+                    eprintln!("{warn} No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'.");
                     "5432".to_string()
                 }).parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("LUMINA_POSTGRES_PORT is not a valid integer number".to_string()) })?);
                 match std::env::var("LUMINA_POSTGRES_HOST") {
