@@ -34,7 +34,7 @@ fn config_get() -> Result<ServerConfig, LuminaError> {
             .map_err(|_| LuminaError::ConfInvalid("LUMINA_SERVER_ADDR".to_string()))?
     };
     let port = {
-        let s = std::env::var("LUMINA_SERVER_PORT").unwrap_or(String::from("8080"));
+        let s = std::env::var("LUMINA_SERVER_PORT").unwrap_or(String::from("8085"));
         s.parse::<u16>()
             .map_err(|_| LuminaError::ConfInvalid("LUMINA_SERVER_PORT".to_string()))?
     };
