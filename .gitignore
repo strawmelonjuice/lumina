@@ -34,4 +34,6 @@ node_modules
 /client/priv/static/lumina_client*.css
 /client/priv/static/lumina_client*.mjs
 instance.sqlite
+instance.sqlite-shm
+instance.sqlite-wal
 .env
