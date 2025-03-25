@@ -142,7 +142,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                 }
                                 Ok(jsonmsg) => {
                                     let _ = stream.send(ws::Message::from("unknown")).await;
-                                    todo!("Handle message: {:?}", jsonmsg);
+                                    panic!("Unhandled message: {:?}", jsonmsg);
                                 }
                                 Err(e) => {
                                     error!("Error deserialising message: {:?}", e);
@@ -188,6 +188,12 @@ pub(crate) enum Message {
         username: String,
         password: String,
     },
+	#[serde(rename = "register_precheck")]
+	RegisterPrecheck {
+		email: String,
+		username: String,
+		password: String,
+	},
     #[serde(rename = "auth_success")]
     AuthSuccess { token: String, username: String },
     #[serde(rename = "auth_failure")]
