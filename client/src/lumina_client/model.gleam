@@ -17,7 +17,7 @@ pub type Model {
 /// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
 pub type Page {
   Landing
-  Register(fields: RegisterPageFields)
+  Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields)
   HomeTimeline(timeline_id: String)
 }
