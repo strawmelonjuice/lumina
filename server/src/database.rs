@@ -36,7 +36,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 						created_at INT NOT NULL)",
                     [],
                 );
-                let _ = conn.execute("PRAGMA WAL_MODE = NORMAL", []);
+                let _ = conn.execute("PRAGMA journal_mode = WAL;", []);
+                let _ = conn.execute("PRAGMA foreign_keys = ON;", []);
+                let _ = conn.execute("PRAGMA temp_store = '2'", []);
             };
             let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(pool.clone())));
             Ok(DbConn::SqliteConnectionPool(pool))
@@ -160,8 +162,17 @@ pub async fn maintain(db: DbConn) {
                     .await;
             }
         }
-        DbConn::SqliteConnectionPool(_) => {
-            todo!()
+        DbConn::SqliteConnectionPool(pool) => {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                let conn = pool.get().unwrap();
+                // Delete any sessions older than 20 days
+                let _ = conn.execute(
+                    "DELETE FROM sessions WHERE created_at < strftime('%s', 'now') - 1728000",
+                    [],
+                );
+            }
         }
     }
 }

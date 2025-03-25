@@ -259,8 +259,20 @@ impl User {
                 );
                 Ok((session_key, user))
             }
-            DbConn::SqliteConnectionPool(_) => {
-                todo!()
+            DbConn::SqliteConnectionPool(pool) => {
+                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let user_id_str = user_id.to_string();
+                let session_key = Uuid::new_v4().to_string();
+                conn.execute(
+                    "INSERT INTO sessions (user_id, session_key) VALUES (?1, ?2)",
+                    &[&user_id_str, &session_key],
+                )
+                .map_err(LuminaError::Sqlite)?;
+                println!(
+                    "{info} New session created by {}",
+                    user.clone().username.color_bright_cyan()
+                );
+                Ok((session_key, user))
             }
         }
     }
@@ -280,8 +292,18 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnectionPool(_) => {
-                todo!()
+            DbConn::SqliteConnectionPool(pool) => {
+                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let user = conn.query_row("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = ?1", &[&token], 
+					|row| {
+					let a: String = row.get(0).unwrap();
+					Ok(User {
+						id: Uuid::from_str(a.as_str()).unwrap(),
+						email: row.get(1).unwrap(),
+						username: row.get(2).unwrap(),
+					})
+				}).map_err(LuminaError::Sqlite)?;
+                Ok(user)
             }
         }
     }
