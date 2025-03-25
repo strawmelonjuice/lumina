@@ -16,117 +16,8 @@ impl User {
         password: String,
         db: &DbConn,
     ) -> Result<User, LuminaError> {
-        match {
-            let mut check_results = vec![];
-            {
-                check_results.push((
-                    username.len() > 4,
-                    "Username must be at least 5 characters long",
-                ));
-                check_results.push((
-                    username.len() < 20,
-                    "Username must be less than 20 characters long",
-                ));
-                // Make sure the username does not contain any special characters, but underscores or dashes are allowed
-                check_results.push((!username.contains('@'), "Username cannot contain '@'"));
-                check_results.push((!username.contains('!'), "Username cannot contain '!'"));
-                check_results.push((!username.contains('#'), "Username cannot contain '#'"));
-                check_results.push((!username.contains('$'), "Username cannot contain '$'"));
-                check_results.push((!username.contains('%'), "Username cannot contain '%'"));
-                check_results.push((!username.contains('^'), "Username cannot contain '^'"));
-                check_results.push((!username.contains('&'), "Username cannot contain '&'"));
-                check_results.push((!username.contains('*'), "Username cannot contain '*'"));
-                check_results.push((!username.contains('('), "Username cannot contain '('"));
-                check_results.push((!username.contains(')'), "Username cannot contain ')'"));
-                // check_results.push((
-                //     username.chars().all(char::is_lowercase),
-                //     "Username must be all lowercase",
-                // ));
-                // This false-positive's on the last check, so it's commented out for now, replacing it with a replacement check
-                check_results.push((
-                    username.chars().all(|x| {
-                        // No case check on special
-                        if !x.is_alphabetic() {
-                            return true;
-                        } else {
-                            return x.is_lowercase();
-                        }
-                    }),
-                    "Username must be alphanumeric, with underscores and dashes allowed",
-                ));
-            }
-            check_results.iter().find(|x| x.0 == false).map(|x| x.1)
-        } {
-            Some(v) => {
-                return Err(LuminaError::RegisterUsernameInvalid(v.to_string()));
-            }
-            None => {}
-        }
-        // Check if the email is valid
-        if {
-            let mut check_results = vec![];
-            {
-                check_results.push(email.contains('@'));
-                check_results.push(email.contains('.'));
-                let mut splemail = email.split("@");
-                check_results.push(match splemail.nth(0) {
-                    Some(v) => v.len() > 4,
-                    None => false,
-                });
-                check_results.push(match splemail.nth(1) {
-                    Some(v) => {
-                        v.len() > 4
-                            && v.contains('.')
-                            && v.split('.').last().unwrap().len() > 1
-                            && v.split('.').last().unwrap().len() < 5
-                            && v == splemail.last().unwrap()
-                    }
-                    None => false,
-                });
-
-                check_results.push(email.len() > 8);
-            }
-            check_results.contains(&false)
-        } {
-            return Err(LuminaError::RegisterEmailNotValid);
-        }
-        // Now do that again but with reasons, like for username:
-        match {
-            let mut check_results = vec![];
-            {
-                check_results.push((
-                    password.len() > 7,
-                    "Password must be at least 8 characters long",
-                ));
-                check_results.push((
-                    password.len() < 100,
-                    "Password must be less than 100 characters long",
-                ));
-                check_results.push((
-                    password.chars().any(char::is_uppercase),
-                    "Password must contain at least one uppercase letter",
-                ));
-                check_results.push((
-                    password.chars().any(char::is_lowercase),
-                    "Password must contain at least one lowercase letter",
-                ));
-                check_results.push((
-                    password.chars().any(char::is_numeric),
-                    "Password must contain at least one number",
-                ));
-                check_results.push((
-                    !password.chars().all(char::is_alphanumeric),
-                    "Password must contain at least one special character",
-                ));
-            }
-            check_results.iter().find(|x| x.0 == false).map(|x| x.1)
-        } {
-            Some(v) => {
-                return Err(LuminaError::RegisterPasswordNotValid(v.to_string()));
-            }
-            None => {}
-        }
-
+        let _ =
+            register_validitycheck(email.clone(), username.clone(), password.clone(), db).await?;
         // hash the password
         let password =
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
@@ -307,4 +198,118 @@ impl User {
             }
         }
     }
+}
+
+pub(crate) async fn register_validitycheck(
+    email: String,
+    username: String,
+    password: String,
+    db: &DbConn,
+) -> Result<(), LuminaError> {
+    //
+    //
+    // Email checks
+    //
+    {
+        let email_regex = regex::Regex::new(
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+        )
+        .map_err(LuminaError::RegexError)?;
+        if !email_regex.is_match(&email) {
+            return Err(LuminaError::RegisterEmailNotValid);
+        };
+    }
+
+    //
+    //
+    // Username checks
+    //
+    {
+        // Check if username is valid
+        if username.chars().any(|c| {
+            match c {
+                ' ' | '\\' | '/' | '@' | '\n' | '\r' | '\t' | '\x0b' | '\'' | '"' | '(' | ')'
+                | '`' | '%' | '?' | '!' => true,
+                '#' => (
+                    // Make sure, if a # is in the username, only 4 numbers may follow it.
+                    || {
+                        let split_username = username.split('#');
+                        let array_split_username: Vec<&str> = split_username.collect();
+                        let lastbit = username.replacen(array_split_username[0], "", 1);
+                        let firstbit = username.replacen(&*lastbit, "", 1);
+                        let vec_split_username: Vec<&str> = vec![&*firstbit, &*lastbit];
+                        // println!("array: {:?}", array_split_username);
+                        // println!("vec: {:?}", vec_split_username);
+                        if vec_split_username.is_empty() || array_split_username[1].is_empty() {
+                            return true;
+                        };
+                        (!array_split_username[1].chars().all(char::is_numeric))
+                            || !(vec_split_username[1].len() == 5
+                                || vec_split_username[1].len() == 7)
+                    }
+                )(),
+                _ => false,
+            }
+        }) || !username
+            .replace(['_', '-', '.'], "")
+            .replacen('#', "", 1)
+            .chars()
+            .all(char::is_alphanumeric)
+        {
+            return Err(LuminaError::RegisterUsernameInvalid(
+                "Invalid characters in username".to_string(),
+            ));
+        }
+        // Check if the username is too long
+        if username.len() > 20 {
+            return Err(LuminaError::RegisterUsernameInvalid(
+                "Username too long".to_string(),
+            ));
+        }
+        // Check if the username is too short
+        if username.len() < 4 {
+            return Err(LuminaError::RegisterUsernameInvalid(
+                "Username too short".to_string(),
+            ));
+        }
+
+        // Check if the username is already in use
+        if let Ok(_) = User::get_user_by_identifier(username.clone(), db).await {
+            return Err(LuminaError::RegisterUsernameInUse);
+        };
+    }
+
+    //
+    //
+    // Password checks
+    //
+    {
+        if password.len() < 8 {
+            return Err(LuminaError::RegisterPasswordNotValid(
+                "Password too short".to_string(),
+            ));
+        }
+        if password.len() > 100 {
+            return Err(LuminaError::RegisterPasswordNotValid(
+                "Password too long".to_string(),
+            ));
+        }
+        if !password.chars().any(char::is_uppercase) {
+            return Err(LuminaError::RegisterPasswordNotValid(
+                "Password must contain at least one uppercase letter".to_string(),
+            ));
+        }
+        if !password.chars().any(char::is_lowercase) {
+            return Err(LuminaError::RegisterPasswordNotValid(
+                "Password must contain at least one lowercase letter".to_string(),
+            ));
+        }
+        if !password.chars().any(char::is_numeric) {
+            return Err(LuminaError::RegisterPasswordNotValid(
+                "Password must contain at least one number".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
 }

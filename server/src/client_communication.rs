@@ -71,15 +71,12 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                     }
                                                     Err(e) => {
                                                     	match e {
-                                                     															LuminaError::Postgres(e) => 
-																error!("Error creating session token: {:?}", e),
-																
-																LuminaError::SqlitePool(e) => 
-																	warn!("Error creating session token: {:?}", e)
-																,
+                                                     				LuminaError::Postgres(e) =>
+													                              			error!("Error creating session token: {:?}", e),
+                            																LuminaError::SqlitePool(e) =>
+                            																	warn!("Error creating session token: {:?}", e),
 																_ => {}
                                                      }
-                                                    
                                                         // I would return a more specific error message
                                                         // to the client here, but if the server knows the
                                                         // error, the client should know the error twice as
@@ -105,7 +102,6 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                     LuminaError::RegisterEmailNotValid => {
                                                         println!(
                                                             "{registrationerror} Email {} is not valid",
-                                                            
                                                             email.clone().color_bright_cyan()
                                                         );
                                                     }
@@ -140,8 +136,50 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                     }
                                     let _ = stream.send(ws::Message::from("unknown")).await;
                                 }
+                                Ok(Message::RegisterPrecheck { email, username, password }) => {
+                                    let appstate = state.0.clone();
+                                    let db = &appstate.1.lock().await;
+                                    match crate::user::register_validitycheck(email, username, password, db).await {
+                                        Err(LuminaError::RegisterEmailInUse) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: false,
+                                                why: "Email already in use".to_string(),
+                                            }))).await;
+                                        }
+                                        Err(LuminaError::RegisterUsernameInUse) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: false,
+                                                why: "Username already in use".to_string(),
+                                            }))).await;
+                                        }
+                                        Err(LuminaError::RegisterEmailNotValid) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: false,
+                                                why: "Email not valid".to_string(),
+                                            }))).await;
+                                        }
+                                        Err(LuminaError::RegisterUsernameInvalid(why)) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: false,
+                                                why: format!("Username invalid: {}", why),
+                                            }))).await;
+                                        }
+                                        Err(LuminaError::RegisterPasswordNotValid(why)) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: false,
+                                                why: format!("Password invalid: {}", why),
+                                            }))).await;
+                                        }
+                                        Ok(_) => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                ok: true,
+                                                why: "".to_string(),
+                                            }))).await;
+                                        }
+                                        _ => {}
+                                    }
+                                }
                                 Ok(jsonmsg) => {
-                                    let _ = stream.send(ws::Message::from("unknown")).await;
                                     panic!("Unhandled message: {:?}", jsonmsg);
                                 }
                                 Err(e) => {
@@ -188,12 +226,14 @@ pub(crate) enum Message {
         username: String,
         password: String,
     },
-	#[serde(rename = "register_precheck")]
-	RegisterPrecheck {
-		email: String,
-		username: String,
-		password: String,
-	},
+    #[serde(rename = "register_precheck")]
+    RegisterPrecheck {
+        email: String,
+        username: String,
+        password: String,
+    },
+    #[serde(rename = "register_precheck_response")]
+    RegisterPrecheckResponse { ok: bool, why: String },
     #[serde(rename = "auth_success")]
     AuthSuccess { token: String, username: String },
     #[serde(rename = "auth_failure")]

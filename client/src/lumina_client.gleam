@@ -63,21 +63,35 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     ToRegisterPage -> #(
       Model(
         ..model_,
-        page: model.Register(fields: model.RegisterPageFields("", "", "", "")),
+        page: model.Register(
+          fields: model.RegisterPageFields("", "", "", ""),
+          ready: None,
+        ),
       ),
       effect.none(),
     )
     ToLandingPage -> #(Model(model.Landing, None, None), effect.none())
     UpdateEmailField(new_email) -> {
       case model_.page {
-        model.Register(fields) -> #(
+        model.Register(fields, ready) -> #(
           Model(
             ..model_,
             page: model.Register(
               fields: model.RegisterPageFields(..fields, emailfield: new_email),
+              ready:,
             ),
           ),
-          effect.none(),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            let assert Some(socket) = model_.ws as "Socket not connected"
+            encode_ws_msg(RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+            |> lustre_websocket.send(socket, _)
+          },
         )
         model.Login(fields) -> #(
           Model(
@@ -93,14 +107,25 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     UpdatePasswordField(new_password) -> {
       case model_.page {
-        model.Register(fields) -> #(
+        model.Register(fields, ready) -> #(
           Model(
             ..model_,
             page: model.Register(
               model.RegisterPageFields(..fields, passwordfield: new_password),
+              ready:,
             ),
           ),
-          effect.none(),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            let assert Some(socket) = model_.ws as "Socket not connected"
+            encode_ws_msg(RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+            |> lustre_websocket.send(socket, _)
+          },
         )
         model.Login(fields) -> #(
           Model(
@@ -116,7 +141,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     UpdatePasswordConfirmField(new_password_confirmation) -> {
       case model_.page {
-        model.Register(fields) -> #(
+        model.Register(fields, ready) -> #(
           Model(
             ..model_,
             page: model.Register(
@@ -124,16 +149,27 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 ..fields,
                 passwordconfirmfield: new_password_confirmation,
               ),
+              ready:,
             ),
           ),
-          effect.none(),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            let assert Some(socket) = model_.ws as "Socket not connected"
+            encode_ws_msg(RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+            |> lustre_websocket.send(socket, _)
+          },
         )
         _ -> #(model_, effect.none())
       }
     }
     UpdateUsernameField(new_username) -> {
       case model_.page {
-        model.Register(fields) -> #(
+        model.Register(fields, ready) -> #(
           Model(
             ..model_,
             page: model.Register(
@@ -145,9 +181,19 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 |> string.replace("@", "")
                 |> string.replace(".", "")
               }),
+              ready:,
             ),
           ),
-          effect.none(),
+          {
+            let assert Some(socket) = model_.ws as "Socket not connected"
+            encode_ws_msg(RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            ))
+            |> json.to_string()
+            |> lustre_websocket.send(socket, _)
+          },
         )
         _ -> #(model_, effect.none())
       }
@@ -177,11 +223,15 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     SubmitSignup -> {
-      let assert model.Register(fields) = model_.page
+      let assert model.Register(fields, ready) = model_.page
 
-      let values_ok = register_view_checker(fields)
-
-      case values_ok.0 {
+      case
+        {
+          { ready |> option.is_some() }
+          && { ready |> option.unwrap(Error("")) |> result.is_ok() }
+          && { fields.passwordfield == fields.passwordconfirmfield }
+        }
+      {
         True -> {
           console.log("Submitting signup form")
           let json =
@@ -221,6 +271,23 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
         Ok(Greeting(m)) -> {
           console.log("The server says hi! '" <> m <> "'")
           #(model_, effect.none())
+        }
+        Ok(RegisterPrecheckResponse(ok, why)) -> {
+          console.log("Register precheck response: " <> string.inspect(ok))
+          let ready =
+            case ok {
+              True -> Ok(Nil)
+              False -> Error(why)
+            }
+            |> Some
+
+          case model_.page {
+            model.Register(fields, _) -> #(
+              Model(..model_, page: model.Register(fields:, ready:)),
+              effect.none(),
+            )
+            _ -> #(model_, effect.none())
+          }
         }
         Ok(f) -> {
           console.error("Unhandled message: " <> string.inspect(f))
@@ -431,8 +498,8 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
 
 fn view_register(model_: Model) -> List(Element(Msg)) {
   // We know that the model is a Login page, so we can safely unwrap it
-  let assert model.Register(fieldvalues): model.Page = model_.page
-  let values_ok = register_view_checker(fieldvalues)
+  let assert model.Register(fieldvalues, ready): model.Page = model_.page
+
   // Check if the password and password confirmation fields match and if the email and username fields are not empty
   [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
@@ -527,13 +594,18 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
                       html.br([]),
                       html.div(
                         [
-                          attribute.class(
-                            "bg-base-200 card shadow-md p-4 w-full",
-                          ),
+                          attribute.class(case ready |> option.is_some() {
+                            True -> "bg-base-200 card shadow-md p-4 w-full"
+                            False -> "hidden"
+                          }),
                         ],
                         [
-                          case values_ok.0 {
-                            False ->
+                          case
+                            ready |> option.unwrap(Ok(Nil)),
+                            fieldvalues.passwordfield
+                            == fieldvalues.passwordconfirmfield
+                          {
+                            Error(why), _ ->
                               html.div([attribute.class("w-full")], [
                                 html.div(
                                   [
@@ -556,9 +628,9 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
                                     ),
                                   ],
                                 ),
-                                html.text(" " <> values_ok.1),
+                                html.text(" " <> why),
                               ])
-                            True ->
+                            Ok(_), True ->
                               html.div([attribute.class("w-full")], [
                                 html.div(
                                   [
@@ -583,11 +655,41 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
                                 ),
                                 html.text(" Ready to go!"),
                               ])
+                            Ok(_), False ->
+                              html.div([attribute.class("w-full")], [
+                                html.div(
+                                  [
+                                    attribute.class(
+                                      "inline-grid *:[grid-area:1/1]",
+                                    ),
+                                  ],
+                                  [
+                                    html.div(
+                                      [
+                                        attribute.class(
+                                          "status status-error animate-ping",
+                                        ),
+                                      ],
+                                      [],
+                                    ),
+                                    html.div(
+                                      [attribute.class("status status-error")],
+                                      [],
+                                    ),
+                                  ],
+                                ),
+                                html.text(" Passwords don't match!"),
+                              ])
                           },
                         ],
                       ),
                       html.button(
-                        case values_ok.0 {
+                        case
+                          ready |> option.is_some()
+                          && ready |> option.unwrap(Error("")) |> result.is_ok()
+                          && fieldvalues.passwordfield
+                          == fieldvalues.passwordconfirmfield
+                        {
                           True -> [
                             attribute.class("btn btn-base-400 mt-4"),
                             attribute.type_("submit"),
@@ -637,115 +739,6 @@ fn login_view_checker(fieldvalues: model.LoginFields) {
   |> list.all(fn(x) { x })
 }
 
-fn register_view_checker(
-  fieldvalues: model.RegisterPageFields,
-) -> #(Bool, String) {
-  [
-    #({ fieldvalues.emailfield != "" }, "Email field cannot be empty"),
-    #(
-      {
-        [
-          fieldvalues.emailfield |> string.contains("@"),
-          {
-            let f = fieldvalues.emailfield |> string.split("@")
-            case f {
-              [a, b] -> { string.length(a) > 3 } && { string.length(b) > 5 }
-              _ -> False
-            }
-          },
-          fieldvalues.emailfield |> string.contains("."),
-          {
-            case fieldvalues.emailfield |> string.split("@") {
-              [_, c] ->
-                case string.split(c, ".") {
-                  [a, b] -> { string.length(a) > 1 } && { string.length(b) > 1 }
-                  [a, "co", "uk"] -> {
-                    string.length(a) > 1
-                  }
-                  _ -> False
-                }
-              _ -> False
-            }
-          },
-        ]
-        |> list.all(fn(x) { x })
-      },
-      "Must be a valid email address",
-    ),
-    #({ fieldvalues.usernamefield != "" }, "Username field cannot be empty"),
-    #(
-      { fieldvalues.passwordfield |> string.length() > 7 },
-      "Password must be at least 8 characters, are "
-        <> fieldvalues.passwordfield |> string.length() |> int.to_string(),
-    ),
-    #(
-      {
-        [
-          { fieldvalues.passwordfield |> string.contains("0") },
-          { fieldvalues.passwordfield |> string.contains("1") },
-          { fieldvalues.passwordfield |> string.contains("2") },
-          { fieldvalues.passwordfield |> string.contains("3") },
-          { fieldvalues.passwordfield |> string.contains("4") },
-          { fieldvalues.passwordfield |> string.contains("5") },
-          { fieldvalues.passwordfield |> string.contains("6") },
-          { fieldvalues.passwordfield |> string.contains("7") },
-          { fieldvalues.passwordfield |> string.contains("8") },
-          { fieldvalues.passwordfield |> string.contains("9") },
-        ]
-        |> list.any(fn(x) { x })
-      },
-      "Password must contain at least one number",
-    ),
-    #(
-      {
-        [
-          { fieldvalues.passwordfield |> string.contains("!") },
-          { fieldvalues.passwordfield |> string.contains("@") },
-          { fieldvalues.passwordfield |> string.contains("#") },
-          { fieldvalues.passwordfield |> string.contains("$") },
-          { fieldvalues.passwordfield |> string.contains("%") },
-          { fieldvalues.passwordfield |> string.contains("^") },
-          { fieldvalues.passwordfield |> string.contains("&") },
-          { fieldvalues.passwordfield |> string.contains("*") },
-          { fieldvalues.passwordfield |> string.contains("(") },
-          { fieldvalues.passwordfield |> string.contains(")") },
-          { fieldvalues.passwordfield |> string.contains("-") },
-          { fieldvalues.passwordfield |> string.contains("_") },
-          { fieldvalues.passwordfield |> string.contains("=") },
-          { fieldvalues.passwordfield |> string.contains("+") },
-          { fieldvalues.passwordfield |> string.contains("[") },
-          { fieldvalues.passwordfield |> string.contains("]") },
-          { fieldvalues.passwordfield |> string.contains("{") },
-          { fieldvalues.passwordfield |> string.contains("}") },
-          { fieldvalues.passwordfield |> string.contains(":") },
-          { fieldvalues.passwordfield |> string.contains(";") },
-          { fieldvalues.passwordfield |> string.contains("<") },
-          { fieldvalues.passwordfield |> string.contains(">") },
-          { fieldvalues.passwordfield |> string.contains(",") },
-          { fieldvalues.passwordfield |> string.contains(".") },
-          { fieldvalues.passwordfield |> string.contains("?") },
-          { fieldvalues.passwordfield |> string.contains("/") },
-          { fieldvalues.passwordfield |> string.contains("|") },
-          { fieldvalues.passwordfield |> string.contains("`") },
-          { fieldvalues.passwordfield |> string.contains("~") },
-          { fieldvalues.passwordfield |> string.contains("\"") },
-          { fieldvalues.passwordfield |> string.contains("'") },
-          { fieldvalues.passwordfield |> string.contains("\\") },
-          { fieldvalues.passwordfield |> string.contains(" ") },
-        ]
-        |> list.any(fn(x) { x })
-      },
-      "Password must contain at least one special character",
-    ),
-    #(
-      { fieldvalues.passwordfield == fieldvalues.passwordconfirmfield },
-      "Passwords do not match",
-    ),
-  ]
-  |> list.find(fn(x) { x.0 == False })
-  |> result.unwrap(#(True, ""))
-}
-
 // WS Message decoding ---------------------------------------------------------
 
 type WsMsg {
@@ -756,6 +749,7 @@ type WsMsg {
     // Password only once? Yes, the equal password check is done in the view.
     password: String,
   )
+  RegisterPrecheckResponse(ok: Bool, why: String)
   RegisterRequest(email: String, username: String, password: String)
   LoginAuthenticationRequest(email_username: String, password: String)
   Undecodable
@@ -783,6 +777,12 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("username", json.string(username)),
         #("password", json.string(password)),
       ])
+    RegisterPrecheckResponse(ok, why) ->
+      json.object([
+        #("type", json.string("register_precheck_response")),
+        #("ok", json.bool(ok)),
+        #("why", json.string(why)),
+      ])
     Greeting(_) | Undecodable ->
       json.object([#("type", json.string("unknown"))])
   }
@@ -807,6 +807,11 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       use username <- decode.field("username", decode.string)
       use password <- decode.field("password", decode.string)
       decode.success(RegisterPrecheck(email, username, password))
+    }
+    "register_precheck_response" -> {
+      use ok <- decode.field("ok", decode.bool)
+      use why <- decode.field("why", decode.string)
+      decode.success(RegisterPrecheckResponse(ok, why))
     }
     "greeting" -> {
       use greeting <- decode.field("greeting", decode.string)
