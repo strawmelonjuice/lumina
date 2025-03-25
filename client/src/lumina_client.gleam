@@ -750,6 +750,12 @@ fn register_view_checker(
 
 type WsMsg {
   Greeting(greeting: String)
+  RegisterPrecheck(
+    email: String,
+    username: String,
+    // Password only once? Yes, the equal password check is done in the view.
+    password: String,
+  )
   RegisterRequest(email: String, username: String, password: String)
   LoginAuthenticationRequest(email_username: String, password: String)
   Undecodable
@@ -766,6 +772,13 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
     RegisterRequest(email, username, password) ->
       json.object([
         #("type", json.string("register_request")),
+        #("email", json.string(email)),
+        #("username", json.string(username)),
+        #("password", json.string(password)),
+      ])
+    RegisterPrecheck(email, username, password) ->
+      json.object([
+        #("type", json.string("register_precheck")),
         #("email", json.string(email)),
         #("username", json.string(username)),
         #("password", json.string(password)),
@@ -788,6 +801,12 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       use username <- decode.field("username", decode.string)
       use password <- decode.field("password", decode.string)
       decode.success(RegisterRequest(email, username, password))
+    }
+    "register_precheck" -> {
+      use email <- decode.field("email", decode.string)
+      use username <- decode.field("username", decode.string)
+      use password <- decode.field("password", decode.string)
+      decode.success(RegisterPrecheck(email, username, password))
     }
     "greeting" -> {
       use greeting <- decode.field("greeting", decode.string)
