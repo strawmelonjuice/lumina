@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @source "./src/**/*.gleam";
-@source "./index.html";
 
 @font-face {
 	font-family: "Josefin Sans";
