@@ -8,7 +8,28 @@ use rocket::response::content::RawHtml;
 
 #[get("/")]
 pub(crate) async fn index() -> RawHtml<String> {
-    RawHtml(include_str!("../../client/index.html").to_string())
+    RawHtml(
+        r#"<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<title>Lumina</title>
+
+	<link
+		rel="stylesheet"
+		href="/static/lumina.css"
+	/>
+	<script type="module" src="/static/lumina.min.mjs"></script>
+</head>
+
+<body>
+<div id="app"></div>
+</body>
+</html>"#
+            .to_string(),
+    )
 }
 
 #[get("/static/lumina.min.mjs")]
