@@ -206,6 +206,50 @@ pub(crate) async fn register_validitycheck(
     password: String,
     db: &DbConn,
 ) -> Result<(), LuminaError> {
+    {
+        // Check if the email or username is already in use
+        match db {
+            DbConn::PgsqlConnection(client) => {
+                // Some username and email validation should be done here
+                // Check if the email is already in use
+                let email_exists = client
+                    .query("SELECT * FROM users WHERE email = $1", &[&email])
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                if !email_exists.is_empty() {
+                    return Err(LuminaError::RegisterEmailInUse);
+                }
+                // Check if the username is already in use
+                let username_exists = client
+                    .query("SELECT * FROM users WHERE username = $1", &[&username])
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                if !username_exists.is_empty() {
+                    return Err(LuminaError::RegisterUsernameInUse);
+                }
+            }
+            DbConn::SqliteConnectionPool(pool) => {
+                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let username_exists = conn
+                    .prepare("SELECT * FROM users WHERE username = ?1")
+                    .map_err(LuminaError::Sqlite)?
+                    .exists(&[&username])
+                    .map_err(LuminaError::Sqlite)?;
+                if username_exists {
+                    return Err(LuminaError::RegisterUsernameInUse);
+                }
+                let email_exists = conn
+                    .prepare("SELECT * FROM users WHERE email = ?1")
+                    .map_err(LuminaError::Sqlite)?
+                    .exists(&[&email])
+                    .map_err(LuminaError::Sqlite)?;
+                if email_exists {
+                    return Err(LuminaError::RegisterEmailInUse);
+                }
+            }
+        }
+    }
+
     //
     //
     // Email checks
@@ -272,11 +316,6 @@ pub(crate) async fn register_validitycheck(
                 "Username too short".to_string(),
             ));
         }
-
-        // Check if the username is already in use
-        if let Ok(_) = User::get_user_by_identifier(username.clone(), db).await {
-            return Err(LuminaError::RegisterUsernameInUse);
-        };
     }
 
     //
@@ -310,6 +349,5 @@ pub(crate) async fn register_validitycheck(
             ));
         }
     }
-
     Ok(())
 }

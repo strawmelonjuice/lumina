@@ -817,7 +817,10 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       use greeting <- decode.field("greeting", decode.string)
       decode.success(Greeting(greeting:))
     }
-    _ -> decode.failure(Undecodable, "Unknown message type")
+    g -> {
+      console.error("Unknown message type: " <> g)
+      decode.failure(Undecodable, g)
+    }
   }
 }
 
