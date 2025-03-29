@@ -2,15 +2,19 @@ const MINIMUM_GLEAM_VERSION: (u32, u32, u32) = (1, 9, 1);
 const MINIMUM_BUN_VERSION: (u32, u32, u32) = (1, 2, 4);
 
 fn main() {
-    // The build script will be ran from the server directory, so we need to go up one directory to get to the root
-    let root_path = match std::env::var("CARGO_MANIFEST_DIR") {
-        Ok(path) => (path + "/..").replace("\\", "/").replace("/server/..", "/"),
-        Err(_) => panic!("Failed to get root path"),
-    };
     // Tell cargo to rerun the build script if the client directory changes
-    println!("cargo::rerun-if-changed={}client/src/", root_path);
-    println!("cargo::rerun-if-changed={}client/app.css", root_path);
-    println!("cargo::rerun-if-changed={}server/src/", root_path);
+    println!(
+        "cargo::rerun-if-changed={}client/src/",
+        env!("CARGO_WORKSPACE_DIR")
+    );
+    println!(
+        "cargo::rerun-if-changed={}client/app.css",
+        env!("CARGO_WORKSPACE_DIR")
+    );
+    println!(
+        "cargo::rerun-if-changed={}server/src/",
+        env!("CARGO_WORKSPACE_DIR")
+    );
     // Check if Bun is installed and is the correct version
     println!("Checking for Bun...");
     let bun_version = match std::process::Command::new("bun").arg("--version").output() {
@@ -58,7 +62,7 @@ fn main() {
     // Install the dependencies: bun install
     println!("Installing Bun dependencies...");
     let install_result = std::process::Command::new("bun")
-        .current_dir(root_path.clone() + "/client")
+        .current_dir(env!("CARGO_WORKSPACE_DIR").to_string() + "/client")
         .args(&["install"])
         .output()
         .expect("Failed to install Bun dependencies");
@@ -122,7 +126,7 @@ fn main() {
 
     println!("Checking Gleam client code...");
     let lustre_result = std::process::Command::new("gleam")
-        .current_dir(root_path.clone() + "/client")
+        .current_dir(env!("CARGO_WORKSPACE_DIR").to_string() + "/client")
         .args(&["check"])
         .output()
         .expect("Failed to check Gleam code");
@@ -137,7 +141,7 @@ fn main() {
     // Compile the Gleam code: gleam run -m lustre/dev build --minify=true
     println!("Compiling Gleam client code...");
     let lustre_result = std::process::Command::new("gleam")
-        .current_dir(root_path.clone() + "/client")
+        .current_dir(env!("CARGO_WORKSPACE_DIR").to_string() + "/client")
         .args(&[
             "run",
             "-m",
@@ -158,7 +162,7 @@ fn main() {
     // Transpile tailwind styles
     println!("Transpiling Tailwind styles...");
     let tailwind_result = std::process::Command::new("bun")
-        .current_dir(root_path.clone() + "/client")
+        .current_dir(env!("CARGO_WORKSPACE_DIR").to_string() + "/client")
         .args(&[
             "x",
             "@tailwindcss/cli",
