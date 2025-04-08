@@ -1,8 +1,4 @@
-//// For now, as you may see, I am compiling examples from Lustre packages into a single file.
-//// Once I get time to work on the actual project, I'll adapt them further to original code fitting the project's needs.
-
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
