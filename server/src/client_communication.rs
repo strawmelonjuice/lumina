@@ -1,5 +1,5 @@
 use crate::user::User;
-use crate::{AppState, LuminaError};
+use crate::{AppState, LuminaError, database};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
@@ -178,6 +178,15 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                         }
                                         _ => {}
                                     }
+                                }
+                                Ok(Message::LoginAuthenticationRequest { email_username, password }) =>
+                                {
+									let appstate = state.0.clone();
+                                        let db = &appstate.1.lock().await;
+                                match User::authenticate(email_username, password, db).await {
+                                    Ok(_) => todo!(),
+                                    Err(_) => todo!(),
+                                }
                                 }
                                 Ok(jsonmsg) => {
                                     panic!("Unhandled message: {:?}", jsonmsg);

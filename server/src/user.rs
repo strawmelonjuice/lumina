@@ -10,6 +10,38 @@ pub struct User {
     pub username: String,
 }
 impl User {
+    pub async fn authenticate(
+        email_username: String,
+        password: String,
+        db: &DbConn,
+    ) -> Result<User, LuminaError> {
+        let is_email = email_username.contains('@');
+
+        match db {
+            DbConn::PgsqlConnection(client) => {
+                let hashed_password: String = match is_email {
+                    true => client
+                        .query_one(
+                            "SELECT password FROM users WHERE email = $1",
+                            &[&email_username],
+                        )
+                        .await
+                        .map_err(LuminaError::Postgres)?
+                        .get(0),
+                    false => client
+                        .query_one(
+                            "SELECT password FROM users WHERE username = $1",
+                            &[&email_username],
+                        )
+                        .await
+                        .map_err(LuminaError::Postgres)?
+                        .get(0),
+                };
+                todo!("Verify that hash now. I've no time sorry.")
+            }
+            DbConn::SqliteConnectionPool(pool) => todo!(),
+        }
+    }
     pub async fn create_user(
         email: String,
         username: String,
