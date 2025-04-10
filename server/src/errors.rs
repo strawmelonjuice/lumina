@@ -1,5 +1,6 @@
 use crate::postgres;
 use r2d2_sqlite::rusqlite;
+#[derive(Debug)]
 pub(crate) enum LuminaError {
     ConfMissing(String),
     ConfInvalid(String),
