@@ -14,32 +14,38 @@ impl User {
         email_username: String,
         password: String,
         db: &DbConn,
-    ) -> Result<User, LuminaError> {
-        let is_email = email_username.contains('@');
-
-        match db {
-            DbConn::PgsqlConnection(client) => {
-                let hashed_password: String = match is_email {
-                    true => client
-                        .query_one(
-                            "SELECT password FROM users WHERE email = $1",
-                            &[&email_username],
-                        )
-                        .await
-                        .map_err(LuminaError::Postgres)?
-                        .get(0),
-                    false => client
-                        .query_one(
-                            "SELECT password FROM users WHERE username = $1",
-                            &[&email_username],
-                        )
-                        .await
-                        .map_err(LuminaError::Postgres)?
-                        .get(0),
-                };
-                todo!("Verify that hash now. I've no time sorry.")
+    ) -> Result<(String, User), LuminaError> {
+        let user = User::get_user_by_identifier(email_username, db).await?;
+        let hashed_password = user.clone().get_hashed_password(db).await?;
+        if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
+            Ok(user.create_session_token(db).await?)
+        } else {
+            Err(LuminaError::LoginInvalid)
+        }
+    }
+    async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
+        match database {
+            DbConn::SqliteConnectionPool(pool) => {
+                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let user_id_str = self.id.to_string();
+                conn.query_row(
+                    "SELECT password FROM users WHERE id = ?1",
+                    &[&user_id_str],
+                    |row| {
+                        let s: Result<String, r2d2_sqlite::rusqlite::Error> = row.get(0);
+                        s
+                    },
+                )
+                .map_err(LuminaError::Sqlite)
             }
-            DbConn::SqliteConnectionPool(pool) => todo!(),
+            DbConn::PgsqlConnection(client) => {
+                let row = client
+                    .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                let password: String = row.get(0);
+                Ok(password)
+            }
         }
     }
     pub async fn create_user(
@@ -160,10 +166,8 @@ impl User {
                 .map_err(LuminaError::Sqlite),
         }
     }
-    pub async fn create_session_token(
-        user: User,
-        db: &DbConn,
-    ) -> Result<(String, User), LuminaError> {
+    pub async fn create_session_token(self, db: &DbConn) -> Result<(String, User), LuminaError> {
+        let user = self;
         let info = "[INFO]".color_green().style_bold();
         let user_id = user.id;
         match db {

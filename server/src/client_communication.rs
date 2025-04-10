@@ -60,6 +60,10 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                     Ok((token, user)) => {
                                                         client_session_data.user =
                                                             Some(user.clone());
+														println!(
+															"{incoming} User {} authenticated",
+															user.clone().username.color_bright_cyan()
+														);
                                                         let _ = stream
                                                             .send(ws::Message::from(msgtojson(
                                                                 Message::AuthSuccess {
@@ -118,7 +122,12 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 															why
 														);
 													}
-                                                    _ => {}
+                                                    e => {
+														println!(
+															"{registrationerror} Error creating user: {:?}",
+															e
+														);
+													}
                                                 }
 
                                                 // I would return a more specific error message
@@ -183,10 +192,23 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                 {
 									let appstate = state.0.clone();
                                         let db = &appstate.1.lock().await;
-                                match User::authenticate(email_username, password, db).await {
-                                    Ok(_) => todo!(),
-                                    Err(_) => todo!(),
-                                }
+										let msgback = match User::authenticate(email_username.clone(), password, db).await {
+                                    Ok((token, user)) => {
+										println!("{incoming} User {} authenticated", user.clone().id.to_string().color_bright_cyan());
+										client_session_data.user =
+                                                            Some(user.clone());
+										client_session_data.user = Some(user.clone());
+										Message::AuthSuccess { token, username: user.username }
+									}
+								,
+                                    Err(_) => {
+									println!("{registrationerror} User {} {} authenticated", email_username.clone().color_bright_cyan(), "not".color_red());
+
+										Message::AuthFailure
+
+									},
+                                };
+									let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
                                 }
                                 Ok(jsonmsg) => {
                                     panic!("Unhandled message: {:?}", jsonmsg);
