@@ -107,10 +107,11 @@ impl User {
                 if email_exists {
                     return Err(LuminaError::RegisterEmailInUse);
                 }
+                let id_str = Uuid::new_v4().to_string();
                 let id = conn
-					.prepare("INSERT INTO users (email, username, password) VALUES (?1, ?2, ?3) RETURNING id")
+					.prepare("INSERT INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4) RETURNING id")
 					.map_err(LuminaError::Sqlite)?
-					.query_row(&[&email, &username, &password], |row| {
+					.query_row(&[&id_str, &email, &username, &password], |row| {
 						let a: String = row.get(0)?;
 						// Unwrap: Not entirely safe. If the database is corrupted, this will panic.
 						Ok(Uuid::from_str(a.as_str()).unwrap())
