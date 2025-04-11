@@ -293,7 +293,7 @@ pub(crate) async fn register_validitycheck(
     //
     {
         let email_regex = regex::Regex::new(
-            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{1,6})",
         )
         .map_err(LuminaError::RegexError)?;
         if !email_regex.is_match(&email) {
