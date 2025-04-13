@@ -17,6 +17,8 @@ pub(crate) enum LuminaError {
     RegisterUsernameInvalid(String),
     RegisterPasswordNotValid(String),
     LoginInvalid,
+    AuthenticationWrongPassword,
+    AuthenticationUserNotFound,
     UUidError(uuid::Error),
     RegexError(regex::Error),
 }
