@@ -18,9 +18,9 @@ impl User {
         let user = User::get_user_by_identifier(email_username, db).await?;
         let hashed_password = user.clone().get_hashed_password(db).await?;
         if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
-            Ok(user.create_session_token(db).await?)
+            user.create_session_token(db).await
         } else {
-            Err(LuminaError::LoginInvalid)
+            Err(LuminaError::AuthenticationWrongPassword)
         }
     }
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {

@@ -201,9 +201,18 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 										Message::AuthSuccess { token, username: user.username }
 									}
 								,
-                                    Err(_) => {
-									println!("{registrationerror} User {} {} authenticated", email_username.clone().color_bright_cyan(), "not".color_red());
-
+                                    Err(s) => {
+										match s {
+											LuminaError::AuthenticationWrongPassword => {
+												println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.clone().color_bright_cyan(), "not".color_red());
+											}
+											LuminaError::AuthenticationUserNotFound => {
+												println!("{registrationerror} User {} {} authenticated: User not found", email_username.clone().color_bright_cyan(), "not".color_red());
+											}
+											_ => {
+												println!("{registrationerror} User {} {} authenticated: {:?}", email_username.clone().color_bright_cyan(), "not".color_red(), s);
+											}
+										}
 										Message::AuthFailure
 
 									},
