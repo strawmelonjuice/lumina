@@ -15,6 +15,9 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import lustre_websocket
+import plinth/javascript/storage
+
+const model_local_storage_key = "luminaModelJSOB"
 
 // MAIN ------------------------------------------------------------------------
 
@@ -25,9 +28,34 @@ pub fn main() {
 
 // INIT ------------------------------------------------------------------------
 
-fn init(_flags: a) -> #(Model, Effect(Msg)) {
+fn init(_) -> #(Model, Effect(Msg)) {
+  let assert Ok(localstorage) = storage.local()
+    as "localstorage should be available on ALL major browsers."
+  let empty_model =
+    Model(page: model.Landing, user: None, ws: None, token: None)
   #(
-    Model(model.Landing, None, None),
+    case storage.get_item(localstorage, model_local_storage_key) {
+      Ok(l) -> {
+        case model.deserialize_serializable_model(l) {
+          Ok(loadable_model) -> {
+            Model(
+              page: loadable_model.page,
+              user: None,
+              ws: None,
+              token: loadable_model.token,
+            )
+          }
+          Error(_) -> {
+            console.error("Could not deserialise last saved model.")
+            empty_model
+          }
+        }
+      }
+      Error(_) -> {
+        console.log("No model to restore")
+        empty_model
+      }
+    },
     lustre_websocket.init("/connection", WsWrapper),
   )
 }
@@ -51,6 +79,7 @@ pub opaque type Msg {
 
 fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    // Catch Ws Events in a different function, since that is generally very different stuff.
     WsWrapper(event) -> update_ws(model_, event)
     ToLoginPage -> #(
       Model(..model_, page: model.Login(fields: model.LoginFields("", ""))),
@@ -66,7 +95,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       ),
       effect.none(),
     )
-    ToLandingPage -> #(Model(model.Landing, None, None), effect.none())
+    ToLandingPage -> #(Model(model.Landing, None, None, None), effect.none())
     UpdateEmailField(new_email) -> {
       case model_.page {
         model.Register(fields, ready) -> #(
@@ -298,7 +327,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
         }
       }
     lustre_websocket.OnBinaryMessage(_msg) -> {
-      // Ignore this. We don't expect binary messages, as we cannot tag them. We only expect text messages, with base64-encoded bitarrays in their fields. This makes it easier to handle them in the decoder.
+      // Ignore this. We don't expect binary messages, as we cannot tag them with how the decoder works right now. We only expect text messages, with base64-encoded bitarrays in their fields if so needed.
       // So, continue with the model as is:
       #(model_, effect.none())
     }
@@ -308,7 +337,23 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
     )
     lustre_websocket.OnOpen(socket) -> #(
       Model(..model_, ws: Some(socket)),
-      lustre_websocket.send(socket, "client-init"),
+      lustre_websocket.send(
+        socket,
+        {
+          let x = [
+            #("type", json.string("introduction")),
+            #("client_kind", json.string("web")),
+          ]
+          json.object(case model_.user, model_.token {
+            None, Some(token) -> {
+              // traversing x is okay.
+              list.append(x, [#("try_revive", json.string(token))])
+            }
+            _, _ -> x
+          })
+        }
+          |> json.to_string(),
+      ),
     )
   }
 }
@@ -316,6 +361,14 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
 // VIEW ------------------------------------------------------------------------
 
 fn view(model_: Model) -> Element(Msg) {
+  let assert Ok(localstorage) = storage.local()
+    as "localstorage should be available on ALL major browsers."
+  let _ =
+    storage.set_item(
+      localstorage,
+      model_local_storage_key,
+      model.serialize(model_),
+    )
   html.div(
     [get_color_scheme(model_), attribute.class("w-screen h-screen")],
     case model_.page {

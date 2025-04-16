@@ -25,15 +25,24 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                             "ping" => {
                                 let _ = stream.send(ws::Message::Text("pong".to_string())).await;
                             }
-                            "client-init" => {
-                                client_session_data.client_type = Some(ClientType::Web);
-                                let _ = stream
+                            possibly_json => match serde_json::from_str::<Message>(possibly_json) {
+								Ok(Message::Introduction { client_kind, try_revive }) => {
+									match client_kind.as_str() {
+										"web" => {
+											client_session_data.client_type = Some(ClientType::Web)
+										}
+										_ => {}
+									}
+									match try_revive {
+										Some(token) => {todo!("Re-awaking requests is not implemented! I do not know how to revive session {:#}", token)}
+										None =>{ let _ = stream
                                     .send(ws::Message::from(msgtojson(Message::Greeting {
                                         greeting: "Hello from server!".to_string(),
                                     })))
                                     .await;
-                            }
-                            possibly_json => match serde_json::from_str::<Message>(possibly_json) {
+											}
+									}
+								},
                                 Ok(Message::RegisterRequest {
                                     email,
                                     username,
@@ -251,6 +260,11 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 pub(crate) enum Message {
     #[serde(rename = "client-init")]
     ClientInit { data: String },
+    #[serde(rename = "introduction")]
+    Introduction {
+        client_kind: String,
+        try_revive: Option<String>,
+    },
     #[serde(rename = "greeting")]
     Greeting { greeting: String },
     #[serde(rename = "serialisation_error")]
