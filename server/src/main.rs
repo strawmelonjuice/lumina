@@ -46,6 +46,7 @@ async fn main() {
     // Some print prefixes
     let error = "[ERROR]".color_error_red().style_bold();
     let info = "[INFO]".color_green().style_bold();
+    let warn = "[WARN]".color_yellow().style_bold();
     // End of print prefixes
     let me = format!("Lumina Server, version {}", env!("CARGO_PKG_VERSION"));
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -62,6 +63,9 @@ async fn main() {
                 "BSD-3".color_blue()
             );
             println!("{}", cynthia_con::horizline());
+            println!(
+                "{warn} Lumina is still in early development, and should not be used in production in any way. Please use at your own risk."
+            );
             match config_get() {
                 Ok(config) => {
                     let db = match database::setup().await {
