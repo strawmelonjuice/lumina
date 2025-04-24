@@ -4,9 +4,9 @@ target = "javascript"
 
 [dependencies]
 gleam_json = "2.3.0"
-gleam_stdlib = "0.55.0"
-lustre = "4.6.3"
-lustre_websocket = ">= 0.7.6 and < 1.0.0"
+gleam_stdlib = "0.59.0"
+lustre = ">= 5.0.0 and < 6.0.0"
+lustre_websocket = { git = "https://codeberg.org/strawmelonjuice/lustre_websocket.git", ref = "main" }
 gleamy_lights = ">= 2.3.0 and < 3.0.0"
 plinth = ">= 0.5.9 and < 1.0.0"
 
