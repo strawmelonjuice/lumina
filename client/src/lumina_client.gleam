@@ -65,9 +65,9 @@ fn init(_) -> #(Model, Effect(Msg)) {
 pub opaque type Msg {
   WsWrapper(lustre_websocket.WebSocketEvent)
   ToLoginPage
-  SubmitLogin
+  SubmitLogin(List(#(String, String)))
   ToRegisterPage
-  SubmitSignup
+  SubmitSignup(List(#(String, String)))
   ToLandingPage
   // Can be re-used for both login and register pages
   UpdateEmailField(String)
@@ -223,7 +223,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model_, effect.none())
       }
     }
-    SubmitLogin -> {
+    SubmitLogin(_) -> {
       let assert model.Login(fields) = model_.page
       let values_ok = login_view_checker(fields)
       case values_ok {
@@ -247,7 +247,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
-    SubmitSignup -> {
+    SubmitSignup(_) -> {
       let assert model.Register(fields, ready) = model_.page
 
       case
