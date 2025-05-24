@@ -757,7 +757,7 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
                 ),
               ],
             ),
-            html.div([attribute.class("text-center lg:text-right")], [
+            html.div([attribute.class("text-center lg:text-left")], [
               html.h1([attribute.class("text-5xl font-bold")], [
                 html.text("Sign up for Lumina!"),
               ]),
