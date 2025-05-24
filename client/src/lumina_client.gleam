@@ -17,6 +17,7 @@ import lustre/event
 import lustre_websocket
 import plinth/javascript/storage
 
+/// Under which key the model is stored in local storage.
 const model_local_storage_key = "luminaModelJSOB"
 
 // MAIN ------------------------------------------------------------------------
