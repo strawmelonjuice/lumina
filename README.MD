@@ -1,5 +1,9 @@
 # Lumina(/peonies) server
 
+> Notice:
+> This repo is edited on [CodeBerg](https://codeberg.org/strawmelonjuice/lumina).
+> Any changes in the code on github will be overwritten by automated force-push from Codeberg.
+
 ## -> Rewrite '25'
 
 > Completely rewriting this project. I am relatively new
