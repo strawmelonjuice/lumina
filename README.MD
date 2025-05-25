@@ -25,3 +25,14 @@ Environment variables can be set in the _environment_ before run, but Lumina pre
 | `LUMINA_SERVER_HTTPS`             | `"false"`                                   | Wether to use 'https' rather than 'http' in links, etc. (please do!) |
 | `LUMINA_SYNC_IID`      | `"localhost"`                               | A name Lumina uses when communicating with other instances, must be equal to where it's http is facing the public internet |
 | `LUMINA_SYNC_INTERVAL` | `"30"`                                      | Specifies the interval between syncs. Minimum is 30.         |
+
+
+## Development
+
+During development, I use the following watchexec command that just truly checks everything and then keeps rebuilding.
+
+```sh
+watchexec -e rs,gleam,toml,css,ts,json -- cargo run
+```
+I might just specify it a bit further sometime in the future.
+
