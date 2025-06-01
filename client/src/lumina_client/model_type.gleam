@@ -10,10 +10,16 @@ import lustre_websocket
 /// blablabla
 pub type Model {
   Model(
+    /// Page currently browsing.
     page: Page,
+    /// User, if known
     user: Option(User),
-    ws: Option(lustre_websocket.WebSocket),
+    /// WebSocket connection
+    ws: Option(Option(lustre_websocket.WebSocket)),
+    /// Used to restore sessions
     token: Option(String),
+    /// Used to show error screens on unrecoverable errors
+    status: Result(Nil, String),
   )
 }
 
@@ -167,7 +173,7 @@ fn serializable_model_decoder() -> decode.Decoder(SerializableModel) {
 }
 
 pub fn serialize(normal_model: Model) {
-  let Model(page, _, _, token): Model = normal_model
+  let Model(page, _, _, token, _): Model = normal_model
   SerializableModel(page:, token:)
   |> serialize_serializable_model
   |> json.to_string
