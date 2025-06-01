@@ -7,7 +7,10 @@ import gleam/string
 import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/dom
-import lumina_client/model.{type Model, Model}
+import lumina_client/model_type.{
+  type LoginFields, type Model, HomeTimeline, Landing, Login, LoginFields, Model,
+  Register, RegisterPageFields,
+}
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -33,17 +36,18 @@ fn init(_) -> #(Model, Effect(Msg)) {
   let assert Ok(localstorage) = storage.local()
     as "localstorage should be available on ALL major browsers."
   let empty_model =
-    Model(page: model.Landing, user: None, ws: None, token: None)
+    Model(page: Landing, user: None, ws: None, token: None, status: Ok(Nil))
   #(
     case storage.get_item(localstorage, model_local_storage_key) {
       Ok(l) -> {
-        case model.deserialize_serializable_model(l) {
+        case model_type.deserialize_serializable_model(l) {
           Ok(loadable_model) -> {
             Model(
               page: loadable_model.page,
               user: None,
               ws: None,
               token: loadable_model.token,
+              status: Ok(Nil),
             )
           }
           Error(_) -> {
@@ -64,6 +68,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
 // UPDATE ----------------------------------------------------------------------
 
 pub opaque type Msg {
+  WSTryReconnect
   WsWrapper(lustre_websocket.WebSocketEvent)
   ToLoginPage
   SubmitLogin(List(#(String, String)))
@@ -78,38 +83,39 @@ pub opaque type Msg {
   UpdatePasswordConfirmField(String)
 }
 
-fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    // Catch Ws Events in a different function, since that is generally very different stuff.
-    WsWrapper(event) -> update_ws(model_, event)
+    WSTryReconnect -> {
+      init(Nil)
+    }
+
+    // Catch other Ws Events in a different function, since that is generally very different stuff.
+    WsWrapper(event) -> update_ws(model, event)
     ToLoginPage -> #(
-      Model(..model_, page: model.Login(fields: model.LoginFields("", ""))),
+      Model(..model, page: Login(fields: LoginFields("", ""))),
       effect.none(),
     )
     ToRegisterPage -> #(
       Model(
-        ..model_,
-        page: model.Register(
-          fields: model.RegisterPageFields("", "", "", ""),
-          ready: None,
-        ),
+        ..model,
+        page: Register(fields: RegisterPageFields("", "", "", ""), ready: None),
       ),
       effect.none(),
     )
-    ToLandingPage -> #(Model(model.Landing, None, None, None), effect.none())
+    ToLandingPage -> #(Model(Landing, None, None, None, Ok(Nil)), effect.none())
     UpdateEmailField(new_email) -> {
-      case model_.page {
-        model.Register(fields, ready) -> #(
+      case model.page {
+        Register(fields, ready) -> #(
           Model(
-            ..model_,
-            page: model.Register(
-              fields: model.RegisterPageFields(..fields, emailfield: new_email),
+            ..model,
+            page: Register(
+              fields: RegisterPageFields(..fields, emailfield: new_email),
               ready:,
             ),
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(socket) = model_.ws as "Socket not connected"
+            let assert Some(Some(socket)) = model.ws as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -119,31 +125,29 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        model.Login(fields) -> #(
+        Login(fields) -> #(
           Model(
-            ..model_,
-            page: model.Login(
-              fields: model.LoginFields(..fields, emailfield: new_email),
-            ),
+            ..model,
+            page: Login(fields: LoginFields(..fields, emailfield: new_email)),
           ),
           effect.none(),
         )
-        _ -> #(model_, effect.none())
+        _ -> #(model, effect.none())
       }
     }
     UpdatePasswordField(new_password) -> {
-      case model_.page {
-        model.Register(fields, ready) -> #(
+      case model.page {
+        Register(fields, ready) -> #(
           Model(
-            ..model_,
-            page: model.Register(
-              model.RegisterPageFields(..fields, passwordfield: new_password),
+            ..model,
+            page: Register(
+              RegisterPageFields(..fields, passwordfield: new_password),
               ready:,
             ),
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(socket) = model_.ws as "Socket not connected"
+            let assert Some(Some(socket)) = model.ws as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -153,25 +157,25 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        model.Login(fields) -> #(
+        Login(fields) -> #(
           Model(
-            ..model_,
-            page: model.Login(
-              fields: model.LoginFields(..fields, passwordfield: new_password),
+            ..model,
+            page: Login(
+              fields: LoginFields(..fields, passwordfield: new_password),
             ),
           ),
           effect.none(),
         )
-        _ -> #(model_, effect.none())
+        _ -> #(model, effect.none())
       }
     }
     UpdatePasswordConfirmField(new_password_confirmation) -> {
-      case model_.page {
-        model.Register(fields, ready) -> #(
+      case model.page {
+        Register(fields, ready) -> #(
           Model(
-            ..model_,
-            page: model.Register(
-              fields: model.RegisterPageFields(
+            ..model,
+            page: Register(
+              fields: RegisterPageFields(
                 ..fields,
                 passwordconfirmfield: new_password_confirmation,
               ),
@@ -180,7 +184,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(socket) = model_.ws as "Socket not connected"
+            let assert Some(Some(socket)) = model.ws as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -190,16 +194,16 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        _ -> #(model_, effect.none())
+        _ -> #(model, effect.none())
       }
     }
     UpdateUsernameField(new_username) -> {
-      case model_.page {
-        model.Register(fields, ready) -> #(
+      case model.page {
+        Register(fields, ready) -> #(
           Model(
-            ..model_,
-            page: model.Register(
-              fields: model.RegisterPageFields(..fields, usernamefield: {
+            ..model,
+            page: Register(
+              fields: RegisterPageFields(..fields, usernamefield: {
                 new_username
                 |> string.trim()
                 |> string.replace(" ", "")
@@ -211,7 +215,7 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             ),
           ),
           {
-            let assert Some(socket) = model_.ws as "Socket not connected"
+            let assert Some(Some(socket)) = model.ws as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -221,11 +225,11 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        _ -> #(model_, effect.none())
+        _ -> #(model, effect.none())
       }
     }
     SubmitLogin(_) -> {
-      let assert model.Login(fields) = model_.page
+      let assert Login(fields) = model.page
       let values_ok = login_view_checker(fields)
       case values_ok {
         True -> {
@@ -236,20 +240,20 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               fields.passwordfield,
             ))
             |> json.to_string()
-          let assert Some(socket) = model_.ws as "Socket not connected"
+          let assert Some(Some(socket)) = model.ws as "Socket not connected"
           #(
-            Model(..model_, ws: Some(socket)),
+            Model(..model, ws: Some(Some(socket))),
             lustre_websocket.send(socket, json),
           )
         }
         False -> {
           console.error("Form not ready to submit")
-          #(model_, effect.none())
+          #(model, effect.none())
         }
       }
     }
     SubmitSignup(_) -> {
-      let assert model.Register(fields, ready) = model_.page
+      let assert Register(fields, ready) = model.page
 
       case
         {
@@ -267,15 +271,15 @@ fn update(model_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               fields.passwordfield,
             ))
             |> json.to_string()
-          let assert Some(socket) = model_.ws as "Socket not connected"
+          let assert Some(Some(socket)) = model.ws as "Socket not connected"
           #(
-            Model(..model_, ws: Some(socket)),
+            Model(..model, ws: Some(Some(socket))),
             lustre_websocket.send(socket, json),
           )
         }
         False -> {
           console.error("Form not ready to submit")
-          #(model_, effect.none())
+          #(model, effect.none())
         }
       }
     }
@@ -308,8 +312,8 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
             |> Some
 
           case model_.page {
-            model.Register(fields, _) -> #(
-              Model(..model_, page: model.Register(fields:, ready:)),
+            Register(fields, _) -> #(
+              Model(..model_, page: Register(fields:, ready:)),
               effect.none(),
             )
             _ -> #(model_, effect.none())
@@ -333,11 +337,11 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
       #(model_, effect.none())
     }
     lustre_websocket.OnClose(_reason) -> #(
-      Model(..model_, ws: None),
+      Model(..model_, ws: Some(None)),
       effect.none(),
     )
     lustre_websocket.OnOpen(socket) -> #(
-      Model(..model_, ws: Some(socket)),
+      Model(..model_, ws: Some(Some(socket))),
       lustre_websocket.send(
         socket,
         {
@@ -361,29 +365,66 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
 
 // VIEW ------------------------------------------------------------------------
 
-fn view(model_: Model) -> Element(Msg) {
+fn view(model: Model) -> Element(Msg) {
   let assert Ok(localstorage) = storage.local()
     as "localstorage should be available on ALL major browsers."
   let _ =
     storage.set_item(
       localstorage,
       model_local_storage_key,
-      model.serialize(model_),
+      model_type.serialize(model),
     )
-  html.div(
-    [get_color_scheme(model_), attribute.class("w-screen h-screen")],
-    case model_.page {
-      model.Landing -> view_landing()
-      model.Register(..) -> view_register(model_)
-      model.Login(..) -> view_login(model_)
-      model.HomeTimeline(timeline_id) ->
+  html.div([get_color_scheme(model), attribute.class("w-screen h-screen")], [
+    case model.ws {
+      Some(Some(_)) -> element.none()
+      None ->
+        html.div(
+          [
+            attribute.attribute("open", ""),
+            attribute.class("toast toast-top toast-center"),
+          ],
+          [
+            html.div([attribute.class("alert alert-info")], [
+              html.text("Connecting to server..."),
+              html.span(
+                [attribute.class("loading loading-spinner text-info")],
+                [],
+              ),
+            ]),
+          ],
+        )
+      Some(None) ->
+        html.div(
+          [
+            attribute.attribute("open", ""),
+            attribute.class("toast toast-top toast-center"),
+          ],
+          [
+            html.div([attribute.class("alert alert-warn")], [
+              html.text("Connection to server ended! "),
+              html.button(
+                [
+                  attribute.class("btn btn-primary"),
+                  event.on_click(WSTryReconnect),
+                ],
+                [element.text("Reconnect")],
+              ),
+            ]),
+          ],
+        )
+    },
+    case model.page {
+      Landing -> view_landing()
+      Register(..) -> view_register(model)
+      Login(..) -> view_login(model)
+      HomeTimeline(timeline_id) ->
         todo as "HomeTimeline page not yet implemented"
     },
-  )
+  ])
 }
 
-fn view_landing() -> List(Element(Msg)) {
-  [
+fn view_landing() -> Element(Msg) {
+  html.div([], [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
@@ -426,15 +467,14 @@ fn view_landing() -> List(Element(Msg)) {
         ]),
       ],
     ),
-  ]
+  ])
 }
 
-fn view_login(model_: Model) -> List(Element(Msg)) {
+fn view_login(model_: Model) -> Element(Msg) {
   // We know that the model is a Login page, so we can safely unwrap it
-  let assert model.Login(fieldvalues) = model_.page
-
+  let assert Login(fieldvalues) = model_.page
   let values_ok = login_view_checker(fieldvalues)
-  [
+  html.div([], [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
@@ -543,15 +583,15 @@ fn view_login(model_: Model) -> List(Element(Msg)) {
         ),
       ],
     ),
-  ]
+  ])
 }
 
-fn view_register(model_: Model) -> List(Element(Msg)) {
+fn view_register(model_: Model) -> Element(Msg) {
   // We know that the model is a Login page, so we can safely unwrap it
-  let assert model.Register(fieldvalues, ready): model.Page = model_.page
+  let assert Register(fieldvalues, ready): model_type.Page = model_.page
 
   // Check if the password and password confirmation fields match and if the email and username fields are not empty
-  [
+  html.div([], [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
@@ -771,7 +811,7 @@ fn view_register(model_: Model) -> List(Element(Msg)) {
         ),
       ],
     ),
-  ]
+  ])
 }
 
 // HELPER FUNCTIONS ------------------------------------------------------------
@@ -784,7 +824,7 @@ fn get_color_scheme(_model_) -> attribute.Attribute(Msg) {
   }
 }
 
-fn login_view_checker(fieldvalues: model.LoginFields) {
+fn login_view_checker(fieldvalues: LoginFields) {
   [{ fieldvalues.passwordfield != "" }, { fieldvalues.emailfield != "" }]
   |> list.all(fn(x) { x })
 }
