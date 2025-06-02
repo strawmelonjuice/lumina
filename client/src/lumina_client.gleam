@@ -351,8 +351,6 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
   }
 }
 
-// VIEW ------------------------------------------------------------------------
-// HELPER FUNCTIONS ------------------------------------------------------------
 // WS Message decoding ---------------------------------------------------------
 
 type WsMsg {

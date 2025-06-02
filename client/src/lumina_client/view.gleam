@@ -1,3 +1,5 @@
+//// Module containing the view function and it's splits
+
 import gleam/option.{None, Some}
 import gleam/result
 import lumina_client/helpers.{
