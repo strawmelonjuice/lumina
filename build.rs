@@ -1,4 +1,4 @@
-const MINIMUM_GLEAM_VERSION: (u32, u32, u32) = (1, 9, 1);
+const MINIMUM_GLEAM_VERSION: (u32, u32, u32) = (1, 11, 0);
 const MINIMUM_BUN_VERSION: (u32, u32, u32) = (1, 2, 4);
 
 fn main() {

@@ -1,4 +1,4 @@
 [tools]
 bun = "latest"
 erlang = "27"
-gleam = "1.10.0"
+gleam = "1.11.0"
