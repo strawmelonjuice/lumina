@@ -1,3 +1,5 @@
+//// Helper functions
+
 import lumina_client/message_type.{type Msg}
 import lustre/attribute
 
