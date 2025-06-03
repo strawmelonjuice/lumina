@@ -1,7 +1,0 @@
-{
-	"dependencies": {
-		"@tailwindcss/cli": "^4",
-		"daisyui": "latest",
-		"tailwindcss": "^4"
-	}
-}

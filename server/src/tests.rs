@@ -1,6 +1,7 @@
 #[cfg(test)]
 #[test]
 fn gleam_test() {
+    // Sometimes
     println!("Checking Gleam client code...");
     let lustre_result = std::process::Command::new("gleam")
         .current_dir("../client/")
