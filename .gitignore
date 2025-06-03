@@ -16,7 +16,6 @@ frontend/prelude.mjs
 erl_crash.dump
 /test
 *.log
-node_modules
 package-lock.json
 rsffi/target
 rsffi/test

@@ -1,4 +1,28 @@
 [tools]
-bun = "latest"
+bun = "1.2.14"
 erlang = "27"
 gleam = "1.11.0"
+"npm:daisyui" = "latest"
+"npm:tailwindcss" = "^4"
+"npm:@tailwindcss/cli" = "^4"
+# mise plugin add https://github.com/Stratus3D/asdf-rebar.git
+rebar = "latest"
+watchexec = "latest"
+[settings]
+[settings.npm]
+bun = true
+
+[tasks.development-run]
+depends = "build-client"
+run = "cargo run"
+dir = "{{cwd}}"
+[tasks.build-client]
+depends = "build-styles"
+run = "gleam run -m lustre/dev build --minify=true --detect-tailwind=false"
+dir = "./client/"
+[tasks.build-styles]
+run = ["bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css"]
+dir = "./client/"
+[tasks.build-server]
+depends = ["build-client"]
+run = ["cargo build --release"]
