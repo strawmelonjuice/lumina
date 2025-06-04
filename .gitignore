@@ -27,8 +27,8 @@ node_modules
 
 
 # Added by cargo
-
 /target
+
 # Added by me
 /client/priv/static/lumina_client*.css
 /client/priv/static/lumina_client*.mjs

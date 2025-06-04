@@ -2,15 +2,11 @@
 bun = "1.2.14"
 erlang = "27"
 gleam = "1.11.0"
-# mise plugin add https://github.com/Stratus3D/asdf-rebar.git
-rebar = "latest"
 watchexec = "latest"
 [settings]
 [settings.npm]
 bun = true
-[tasks.development-watch]
-depends = ["development-run"]
-run = "cargo run"
+
 [tasks.development-run]
 depends = "build-client"
 run = "cargo run"
