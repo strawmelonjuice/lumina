@@ -29,10 +29,11 @@ Environment variables can be set in the _environment_ before run, but Lumina pre
 
 ## Development
 
-During development, I use the following watchexec command that just truly checks everything and then keeps rebuilding.
+During development, I use the following:
 
 ```sh
-watchexec -e rs,gleam,toml,css,ts,json -- cargo run
+mise install # Installs mise deps
+mise watch --restart -e rs,gleam,toml,css,ts,json development-run # Watches every important file and auto restarts build process on changes. Really nice!
 ```
 I might just specify it a bit further sometime in the future.
 
