@@ -255,7 +255,7 @@ pub(crate) async fn register_validitycheck(
     {
         // Check if the email or username is already in use
         match db {
-            // TODO: Bloom filter for username and email checks
+            // TODO: Bloom filter for username and email checks using fast-bloom
             DbConn::PgsqlConnection(client) => {
                 // Some username and email validation should be done here
                 // Check if the email is already in use
