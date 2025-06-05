@@ -9,12 +9,19 @@ pub struct User {
     pub email: String,
     pub username: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct SessionReference {
+    pub session_id: Uuid,
+    pub token: String,
+}
+
 impl User {
     pub async fn authenticate(
         email_username: String,
         password: String,
         db: &DbConn,
-    ) -> Result<(String, User), LuminaError> {
+    ) -> Result<(SessionReference, User), LuminaError> {
         let user = match User::get_user_by_identifier(email_username, db).await {
             // Replace some errors
             // //==> When no Sqlite rows are found matching the user, that means the user is not found.
@@ -27,7 +34,7 @@ impl User {
         }?;
         let hashed_password = user.clone().get_hashed_password(db).await?;
         if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
-            user.create_session_token(db).await
+            user.create_session(db).await
         } else {
             Err(LuminaError::AuthenticationWrongPassword)
         }
@@ -176,16 +183,20 @@ impl User {
                 .map_err(LuminaError::Sqlite),
         }
     }
-    pub async fn create_session_token(self, db: &DbConn) -> Result<(String, User), LuminaError> {
+
+    pub async fn create_session(
+        self,
+        db: &DbConn,
+    ) -> Result<(SessionReference, User), LuminaError> {
         let user = self;
         let info = "[INFO]".color_green().style_bold();
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(client) => {
                 let session_key = Uuid::new_v4().to_string();
-                client
-                    .execute(
-                        "INSERT INTO sessions (user_id, session_key) VALUES ($1, $2)",
+                let id = client
+                    .query_one(
+                        "INSERT INTO sessions (user_id, session_key) VALUES ($1, $2) RETURNING id",
                         &[&user_id, &session_key],
                     )
                     .await
@@ -194,22 +205,37 @@ impl User {
                     "{info} New session created by {}",
                     user.clone().username.color_bright_cyan()
                 );
-                Ok((session_key, user))
+                let session_id = id.get(0);
+                Ok((
+                    SessionReference {
+                        session_id,
+                        token: session_key,
+                    },
+                    user,
+                ))
             }
             DbConn::SqliteConnectionPool(pool) => {
                 let conn = pool.get().map_err(LuminaError::SqlitePool)?;
                 let user_id_str = user_id.to_string();
                 let session_key = Uuid::new_v4().to_string();
+                let session_id = Uuid::new_v4();
+                let session_id_string = session_id.to_string();
                 conn.execute(
-                    "INSERT INTO sessions (user_id, session_key) VALUES (?1, ?2)",
-                    &[&user_id_str, &session_key],
+                    "INSERT INTO sessions (id, user_id, session_key, created_at) VALUES (?1,?2, ?3, strftime('%s', 'now'))",
+                    &[&session_id_string,&user_id_str, &session_key],
                 )
                 .map_err(LuminaError::Sqlite)?;
                 println!(
                     "{info} New session created by {}",
                     user.clone().username.color_bright_cyan()
                 );
-                Ok((session_key, user))
+                Ok((
+                    SessionReference {
+                        session_id,
+                        token: session_key,
+                    },
+                    user,
+                ))
             }
         }
     }

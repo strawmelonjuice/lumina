@@ -65,18 +65,18 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                     "{info} User created: {}",
                                                     user.clone().username.color_bright_cyan()
                                                 );
-                                                match User::create_session_token(user, db).await {
-                                                    Ok((token, user)) => {
+                                                match User::create_session(user, db).await {
+                                                    Ok((session_reference, user)) => {
                                                         client_session_data.user =
                                                             Some(user.clone());
 														println!(
-															"{incoming} User {} authenticated",
+															"{incoming} User {} authenticated.",
 															user.clone().username.color_bright_cyan()
 														);
                                                         let _ = stream
                                                             .send(ws::Message::from(msgtojson(
                                                                 Message::AuthSuccess {
-                                                                    token,
+                                                                    token: session_reference.token,
                                                                     username: user.username,
                                                                 },
                                                             )))
@@ -202,12 +202,12 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 									let appstate = state.0.clone();
                                         let db = &appstate.1.lock().await;
 										let msgback = match User::authenticate(email_username.clone(), password, db).await {
-                                    Ok((token, user)) => {
-										println!("{incoming} User {} authenticated", user.clone().id.to_string().color_bright_cyan());
+                                    Ok((session_reference, user)) => {
+										println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.clone().username.to_string().color_bright_cyan(), session_reference.clone().session_id.to_string().color_pink(), format!("(User id: {})",user.clone().id.to_string()).style_dim());
 										client_session_data.user =
                                                             Some(user.clone());
 										client_session_data.user = Some(user.clone());
-										Message::AuthSuccess { token, username: user.username }
+										Message::AuthSuccess {token: session_reference.token, username: user.username }
 									}
 								,
                                     Err(s) => {
