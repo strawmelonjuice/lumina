@@ -144,15 +144,35 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        Login(fields) -> #(
-          Model(
-            ..model,
-            page: Login(
-              fields: LoginFields(..fields, passwordfield: new_password),
+        Login(fields) -> {
+          let username_email = case string.starts_with(fields.emailfield, "@") {
+            True -> string.drop_start(fields.emailfield, 1)
+            False -> fields.emailfield
+          }
+          let new_username_email = case string.contains(username_email, "@") {
+            True -> {
+              // Is an email, what now!
+              username_email
+            }
+            False -> {
+              string.trim(username_email)
+              |> string.replace(" ", "")
+              |> string.lowercase()
+              |> string.replace("@", "")
+              |> string.replace(".", "")
+            }
+          }
+          #(
+            Model(
+              ..model,
+              page: Login(fields: LoginFields(
+                passwordfield: new_password,
+                emailfield: new_username_email,
+              )),
             ),
-          ),
-          effect.none(),
-        )
+            effect.none(),
+          )
+        }
         _ -> #(model, effect.none())
       }
     }
@@ -218,12 +238,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    FocusLostEmailField(value) -> {
+    FocusLostEmailField -> {
       // This handles the login username/email field value once the user seems to be done typing.
       let assert Login(fields) = model.page
-      let value = case string.starts_with(value, "@") {
-        True -> string.drop_start(value, 1)
-        False -> value
+      let value = case string.starts_with(fields.emailfield, "@") {
+        True -> string.drop_start(fields.emailfield, 1)
+        False -> fields.emailfield
       }
       let new_value = case string.contains(value, "@") {
         True -> {
