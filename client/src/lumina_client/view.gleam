@@ -199,12 +199,7 @@ fn view_login(model_: Model) -> Element(Msg) {
                         attribute.value(fieldvalues.emailfield),
                         event.on_input(UpdateEmailField),
                         event.on("focusout", {
-                          use value <- decode.subfield(
-                            ["target", "value"],
-                            decode.string,
-                          )
-
-                          decode.success(message_type.FocusLostEmailField(value))
+                          decode.success(message_type.FocusLostEmailField)
                         }),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
