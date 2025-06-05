@@ -1,5 +1,6 @@
 //// Module containing the view function and it's splits
 
+import gleam/dynamic/decode
 import gleam/option.{None, Some}
 import gleam/result
 import lumina_client/helpers.{
@@ -197,6 +198,14 @@ fn view_login(model_: Model) -> Element(Msg) {
                         attribute.type_("text"),
                         attribute.value(fieldvalues.emailfield),
                         event.on_input(UpdateEmailField),
+                        event.on("focusout", {
+                          use value <- decode.subfield(
+                            ["target", "value"],
+                            decode.string,
+                          )
+
+                          decode.success(message_type.FocusLostEmailField(value))
+                        }),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
                         html.text("Password"),
