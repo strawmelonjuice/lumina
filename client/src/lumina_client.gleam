@@ -8,8 +8,8 @@ import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
-  ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
+  type Msg, FocusLostEmailField, SubmitLogin, SubmitSignup, ToLandingPage,
+  ToLoginPage, ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
   UpdatePasswordField, UpdateUsernameField, WSTryReconnect, WsWrapper,
 }
 import lumina_client/model_type.{
@@ -191,7 +191,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             ..model,
             page: Register(
               fields: RegisterPageFields(..fields, usernamefield: {
-                new_username
+                case string.starts_with(new_username, "@") {
+                  True -> string.drop_start(new_username, 1)
+                  False -> new_username
+                }
                 |> string.trim()
                 |> string.replace(" ", "")
                 |> string.lowercase()
@@ -214,6 +217,34 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
         _ -> #(model, effect.none())
       }
+    }
+    FocusLostEmailField(value) -> {
+      // This handles the login username/email field value once the user seems to be done typing.
+      let assert Login(fields) = model.page
+      let value = case string.starts_with(value, "@") {
+        True -> string.drop_start(value, 1)
+        False -> value
+      }
+      let new_value = case string.contains(value, "@") {
+        True -> {
+          // Is an email, what now!
+          value
+        }
+        False -> {
+          string.trim(value)
+          |> string.replace(" ", "")
+          |> string.lowercase()
+          |> string.replace("@", "")
+          |> string.replace(".", "")
+        }
+      }
+      #(
+        Model(
+          ..model,
+          page: Login(fields: LoginFields(..fields, emailfield: new_value)),
+        ),
+        effect.none(),
+      )
     }
     SubmitLogin(_) -> {
       let assert Login(fields) = model.page
@@ -319,13 +350,13 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
         }
       }
     lustre_websocket.OnBinaryMessage(msg) -> {
-      echo msg
+      msg
       // Ignore this. We don't expect binary messages, as we cannot tag them with how the decoder works right now. We only expect text messages, with base64-encoded bitarrays in their fields if so needed.
       // So, continue with the model as is:
       #(model_, effect.none())
     }
     lustre_websocket.OnClose(reason) -> {
-      echo reason
+      reason
       #(Model(..model_, ws: Some(None)), effect.none())
     }
     lustre_websocket.OnOpen(socket) -> #(

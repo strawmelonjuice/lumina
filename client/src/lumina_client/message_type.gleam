@@ -14,4 +14,5 @@ pub type Msg {
   // Register page
   UpdateUsernameField(String)
   UpdatePasswordConfirmField(String)
+  FocusLostEmailField(String)
 }
