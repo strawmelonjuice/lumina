@@ -15,7 +15,16 @@ impl User {
         password: String,
         db: &DbConn,
     ) -> Result<(String, User), LuminaError> {
-        let user = User::get_user_by_identifier(email_username, db).await?;
+        let user = match User::get_user_by_identifier(email_username, db).await {
+            // Replace some errors
+            // //==> When no Sqlite rows are found matching the user, that means the user is not found.
+            Err(LuminaError::Sqlite(r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows)) => {
+                Err(LuminaError::AuthenticationUserNotFound)
+            }
+            // Pass through other errors
+            Ok(user) => Ok(user),
+            Err(e) => Err(e),
+        }?;
         let hashed_password = user.clone().get_hashed_password(db).await?;
         if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
             user.create_session_token(db).await
