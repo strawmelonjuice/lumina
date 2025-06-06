@@ -11,9 +11,7 @@
 }
 
 @plugin "daisyui" {
-	themes:
-		lumina-light --prefers-light,
-		lumina-dark --prefers-dark;
+	themes: lumina-light --prefers-light, lumina-dark --prefers-dark;
 }
 
 @plugin "daisyui/theme" {
