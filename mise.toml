@@ -1,32 +1,63 @@
 [tools]
+biome = "latest"
 bun = "1.2.14"
 erlang = "27"
 gleam = "1.11.0"
+marksman = "latest"
+rust-analyzer = "latest"
+taplo = "latest"
 watchexec = "latest"
+
 [settings]
 [settings.npm]
 bun = true
+
+[tasks.optimised-development-run]
+depends = "build-client"
+run = "cargo run --release"
+dir = "{{cwd}}"
+
+[tasks.format]
+depends = ["format-server", "format-client", "format-metafiles"]
+run = []
+
+[tasks.format-server]
+hide = true
+run = "cargo fmt"
+dir = "./server"
+
+[tasks.format-client]
+hide = true
+run = "gleam format"
+dir = "./client"
+
+[tasks.format-metafiles]
+hide = true
+run = ["biome format --write  --vcs-enabled=true", "taplo fmt"]
 
 [tasks.development-run]
 depends = "build-client"
 run = "cargo run"
 dir = "{{cwd}}"
+
 [tasks.build-client]
 run = [
-	"gleam build --target javascript",
-	"""
+  "gleam build --target javascript",
+  """
 echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts"
 """,
-	"bun build \"./build/dev/javascript/lumina_client/lumina_client.ts\" --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+  "bun build \"./build/dev/javascript/lumina_client/lumina_client.ts\" --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
 ]
 depends = "build-styles"
 dir = "./client/"
+
 [tasks.build-styles]
 run = [
-	"bun i",
-	"bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
+  "bun i",
+  "bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
 ]
 dir = "./client/"
+
 [tasks.build-server]
 depends = ["build-client"]
-run = ["cargo build --release"]
+run = ["cargo build"]
