@@ -226,10 +226,10 @@ async fn main() {
                 println!();
                 let mut builder = tabled::builder::Builder::new();
                 builder.push_record(["Name", "Default value", "Description"]);
-                builder.push_record(["LUMINA_DB_TYPE", r#""sqlite""#, r#"The kind of database to use. Options are 'postgres' (recommended) or 'sqlite'."#]);
+                builder.push_record(["LUMINA_DB_TYPE", r#"sqlite"#, r#"The kind of database to use. Options are 'postgres' (recommended) or 'sqlite'."#]);
                 builder.push_record([
                     "LUMINA_DB_SALT",
-                    r#""sal""#,
+                    r#"sal"#,
                     r#"The salting to use for some data on the database."#,
                 ]);
                 builder.push_record([
@@ -241,7 +241,7 @@ async fn main() {
                 builder.push_record(["LUMINA_SERVER_HTTPS", r#"false"#, "Wether to use 'https' rather than 'http' in links, etc. Recommendation is to set to true."]);
                 builder.push_record([
                     "LUMINA_SYNC_IID",
-                    r#""localhost""#,
+                    r#"localhost"#,
                     "Broadcasted domain name, should be equal to public domain name.",
                 ]);
                 builder.push_record([
@@ -275,7 +275,7 @@ async fn main() {
                 ]);
                 builder.push_record([
                     "LUMINA_POSTGRES_HOST",
-                    r#""localhost""#,
+                    r#"localhost"#,
                     r#"The address to contact the database on."#,
                 ]);
                 builder.push_record([
@@ -313,7 +313,7 @@ async fn main() {
 
                 builder.push_record([
                     "LUMINA_SQLITE_FILE",
-                    r#""instance.sqlite""#,
+                    r#"instance.sqlite"#,
                     "SQLite file to connect to. Always a relative path from the instance folder.",
                 ]);
                 println!(
