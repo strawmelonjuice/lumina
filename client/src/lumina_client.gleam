@@ -358,25 +358,38 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
           }
         }
         Ok(f) -> {
-          console.error("Unhandled message: " <> string.inspect(f))
+          let message_variant =
+            json.parse(notice, ws_msg_typedefiner())
+            |> result.unwrap("Unparsable message")
+          console.error(
+            "Unhandled message: "
+            <> message_variant
+            <> " => "
+            <> string.inspect(f),
+          )
           #(model_, effect.none())
         }
         Error(err) -> {
           console.error(
             "Message could not be parsed:"
-            <> premixed.text_error_red(string.inspect(err)),
+            // <> premixed.text_error_red(string.inspect(err)),
+            <> premixed.text_error_red(notice),
           )
           #(model_, effect.none())
         }
       }
     lustre_websocket.OnBinaryMessage(msg) -> {
-      msg
+      console.warn(
+        "Received unexpected:" <> premixed.text_cyan(string.inspect(msg)),
+      )
       // Ignore this. We don't expect binary messages, as we cannot tag them with how the decoder works right now. We only expect text messages, with base64-encoded bitarrays in their fields if so needed.
       // So, continue with the model as is:
       #(model_, effect.none())
     }
     lustre_websocket.OnClose(reason) -> {
-      reason
+      console.warn(
+        "Given close reason:" <> premixed.text_cyan(string.inspect(reason)),
+      )
       #(Model(..model_, ws: Some(None)), effect.none())
     }
     lustre_websocket.OnOpen(socket) -> #(
@@ -409,12 +422,13 @@ type WsMsg {
   RegisterPrecheck(
     email: String,
     username: String,
-    // Password only once? Yes, the equal password check is done in the view.
+    // Password only once? Yes, the equal password check is done in the view/update themselves.
     password: String,
   )
   RegisterPrecheckResponse(ok: Bool, why: String)
   RegisterRequest(email: String, username: String, password: String)
   LoginAuthenticationRequest(email_username: String, password: String)
+  AuthenticationSuccess(username: String, token: String)
   Undecodable
 }
 
@@ -440,19 +454,22 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("username", json.string(username)),
         #("password", json.string(password)),
       ])
-    RegisterPrecheckResponse(ok, why) ->
-      json.object([
-        #("type", json.string("register_precheck_response")),
-        #("ok", json.bool(ok)),
-        #("why", json.string(why)),
-      ])
-    Greeting(_) | Undecodable ->
+    // And the client should never have to encode the next few:
+    Greeting(_)
+    | Undecodable
+    | RegisterPrecheckResponse(_, _)
+    | AuthenticationSuccess(_, _) ->
       json.object([#("type", json.string("unknown"))])
   }
 }
 
 fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
   case variant {
+    "auth_success" -> {
+      use username <- decode.field("username", decode.string)
+      use token <- decode.field("token", decode.string)
+      decode.success(AuthenticationSuccess(username:, token:))
+    }
     "unknown" -> decode.success(Undecodable)
     "login_authentication_request" -> {
       use email_username <- decode.field("email_username", decode.string)
