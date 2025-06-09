@@ -380,7 +380,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
       }
     lustre_websocket.OnBinaryMessage(msg) -> {
       console.warn(
-        "Received unexpected:" <> premixed.text_cyan(string.inspect(msg)),
+        "Received unexpected: " <> premixed.text_cyan(string.inspect(msg)),
       )
       // Ignore this. We don't expect binary messages, as we cannot tag them with how the decoder works right now. We only expect text messages, with base64-encoded bitarrays in their fields if so needed.
       // So, continue with the model as is:
@@ -388,7 +388,25 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
     }
     lustre_websocket.OnClose(reason) -> {
       console.warn(
-        "Given close reason:" <> premixed.text_cyan(string.inspect(reason)),
+        "Given close reason: "
+        <> premixed.text_cyan({
+          case reason {
+            lustre_websocket.AbnormalClose -> "Abnormal close"
+            lustre_websocket.FailedExtensionNegotation ->
+              "Failed extension negotation"
+            lustre_websocket.FailedTLSHandshake -> "Failed TLS handshake"
+            lustre_websocket.GoingAway -> "Going away"
+            lustre_websocket.IncomprehensibleFrame -> "Incomprehensible frame"
+            lustre_websocket.MessageTooBig -> "Message was too big"
+            lustre_websocket.NoCodeFromServer -> "No code from server"
+            lustre_websocket.Normal -> "Normal close"
+            lustre_websocket.OtherCloseReason -> "Other close reason (unknown)"
+            lustre_websocket.PolicyViolated -> "Policy violation"
+            lustre_websocket.ProtocolError -> "Protocol error"
+            lustre_websocket.UnexpectedFailure -> "Unexpected faillure"
+            lustre_websocket.UnexpectedTypeOfData -> "Unexpected type of data"
+          }
+        }),
       )
       #(Model(..model_, ws: Some(None)), effect.none())
     }
