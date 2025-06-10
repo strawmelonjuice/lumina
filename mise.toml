@@ -42,19 +42,19 @@ dir = "{{cwd}}"
 
 [tasks.build-client]
 run = [
-  "gleam build --target javascript",
-  """
-echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts"
-""",
-  "bun build \"./build/dev/javascript/lumina_client/lumina_client.ts\" --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"gleam build --target javascript",
+	"""
+	echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts"
+	""",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
 ]
 depends = "build-styles"
 dir = "./client/"
 
 [tasks.build-styles]
 run = [
-  "bun i",
-  "bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
+	"bun i",
+	"bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
 ]
 dir = "./client/"
 
