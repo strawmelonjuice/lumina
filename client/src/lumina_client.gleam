@@ -369,7 +369,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
           )
           #(model_, effect.none())
         }
-        Error(err) -> {
+        Error(_err) -> {
           console.error(
             "Message could not be parsed:"
             // <> premixed.text_error_red(string.inspect(err)),
