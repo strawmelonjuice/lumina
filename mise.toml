@@ -13,11 +13,13 @@ watchexec = "latest"
 bun = true
 
 [tasks.optimised-development-run]
+description = "Run the server in release mode for development"
 depends = "build-client"
 run = "cargo run --release"
 dir = "{{cwd}}"
 
 [tasks.format]
+description = "Format the codebase"
 depends = ["format-server", "format-client", "format-metafiles"]
 run = []
 
@@ -36,11 +38,17 @@ hide = true
 run = ["biome format --write  --vcs-enabled=true", "taplo fmt"]
 
 [tasks.development-run]
+description = "Run the server in development mode"
 depends = "build-client"
 run = "cargo run"
 dir = "{{cwd}}"
 
+[tasks.development-watch]
+description = "Run the server in development mode with file watching"
+run = "mise watch --restart -e rs,gleam,toml,css,ts,json development-run"
+
 [tasks.build-client]
+description = "Build the client-side of Lumina and it's styles"
 run = [
 	"gleam build --target javascript",
 	"""
@@ -57,6 +65,7 @@ depends = "build-styles"
 dir = "./client/"
 
 [tasks.build-styles]
+description = "Build the styles for Lumina"
 run = [
 	"bun i",
 	"bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
@@ -64,5 +73,6 @@ run = [
 dir = "./client/"
 
 [tasks.build-server]
+description = "Build the server-side of Lumina"
 depends = ["build-client"]
 run = ["cargo build"]
