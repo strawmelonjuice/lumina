@@ -16,7 +16,7 @@ bun = true
 description = "Run the server in release mode for development"
 depends = "build-client"
 run = "cargo run --release"
-dir = "{{cwd}}"
+dir = "{{ config_root }}"
 
 [tasks.format]
 description = "Format the codebase"
