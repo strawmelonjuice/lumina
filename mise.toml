@@ -48,6 +48,11 @@ run = [
 	""",
 	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
 ]
+run_windows = [
+	"gleam build --target javascript",
+	"echo import { main } from `./lumina_client.mjs`;document.addEventListener(`DOMContentLoaded`, main()) > ./build/dev/javascript/lumina_client/lumina_client.ts",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+]
 depends = "build-styles"
 dir = "./client/"
 
