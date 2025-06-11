@@ -238,7 +238,7 @@ fn serializable_model_decoder() -> decode.Decoder(SerializableModel) {
 }
 
 pub fn serialize(normal_model: Model) {
-  let Model(page, _, _, token, _): Model = normal_model
+  let Model(page, _, _, token, _, _): Model = normal_model
   SerializableModel(page:, token:)
   |> serialize_serializable_model
   |> json.to_string

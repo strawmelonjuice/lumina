@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
@@ -34,7 +35,14 @@ fn init(reconnection: Bool) -> #(Model, Effect(Msg)) {
   let assert Ok(localstorage) = storage.local()
     as "localstorage should be available on ALL major browsers."
   let empty_model =
-    Model(page: Landing, user: None, ws: None, token: None, status: Ok(Nil))
+    Model(
+      page: Landing,
+      user: None,
+      ws: None,
+      token: None,
+      status: Ok(Nil),
+      cache: model_type.Cached(cached_posts: dict.new()),
+    )
   #(
     case storage.get_item(localstorage, model_local_storage_key) {
       Ok(l) -> {
@@ -51,6 +59,7 @@ fn init(reconnection: Bool) -> #(Model, Effect(Msg)) {
               },
               token: loadable_model.token,
               status: Ok(Nil),
+              cache: model_type.Cached(cached_posts: dict.new()),
             )
           }
           Error(_) -> {
@@ -89,7 +98,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       ),
       effect.none(),
     )
-    ToLandingPage -> #(Model(Landing, None, None, None, Ok(Nil)), effect.none())
+    ToLandingPage -> #(Model(..model, page: Landing), effect.none())
     UpdateEmailField(new_email) -> {
       case model.page {
         Register(fields, ready) -> #(
