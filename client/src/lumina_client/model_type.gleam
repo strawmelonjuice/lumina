@@ -1,12 +1,14 @@
 //// Branched out the Model into a module.
 //// The Model is about to be huge, I'm just preselecting for that.
 
+import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
 import gleam/option.{type Option}
 import lustre_websocket
 
 /// # Model
+///
 /// blablabla
 pub type Model {
   Model(
@@ -20,6 +22,69 @@ pub type Model {
     token: Option(String),
     /// Used to show error screens on unrecoverable errors
     status: Result(Nil, String),
+    /// To keep the client going while navigating, the websocket just requests certain data and then stores it in the model so that view can update once it's there
+    /// Displaying some loading screen in between.
+    /// Once it is there, this is where it's stored:
+    cache: Cached,
+  )
+}
+
+pub type Cached {
+  Cached(
+    /// Posts are requested if nonexistent in the dict, and a loading screen can be displayed immediately
+    /// The server will afterwards send all corresponding comments, which can also be stored and, if deemed
+    /// necessary by the Lustre runtime, also update the DOM.
+    /// Only drawback is that the view function might run a lot, but I don't believe that'd have such a big impact.
+    ///
+    /// `Dict(post_uuid, CachedPost)`
+    cached_posts: dict.Dict(String, CachedPost),
+    // /// Comments received:
+    // cached_comments: List(CachedComment)
+    // /// Users received:
+    // cached_users: Dict(String, CachedUser)
+  )
+}
+
+pub type CachedPost {
+  /// A media post, embedded is either webp or mp4.
+  CachedMediaPost(
+    /// Source instance. 'local' by default, hostname if external.
+    source_instance: String,
+    /// Media description
+    description: String,
+    /// Media files as base64-encoded 'data:'-strings
+    /// Try matching on the substring of content-type
+    /// to determine the valid HTML embed element to put it in.
+    medias: List(String),
+    /// Unix timestamp of the moment of posting
+    timestamp: Int,
+    /// User id of poster, which is why the source_instance matters.
+    /// This means that client will do a lookup and stores the user once it gets it.
+    author_id: String,
+  )
+  /// The 'default', bluesky-like post, contains markdown and not much else.
+  CachedTextualPost(
+    /// Source instance. 'local' by default, hostname if external.
+    source_instance: String,
+    /// Markdown content.
+    content: String,
+    /// Unix timestamp of the moment of posting
+    timestamp: Int,
+    /// User id of poster, which is why the source_instance matters.
+    /// This means that client will do a lookup and stores the user once it gets it.
+    author_id: String,
+  )
+  /// Article posts
+  CachedArticlePost(
+    /// Title of the article post
+    title: String,
+    /// Markdown content
+    content: String,
+    /// Unix timestamp of the moment of posting
+    timestamp: Int,
+    /// User id of poster, which is why the source_instance matters.
+    /// This means that client will do a lookup and stores the user once it gets it.
+    author_id: String,
   )
 }
 

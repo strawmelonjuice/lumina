@@ -3,6 +3,7 @@ use crate::{AppState, LuminaError, database};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
+use uuid::Uuid;
 
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
@@ -292,6 +293,38 @@ pub(crate) enum Message {
     AuthSuccess { token: String, username: String },
     #[serde(rename = "auth_failure")]
     AuthFailure,
+    #[serde(rename = "data_article_post")]
+    ArticlePostDataSent {
+        post_id: Uuid,
+        /// Source instance. 'local' by default, hostname if external.
+        source_instance: String,
+        title: String,
+        content: String,
+        /// Unix timestamp of the moment of posting
+        timestamp: u64,
+        /// User id of poster, which is why the source_instance matters.
+        /// This means that client will do a lookup and stores the user once it gets it.
+        author_id: String,
+    },
+    #[serde(rename = "data_embed_post")]
+    MediaPostDataSent {
+        post_id: Uuid,
+        /// Source instance. 'local' by default, hostname if external.
+        source_instance: String,
+        /// Media description
+        description: String,
+        /// Base64 encoded media strings, either webp or mp4.
+        medias: Vec<String>,
+    },
+    #[serde(rename = "data_textual_post")]
+    TextPostDataSent {
+        post_id: Uuid,
+        /// Source instance. 'local' by default, hostname if external.
+        source_instance: String,
+        /// Markdown content.
+        content: String,
+    },
+    /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,
 }
