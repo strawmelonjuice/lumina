@@ -8,6 +8,7 @@ use tokio_postgres::{Client, Connection, Socket};
 
 pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let warn = "[WARN]".color_bright_orange().style_bold();
+    let info = "[INFO]".color_green().style_bold();
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
         .unwrap_or(String::from("sqlite")))
@@ -15,7 +16,11 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     {
         "sqlite" => {
             let db_path =
-                std::env::var("LUMINA_SQLITE_PATH").unwrap_or("instance.sqlite".to_string());
+                std::env::var("LUMINA_SQLITE_FILE").unwrap_or("instance.sqlite".to_string());
+            println!(
+                "{info} Using SQLite database at path: {}",
+                db_path.clone().color_bright_cyan().style_bold()
+            );
             let manager = SqliteConnectionManager::file(db_path);
             let pool = Pool::new(manager).map_err(LuminaError::SqlitePool)?;
             {
@@ -44,28 +49,40 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             Ok(DbConn::SqliteConnectionPool(pool))
         }
         "postgres" => {
+           
             let pg_config = {
+                 let mut uuu = (
+                    "unspecified database".to_string(),
+                    "unspecified host".to_string(),
+                    "unkwown port".to_string(),
+                );
                 let mut pg_config = postgres::Config::new();
                 pg_config.user(&{
                     std::env::var("LUMINA_POSTGRES_USERNAME")
                         .map_err(|_| ConfMissing("LUMINA_POSTGRES_USERNAME".to_string()))?
                 });
-                pg_config.dbname(&{
-                    std::env::var("LUMINA_POSTGRES_DATABASE")
-                        .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?
-                });
-                pg_config.port(std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
+                let dbname = std::env::var("LUMINA_POSTGRES_DATABASE")
+                        .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?;
+                    uuu.0 = dbname.clone();
+                pg_config.dbname(&dbname);
+                let port = std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
                     eprintln!("{warn} No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'.");
                     "5432".to_string()
-                }).parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("LUMINA_POSTGRES_PORT is not a valid integer number".to_string()) })?);
+                });
+                uuu.2 = port.clone();
+                // Parse the port as u16, if it fails, return an error
+                pg_config.port(port.parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("LUMINA_POSTGRES_PORT is not a valid integer number".to_string()) })?);
                 match std::env::var("LUMINA_POSTGRES_HOST") {
                     Ok(val) => {
+                        uuu.1 = val.clone();
                         pg_config.host(&val);
                     }
                     Err(_) => {
                         eprintln!(
                             "{warn} No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
                         );
+                        // Default to localhost if not set
+                        uuu.1 = "localhost".to_string();
                         pg_config.host("localhost");
                     }
                 };
@@ -79,8 +96,15 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                         );
                     }
                 };
+                 println!(
+                "{info} Using Postgres database at: {} on host: {} at port: {}",
+                uuu.0.color_bright_cyan().style_bold(),
+                uuu.1.color_bright_cyan().style_bold(),
+                uuu.2.color_bright_cyan().style_bold(),
+            );
                 pg_config
             };
+           
             // Connect to the database
             let conn: (Client, Connection<Socket, NoTlsStream>) = pg_config
                 .connect(postgres::tls::NoTls)
