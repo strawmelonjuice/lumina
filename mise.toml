@@ -12,8 +12,9 @@ bun = true
 
 [tasks.optimised-development-run]
 description = "Run the server in release mode for development"
-depends = "build-client"
-run = "cargo run --release"
+depends = "build-server-release"
+run = "target/release/lumina-server"
+run_windows = "target\\release\\lumina-server.exe"
 dir = "{{ config_root }}"
 
 [tasks.format]
@@ -37,8 +38,9 @@ run = ["bun x prettier . --write", "taplo format"]
 
 [tasks.development-run]
 description = "Run the server in development mode"
-depends = "build-client"
-run = "cargo run"
+depends = "build-server"
+run = "target/debug/lumina-server"
+run_windows = "target\\debug\\lumina-server.exe"
 dir = "{{cwd}}"
 
 [tasks.development-watch]
@@ -74,3 +76,8 @@ dir = "./client/"
 description = "Build the server-side of Lumina"
 depends = ["build-client"]
 run = ["cargo build"]
+
+[tasks.build-server-release]
+description = "Build the server-side of Lumina optimised for release"
+depends = ["build-client"]
+run = ["cargo build --release"]
