@@ -1,10 +1,7 @@
 [tools]
 bun = "1.2.14"
-erlang = "27"
 gleam = "1.11.0"
-rust-analyzer = "latest"
-taplo = "latest"
-watchexec = "latest"
+"rust" = { version = "1.87.0", components = "rust-analyzer" }
 
 [settings]
 [settings.npm]
@@ -35,6 +32,7 @@ dir = "./client"
 [tasks.format-metafiles]
 hide = true
 run = ["bun x prettier . --write", "taplo format"]
+tools.taplo = "latest"
 
 [tasks.development-run]
 description = "Run the server in development mode"
@@ -44,6 +42,7 @@ run_windows = "target\\debug\\lumina-server.exe"
 dir = "{{cwd}}"
 
 [tasks.development-watch]
+tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
 run = "mise watch --restart -e rs,gleam,toml,css,ts,json development-run"
 
@@ -81,3 +80,63 @@ run = ["cargo build"]
 description = "Build the server-side of Lumina optimised for release"
 depends = ["build-client"]
 run = ["cargo build --release"]
+
+[tasks.clean-all]
+description = "Clean all build artifacts"
+run = [
+  "cargo clean",
+  "rm -rf ./client/node_modules",
+  "rm -rf ./client/build",
+  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
+  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
+  "rm -rf ./client/priv/static/lumina_client.min.mjs",
+  "rm -rf ./client/priv/static/lumina_client.css",
+]
+
+[tasks.docker-compose-up-postgres-no-optimise]
+description = "Run the docker-compose file combining lumina with a postgres database, but without optimised build.  [debug mode]"
+tools.docker-compose = "latest"
+env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
+run = [
+  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+  "docker compose  --progress plain -f 'docker-compose-postgres.yml' up -d --build",
+]
+[tasks.docker-compose-up-postgres]
+description = "Run the docker-compose file combining lumina with a postgres database."
+tools.docker-compose = "latest"
+env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
+run = [
+  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+  "docker compose  -f 'docker-compose-postgres.yml' up -d --build",
+]
+[tasks.docker-compose-up-sqlite]
+description = "Run the docker-compose file combining lumina with a sqlite database."
+tools.docker-compose = "latest"
+env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
+run = [
+  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+  "docker compose  -f 'docker-compose-sqlite.yml' up -d --build",
+]
+[tasks.docker-compose-up-sqlite-no-optimise]
+description = "Run the docker-compose file combining lumina with a sqlite database, but without optimised build. [debug mode]"
+tools.docker-compose = "latest"
+env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
+run = [
+  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+  "docker compose  --progress plain -f 'docker-compose-sqlite.yml' up -d --build",
+]
+[tasks.docker-compose-down]
+description = "Stop and remove the docker-compose containers"
+tools.docker-compose = "latest"
+run = [
+  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+  "docker compose -f 'docker-compose-sqlite.yml' down --remove-orphans",
+  "docker compose -f 'docker-compose-postgres.yml' down --remove-orphans",
+]
+[tasks.docker-compose-watch-postgres-i]
+hide = true
+depends = ["docker-compose-down", "docker-compose-up-postgres-no-optimise"]
+[tasks.docker-compose-watch-postgres]
+description = "Run the docker-compose file combining lumina with a postgres database, but with file watching"
+tools.watchexec = "latest"
+run = "mise docker-compose-watch-postgres-i --restart -e rs,gleam,toml,css,ts,json docker-compose-up-postgres-no-optimise"
