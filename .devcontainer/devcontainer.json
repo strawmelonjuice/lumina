@@ -14,7 +14,7 @@
 		"mise trust",
 		// Unusing bun since it'll fail in alpine
 		"mise unuse bun",
-		"git update-index --skip-worktree"
+		"git update-index --skip-worktree mise.toml"
 	],
 	"forwardPorts": [
 		8085
