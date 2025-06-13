@@ -95,41 +95,28 @@ run = [
 
 [tasks.docker-compose-up-postgres-no-optimise]
 description = "Run the docker-compose file combining lumina with a postgres database, but without optimised build.  [debug mode]"
-tools.docker-compose = "latest"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
 run = [
-  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
+
   "docker compose  --progress plain -f 'docker-compose-postgres.yml' up -d --build",
 ]
 [tasks.docker-compose-up-postgres]
 description = "Run the docker-compose file combining lumina with a postgres database."
-tools.docker-compose = "latest"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
-run = [
-  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
-  "docker compose  -f 'docker-compose-postgres.yml' up -d --build",
-]
+run = ["docker compose  -f 'docker-compose-postgres.yml' up -d --build"]
 [tasks.docker-compose-up-sqlite]
 description = "Run the docker-compose file combining lumina with a sqlite database."
-tools.docker-compose = "latest"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
-run = [
-  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
-  "docker compose  -f 'docker-compose-sqlite.yml' up -d --build",
-]
+run = ["docker compose  -f 'docker-compose-sqlite.yml' up -d --build"]
 [tasks.docker-compose-up-sqlite-no-optimise]
 description = "Run the docker-compose file combining lumina with a sqlite database, but without optimised build. [debug mode]"
-tools.docker-compose = "latest"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
 run = [
-  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
   "docker compose  --progress plain -f 'docker-compose-sqlite.yml' up -d --build",
 ]
 [tasks.docker-compose-down]
 description = "Stop and remove the docker-compose containers"
-tools.docker-compose = "latest"
 run = [
-  "ln -sf $HOME/.local/share/mise/installs/docker-compose/latest/docker-cli-plugin-docker-compose $HOME/.docker/cli-plugins/docker-compose",
   "docker compose -f 'docker-compose-sqlite.yml' down --remove-orphans",
   "docker compose -f 'docker-compose-postgres.yml' down --remove-orphans",
 ]
