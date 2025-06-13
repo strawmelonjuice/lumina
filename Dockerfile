@@ -13,14 +13,19 @@ ENV PATH="/usr/local/bin/bun/bin:/mise/shims:$PATH"
 RUN apk add --no-cache curl git unzip build-base bash
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
+# Install bun outside of mise because Alpine uses musl libc which the mise bun package does not support
+RUN curl -fsSL https://bun.sh/install | bash
 RUN curl https://mise.run | sh
 
-WORKDIR /app
-COPY . .
-RUN curl -fsSL https://bun.sh/install | bash
+WORKDIR /build
+# Copy and install the mise.toml file first to leverage Docker cache
+COPY mise.toml ./mise.toml
 RUN mise trust && mise unuse bun && mise install
-RUN mkdir -p target/output  && \
+# Now copy the rest of the project files
+COPY . .
+# Unuse bun again after copying the project files
+RUN mise unuse bun && \
+    mkdir -p target/output  && \
     if [ "$optimize_build" = "true" ]; then \
         mise run build-server-release && \
         cp ./target/release/lumina-server ./target/output/; \
@@ -34,6 +39,7 @@ RUN mkdir -p target/output  && \
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
-COPY --from=builder /app/target/output/lumina-server /app/lumina-server
+COPY --from=builder /build/target/output/lumina-server /app/lumina-server
 EXPOSE 8085
 CMD ["/app/lumina-server"]
+
