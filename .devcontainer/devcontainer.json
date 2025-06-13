@@ -1,4 +1,3 @@
-
 {
 	"name": "Alpine",
 	"image": "mcr.microsoft.com/devcontainers/base:alpine-3.20",
@@ -10,9 +9,15 @@
 		"ghcr.io/cirolosapio/devcontainers-features/alpine-docker-outside-of-docker:0": {},
 		"ghcr.io/cirolosapio/devcontainers-features/alpine-bun:0": {}
 	},
-
-	"postCreateCommand": "git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
-	"forwardPorts": [8085],
-	// Unusing bun since it'll fail in alpine
-	"postStartCommand": "mise trust && mise unuse bun && mise install"
+	"postCreateCommand": [
+		"git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
+		"mise trust",
+		// Unusing bun since it'll fail in alpine
+		"mise unuse bun",
+		"git update-index --skip-worktree"
+	],
+	"forwardPorts": [
+		8085
+	],
+	"postStartCommand": "mise install"
 }
