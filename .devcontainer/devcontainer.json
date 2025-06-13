@@ -17,13 +17,16 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": [
 		"git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
-		"echo eval \"$(mise activate bash)\" >> ~/.profile",
-		"eval \"$(mise activate bash --shims)\"",
+		"echo eval \"$(mise activate bash)\" >> ~/.bashrc",
 		"mise trust",
 		"mise use -g usage",
 		"mise install",
 		"mkdir -p ~/.local/share/bash-completion/completions",
 		"mise completion bash --include-bash-completion-lib > ~/.local/share/bash-completion/completions/mise"
+	],
+	"postStartCommand": [
+		"git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
+		"mise trust && mise install"
 	]
 	// Configure tool-specific properties.
 	// "customizations": {},
