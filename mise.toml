@@ -49,16 +49,16 @@ run = "mise watch --restart -e rs,gleam,toml,css,ts,json development-run"
 [tasks.build-client]
 description = "Build the client-side of Lumina and it's styles"
 run = [
-  "gleam build --target javascript",
-  """
+	"gleam build --target javascript",
+	"""
 	echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts"
 	""",
-  "bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
 ]
 run_windows = [
-  "gleam build --target javascript",
-  "echo import { main } from `./lumina_client.mjs`;document.addEventListener(`DOMContentLoaded`, main()) > ./build/dev/javascript/lumina_client/lumina_client.ts",
-  "bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"gleam build --target javascript",
+	"echo import { main } from `./lumina_client.mjs`;document.addEventListener(`DOMContentLoaded`, main()) > ./build/dev/javascript/lumina_client/lumina_client.ts",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
 ]
 depends = "build-styles"
 dir = "./client/"
@@ -66,8 +66,8 @@ dir = "./client/"
 [tasks.build-styles]
 description = "Build the styles for Lumina"
 run = [
-  "bun i",
-  "bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
+	"bun i",
+	"bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
 ]
 dir = "./client/"
 
@@ -84,46 +84,16 @@ run = ["cargo build --release"]
 [tasks.clean-all]
 description = "Clean all build artifacts"
 run = [
-  "cargo clean",
-  "rm -rf ./client/node_modules",
-  "rm -rf ./client/build",
-  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
-  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
-  "rm -rf ./client/priv/static/lumina_client.min.mjs",
-  "rm -rf ./client/priv/static/lumina_client.css",
+	"cargo clean",
+	"rm -rf ./client/node_modules",
+	"rm -rf ./client/build",
+	"rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
+	"rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
+	"rm -rf ./client/priv/static/lumina_client.min.mjs",
+	"rm -rf ./client/priv/static/lumina_client.css",
 ]
 
-[tasks.docker-compose-up-postgres-no-optimise]
-description = "Run the docker-compose file combining lumina with a postgres database, but without optimised build.  [debug mode]"
-env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
-run = [
 
-  "docker compose  --progress plain -f 'docker-compose-postgres.yml' up -d --build",
-]
-[tasks.docker-compose-up-postgres]
-description = "Run the docker-compose file combining lumina with a postgres database."
-env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
-run = ["docker compose  -f 'docker-compose-postgres.yml' up -d --build"]
-[tasks.docker-compose-up-sqlite]
-description = "Run the docker-compose file combining lumina with a sqlite database."
-env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
-run = ["docker compose  -f 'docker-compose-sqlite.yml' up -d --build"]
-[tasks.docker-compose-up-sqlite-no-optimise]
-description = "Run the docker-compose file combining lumina with a sqlite database, but without optimised build. [debug mode]"
-env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
-run = [
-  "docker compose  --progress plain -f 'docker-compose-sqlite.yml' up -d --build",
-]
-[tasks.docker-compose-down]
-description = "Stop and remove the docker-compose containers"
-run = [
-  "docker compose -f 'docker-compose-sqlite.yml' down --remove-orphans",
-  "docker compose -f 'docker-compose-postgres.yml' down --remove-orphans",
-]
-[tasks.docker-compose-watch-postgres-i]
-hide = true
-depends = ["docker-compose-down", "docker-compose-up-postgres-no-optimise"]
-[tasks.docker-compose-watch-postgres]
-description = "Run the docker-compose file combining lumina with a postgres database, but with file watching"
-tools.watchexec = "latest"
-run = "mise docker-compose-watch-postgres-i --restart -e rs,gleam,toml,css,ts,json docker-compose-up-postgres-no-optimise"
+[task_config]
+includes = ["./mise/tasks/docker-compose-tasks.toml"]
+dir = "{{ config_root }}"
