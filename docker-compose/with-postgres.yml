@@ -20,8 +20,6 @@ services:
             - "8085:8085"
         depends_on:
             - db
-        volumes:
-            - ./priv:/app/priv
     db:
         hostname: luminadb
         image: postgres:16
@@ -32,4 +30,4 @@ services:
         ports:
             - "5432:5432"
         volumes:
-            - ./data/postgres:/var/lib/postgresql/data
+            - ../data/postgres:/var/lib/postgresql/data

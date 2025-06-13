@@ -15,5 +15,4 @@ services:
         ports:
             - "8085:8085"
         volumes:
-            - ./data/:/app/data/
-
+            - ../data/:/app/data/
