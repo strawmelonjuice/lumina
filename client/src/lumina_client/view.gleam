@@ -3,6 +3,7 @@
 import gleam/dynamic/decode
 import gleam/option.{None, Some}
 import gleam/result
+import gleam/string
 import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
@@ -376,7 +377,25 @@ fn view_register(model_: Model) -> Element(Msg) {
                                     ),
                                   ],
                                 ),
-                                html.text(" " <> why),
+                                html.span(
+                                  [],
+                                  case string.contains(why, "in use") {
+                                    True -> [
+                                      html.text(
+                                        " " <> why <> ", do you want to ",
+                                      ),
+                                      html.a(
+                                        [
+                                          event.on_click(ToLoginPage),
+                                          attribute.class("link link-primary"),
+                                        ],
+                                        [element.text("log in instead")],
+                                      ),
+                                      element.text("?"),
+                                    ]
+                                    False -> [element.text(" " <> why)]
+                                  },
+                                ),
                               ])
                             Ok(_), True ->
                               html.div([attribute.class("w-full")], [
