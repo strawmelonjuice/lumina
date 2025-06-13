@@ -7,10 +7,12 @@
 		"ghcr.io/cirolosapio/devcontainers-features/alpine-lazygit:0": {},
 		"ghcr.io/devcontainers-extra/features/mise:1": {},
 		"ghcr.io/davzucky/devcontainers-features-wolfi/bash:1": {},
-		"ghcr.io/cirolosapio/devcontainers-features/alpine-docker-outside-of-docker:0": {}
+		"ghcr.io/cirolosapio/devcontainers-features/alpine-docker-outside-of-docker:0": {},
+		"ghcr.io/cirolosapio/devcontainers-features/alpine-bun:0": {}
 	},
 
 	"postCreateCommand": "git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
 	"forwardPorts": [8085],
-	"postStartCommand": "mise trust && mise install"
+	// Unusing bun since it'll fail in alpine
+	"postStartCommand": "mise trust && mise unuse bun && mise install"
 }
