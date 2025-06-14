@@ -366,16 +366,13 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model_, effect.none())
           }
         }
-        Ok(f) -> {
-          let message_variant =
-            json.parse(notice, ws_msg_typedefiner())
-            |> result.unwrap("Unparsable message")
-          console.error(
-            "Unhandled message: "
-            <> message_variant
-            <> " => "
-            <> string.inspect(f),
-          )
+        Ok(AuthenticationSuccess(username:, token:)) ->
+          todo as "What to do on succces!"
+        // Ws messages we can't receive
+        Ok(RegisterPrecheck(..))
+        | Ok(Undecodable)
+        | Ok(LoginAuthenticationRequest(..))
+        | Ok(RegisterRequest(..)) -> {
           #(model_, effect.none())
         }
         Error(_err) -> {
