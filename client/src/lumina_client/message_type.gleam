@@ -2,6 +2,8 @@ import lustre_websocket
 
 pub type Msg {
   WSTryReconnect
+  TickUp
+  WsDisconnectDefinitive
   WsWrapper(lustre_websocket.WebSocketEvent)
   ToLoginPage
   SubmitLogin(List(#(String, String)))
