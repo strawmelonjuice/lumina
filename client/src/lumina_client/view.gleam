@@ -1,7 +1,7 @@
 //// Module containing the view function and it's splits
 
 import gleam/dynamic/decode
-import gleam/option.{None, Some}
+import gleam/option
 import gleam/result
 import gleam/string
 import lumina_client/helpers.{
@@ -32,8 +32,25 @@ pub fn view(model: Model) -> Element(Msg) {
     )
   html.div([get_color_scheme(model), attribute.class("w-screen h-screen")], [
     case model.ws {
-      Some(Some(_)) -> element.none()
-      None ->
+      model_type.WsConnectionInitial ->
+        html.div(
+          [
+            attribute.attribute("open", ""),
+            attribute.class("modal modal-bottom sm:modal-middle"),
+          ],
+          [
+            html.div([attribute.class("modal-box")], [
+              html.text("Connecting to server..."),
+              html.div([attribute.class("float-right")], [
+                html.span(
+                  [attribute.class("loading loading-spinner loading-xl")],
+                  [],
+                ),
+              ]),
+            ]),
+          ],
+        )
+      model_type.WsConnectionDisconnected ->
         html.div(
           [
             attribute.attribute("open", ""),
@@ -41,22 +58,6 @@ pub fn view(model: Model) -> Element(Msg) {
           ],
           [
             html.div([attribute.class("alert alert-info")], [
-              html.text("Connecting to server..."),
-              html.span(
-                [attribute.class("loading loading-spinner text-info")],
-                [],
-              ),
-            ]),
-          ],
-        )
-      Some(None) ->
-        html.div(
-          [
-            attribute.attribute("open", ""),
-            attribute.class("toast toast-top toast-center"),
-          ],
-          [
-            html.div([attribute.class("alert alert-warn")], [
               html.text("Connection to server ended! "),
               html.button(
                 [
@@ -68,6 +69,28 @@ pub fn view(model: Model) -> Element(Msg) {
             ]),
           ],
         )
+
+      model_type.WsConnectionRetrying ->
+        html.div(
+          [
+            attribute.attribute("open", ""),
+            attribute.class("toast toast-top toast-center"),
+          ],
+          [
+            html.div([attribute.class("alert alert-info")], [
+              html.text("Connection to server ended! Reconnecting..."),
+              html.div([attribute.class("float-right")], [
+                html.span(
+                  [attribute.class("loading loading-spinner loading-lg")],
+                  [],
+                ),
+              ]),
+            ]),
+          ],
+        )
+
+      model_type.WsConnectionConnected(..)
+      | model_type.WsConnectionDisconnecting -> element.none()
     },
     case model.page {
       Landing -> view_landing()
@@ -76,6 +99,9 @@ pub fn view(model: Model) -> Element(Msg) {
       HomeTimeline(timeline_id) ->
         todo as "HomeTimeline page not yet implemented"
     },
+    // html.div([attribute.class("absolute left-0 bottom-0 text-xs")], [
+  //   element.text(int.to_string(model.ticks)),
+  // ]),
   ])
 }
 

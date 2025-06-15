@@ -2,6 +2,7 @@
 
 import lumina_client/message_type.{type Msg}
 import lustre/attribute
+import plinth/javascript/global
 
 import gleam/list
 import lumina_client/dom
@@ -22,4 +23,9 @@ pub const model_local_storage_key = "luminaModelJSOB"
 pub fn login_view_checker(fieldvalues: LoginFields) {
   [{ fieldvalues.passwordfield != "" }, { fieldvalues.emailfield != "" }]
   |> list.all(fn(x) { x })
+}
+
+pub fn set_timeout_nilled(delay: Int, cb: fn() -> a) -> Nil {
+  global.set_timeout(delay, cb)
+  Nil
 }

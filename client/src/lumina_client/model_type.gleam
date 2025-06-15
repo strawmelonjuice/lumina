@@ -17,7 +17,7 @@ pub type Model {
     /// User, if known
     user: Option(User),
     /// WebSocket connection
-    ws: Option(Option(lustre_websocket.WebSocket)),
+    ws: WsConnectionStatus,
     /// Used to restore sessions
     token: Option(String),
     /// Used to show error screens on unrecoverable errors
@@ -26,7 +26,23 @@ pub type Model {
     /// Displaying some loading screen in between.
     /// Once it is there, this is where it's stored:
     cache: Cached,
+    /// Ticks are upped by one every 50ms since initialisation.
+    ticks: Int,
   )
+}
+
+pub type WsConnectionStatus {
+  /// Before connection is created
+  WsConnectionInitial
+  /// An established socket
+  WsConnectionConnected(lustre_websocket.WebSocket)
+  /// A disconnected socket
+  WsConnectionDisconnected
+  /// A non-connected socket, may also occur while connecting.
+  /// This'll either turn into a `WsConnectionConnected` or an `WsConnectionDisconnected`.
+  WsConnectionDisconnecting
+  /// Retrying to connect.
+  WsConnectionRetrying
 }
 
 pub type Cached {
@@ -238,7 +254,7 @@ fn serializable_model_decoder() -> decode.Decoder(SerializableModel) {
 }
 
 pub fn serialize(normal_model: Model) {
-  let Model(page, _, _, token, _, _): Model = normal_model
+  let Model(page, _, _, token, _, _, _): Model = normal_model
   SerializableModel(page:, token:)
   |> serialize_serializable_model
   |> json.to_string

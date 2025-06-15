@@ -1,5 +1,6 @@
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
@@ -9,9 +10,10 @@ import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, SubmitLogin, SubmitSignup, ToLandingPage,
-  ToLoginPage, ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
-  UpdatePasswordField, UpdateUsernameField, WSTryReconnect, WsWrapper,
+  type Msg, FocusLostEmailField, SubmitLogin, SubmitSignup, TickUp,
+  ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
+  UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
+  WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
 }
 import lumina_client/model_type.{
   type Model, Landing, Login, LoginFields, Model, Register, RegisterPageFields,
@@ -26,22 +28,23 @@ import plinth/javascript/storage
 
 pub fn main() {
   let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", False)
+  let assert Ok(_) = lustre.start(app, "#app", 0)
 }
 
 // INIT ------------------------------------------------------------------------
 
-fn init(reconnection: Bool) -> #(Model, Effect(Msg)) {
+fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
   let assert Ok(localstorage) = storage.local()
     as "localstorage should be available on ALL major browsers."
   let empty_model =
     Model(
       page: Landing,
       user: None,
-      ws: None,
+      ws: model_type.WsConnectionInitial,
       token: None,
       status: Ok(Nil),
       cache: model_type.Cached(cached_posts: dict.new()),
+      ticks: initial_ticks,
     )
   #(
     case storage.get_item(localstorage, model_local_storage_key) {
@@ -52,14 +55,15 @@ fn init(reconnection: Bool) -> #(Model, Effect(Msg)) {
               page: loadable_model.page,
               user: None,
               ws: {
-                case reconnection {
-                  True -> Some(None)
-                  False -> None
+                case initial_ticks != 0 {
+                  True -> model_type.WsConnectionRetrying
+                  False -> model_type.WsConnectionInitial
                 }
               },
               token: loadable_model.token,
               status: Ok(Nil),
               cache: model_type.Cached(cached_posts: dict.new()),
+              ticks: initial_ticks,
             )
           }
           Error(_) -> {
@@ -73,18 +77,57 @@ fn init(reconnection: Bool) -> #(Model, Effect(Msg)) {
         empty_model
       }
     },
-    lustre_websocket.init("/connection", WsWrapper),
+    effect.batch([
+      lustre_websocket.init("/connection", WsWrapper),
+      up_next_tick(),
+    ]),
   )
+}
+
+pub fn up_next_tick() {
+  use dispatch <- effect.from
+  use <- helpers.set_timeout_nilled(50)
+  dispatch(TickUp)
+}
+
+fn let_definitely_disconnect(model: Model) {
+  use dispatch <- effect.from
+  case model.ws, model.ticks > 3 {
+    model_type.WsConnectionDisconnecting, False
+    | model_type.WsConnectionDisconnected, _
+    | model_type.WsConnectionInitial, _
+    | model_type.WsConnectionRetrying, _
+    | model_type.WsConnectionConnected(..), _
+    -> Nil
+    model_type.WsConnectionDisconnecting, True ->
+      dispatch(WsDisconnectDefinitive)
+  }
 }
 
 // UPDATE ----------------------------------------------------------------------
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    WSTryReconnect -> {
-      init(True)
+    TickUp -> {
+      #(
+        Model(..model, ticks: model.ticks + 1),
+        effect.batch([up_next_tick(), let_definitely_disconnect(model)]),
+      )
     }
-
+    WSTryReconnect -> {
+      init(model.ticks)
+    }
+    WsDisconnectDefinitive -> {
+      let timed_trigger_to_retry_connect = fn() {
+        use dispatch <- effect.from
+        use <- helpers.set_timeout_nilled(3000)
+        dispatch(WSTryReconnect)
+      }
+      #(
+        Model(..model, ws: model_type.WsConnectionDisconnected),
+        timed_trigger_to_retry_connect(),
+      )
+    }
     // Catch other Ws Events in a different function, since that is generally very different stuff.
     WsWrapper(event) -> update_ws(model, event)
     ToLoginPage -> #(
@@ -111,7 +154,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(Some(socket)) = model.ws as "Socket not connected"
+            let assert model_type.WsConnectionConnected(socket) = model.ws
+              as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -143,7 +187,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(Some(socket)) = model.ws as "Socket not connected"
+            let assert model_type.WsConnectionConnected(socket) = model.ws
+              as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -200,7 +245,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
           {
             // This block emits an effect to send RegisterPrecheck message to the server
-            let assert Some(Some(socket)) = model.ws as "Socket not connected"
+            let assert model_type.WsConnectionConnected(socket) = model.ws
+              as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -234,7 +280,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             ),
           ),
           {
-            let assert Some(Some(socket)) = model.ws as "Socket not connected"
+            let assert model_type.WsConnectionConnected(socket) = model.ws
+              as "Socket not connected"
             encode_ws_msg(RegisterPrecheck(
               fields.emailfield,
               fields.usernamefield,
@@ -287,9 +334,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               fields.passwordfield,
             ))
             |> json.to_string()
-          let assert Some(Some(socket)) = model.ws as "Socket not connected"
+          let assert model_type.WsConnectionConnected(socket) = model.ws
+            as "Socket not connected"
           #(
-            Model(..model, ws: Some(Some(socket))),
+            Model(..model, ws: model_type.WsConnectionConnected(socket)),
             lustre_websocket.send(socket, json),
           )
         }
@@ -318,9 +366,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               fields.passwordfield,
             ))
             |> json.to_string()
-          let assert Some(Some(socket)) = model.ws as "Socket not connected"
+          let assert model_type.WsConnectionConnected(socket) = model.ws
+            as "Socket not connected"
           #(
-            Model(..model, ws: Some(Some(socket))),
+            Model(..model, ws: model_type.WsConnectionConnected(socket)),
             lustre_websocket.send(socket, json),
           )
         }
@@ -333,7 +382,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
+fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
   case wsevent {
     lustre_websocket.InvalidUrl -> panic
     lustre_websocket.OnTextMessage(notice) ->
@@ -347,7 +396,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
       {
         Ok(Greeting(m)) -> {
           console.log("The server says hi! '" <> m <> "'")
-          #(model_, effect.none())
+          #(model, effect.none())
         }
         Ok(RegisterPrecheckResponse(ok, why)) -> {
           console.log("Register precheck response: " <> string.inspect(ok))
@@ -358,12 +407,12 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
             }
             |> Some
 
-          case model_.page {
+          case model.page {
             Register(fields, _) -> #(
-              Model(..model_, page: Register(fields:, ready:)),
+              Model(..model, page: Register(fields:, ready:)),
               effect.none(),
             )
-            _ -> #(model_, effect.none())
+            _ -> #(model, effect.none())
           }
         }
         Ok(AuthenticationSuccess(username:, token:)) ->
@@ -373,7 +422,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
         | Ok(Undecodable)
         | Ok(LoginAuthenticationRequest(..))
         | Ok(RegisterRequest(..)) -> {
-          #(model_, effect.none())
+          #(model, effect.none())
         }
         Error(_err) -> {
           console.error(
@@ -381,7 +430,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
             // <> premixed.text_error_red(string.inspect(err)),
             <> premixed.text_error_red(notice),
           )
-          #(model_, effect.none())
+          #(model, effect.none())
         }
       }
     lustre_websocket.OnBinaryMessage(msg) -> {
@@ -390,7 +439,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
       )
       // Ignore this. We don't expect binary messages, as we cannot tag them with how the decoder works right now. We only expect text messages, with base64-encoded bitarrays in their fields if so needed.
       // So, continue with the model as is:
-      #(model_, effect.none())
+      #(model, effect.none())
     }
     lustre_websocket.OnClose(reason) -> {
       console.warn(
@@ -414,10 +463,27 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
           }
         }),
       )
-      #(Model(..model_, ws: Some(None)), effect.none())
+      case model.ws {
+        model_type.WsConnectionInitial -> #(model, effect.none())
+        _ -> {
+          echo "Falling into disconnection mode at tick"
+            <> int.to_string(model.ticks)
+            <> ". Current status: "
+            <> case model.ws {
+              model_type.WsConnectionConnected(_) -> "connected"
+              model_type.WsConnectionDisconnected -> "disconnected"
+              model_type.WsConnectionInitial -> "initial"
+              model_type.WsConnectionRetrying -> "retrying"
+              model_type.WsConnectionDisconnecting -> "disconnecting"
+            }
+          let new_model =
+            Model(..model, ws: model_type.WsConnectionDisconnecting)
+          #(new_model, let_definitely_disconnect(new_model))
+        }
+      }
     }
     lustre_websocket.OnOpen(socket) -> #(
-      Model(..model_, ws: Some(Some(socket))),
+      Model(..model, ws: model_type.WsConnectionConnected(socket)),
       lustre_websocket.send(
         socket,
         {
@@ -425,7 +491,7 @@ fn update_ws(model_: Model, wsevent: lustre_websocket.WebSocketEvent) {
             #("type", json.string("introduction")),
             #("client_kind", json.string("web")),
           ]
-          json.object(case model_.user, model_.token {
+          json.object(case model.user, model.token {
             None, Some(token) -> {
               // traversing x is okay.
               list.append(x, [#("try_revive", json.string(token))])
