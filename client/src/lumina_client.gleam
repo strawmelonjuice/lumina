@@ -21,6 +21,7 @@ import lumina_client/model_type.{
 import lumina_client/view.{view}
 import lustre
 import lustre/effect.{type Effect}
+import lustre/server_component
 import lustre_websocket
 import plinth/javascript/storage
 
@@ -424,8 +425,21 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-        Ok(AuthenticationSuccess(username:, token:)) ->
-          todo as "What to do on succces!"
+        Ok(AuthenticationSuccess(username:, token:)) -> {
+          let assert model_type.WsConnectionConnected(socket) = model.ws
+            as "Socket not connected"
+          #(
+            Model(
+              ..model,
+              page: model_type.HomeTimeline("home"),
+              token: Some(token),
+            ),
+            OwnUserInformationRequest
+              |> encode_ws_msg
+              |> json.to_string
+              |> lustre_websocket.send(socket, _),
+          )
+        }
         Ok(AuthenticationFailure) -> {
           case model.page {
             model_type.Landing | model_type.HomeTimeline(..) -> #(
@@ -443,6 +457,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         Ok(RegisterPrecheck(..))
         | Ok(Undecodable)
         | Ok(LoginAuthenticationRequest(..))
+        | Ok(OwnUserInformationRequest)
         | Ok(RegisterRequest(..)) -> {
           #(model, effect.none())
         }
@@ -546,17 +561,21 @@ type WsMsg {
   LoginAuthenticationRequest(email_username: String, password: String)
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
+  OwnUserInformationRequest
   Undecodable
 }
 
 fn encode_ws_msg(message: WsMsg) -> json.Json {
   case message {
+    OwnUserInformationRequest ->
+      json.object([#("type", json.string("own_user_information_request"))])
     LoginAuthenticationRequest(email_username, password) ->
       json.object([
         #("type", json.string("login_authentication_request")),
         #("email_username", json.string(email_username)),
         #("password", json.string(password)),
       ])
+
     RegisterRequest(email, username, password) ->
       json.object([
         #("type", json.string("register_request")),
