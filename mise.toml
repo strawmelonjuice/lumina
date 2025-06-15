@@ -41,10 +41,27 @@ run = "target/debug/lumina-server"
 run_windows = "target\\debug\\lumina-server.exe"
 dir = "{{cwd}}"
 
-[tasks.development-watch]
+[tasks.check]
+description = "Run the check command on both server and client."
+depends = ["check-server", "check-client"]
+[tasks.check-server]
+hide = true
+run = "cargo check"
+dir = "./server"
+[tasks.check-client]
+hide = true
+run = "gleam check"
+dir = "./client/"
+
+[tasks.development-run-watch]
 tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
 run = "mise watch --restart -e rs,gleam,toml,css,ts,json development-run"
+
+[tasks.check-watch]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "mise watch --restart -e rs,gleam,toml,css,ts,json --clear=clear check"
 
 [tasks.build-client]
 description = "Build the client-side of Lumina and it's styles"
