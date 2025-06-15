@@ -22,7 +22,7 @@ services:
             - db
     db:
         hostname: luminadb
-        image: postgres:16
+        image: postgres:17-alpine3.22
         environment:
             POSTGRES_USER: lumina
             POSTGRES_PASSWORD: lumina_pw
