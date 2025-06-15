@@ -120,7 +120,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     WsDisconnectDefinitive -> {
       let timed_trigger_to_retry_connect = fn() {
         use dispatch <- effect.from
-        use <- helpers.set_timeout_nilled(3000)
+        use <- helpers.set_timeout_nilled(1500)
         dispatch(WSTryReconnect)
       }
       #(
@@ -487,8 +487,12 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
       )
       case model.ws {
         model_type.WsConnectionInitial -> #(model, effect.none())
+        model_type.WsConnectionRetrying -> #(
+          Model(..model, ws: model_type.WsConnectionDisconnected),
+          effect.none(),
+        )
         _ -> {
-          echo "Falling into disconnection mode at tick"
+          echo "Falling into disconnection mode at tick #"
             <> int.to_string(model.ticks)
             <> ". Current status: "
             <> case model.ws {
