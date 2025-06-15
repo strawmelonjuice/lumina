@@ -38,3 +38,4 @@ instance.sqlite
 instance.sqlite-shm
 instance.sqlite-wal
 .env
+/data
