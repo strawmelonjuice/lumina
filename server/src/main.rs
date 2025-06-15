@@ -46,6 +46,7 @@ async fn main() {
     // Some print prefixes
     let error = "[ERROR]".color_error_red().style_bold();
     let info = "[INFO]".color_green().style_bold();
+    let succes = "[✅ SUCCES]".color_ok_green().style_bold();
     let warn = "[WARN]".color_yellow().style_bold();
     // End of print prefixes
     let me = format!("Lumina Server, version {}", env!("CARGO_PKG_VERSION"));
@@ -68,37 +69,59 @@ async fn main() {
             );
             match config_get() {
                 Ok(config) => {
-                    let db = match database::setup().await {
-                        Ok(db) => db,
-                        Err(LuminaError::ConfMissing(a)) => {
-                            eprintln!(
-                                "{error} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-                                a.color_bright_orange()
-                            );
-                            process::exit(1);
+                    let mut interval =
+                        tokio::time::interval(std::time::Duration::from_millis(3000));
+                    let mut db_mut: Option<DbConn> = None;
+                    let mut db_tries: usize = 0;
+                    while db_mut.is_none() {
+                        interval.tick().await;
+                        db_mut = match database::setup().await {
+                            Ok(db) => Some(db),
+                            Err(LuminaError::ConfMissing(a)) => {
+                                eprintln!(
+                                    "{error} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                                    a.color_bright_orange()
+                                );
+                                None
+                            }
+                            Err(LuminaError::ConfInvalid(a)) => {
+                                eprintln!(
+                                    "{error} Invalid environment variable: {}",
+                                    a.color_bright_orange()
+                                );
+                                None
+                            }
+                            Err(LuminaError::Sqlite(a)) => {
+                                eprintln!("{error} While opening sqlite database: {}", a);
+                                None
+                            }
+                            Err(LuminaError::Postgres(a)) => {
+                                eprintln!("{error} While connecting to postgres database: {}", a);
+                                None
+                            }
+                            Err(_) => {
+                                eprintln!(
+                                    "{error} Unknown error: could not setup database connection.",
+                                );
+                                None
+                            }
+                        };
+                        if db_mut.is_none() {
+                            if db_tries < 4 {
+                                db_tries += 1;
+                                println!(
+                                    "{warn} Retrying database connection in 3 seconds. (try {})",
+                                    db_tries
+                                )
+                            } else {
+                                println!("{error} Failed to connect to database, not retrying.");
+                                process::exit(1);
+                            }
+                        } else {
+                            println!("{succes} Database connected.")
                         }
-                        Err(LuminaError::ConfInvalid(a)) => {
-                            eprintln!(
-                                "{error} Invalid environment variable: {}",
-                                a.color_bright_orange()
-                            );
-                            process::exit(1);
-                        }
-                        Err(LuminaError::Sqlite(a)) => {
-                            eprintln!("{error} While opening sqlite database: {}", a);
-                            process::exit(1);
-                        }
-                        Err(LuminaError::Postgres(a)) => {
-                            eprintln!("{error} While connecting to postgres database: {}", a);
-                            process::exit(1);
-                        }
-                        Err(_) => {
-                            eprintln!(
-                                "{error} Unknown error: could not setup database connection.",
-                            );
-                            process::exit(1);
-                        }
-                    };
+                    }
+                    let db = db_mut.unwrap();
                     let appstate = AppState(Arc::from((config.clone(), Mutex::from(db))));
                     let def = rocket::Config {
                         port: config.port,
@@ -106,6 +129,7 @@ async fn main() {
                         ident: rocket::config::Ident::try_new(me.clone()).unwrap_or_default(),
                         ..rocket::Config::default()
                     };
+
                     let result = rocket::build()
                         .configure(def)
                         .mount(
