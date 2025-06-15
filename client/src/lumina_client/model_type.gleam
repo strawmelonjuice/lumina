@@ -4,12 +4,11 @@
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
-import gleam/option.{type Option}
+import gleam/option.{type Option, None}
 import lustre_websocket
 
 /// # Model
 ///
-/// blablabla
 pub type Model {
   Model(
     /// Page currently browsing.
@@ -112,7 +111,7 @@ pub type CachedPost {
 pub type Page {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
-  Login(fields: LoginFields)
+  Login(fields: LoginFields, success: Option(Bool))
   HomeTimeline(timeline_id: String)
 }
 
@@ -141,7 +140,7 @@ fn encode_page(page: Page) -> json.Json {
           json.null()
         }),
       ])
-    Login(fields:) ->
+    Login(fields:, success: _) ->
       json.object([
         #("type", json.string("login")),
         #("fields", {
@@ -180,7 +179,7 @@ fn page_decoder() -> decode.Decoder(Page) {
           passwordconfirmfield:,
         ))
       })
-      let ready = option.None
+      let ready = None
       decode.success(Register(fields:, ready:))
     }
     "login" -> {
@@ -189,7 +188,7 @@ fn page_decoder() -> decode.Decoder(Page) {
         use passwordfield <- decode.field("passwordfield", decode.string)
         decode.success(LoginFields(emailfield:, passwordfield:))
       })
-      decode.success(Login(fields:))
+      decode.success(Login(fields:, success: None))
     }
     "home_timeline" -> {
       use timeline_id <- decode.field("timeline_id", decode.string)

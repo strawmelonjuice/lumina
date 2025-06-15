@@ -131,7 +131,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // Catch other Ws Events in a different function, since that is generally very different stuff.
     WsWrapper(event) -> update_ws(model, event)
     ToLoginPage -> #(
-      Model(..model, page: Login(fields: LoginFields("", ""))),
+      Model(..model, page: Login(fields: LoginFields("", ""), success: None)),
       effect.none(),
     )
     ToRegisterPage -> #(
@@ -165,10 +165,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        Login(fields) -> #(
+        Login(fields, _) -> #(
           Model(
             ..model,
-            page: Login(fields: LoginFields(..fields, emailfield: new_email)),
+            page: Login(
+              fields: LoginFields(..fields, emailfield: new_email),
+              success: None,
+            ),
           ),
           effect.none(),
         )
@@ -198,7 +201,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             |> lustre_websocket.send(socket, _)
           },
         )
-        Login(fields) -> {
+        Login(fields, _success) -> {
           let username_email = case string.starts_with(fields.emailfield, "@") {
             True -> string.drop_start(fields.emailfield, 1)
             False -> fields.emailfield
@@ -219,10 +222,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           #(
             Model(
               ..model,
-              page: Login(fields: LoginFields(
-                passwordfield: new_password,
-                emailfield: new_username_email,
-              )),
+              page: Login(
+                fields: LoginFields(
+                  passwordfield: new_password,
+                  emailfield: new_username_email,
+                ),
+                success: None,
+              ),
             ),
             effect.none(),
           )
@@ -296,7 +302,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     FocusLostEmailField -> {
       // This handles the login username/email field value once the user seems to be done typing.
-      let assert Login(fields) = model.page
+      let assert Login(fields, _success) = model.page
       let value = case string.starts_with(fields.emailfield, "@") {
         True -> string.drop_start(fields.emailfield, 1)
         False -> fields.emailfield
@@ -317,13 +323,16 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(
         Model(
           ..model,
-          page: Login(fields: LoginFields(..fields, emailfield: new_value)),
+          page: Login(
+            fields: LoginFields(..fields, emailfield: new_value),
+            success: None,
+          ),
         ),
         effect.none(),
       )
     }
     SubmitLogin(_) -> {
-      let assert Login(fields) = model.page
+      let assert Login(fields, _) = model.page
       let values_ok = login_view_checker(fields)
       case values_ok {
         True -> {
@@ -417,6 +426,19 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         }
         Ok(AuthenticationSuccess(username:, token:)) ->
           todo as "What to do on succces!"
+        Ok(AuthenticationFailure) -> {
+          case model.page {
+            model_type.Landing | model_type.HomeTimeline(..) -> #(
+              model,
+              effect.none(),
+            )
+            Login(fields:, success: _) -> #(
+              Model(..model, page: Login(fields:, success: Some(False))),
+              effect.none(),
+            )
+            Register(fields:, ready:) -> todo
+          }
+        }
         // Ws messages we can't receive
         Ok(RegisterPrecheck(..))
         | Ok(Undecodable)
@@ -519,6 +541,7 @@ type WsMsg {
   RegisterRequest(email: String, username: String, password: String)
   LoginAuthenticationRequest(email_username: String, password: String)
   AuthenticationSuccess(username: String, token: String)
+  AuthenticationFailure
   Undecodable
 }
 
@@ -548,6 +571,7 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
     Greeting(_)
     | Undecodable
     | RegisterPrecheckResponse(_, _)
+    | AuthenticationFailure
     | AuthenticationSuccess(_, _) ->
       json.object([#("type", json.string("unknown"))])
   }
@@ -559,6 +583,9 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       use username <- decode.field("username", decode.string)
       use token <- decode.field("token", decode.string)
       decode.success(AuthenticationSuccess(username:, token:))
+    }
+    "auth_failure" -> {
+      decode.success(AuthenticationFailure)
     }
     "unknown" -> decode.success(Undecodable)
     "login_authentication_request" -> {

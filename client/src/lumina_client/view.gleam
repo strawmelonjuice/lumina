@@ -152,9 +152,9 @@ fn view_landing() -> Element(Msg) {
   ])
 }
 
-fn view_login(model_: Model) -> Element(Msg) {
+fn view_login(model: Model) -> Element(Msg) {
   // We know that the model is a Login page, so we can safely unwrap it
-  let assert Login(fieldvalues) = model_.page
+  let assert Login(fieldvalues, successful) = model.page
   let values_ok = login_view_checker(fieldvalues)
   html.div([], [
     html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
@@ -205,8 +205,15 @@ fn view_login(model_: Model) -> Element(Msg) {
             html.div(
               [
                 attribute.class(
-                  "card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl",
+                  "card delay-150 duration-300 ease-in-out w-full max-w-sm shrink-0 shadow-2xl transition-colors ",
                 ),
+                attribute.class(case successful {
+                  option.None -> "bg-base-100"
+                  option.Some(False) -> "bg-error/50"
+                  // If this is actually the case, we'll be on another page!
+                  // This shouldn't generally ever be actually constructed in the Login view.
+                  option.Some(True) -> "bg-success"
+                }),
               ],
               [
                 html.form(
@@ -244,6 +251,22 @@ fn view_login(model_: Model) -> Element(Msg) {
                           html.text("Forgot password?"),
                         ]),
                       ]),
+                      case successful {
+                        option.Some(False) ->
+                          html.div(
+                            [
+                              attribute.class(
+                                "text-error-content bg-error p-3 rounded-lg",
+                              ),
+                            ],
+                            [
+                              element.text(
+                                "Incorrect password and/or username!",
+                              ),
+                            ],
+                          )
+                        _ -> element.none()
+                      },
                       html.button(
                         case values_ok {
                           True -> [
