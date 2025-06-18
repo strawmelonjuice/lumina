@@ -96,8 +96,7 @@ pub fn view(model: Model) -> Element(Msg) {
       Landing -> view_landing()
       Register(..) -> view_register(model)
       Login(..) -> view_login(model)
-      HomeTimeline(timeline_id) ->
-        todo as "HomeTimeline page not yet implemented"
+      HomeTimeline(..) -> view_homepage(model)
     },
     // html.div([attribute.class("absolute left-0 bottom-0 text-xs")], [
   //   element.text(int.to_string(model.ticks)),
@@ -538,4 +537,7 @@ fn view_register(model_: Model) -> Element(Msg) {
       ],
     ),
   ])
+}
+fn view_homepage(model: model_type.Model) {
+  todo
 }
