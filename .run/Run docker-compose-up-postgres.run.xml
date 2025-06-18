@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run docker-compose-up-postgres" type="MiseTomlTaskRunConfigurationType" factoryName="MiseTomlTask">
+    <mise configEnvironment="" taskName="docker-compose-up-postgres" workingDirectory="$PROJECT_DIR$">
+      <envs />
+    </mise>
+    <method v="2" />
+  </configuration>
+</component>
