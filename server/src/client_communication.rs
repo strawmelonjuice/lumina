@@ -1,5 +1,5 @@
 use crate::user::User;
-use crate::{AppState, LuminaError, database};
+use crate::{AppState, LuminaError, helpers};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
@@ -8,11 +8,8 @@ use uuid::Uuid;
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
     use rocket::futures::{SinkExt, StreamExt};
-    // Just a few log prefixes
-    let info = "[INFO]".color_green().style_bold();
-    let incoming = "[INCOMING]".color_lilac().style_bold();
-    let registrationerror = "[RegistrationError]".color_bright_red().style_bold();
-    // End of log prefixes
+    let (info, _warn, _error, _success, _failure, _log, incoming, registrationerror) =
+        helpers::message_prefixes();
     ws.channel(move |mut stream| {
         Box::pin(async move {
             let mut client_session_data: SessionData = SessionData {

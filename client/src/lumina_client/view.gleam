@@ -538,6 +538,7 @@ fn view_register(model_: Model) -> Element(Msg) {
     ),
   ])
 }
+
 fn view_homepage(model: model_type.Model) {
   todo
 }

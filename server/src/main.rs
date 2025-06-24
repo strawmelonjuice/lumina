@@ -3,6 +3,7 @@ extern crate dotenv;
 extern crate rocket;
 mod client_communication;
 pub mod errors;
+pub mod helpers;
 mod staticroutes;
 
 mod database;
@@ -43,12 +44,8 @@ fn config_get() -> Result<ServerConfig, LuminaError> {
 
 #[rocket::main]
 async fn main() {
-    // Some print prefixes
-    let error = "[ERROR]".color_error_red().style_bold();
-    let info = "[INFO]".color_green().style_bold();
-    let succes = "[✅ SUCCES]".color_ok_green().style_bold();
-    let warn = "[WARN]".color_yellow().style_bold();
-    // End of print prefixes
+    let (info, warn, error, success, _failure, _log, _incoming, _registrationerror) =
+        helpers::message_prefixes();
     let me = format!("Lumina Server, version {}", env!("CARGO_PKG_VERSION"));
     let args: Vec<String> = std::env::args().skip(1).collect();
     match (
@@ -118,7 +115,7 @@ async fn main() {
                                 process::exit(1);
                             }
                         } else {
-                            println!("{succes} Database connected.")
+                            println!("{success} Database connected.")
                         }
                     }
                     let db = db_mut.unwrap();
