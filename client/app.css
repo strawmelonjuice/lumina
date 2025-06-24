@@ -11,14 +11,11 @@
 }
 
 @plugin "daisyui" {
-	themes:
-		lumina-light --prefers-light,
-		lumina-dark --prefers-dark;
 }
 
 @plugin "daisyui/theme" {
 	name: "lumina-light";
-	default: false;
+	default: true;
 	prefersdark: false;
 	color-scheme: "light";
 	--color-base-100: oklch(96% 0.044 156.743);
@@ -54,7 +51,7 @@
 @plugin "daisyui/theme" {
 	name: "lumina-dark";
 	default: false;
-	prefersdark: false;
+	prefersdark: true;
 	color-scheme: "dark";
 
 	--color-base-100: oklch(14% 0.02 156.743);
