@@ -1,5 +1,5 @@
-use crate::{LuminaError, database::DbConn};
-use cynthia_con::{CynthiaColors, CynthiaStyles};
+use crate::{LuminaError, database::DbConn, helpers};
+use cynthia_con::CynthiaColors;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -188,8 +188,9 @@ impl User {
         self,
         db: &DbConn,
     ) -> Result<(SessionReference, User), LuminaError> {
+        let (info, _warn, _error, _success, _failure, _log, _incoming, _registrationerror) =
+            helpers::message_prefixes();
         let user = self;
-        let info = "[INFO]".color_green().style_bold();
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(client) => {

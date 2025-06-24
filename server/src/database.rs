@@ -1,4 +1,5 @@
 use crate::errors::LuminaError::{self, ConfMissing};
+use crate::helpers;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -7,8 +8,8 @@ use tokio_postgres::tls::NoTlsStream;
 use tokio_postgres::{Client, Connection, Socket};
 
 pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
-    let warn = "[WARN]".color_bright_orange().style_bold();
-    let info = "[INFO]".color_green().style_bold();
+    let (info, warn, _error, _success, _failure, _log, _incoming, _registrationerror) =
+        helpers::message_prefixes();
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
         .unwrap_or(String::from("sqlite")))
@@ -49,9 +50,8 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             Ok(DbConn::SqliteConnectionPool(pool))
         }
         "postgres" => {
-           
             let pg_config = {
-                 let mut uuu = (
+                let mut uuu = (
                     "unspecified database".to_string(),
                     "unspecified host".to_string(),
                     "unkwown port".to_string(),
@@ -62,8 +62,8 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                         .map_err(|_| ConfMissing("LUMINA_POSTGRES_USERNAME".to_string()))?
                 });
                 let dbname = std::env::var("LUMINA_POSTGRES_DATABASE")
-                        .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?;
-                    uuu.0 = dbname.clone();
+                    .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?;
+                uuu.0 = dbname.clone();
                 pg_config.dbname(&dbname);
                 let port = std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
                     eprintln!("{warn} No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'.");
@@ -71,7 +71,11 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 });
                 uuu.2 = port.clone();
                 // Parse the port as u16, if it fails, return an error
-                pg_config.port(port.parse::<u16>().map_err(|_| { LuminaError::ConfInvalid("LUMINA_POSTGRES_PORT is not a valid integer number".to_string()) })?);
+                pg_config.port(port.parse::<u16>().map_err(|_| {
+                    LuminaError::ConfInvalid(
+                        "LUMINA_POSTGRES_PORT is not a valid integer number".to_string(),
+                    )
+                })?);
                 match std::env::var("LUMINA_POSTGRES_HOST") {
                     Ok(val) => {
                         uuu.1 = val.clone();
@@ -96,15 +100,15 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                         );
                     }
                 };
-                 println!(
-                "{info} Using Postgres database at: {} on host: {} at port: {}",
-                uuu.0.color_bright_cyan().style_bold(),
-                uuu.1.color_bright_cyan().style_bold(),
-                uuu.2.color_bright_cyan().style_bold(),
-            );
+                println!(
+                    "{info} Using Postgres database at: {} on host: {} at port: {}",
+                    uuu.0.color_bright_cyan().style_bold(),
+                    uuu.1.color_bright_cyan().style_bold(),
+                    uuu.2.color_bright_cyan().style_bold(),
+                );
                 pg_config
             };
-           
+
             // Connect to the database
             let conn: (Client, Connection<Socket, NoTlsStream>) = pg_config
                 .connect(postgres::tls::NoTls)
