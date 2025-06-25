@@ -31,7 +31,7 @@ dir = "./client"
 
 [tasks.format-metafiles]
 hide = true
-run = ["bun x prettier . --write", "taplo format"]
+run = ["bun x prettier . '!./data' --write", "taplo format"]
 tools.taplo = "latest"
 
 [tasks.development-run]
