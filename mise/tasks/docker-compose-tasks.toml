@@ -12,14 +12,14 @@ description = "Run the docker-compose file combining lumina with a postgres data
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
 run = [
   "mkdir -p ./data/postgres",
-  "docker compose  --progress plain -f ./docker-compose/with-postgres.yml up -d --build",
+  "docker compose  -f ./docker-compose/with-postgres.yml up --build",
 ]
 [docker-compose-up-postgres]
 description = "Run the docker-compose file combining lumina with a postgres database."
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
 run = [
   "mkdir -p ./data/postgres",
-  "docker compose  -f ./docker-compose/with-postgres.yml up -d --build",
+  "docker compose  -f ./docker-compose/with-postgres.yml up --build",
 ]
 # ====================================================================================
 # == with sqlite =====================================================================
@@ -28,12 +28,12 @@ description = "Run the docker-compose file combining lumina with a sqlite databa
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "false" }
 run = [
   "mkdir -p ./data/",
-  "docker compose  --progress plain -f ./docker-compose/with-sqlite.yml up -d --build",
+  "docker compose  -f ./docker-compose/with-sqlite.yml up --build",
 ]
 [docker-compose-up-sqlite]
 description = "Run the docker-compose file combining lumina with a sqlite database."
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
 run = [
   "mkdir -p ./data/",
-  "docker compose  -f ./docker-compose/with-sqlite.yml up -d --build",
+  "docker compose  -f ./docker-compose/with-sqlite.yml up --build",
 ]
