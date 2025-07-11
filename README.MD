@@ -31,7 +31,7 @@ During development, I use the following:
 
 ```sh
 mise install # Installs mise deps
-mise run development-watch # Watches every important file and auto restarts build process on changes. Really nice!
+mise run development-run-watch # Watches every important file and auto restarts build process on changes. Really nice!
 ```
 
 I might just specify it a bit further sometime in the future.
