@@ -112,5 +112,8 @@ run = [
 
 
 [task_config]
-includes = ["./mise/tasks/docker-compose-tasks.toml"]
+includes = [
+	"./mise/tasks/podman-tasks.toml",
+	"./mise/tasks/docker-compose-tasks.toml",
+]
 dir = "{{ config_root }}"
