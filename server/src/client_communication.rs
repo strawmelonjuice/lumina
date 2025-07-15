@@ -32,7 +32,56 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 										_ => {}
 									}
 									match try_revive {
-										Some(token) => {todo!("Re-awaking requests is not implemented! I do not know how to revive session {:#}", token)}
+										Some(token) => {
+											let appstate = state.0.clone();
+											let db = &appstate.1.lock().await;
+											match User::revive_session_from_token(token.clone(), db).await {
+												Ok(user) => {
+													println!(
+														"{incoming} Session revived for user: {}",
+														user.clone().username.color_bright_cyan()
+													);
+													client_session_data.user = Some(user.clone());
+													let _ = stream
+														.send(ws::Message::from(msgtojson(Message::AuthSuccess {
+															token: token,
+															username: user.username,
+														})))
+														.await;
+												}
+												Err(e) => {
+													match e {
+														LuminaError::Postgres(postgres_error) => {
+															// Check if it's a "no rows returned" type error
+															if postgres_error.to_string().contains("no rows") {
+																println!("{info} Session revival failed: token not found or expired");
+															} else {
+																println!("{info} Session revival failed: database error: {:?}", postgres_error);
+															}
+														}
+														LuminaError::Sqlite(sqlite_error) => {
+															match sqlite_error {
+																r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
+																	// No rows returned - session not found or expired
+																	println!("{info} Session revival failed: token not found or expired");
+																}
+																_ => {
+																	println!("{info} Session revival failed: database error: {:?}", sqlite_error);
+																}
+															}
+														}
+														_ => {
+															println!("{info} Session revival failed: {:?}", e);
+														}
+													}
+													let _ = stream
+														.send(ws::Message::from(msgtojson(Message::Greeting {
+															greeting: "Hello from server! (Session revival failed)".to_string(),
+														})))
+														.await;
+												}
+											}
+										}
 										None =>{ let _ = stream
                                     .send(ws::Message::from(msgtojson(Message::Greeting {
                                         greeting: "Hello from server!".to_string(),
@@ -321,6 +370,10 @@ pub(crate) enum Message {
         /// Markdown content.
         content: String,
     },
+    #[serde(rename = "own_user_information_request")]
+    /// Request for the server to send back the user's own information.
+    /// This is used to get the user's own information after logging in.
+    OwnUserInformationRequest,
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,
