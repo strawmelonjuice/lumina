@@ -135,6 +135,8 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 													                              			error!("Error creating session token: {:?}", e),
                             																LuminaError::SqlitePool(e) =>
                             																	warn!("Error creating session token: {:?}", e),
+                            																LuminaError::Sqlite(e) =>
+                            																	warn!("Error creating session token: {:?}", e),
 																_ => {}
                                                      }
                                                         // I would return a more specific error message
@@ -199,7 +201,6 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                             }
                                         }
                                     }
-                                    let _ = stream.send(ws::Message::from("unknown")).await;
                                 }
                                 Ok(Message::RegisterPrecheck { email, username, password }) => {
                                     let appstate = state.0.clone();
@@ -251,8 +252,6 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 										let msgback = match User::authenticate(email_username.clone(), password, db).await {
                                     Ok((session_reference, user)) => {
 										println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.clone().username.to_string().color_bright_cyan(), session_reference.clone().session_id.to_string().color_pink(), format!("(User id: {})",user.clone().id.to_string()).style_dim());
-										client_session_data.user =
-                                                            Some(user.clone());
 										client_session_data.user = Some(user.clone());
 										Message::AuthSuccess {token: session_reference.token, username: user.username }
 									}
@@ -272,8 +271,28 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 										Message::AuthFailure
 
 									},
-                                };
+                								};
 									let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
+                                }
+                                Ok(Message::OwnUserInformationRequest) => {
+                                    // Handle request for user's own information
+                                    match &client_session_data.user {
+                                        Some(user) => {
+                                            // For now, send back basic user info as a greeting
+                                            // This could be expanded to a proper user info response message type
+                                            let response = Message::OwnUserInformationResponse {
+                                                username: user.username.clone(),
+                                                email: user.email.clone(),
+                                                // TODO: Populate avatar if available
+                                                avatar: None,
+                                                uuid: user.id.to_string(),
+                                            };
+                                            let _ = stream.send(ws::Message::from(msgtojson(response))).await;
+                                        }
+                                        None => {
+                                            let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
+                                        }
+                                    }
                                 }
                                 Ok(jsonmsg) => {
                                     panic!("Unhandled message: {:?}", jsonmsg);
@@ -374,6 +393,15 @@ pub(crate) enum Message {
     /// Request for the server to send back the user's own information.
     /// This is used to get the user's own information after logging in.
     OwnUserInformationRequest,
+    #[serde(rename = "own_user_information_response")]
+    /// Response to the `OwnUserInformationRequest` containing the user's own information.
+    OwnUserInformationResponse {
+    username: String,
+    email: String,
+    // Optional field populated with mime type and base64 of a profile picture.
+    avatar: Option<(String, String)>,
+    uuid: String,
+    },
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,
