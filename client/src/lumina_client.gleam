@@ -425,6 +425,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
+        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) -> todo as "TODO: Handle own user information response"
         Ok(AuthenticationSuccess(username:, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
@@ -562,6 +563,13 @@ type WsMsg {
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
   OwnUserInformationRequest
+  OwnUserInformationResponse(
+    username: String,
+    email: String,
+    // Optional field populated with mime type and base64 of a profile picture.
+    avatar: option.Option(#(String, String)),
+    uuid: String,
+  )
   Undecodable
 }
 
@@ -591,11 +599,12 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("password", json.string(password)),
       ])
     // And the client should never have to encode the next few:
-    Greeting(_)
+    Greeting(..)
     | Undecodable
-    | RegisterPrecheckResponse(_, _)
+    | RegisterPrecheckResponse(..)
     | AuthenticationFailure
-    | AuthenticationSuccess(_, _) ->
+    | AuthenticationSuccess(..)
+    | OwnUserInformationResponse(..) ->
       json.object([#("type", json.string("unknown"))])
   }
 }
