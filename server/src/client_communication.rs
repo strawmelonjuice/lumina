@@ -251,7 +251,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                         let db = &appstate.1.lock().await;
 										let msgback = match User::authenticate(email_username.clone(), password, db).await {
                                     Ok((session_reference, user)) => {
-										println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.clone().username.to_string().color_bright_cyan(), session_reference.clone().session_id.to_string().color_pink(), format!("(User id: {})",user.clone().id.to_string()).style_dim());
+										println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
 										client_session_data.user = Some(user.clone());
 										Message::AuthSuccess {token: session_reference.token, username: user.username }
 									}
@@ -259,13 +259,13 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                     Err(s) => {
 										match s {
 											LuminaError::AuthenticationWrongPassword => {
-												println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.clone().color_bright_cyan(), "not".color_red());
+												println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
 											}
 											LuminaError::AuthenticationUserNotFound => {
-												println!("{registrationerror} User {} {} authenticated: User not found", email_username.clone().color_bright_cyan(), "not".color_red());
+												println!("{registrationerror} User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
 											}
 											_ => {
-												println!("{registrationerror} User {} {} authenticated: {:?}", email_username.clone().color_bright_cyan(), "not".color_red(), s);
+												println!("{registrationerror} User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
 											}
 										}
 										Message::AuthFailure
