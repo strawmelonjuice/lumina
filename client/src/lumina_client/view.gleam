@@ -445,9 +445,46 @@ fn view_register(model_: Model) -> Element(Msg) {
 
 fn view_homepage(model: model_type.Model) {
   [
-    html.div([attribute.class("hero h-screen max-h-[calc(100vh-4rem)]")], [
-      element.text("Still, I've to put something on here innit?"),
-    ]),
+    html.div(
+      [
+        attribute.class(
+          "tabs tabs-box h-screen max-h-[calc(100vh-4rem)] bg-neutral text-neutral-content",
+        ),
+      ],
+      [
+        html.input([
+          attribute.attribute("aria-label", "Tab 1"),
+          attribute.class("tab"),
+          attribute.name("my_tabs_6"),
+          attribute.type_("radio"),
+        ]),
+        html.div(
+          [attribute.class("tab-content bg-base-200 border-base-300 p-6")],
+          [html.text("Tab content 1")],
+        ),
+        html.input([
+          attribute.checked(True),
+          attribute.attribute("aria-label", "Tab 2"),
+          attribute.class("tab"),
+          attribute.name("my_tabs_6"),
+          attribute.type_("radio"),
+        ]),
+        html.div(
+          [attribute.class("tab-content bg-base-200 border-base-300 p-6")],
+          [html.text("Still, I've to put something on here innit?")],
+        ),
+        html.input([
+          attribute.attribute("aria-label", "Tab 3"),
+          attribute.class("tab"),
+          attribute.name("my_tabs_6"),
+          attribute.type_("radio"),
+        ]),
+        html.div(
+          [attribute.class("tab-content bg-base-200 border-base-300 p-6")],
+          [html.text("Tab content 3")],
+        ),
+      ],
+    ),
   ]
   |> common_view_parts(with_menu: [])
 }
