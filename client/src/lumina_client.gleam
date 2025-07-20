@@ -425,7 +425,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) -> todo as "TODO: Handle own user information response"
+        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) ->
+          todo as "TODO: Handle own user information response"
         Ok(AuthenticationSuccess(username:, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
@@ -451,7 +452,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
             )
-            Register(fields:, ready:) -> todo
+            Register(fields:, ready:) ->
+              todo as "TODO: what to do AuthenticationFailure when on a register page?"
           }
         }
         // Ws messages we can't receive
