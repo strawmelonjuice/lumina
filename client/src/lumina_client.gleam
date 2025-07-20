@@ -452,8 +452,9 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
             )
-            Register(fields:, ready:) ->
+            Register(fields:, ready:) -> {
               todo as "TODO: what to do AuthenticationFailure when on a register page?"
+            }
           }
         }
         // Ws messages we can't receive
