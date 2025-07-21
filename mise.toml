@@ -56,7 +56,7 @@ dir = "./client/"
 [tasks.development-run-watch]
 tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
-run = "mise x -- watchexec --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run development-run"
+run = "mise x -- watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run development-run"
 
 [tasks.check-watch]
 tools.watchexec = "latest"
