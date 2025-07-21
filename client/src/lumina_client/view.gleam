@@ -57,7 +57,7 @@ pub fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.attribute("open", ""),
-              attribute.class("toast toast-top toast-center"),
+              attribute.class("toast toast-top toast-center z-100"),
             ],
             [
               html.div([attribute.class("alert alert-info")], [
@@ -77,7 +77,7 @@ pub fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.attribute("open", ""),
-              attribute.class("toast toast-top toast-center"),
+              attribute.class("toast toast-top toast-center z-100"),
             ],
             [
               html.div([attribute.class("alert alert-info")], [
@@ -452,15 +452,17 @@ fn view_register(model_: Model) -> Element(Msg) {
 }
 
 fn view_homepage(model: model_type.Model) {
+  // Dissect the model
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_id:),
     user:,
-    ws:,
+    ws: _,
     token:,
     status:,
     cache:,
     ticks:,
   ) = model
+  let timeline_id = option.unwrap(timeline_id, "global")
   [
     html.div(
       [attribute.class("drawer lg:drawer-open max-h-[calc(100vh-4rem)]")],
@@ -510,20 +512,24 @@ fn view_homepage(model: model_type.Model) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
+                      event.on_click(message_type.TimeLineTo("global")),
                     ],
                     [element.text("Global")],
                   ),
                 ]),
-                html.li(
-                  [
-                    bool.lazy_guard(
-                      when: timeline_id == "mutuals",
-                      return: fn() { attribute.class("menu-active") },
-                      otherwise: fn() { attribute.none() },
-                    ),
-                  ],
-                  [html.a([], [element.text("Mutuals")])],
-                ),
+                html.li([], [
+                  html.a(
+                    [
+                      bool.lazy_guard(
+                        when: timeline_id == "mutuals",
+                        return: fn() { attribute.class("menu-active") },
+                        otherwise: fn() { attribute.none() },
+                      ),
+                      event.on_click(message_type.TimeLineTo("mutuals")),
+                    ],
+                    [element.text("Mutuals")],
+                  ),
+                ]),
               ]),
             ],
           ),
