@@ -433,7 +433,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           #(
             Model(
               ..model,
-              page: model_type.HomeTimeline("home"),
+              // Global is default until user information says otherwise
+              page: model_type.HomeTimeline("global"),
               token: Some(token),
             ),
             OwnUserInformationRequest
