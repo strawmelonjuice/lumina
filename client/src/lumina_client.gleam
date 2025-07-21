@@ -16,12 +16,12 @@ import lumina_client/message_type.{
   WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
 }
 import lumina_client/model_type.{
-  type Model, Landing, Login, LoginFields, Model, Register, RegisterPageFields,
+  type Model, HomeTimeline, Landing, Login, LoginFields, Model, Register,
+  RegisterPageFields,
 }
 import lumina_client/view.{view}
 import lustre
 import lustre/effect.{type Effect}
-import lustre/server_component
 import lustre_websocket
 import plinth/javascript/storage
 
@@ -44,7 +44,10 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
       ws: model_type.WsConnectionInitial,
       token: None,
       status: Ok(Nil),
-      cache: model_type.Cached(cached_posts: dict.new()),
+      cache: model_type.Cached(
+        cached_posts: dict.new(),
+        cached_timelines: dict.new(),
+      ),
       ticks: initial_ticks,
     )
   #(
@@ -63,7 +66,10 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
               },
               token: loadable_model.token,
               status: Ok(Nil),
-              cache: model_type.Cached(cached_posts: dict.new()),
+              cache: model_type.Cached(
+                cached_posts: dict.new(),
+                cached_timelines: dict.new(),
+              ),
               ticks: initial_ticks,
             )
           }
@@ -389,6 +395,26 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
+    message_type.TimeLineTo(tid) -> {
+      let assert model_type.WsConnectionConnected(socket) = model.ws
+        as "Socket not connected"
+      let model = case model.page {
+        HomeTimeline(..) -> {
+          model_type.Model(..model, page: HomeTimeline(Some(tid)))
+        }
+        _ -> model
+      }
+      // Request unles cached.
+      let requ = case model.cache.cached_timelines |> dict.get(tid) {
+        Error(..) ->
+          TimeLineRequest(tid)
+          |> encode_ws_msg
+          |> json.to_string
+          |> lustre_websocket.send(socket, _)
+        Ok(..) -> effect.none()
+      }
+      #(model, requ)
+    }
   }
 }
 
@@ -433,22 +459,26 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           #(
             Model(
               ..model,
-              // Global is default until user information says otherwise
-              page: model_type.HomeTimeline("global"),
+              // Global is default until user information says otherwise, however, we can't set it here, for that'd make it impossible to know if it's set by user or by default.
+              page: HomeTimeline(None),
               token: Some(token),
             ),
-            OwnUserInformationRequest
-              |> encode_ws_msg
-              |> json.to_string
-              |> lustre_websocket.send(socket, _),
+            effect.batch([
+              OwnUserInformationRequest
+                |> encode_ws_msg
+                |> json.to_string
+                |> lustre_websocket.send(socket, _),
+              // Even though 'officially' we don't show the global timeline, this should be the one requested firstly.
+              TimeLineRequest("global")
+                |> encode_ws_msg
+                |> json.to_string
+                |> lustre_websocket.send(socket, _),
+            ]),
           )
         }
         Ok(AuthenticationFailure) -> {
           case model.page {
-            model_type.Landing | model_type.HomeTimeline(..) -> #(
-              model,
-              effect.none(),
-            )
+            model_type.Landing | HomeTimeline(..) -> #(model, effect.none())
             Login(fields:, success: _) -> #(
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
@@ -463,6 +493,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         | Ok(Undecodable)
         | Ok(LoginAuthenticationRequest(..))
         | Ok(OwnUserInformationRequest)
+        | Ok(TimeLineRequest(..))
         | Ok(RegisterRequest(..)) -> {
           #(model, effect.none())
         }
@@ -567,6 +598,7 @@ type WsMsg {
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
   OwnUserInformationRequest
+  TimeLineRequest(timeline_id: String)
   OwnUserInformationResponse(
     username: String,
     email: String,
@@ -601,6 +633,11 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("email", json.string(email)),
         #("username", json.string(username)),
         #("password", json.string(password)),
+      ])
+    TimeLineRequest(timeline_id:) ->
+      json.object([
+        #("type", json.string("timeline_request")),
+        #("by_id", json.string(timeline_id)),
       ])
     // And the client should never have to encode the next few:
     Greeting(..)

@@ -1,10 +1,11 @@
 //// Branched out the Model into a module.
 //// The Model is about to be huge, I'm just preselecting for that.
 
-import gleam/dict
+import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
-import gleam/option.{type Option, None}
+import gleam/list
+import gleam/option.{type Option, None, Some}
 import lustre_websocket
 
 /// # Model
@@ -57,6 +58,8 @@ pub type Cached {
     // cached_comments: List(CachedComment)
     // /// Users received:
     // cached_users: Dict(String, CachedUser)
+    /// Cached timelines are lists containing post id's as string, in, again a dict, for there are multiple timelines possible.
+    cached_timelines: Dict(String, List(String)),
   )
 }
 
@@ -112,7 +115,7 @@ pub type Page {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields, success: Option(Bool))
-  HomeTimeline(timeline_id: String)
+  HomeTimeline(timeline_id: Option(String))
 }
 
 fn encode_page(page: Page) -> json.Json {
@@ -152,10 +155,13 @@ fn encode_page(page: Page) -> json.Json {
         }),
       ])
     HomeTimeline(timeline_id:) ->
-      json.object([
-        #("type", json.string("home_timeline")),
-        #("timeline_id", json.string(timeline_id)),
-      ])
+      json.object(
+        [#("type", json.string("home_timeline"))]
+        |> list.append(case timeline_id {
+          None -> []
+          Some(i) -> [#("timeline_id", json.string(i))]
+        }),
+      )
   }
 }
 
@@ -191,7 +197,11 @@ fn page_decoder() -> decode.Decoder(Page) {
       decode.success(Login(fields:, success: None))
     }
     "home_timeline" -> {
-      use timeline_id <- decode.field("timeline_id", decode.string)
+      use timeline_id: Option(String) <- decode.optional_field(
+        "timeline_id",
+        None,
+        decode.optional(decode.string),
+      )
       decode.success(HomeTimeline(timeline_id:))
     }
     _ -> decode.failure(Landing, "Page")
@@ -237,7 +247,7 @@ pub fn serialize_serializable_model(
     #("page", encode_page(page)),
     #("token", case token {
       option.None -> json.null()
-      option.Some(value) -> json.string(value)
+      Some(value) -> json.string(value)
     }),
   ])
 }

@@ -17,4 +17,6 @@ pub type Msg {
   UpdateUsernameField(String)
   UpdatePasswordConfirmField(String)
   FocusLostEmailField
+  /// Travel to a different timeline.
+  TimeLineTo(String)
 }
