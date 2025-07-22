@@ -9,7 +9,7 @@ import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
 import lumina_client/message_type.{
-  type Msg, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
+  type Msg, Logout, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
   ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
   UpdatePasswordField, UpdateUsernameField, WSTryReconnect,
 }
@@ -538,6 +538,7 @@ fn view_homepage(model: model_type.Model) {
     ),
   ]
   |> common_view_parts(with_menu: [
+    html.li([], [html.a([event.on_click(Logout)], [element.text("Log out")])]),
     html.li([], [html.a([], [element.text("Settings")])]),
     html.li([attribute.class("lg:hidden ")], [
       html.label(
