@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
     use rocket::futures::{SinkExt, StreamExt};
-    let (info, _warn, _error, _success, _failure, _log, incoming, registrationerror) =
+    let (info, warn, error, _success, _failure, _log, incoming, registrationerror) =
         helpers::message_prefixes();
     ws.channel(move |mut stream| {
         Box::pin(async move {
@@ -54,7 +54,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 														LuminaError::Postgres(postgres_error) => {
 															// Check if it's a "no rows returned" type error
 															if postgres_error.to_string().contains("no rows") {
-																println!("{info} Session revival failed: token not found or expired");
+																println!("{info} Session revival failed: token not found or expired.");
 															} else {
 																println!("{info} Session revival failed: database error: {:?}", postgres_error);
 															}
@@ -63,7 +63,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 															match sqlite_error {
 																r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
 																	// No rows returned - session not found or expired
-																	println!("{info} Session revival failed: token not found or expired");
+																	println!("{info} Session revival failed: token not found or expired.");
 																}
 																_ => {
 																	println!("{info} Session revival failed: database error: {:?}", sqlite_error);
@@ -75,9 +75,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 														}
 													}
 													let _ = stream
-														.send(ws::Message::from(msgtojson(Message::Greeting {
-															greeting: "Hello from server! (Session revival failed)".to_string(),
-														})))
+														.send(ws::Message::from(msgtojson(Message::AuthFailure)))
 														.await;
 												}
 											}
@@ -132,11 +130,11 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                     Err(e) => {
                                                     	match e {
                                                      				LuminaError::Postgres(e) =>
-													                              			error!("Error creating session token: {:?}", e),
+                                                         println!("{error} While creating session token: {:?}", e),
                             																LuminaError::SqlitePool(e) =>
-                            																	warn!("Error creating session token: {:?}", e),
+                            																	println!("{warn} There was an error creating session token: {:?}", e),
                             																LuminaError::Sqlite(e) =>
-                            																	warn!("Error creating session token: {:?}", e),
+                           																	println!("{warn} There was an error creating session token: {:?}", e),
 																_ => {}
                                                      }
                                                         // I would return a more specific error message
@@ -396,11 +394,11 @@ pub(crate) enum Message {
     #[serde(rename = "own_user_information_response")]
     /// Response to the `OwnUserInformationRequest` containing the user's own information.
     OwnUserInformationResponse {
-    username: String,
-    email: String,
-    // Optional field populated with mime type and base64 of a profile picture.
-    avatar: Option<(String, String)>,
-    uuid: String,
+        username: String,
+        email: String,
+        // Optional field populated with mime type and base64 of a profile picture.
+        avatar: Option<(String, String)>,
+        uuid: String,
     },
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
