@@ -10,7 +10,7 @@ import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, SubmitLogin, SubmitSignup, TickUp,
+  type Msg, FocusLostEmailField, Logout, SubmitLogin, SubmitSignup, TickUp,
   ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
   UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
   WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
@@ -338,6 +338,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
+    Logout -> session_destroy()
     SubmitLogin(_) -> {
       let assert Login(fields, _) = model.page
       let values_ok = login_view_checker(fields)
@@ -419,6 +420,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
+  echo wsevent
   case wsevent {
     lustre_websocket.InvalidUrl -> panic
     lustre_websocket.OnTextMessage(notice) ->
@@ -478,7 +480,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         }
         Ok(AuthenticationFailure) -> {
           case model.page {
-            model_type.Landing | HomeTimeline(..) -> #(model, effect.none())
+            model_type.Landing | HomeTimeline(..) -> session_destroy()
             Login(fields:, success: _) -> #(
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
@@ -697,4 +699,12 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
 fn ws_msg_typedefiner() -> decode.Decoder(String) {
   use variant <- decode.field("type", decode.string)
   decode.success(variant)
+}
+
+fn session_destroy() -> #(Model, Effect(Msg)) {
+  console.info("Destroying session.")
+  let assert Ok(s) = storage.local()
+  storage.clear(s)
+  console.info("Recreating model.")
+  init(0)
 }
