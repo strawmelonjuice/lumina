@@ -21,8 +21,8 @@ import lustre/event
 import plinth/javascript/storage
 
 fn timeline(model: Model) -> Element(Msg) {
-	// Dissect the model
-	let assert model_type.Model(
+  // Dissect the model
+  let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_id:),
     user:,
     ws: _,
