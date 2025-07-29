@@ -418,7 +418,19 @@ fn view_register(model_: Model) -> Element(Msg) {
                         attribute.disabled(True),
                       ]
                     },
-                    [element.text("Sign up")],
+                    [
+                      html.text(
+                        case
+                          ready |> option.is_some()
+                          && ready
+                          |> option.unwrap(Error(""))
+                          |> result.is_ok()
+                        {
+                          True -> "Sign up as " <> fieldvalues.usernamefield
+                          False -> "Sign up"
+                        },
+                      ),
+                    ],
                   ),
                 ]),
               ],
