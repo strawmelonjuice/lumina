@@ -1,6 +1,7 @@
 import gleam/bool
+import gleam/dict
 import gleam/dynamic/decode
-import gleam/option
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import lumina_client/helpers.{
@@ -20,16 +21,53 @@ import lustre/element/html
 import lustre/event
 import plinth/javascript/storage
 
-fn timeline(model: Model) -> Element(Msg) {
+pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_id:),
-    user:,
+    page: model_type.HomeTimeline(timeline_id:, pop_up: _),
+    user: _,
     ws: _,
-    token:,
-    status:,
+    token: _,
+    status: _,
     cache:,
-    ticks:,
+    ticks: _,
   ) = model
-  todo as "Oky, the update function should have created a side effect to fetch this timeline and add it to the cache, now this function should look into the cache and return the timeline if it exists, otherwise show a skeleton."
+  // let timeline_id = option.unwrap(timeline_id, "global")
+  case timeline_id {
+    Some(timeline_id) -> {
+      let timeline_posts = dict.get(cache.cached_timelines, timeline_id)
+      case timeline_posts {
+        Ok(post_ids) -> {
+          let posts: List(String) = post_ids
+          todo as "show the actual timeline items."
+        }
+        Error(..) ->
+          html.div([attribute.class("flex w-4/6 flex-col gap-4 items-start")], [
+            element.text("Loading timeline \"" <> timeline_id <> "\" ..."),
+            html.div([attribute.class("skeleton h-32 w-full")], []),
+            html.div([attribute.class("skeleton h-4 w-28")], []),
+            html.div([attribute.class("skeleton h-4 w-full")], []),
+            html.div([attribute.class("skeleton h-32 w-full")], []),
+            html.div([attribute.class("skeleton h-4 w-28")], []),
+            html.div([attribute.class("skeleton h-4 w-full")], []),
+            html.div([attribute.class("skeleton h-4 w-full")], []),
+            html.div([attribute.class("skeleton h-32 w-full")], []),
+            html.div([attribute.class("skeleton h-4 w-28")], []),
+            html.div([attribute.class("skeleton h-4 w-full")], []),
+            html.div([attribute.class("skeleton h-32 w-full")], []),
+            html.div([attribute.class("skeleton h-4 w-28")], []),
+            html.div([attribute.class("skeleton h-4 w-full")], []),
+            element.text(
+              "Skeleton should be remodeled after the actual post view later.",
+            ),
+          ])
+      }
+    }
+    None ->
+      html.div([attribute.class("")], [
+        html.div([attribute.class("justify-center p-4")], [
+          element.text("Still, I've to put something on here innit?"),
+        ]),
+      ])
+  }
 }
