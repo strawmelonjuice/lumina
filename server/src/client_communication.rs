@@ -293,7 +293,8 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                     }
                                                                 }
                                                             }
-                                                            Ok(Message::TimelineRequest { by_id }) => todo!(),
+                                                            Ok(Message::TimelineRequest { by_id }) => todo!("Fetching timeline content not yet implemented."),
+                                                            // Responding variants are not supposed to ever arrive here.
                                                             Ok(Message::ClientInit { .. }) |
                                                             Ok(Message::Greeting { .. }) | Ok(Message::SerialisationError {..} )
                                                             | Ok(Message::RegisterPrecheckResponse {..} )
@@ -306,9 +307,11 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                             => {
                                                             	panic!("These messages should never arrive here.")
                                                             }
+                                                            // This one makes sense.
                                                             Ok(Message::Unknown) => {
                                                             panic!("Unknown message received?")
                                                             }
+                                                            // And to handle straight up errors:
                                                             Err(e) => {
                                                                 error!("Error deserialising message: {:?}", e);
                                                                 let _ = stream.send(ws::Message::from("unknown")).await;
