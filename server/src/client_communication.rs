@@ -23,282 +23,297 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                             "ping" => {
                                 let _ = stream.send(ws::Message::Text("pong".to_string())).await;
                             }
-                            possibly_json => match serde_json::from_str::<Message>(possibly_json) {
-								Ok(Message::Introduction { client_kind, try_revive }) => {
-									match client_kind.as_str() {
-										"web" => {
-											client_session_data.client_type = Some(ClientType::Web)
-										}
-										_ => {}
-									}
-									match try_revive {
-										Some(token) => {
-											let appstate = state.0.clone();
-											let db = &appstate.1.lock().await;
-											match User::revive_session_from_token(token.clone(), db).await {
-												Ok(user) => {
-													println!(
-														"{incoming} Session revived for user: {}",
-														user.clone().username.color_bright_cyan()
-													);
-													client_session_data.user = Some(user.clone());
-													let _ = stream
-														.send(ws::Message::from(msgtojson(Message::AuthSuccess {
-															token: token,
-															username: user.username,
-														})))
-														.await;
-												}
-												Err(e) => {
-													match e {
-														LuminaError::Postgres(postgres_error) => {
-															// Check if it's a "no rows returned" type error
-															if postgres_error.to_string().contains("no rows") {
-																println!("{info} Session revival failed: token not found or expired.");
-															} else {
-																println!("{info} Session revival failed: database error: {:?}", postgres_error);
-															}
-														}
-														LuminaError::Sqlite(sqlite_error) => {
-															match sqlite_error {
-																r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
-																	// No rows returned - session not found or expired
-																	println!("{info} Session revival failed: token not found or expired.");
-																}
-																_ => {
-																	println!("{info} Session revival failed: database error: {:?}", sqlite_error);
-																}
-															}
-														}
-														_ => {
-															println!("{info} Session revival failed: {:?}", e);
-														}
-													}
-													let _ = stream
-														.send(ws::Message::from(msgtojson(Message::AuthFailure)))
-														.await;
-												}
-											}
-										}
-										None =>{ let _ = stream
-                                    .send(ws::Message::from(msgtojson(Message::Greeting {
-                                        greeting: "Hello from server!".to_string(),
-                                    })))
-                                    .await;
-											}
-									}
-								},
-                                Ok(Message::RegisterRequest {
-                                    email,
-                                    username,
-                                    password,
-                                }) => {
-                                    println!(
-                                        "{incoming} Register request: {} {}",
-                                        email.clone().color_orange(),
-                                        username.clone().color_bright_cyan()
-                                    );
+                            possibly_json => {
+                                match serde_json::from_str::<Message>(possibly_json) {
+								                            Ok(Message::Introduction { client_kind, try_revive }) => {
+									                            match client_kind.as_str() {
+										                            "web" => {
+											                            client_session_data.client_type = Some(ClientType::Web)
+										                            }
+										                            _ => {}
+									                            }
+									                            match try_revive {
+										                            Some(token) => {
+											                            let appstate = state.0.clone();
+											                            let db = &appstate.1.lock().await;
+											                            match User::revive_session_from_token(token.clone(), db).await {
+												                            Ok(user) => {
+													                            println!(
+														                            "{incoming} Session revived for user: {}",
+														                            user.clone().username.color_bright_cyan()
+													                            );
+													                            client_session_data.user = Some(user.clone());
+													                            let _ = stream
+														                            .send(ws::Message::from(msgtojson(Message::AuthSuccess {
+															                            token: token,
+															                            username: user.username,
+														                            })))
+														                            .await;
+												                            }
+												                            Err(e) => {
+													                            match e {
+														                            LuminaError::Postgres(postgres_error) => {
+															                            // Check if it's a "no rows returned" type error
+															                            if postgres_error.to_string().contains("no rows") {
+																                            println!("{info} Session revival failed: token not found or expired.");
+															                            } else {
+																                            println!("{info} Session revival failed: database error: {:?}", postgres_error);
+															                            }
+														                            }
+														                            LuminaError::Sqlite(sqlite_error) => {
+															                            match sqlite_error {
+																                            r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
+																	                            // No rows returned - session not found or expired
+																	                            println!("{info} Session revival failed: token not found or expired.");
+																                            }
+																                            _ => {
+																	                            println!("{info} Session revival failed: database error: {:?}", sqlite_error);
+																                            }
+															                            }
+														                            }
+														                            _ => {
+															                            println!("{info} Session revival failed: {:?}", e);
+														                            }
+													                            }
+													                            let _ = stream
+														                            .send(ws::Message::from(msgtojson(Message::AuthFailure)))
+														                            .await;
+												                            }
+											                            }
+										                            }
+										                            None =>{ let _ = stream
+                                                                .send(ws::Message::from(msgtojson(Message::Greeting {
+                                                                    greeting: "Hello from server!".to_string(),
+                                                                })))
+                                                                .await;
+											                            }
+									                            }
+								                            },
+                                                            Ok(Message::RegisterRequest {
+                                                                email,
+                                                                username,
+                                                                password,
+                                                            }) => {
+                                                                println!(
+                                                                    "{incoming} Register request: {} {}",
+                                                                    email.clone().color_orange(),
+                                                                    username.clone().color_bright_cyan()
+                                                                );
 
-                                    // register the user
-                                    {
-                                        let appstate = state.0.clone();
-                                        let db = &appstate.1.lock().await;
-                                        match User::create_user(email.clone(), username.clone(), password, db).await
-                                        {
-                                            Ok(user) => {
-                                                println!(
-                                                    "{info} User created: {}",
-                                                    user.clone().username.color_bright_cyan()
-                                                );
-                                                match User::create_session(user, db).await {
-                                                    Ok((session_reference, user)) => {
-                                                        client_session_data.user =
-                                                            Some(user.clone());
-														println!(
-															"{incoming} User {} authenticated.",
-															user.clone().username.color_bright_cyan()
-														);
-                                                        let _ = stream
-                                                            .send(ws::Message::from(msgtojson(
-                                                                Message::AuthSuccess {
-                                                                    token: session_reference.token,
-                                                                    username: user.username,
-                                                                },
-                                                            )))
-                                                            .await;
-                                                    }
-                                                    Err(e) => {
-                                                    	match e {
-                                                     				LuminaError::Postgres(e) =>
-                                                         println!("{error} While creating session token: {:?}", e),
-                            																LuminaError::SqlitePool(e) =>
-                            																	println!("{warn} There was an error creating session token: {:?}", e),
-                            																LuminaError::Sqlite(e) =>
-                           																	println!("{warn} There was an error creating session token: {:?}", e),
-																_ => {}
-                                                     }
-                                                        // I would return a more specific error message
-                                                        // to the client here, but if the server knows the
-                                                        // error, the client should know the error twice as
-                                                        // well.
+                                                                // register the user
+                                                                {
+                                                                    let appstate = state.0.clone();
+                                                                    let db = &appstate.1.lock().await;
+                                                                    match User::create_user(email.clone(), username.clone(), password, db).await
+                                                                    {
+                                                                        Ok(user) => {
+                                                                            println!(
+                                                                                "{info} User created: {}",
+                                                                                user.clone().username.color_bright_cyan()
+                                                                            );
+                                                                            match User::create_session(user, db).await {
+                                                                                Ok((session_reference, user)) => {
+                                                                                    client_session_data.user =
+                                                                                        Some(user.clone());
+														                            println!(
+															                            "{incoming} User {} authenticated.",
+															                            user.clone().username.color_bright_cyan()
+														                            );
+                                                                                    let _ = stream
+                                                                                        .send(ws::Message::from(msgtojson(
+                                                                                            Message::AuthSuccess {
+                                                                                                token: session_reference.token,
+                                                                                                username: user.username,
+                                                                                            },
+                                                                                        )))
+                                                                                        .await;
+                                                                                }
+                                                                                Err(e) => {
+                                                    	                            match e {
+                                                     				                            LuminaError::Postgres(e) =>
+                                                                                     println!("{error} While creating session token: {:?}", e),
+                            																                            LuminaError::SqlitePool(e) =>
+                            																	                            println!("{warn} There was an error creating session token: {:?}", e),
+                            																                            LuminaError::Sqlite(e) =>
+                           																	                            println!("{warn} There was an error creating session token: {:?}", e),
+																                            _ => {}
+                                                                                 }
+                                                                                    // I would return a more specific error message
+                                                                                    // to the client here, but if the server knows the
+                                                                                    // error, the client should know the error twice as
+                                                                                    // well.
 
-                                                        let _ = stream
-                                                            .send(ws::Message::from(msgtojson(
-                                                                Message::AuthFailure,
-                                                            )))
-                                                            .await;
-                                                    }
-                                                }
-                                            }
+                                                                                    let _ = stream
+                                                                                        .send(ws::Message::from(msgtojson(
+                                                                                            Message::AuthFailure,
+                                                                                        )))
+                                                                                        .await;
+                                                                                }
+                                                                            }
+                                                                        }
 
-                                            Err(e) => {
-                                                match e {
-                                                    LuminaError::RegisterUsernameInUse => {
-                                                        println!(
-                                                            "{registrationerror} User {} already exists",
-                                                            username.clone().color_bright_cyan()
-                                                        );
-                                                    }
-                                                    LuminaError::RegisterEmailNotValid => {
-                                                        println!(
-                                                            "{registrationerror} Email {} is not valid",
-                                                            email.clone().color_bright_cyan()
-                                                        );
-                                                    }
-                                                    LuminaError::RegisterUsernameInvalid(why) => {
-                                                        println!(
-                                                            "{registrationerror} Username '{}' is not valid: {}",
-                                                            username.clone().color_bright_cyan(),
-                                                            why
-                                                        );
-                                                    }
-                                                    LuminaError::RegisterPasswordNotValid(why) => {
-														println!(
-															"{registrationerror} Password is not valid: {}",
-															why
-														);
-													}
-                                                    e => {
-														println!(
-															"{registrationerror} Error creating user: {:?}",
-															e
-														);
-													}
-                                                }
+                                                                        Err(e) => {
+                                                                            match e {
+                                                                                LuminaError::RegisterUsernameInUse => {
+                                                                                    println!(
+                                                                                        "{registrationerror} User {} already exists",
+                                                                                        username.clone().color_bright_cyan()
+                                                                                    );
+                                                                                }
+                                                                                LuminaError::RegisterEmailNotValid => {
+                                                                                    println!(
+                                                                                        "{registrationerror} Email {} is not valid",
+                                                                                        email.clone().color_bright_cyan()
+                                                                                    );
+                                                                                }
+                                                                                LuminaError::RegisterUsernameInvalid(why) => {
+                                                                                    println!(
+                                                                                        "{registrationerror} Username '{}' is not valid: {}",
+                                                                                        username.clone().color_bright_cyan(),
+                                                                                        why
+                                                                                    );
+                                                                                }
+                                                                                LuminaError::RegisterPasswordNotValid(why) => {
+														                            println!(
+															                            "{registrationerror} Password is not valid: {}",
+															                            why
+														                            );
+													                            }
+                                                                                e => {
+														                            println!(
+															                            "{registrationerror} Error creating user: {:?}",
+															                            e
+														                            );
+													                            }
+                                                                            }
 
-                                                // I would return a more specific error message
-                                                // to the client here, but if the server knows the
-                                                // error, the client should know the error twice as
-                                                // well.
+                                                                            // I would return a more specific error message
+                                                                            // to the client here, but if the server knows the
+                                                                            // error, the client should know the error twice as
+                                                                            // well.
 
-                                                let _ = stream
-                                                    .send(ws::Message::from(msgtojson(
-                                                        Message::AuthFailure,
-                                                    )))
-                                                    .await;
-                                            }
-                                        }
-                                    }
-                                }
-                                Ok(Message::RegisterPrecheck { email, username, password }) => {
-                                    let appstate = state.0.clone();
-                                    let db = &appstate.1.lock().await;
-                                    match crate::user::register_validitycheck(email, username, password, db).await {
-                                        Err(LuminaError::RegisterEmailInUse) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: false,
-                                                why: "Email already in use".to_string(),
-                                            }))).await;
-                                        }
-                                        Err(LuminaError::RegisterUsernameInUse) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: false,
-                                                why: "Username already in use".to_string(),
-                                            }))).await;
-                                        }
-                                        Err(LuminaError::RegisterEmailNotValid) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: false,
-                                                why: "Email not valid".to_string(),
-                                            }))).await;
-                                        }
-                                        Err(LuminaError::RegisterUsernameInvalid(why)) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: false,
-                                                why: format!("Username invalid: {}", why),
-                                            }))).await;
-                                        }
-                                        Err(LuminaError::RegisterPasswordNotValid(why)) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: false,
-                                                why: format!("Password invalid: {}", why),
-                                            }))).await;
-                                        }
-                                        Ok(_) => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
-                                                ok: true,
-                                                why: "".to_string(),
-                                            }))).await;
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                                Ok(Message::LoginAuthenticationRequest { email_username, password }) =>
-                                {
-									let appstate = state.0.clone();
-                                        let db = &appstate.1.lock().await;
-										let msgback = match User::authenticate(email_username.clone(), password, db).await {
-                                    Ok((session_reference, user)) => {
-										println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
-										client_session_data.user = Some(user.clone());
-										Message::AuthSuccess {token: session_reference.token, username: user.username }
-									}
-								,
-                                    Err(s) => {
-										match s {
-											LuminaError::AuthenticationWrongPassword => {
-												println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
-											}
-											LuminaError::AuthenticationUserNotFound => {
-												println!("{registrationerror} User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
-											}
-											_ => {
-												println!("{registrationerror} User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
-											}
-										}
-										Message::AuthFailure
+                                                                            let _ = stream
+                                                                                .send(ws::Message::from(msgtojson(
+                                                                                    Message::AuthFailure,
+                                                                                )))
+                                                                                .await;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            Ok(Message::RegisterPrecheck { email, username, password }) => {
+                                                                let appstate = state.0.clone();
+                                                                let db = &appstate.1.lock().await;
+                                                                match crate::user::register_validitycheck(email, username, password, db).await {
+                                                                    Err(LuminaError::RegisterEmailInUse) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: false,
+                                                                            why: "Email already in use".to_string(),
+                                                                        }))).await;
+                                                                    }
+                                                                    Err(LuminaError::RegisterUsernameInUse) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: false,
+                                                                            why: "Username already in use".to_string(),
+                                                                        }))).await;
+                                                                    }
+                                                                    Err(LuminaError::RegisterEmailNotValid) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: false,
+                                                                            why: "Email not valid".to_string(),
+                                                                        }))).await;
+                                                                    }
+                                                                    Err(LuminaError::RegisterUsernameInvalid(why)) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: false,
+                                                                            why: format!("Username invalid: {}", why),
+                                                                        }))).await;
+                                                                    }
+                                                                    Err(LuminaError::RegisterPasswordNotValid(why)) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: false,
+                                                                            why: format!("Password invalid: {}", why),
+                                                                        }))).await;
+                                                                    }
+                                                                    Ok(_) => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
+                                                                            ok: true,
+                                                                            why: "".to_string(),
+                                                                        }))).await;
+                                                                    }
+                                                                    _ => {}
+                                                                }
+                                                            }
+                                                            Ok(Message::LoginAuthenticationRequest { email_username, password }) =>
+                                                            {
+									                            let appstate = state.0.clone();
+                                                                    let db = &appstate.1.lock().await;
+										                            let msgback = match User::authenticate(email_username.clone(), password, db).await {
+                                                                Ok((session_reference, user)) => {
+										                            println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
+										                            client_session_data.user = Some(user.clone());
+										                            Message::AuthSuccess {token: session_reference.token, username: user.username }
+									                            }
+								                            ,
+                                                                Err(s) => {
+										                            match s {
+											                            LuminaError::AuthenticationWrongPassword => {
+												                            println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
+											                            }
+											                            LuminaError::AuthenticationUserNotFound => {
+												                            println!("{registrationerror} User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+											                            }
+											                            _ => {
+												                            println!("{registrationerror} User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
+											                            }
+										                            }
+										                            Message::AuthFailure
 
-									},
-                								};
-									let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
-                                }
-                                Ok(Message::OwnUserInformationRequest) => {
-                                    // Handle request for user's own information
-                                    match &client_session_data.user {
-                                        Some(user) => {
-                                            // For now, send back basic user info as a greeting
-                                            // This could be expanded to a proper user info response message type
-                                            let response = Message::OwnUserInformationResponse {
-                                                username: user.username.clone(),
-                                                email: user.email.clone(),
-                                                // TODO: Populate avatar if available
-                                                avatar: None,
-                                                uuid: user.id.to_string(),
-                                            };
-                                            let _ = stream.send(ws::Message::from(msgtojson(response))).await;
-                                        }
-                                        None => {
-                                            let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
-                                        }
-                                    }
-                                }
-                                Ok(jsonmsg) => {
-                                    panic!("Unhandled message: {:?}", jsonmsg);
-                                }
-                                Err(e) => {
-                                    error!("Error deserialising message: {:?}", e);
-                                    let _ = stream.send(ws::Message::from("unknown")).await;
-                                }
+									                            },
+                								                            };
+									                            let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
+                                                            }
+                                                            Ok(Message::OwnUserInformationRequest) => {
+                                                                // Handle request for user's own information
+                                                                match &client_session_data.user {
+                                                                    Some(user) => {
+                                                                        // For now, send back basic user info as a greeting
+                                                                        // This could be expanded to a proper user info response message type
+                                                                        let response = Message::OwnUserInformationResponse {
+                                                                            username: user.username.clone(),
+                                                                            email: user.email.clone(),
+                                                                            // TODO: Populate avatar if available
+                                                                            avatar: None,
+                                                                            uuid: user.id.to_string(),
+                                                                        };
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(response))).await;
+                                                                    }
+                                                                    None => {
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
+                                                                    }
+                                                                }
+                                                            }
+                                                            Ok(Message::TimelineRequest { by_id }) => todo!(),
+                                                            Ok(Message::ClientInit { .. }) |
+                                                            Ok(Message::Greeting { .. }) | Ok(Message::SerialisationError {..} )
+                                                            | Ok(Message::RegisterPrecheckResponse {..} )
+                                                            | Ok(Message::AuthSuccess {..} )
+                                                            | Ok(Message::AuthFailure {..} )
+                                                            | Ok(Message::MediaPostDataSent {..} )
+                                                            | Ok(Message::TextPostDataSent {..} )
+                                                            | Ok(Message::ArticlePostDataSent {..} )
+                                                            | Ok(Message::OwnUserInformationResponse {..} )
+                                                            => {
+                                                            	panic!("These messages should never arrive here.")
+                                                            }
+                                                            Ok(Message::Unknown) => {
+                                                            panic!("Unknown message received?")
+                                                            }
+                                                            Err(e) => {
+                                                                error!("Error deserialising message: {:?}", e);
+                                                                let _ = stream.send(ws::Message::from("unknown")).await;
+                                                            }
+                                                        }
                             },
                         }
                     }
@@ -400,6 +415,9 @@ pub(crate) enum Message {
         avatar: Option<(String, String)>,
         uuid: String,
     },
+    /// Requests a list of strings to represent a certain timeline or bubble timeline.
+    #[serde(rename = "timeline_request")]
+    TimelineRequest { by_id: String },
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,
