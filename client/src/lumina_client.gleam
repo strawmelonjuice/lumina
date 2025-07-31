@@ -400,8 +400,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let assert model_type.WsConnectionConnected(socket) = model.ws
         as "Socket not connected"
       let model = case model.page {
-        HomeTimeline(..) -> {
-          model_type.Model(..model, page: HomeTimeline(Some(tid)))
+        HomeTimeline(timeline_id: _, pop_up:) -> {
+          model_type.Model(..model, page: HomeTimeline(Some(tid), pop_up:))
         }
         _ -> model
       }
@@ -462,7 +462,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Model(
               ..model,
               // Global is default until user information says otherwise, however, we can't set it here, for that'd make it impossible to know if it's set by user or by default.
-              page: HomeTimeline(None),
+              page: HomeTimeline(None, None),
               token: Some(token),
             ),
             effect.batch([

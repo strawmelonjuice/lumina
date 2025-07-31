@@ -16,6 +16,7 @@ import lumina_client/message_type.{
 import lumina_client/model_type.{
   type Model, HomeTimeline, Landing, Login, Register,
 }
+import lumina_client/view/homepage
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
@@ -466,7 +467,7 @@ fn view_register(model_: Model) -> Element(Msg) {
 fn view_homepage(model: model_type.Model) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_id:),
+    page: model_type.HomeTimeline(timeline_id:, pop_up:),
     user:,
     ws: _,
     token:,
@@ -487,14 +488,10 @@ fn view_homepage(model: model_type.Model) {
         html.div(
           [
             attribute.class(
-              "drawer-content flex flex-col items-center bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)]",
+              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)]",
             ),
           ],
-          [
-            html.div([attribute.class("justify-center p-4")], [
-              element.text("Still, I've to put something on here innit?"),
-            ]),
-          ],
+          [homepage.timeline(model)],
         ),
         html.div([attribute.class("drawer-side")], [
           html.label(
