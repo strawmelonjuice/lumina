@@ -1,3 +1,5 @@
+pub mod events;
+
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 
 /// Message prefixes for different types of messages.

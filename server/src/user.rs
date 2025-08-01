@@ -54,7 +54,7 @@ impl User {
                 )
                 .map_err(LuminaError::Sqlite)
             }
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
@@ -76,7 +76,7 @@ impl User {
         let password =
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
         match db {
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
@@ -151,7 +151,7 @@ impl User {
             "username"
         };
         match db {
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 let user = client
                     .query_one(
                         &format!("SELECT * FROM users WHERE {} = $1", identifyer_type),
@@ -193,7 +193,7 @@ impl User {
         let user = self;
         let user_id = user.id;
         match db {
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
@@ -245,7 +245,7 @@ impl User {
         db: &DbConn,
     ) -> Result<User, LuminaError> {
         match db {
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 let user = client
 					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 					.await
@@ -283,7 +283,7 @@ pub(crate) async fn register_validitycheck(
         // Check if the email or username is already in use
         match db {
             // TODO: Bloom filter for username and email checks using fast-bloom
-            DbConn::PgsqlConnection(client) => {
+            DbConn::PgsqlConnection(client, _) => {
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client

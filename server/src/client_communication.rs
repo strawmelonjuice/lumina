@@ -1,5 +1,8 @@
 use crate::user::User;
-use crate::{AppState, LuminaError, helpers};
+use crate::{
+    AppState, LuminaError, error_elog, helpers, incoming_elog, info_elog, registration_error_elog,
+    warn_elog,
+};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
@@ -8,13 +11,17 @@ use uuid::Uuid;
 #[get("/connection")]
 pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
     use rocket::futures::{SinkExt, StreamExt};
-    let (info, warn, error, _success, _failure, _log, incoming, registrationerror) =
-        helpers::message_prefixes();
+
     ws.channel(move |mut stream| {
         Box::pin(async move {
             let mut client_session_data: SessionData = SessionData {
                 client_type: None,
                 user: None,
+            };
+            let ev_log = {
+            let appstate = state.0.clone();
+let db = &appstate.1.lock().await;
+helpers::events::EventLogger::from_db(db).await
             };
             while let Some(message) = stream.next().await {
                 match message? {
@@ -38,8 +45,10 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 											                            let db = &appstate.1.lock().await;
 											                            match User::revive_session_from_token(token.clone(), db).await {
 												                            Ok(user) => {
-													                            println!(
-														                            "{incoming} Session revived for user: {}",
+													                            incoming_elog!(
+																																										ev_log
+																																									,
+														                            "Session revived for user: {}",
 														                            user.clone().username.color_bright_cyan()
 													                            );
 													                            client_session_data.user = Some(user.clone());
@@ -55,24 +64,24 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
 														                            LuminaError::Postgres(postgres_error) => {
 															                            // Check if it's a "no rows returned" type error
 															                            if postgres_error.to_string().contains("no rows") {
-																                            println!("{info} Session revival failed: token not found or expired.");
+																                            info_elog!( ev_log,"Session revival failed: token not found or expired.");
 															                            } else {
-																                            println!("{info} Session revival failed: database error: {:?}", postgres_error);
+																                            info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
 															                            }
 														                            }
 														                            LuminaError::Sqlite(sqlite_error) => {
 															                            match sqlite_error {
 																                            r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
 																	                            // No rows returned - session not found or expired
-																	                            println!("{info} Session revival failed: token not found or expired.");
+																	                            info_elog!(ev_log,"Session revival failed: token not found or expired.");
 																                            }
 																                            _ => {
-																	                            println!("{info} Session revival failed: database error: {:?}", sqlite_error);
+																	                            info_elog!(ev_log,"Session revival failed: database error: {:?}", sqlite_error);
 																                            }
 															                            }
 														                            }
 														                            _ => {
-															                            println!("{info} Session revival failed: {:?}", e);
+															                            info_elog!(ev_log,"Session revival failed: {:?}", e);
 														                            }
 													                            }
 													                            let _ = stream
@@ -94,8 +103,9 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                 username,
                                                                 password,
                                                             }) => {
-                                                                println!(
-                                                                    "{incoming} Register request: {} {}",
+                                                                incoming_elog!(
+                                                                ev_log,
+                                                                    "Register request: {} {}",
                                                                     email.clone().color_orange(),
                                                                     username.clone().color_bright_cyan()
                                                                 );
@@ -107,16 +117,16 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                     match User::create_user(email.clone(), username.clone(), password, db).await
                                                                     {
                                                                         Ok(user) => {
-                                                                            println!(
-                                                                                "{info} User created: {}",
+                                                                            info_elog!(
+                                                                            ev_log,
+                                                                                "User created: {}",
                                                                                 user.clone().username.color_bright_cyan()
                                                                             );
                                                                             match User::create_session(user, db).await {
                                                                                 Ok((session_reference, user)) => {
                                                                                     client_session_data.user =
                                                                                         Some(user.clone());
-														                            println!(
-															                            "{incoming} User {} authenticated.",
+														                            incoming_elog!(ev_log,"User {} authenticated.",
 															                            user.clone().username.color_bright_cyan()
 														                            );
                                                                                     let _ = stream
@@ -131,11 +141,11 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                                 Err(e) => {
                                                     	                            match e {
                                                      				                            LuminaError::Postgres(e) =>
-                                                                                     println!("{error} While creating session token: {:?}", e),
+                                                                                     error_elog!(ev_log,"While creating session token: {:?}", e),
                             																                            LuminaError::SqlitePool(e) =>
-                            																	                            println!("{warn} There was an error creating session token: {:?}", e),
+                            																	                            warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                             																                            LuminaError::Sqlite(e) =>
-                           																	                            println!("{warn} There was an error creating session token: {:?}", e),
+warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
 																                            _ => {}
                                                                                  }
                                                                                     // I would return a more specific error message
@@ -155,33 +165,28 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                         Err(e) => {
                                                                             match e {
                                                                                 LuminaError::RegisterUsernameInUse => {
-                                                                                    println!(
-                                                                                        "{registrationerror} User {} already exists",
+                                                                                    registration_error_elog!(ev_log, "User {} already exists",
                                                                                         username.clone().color_bright_cyan()
                                                                                     );
                                                                                 }
                                                                                 LuminaError::RegisterEmailNotValid => {
-                                                                                    println!(
-                                                                                        "{registrationerror} Email {} is not valid",
+                                                                                registration_error_elog!(ev_log, "Email {} is not valid",
                                                                                         email.clone().color_bright_cyan()
                                                                                     );
                                                                                 }
                                                                                 LuminaError::RegisterUsernameInvalid(why) => {
-                                                                                    println!(
-                                                                                        "{registrationerror} Username '{}' is not valid: {}",
+                                                                                registration_error_elog!(ev_log, "Username '{}' is not valid: {}",
                                                                                         username.clone().color_bright_cyan(),
                                                                                         why
                                                                                     );
                                                                                 }
                                                                                 LuminaError::RegisterPasswordNotValid(why) => {
-														                            println!(
-															                            "{registrationerror} Password is not valid: {}",
+                                                                                registration_error_elog!(ev_log, "Password is not valid: {}",
 															                            why
 														                            );
 													                            }
                                                                                 e => {
-														                            println!(
-															                            "{registrationerror} Error creating user: {:?}",
+                                                                                registration_error_elog!(ev_log, "Error creating user: {:?}",
 															                            e
 														                            );
 													                            }
@@ -250,7 +255,7 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                     let db = &appstate.1.lock().await;
 										                            let msgback = match User::authenticate(email_username.clone(), password, db).await {
                                                                 Ok((session_reference, user)) => {
-										                            println!("{incoming} User {} authenticated to session with id {}.\n{incoming} {}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
+										                            incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
 										                            client_session_data.user = Some(user.clone());
 										                            Message::AuthSuccess {token: session_reference.token, username: user.username }
 									                            }
@@ -258,13 +263,13 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                 Err(s) => {
 										                            match s {
 											                            LuminaError::AuthenticationWrongPassword => {
-												                            println!("{registrationerror} User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
+												                            registration_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
 											                            }
 											                            LuminaError::AuthenticationUserNotFound => {
-												                            println!("{registrationerror} User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+												                            registration_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
 											                            }
 											                            _ => {
-												                            println!("{registrationerror} User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
+												                            registration_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
 											                            }
 										                            }
 										                            Message::AuthFailure
@@ -293,7 +298,10 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                                                                     }
                                                                 }
                                                             }
-                                                            Ok(Message::TimelineRequest { by_id }) => todo!("Fetching timeline content not yet implemented."),
+                                                            Ok(Message::TimelineRequest { by_id: _ }) => {
+                                                           	error_elog!(ev_log,"Not yet implemented: Message::TimelineRequest")
+                                                            
+                                                            },
                                                             // Responding variants are not supposed to ever arrive here.
                                                             Ok(Message::ClientInit { .. }) |
                                                             Ok(Message::Greeting { .. }) | Ok(Message::SerialisationError {..} )
