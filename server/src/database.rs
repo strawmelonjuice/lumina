@@ -1,5 +1,6 @@
 use crate::errors::LuminaError::{self, ConfMissing};
-use crate::helpers;
+use crate::helpers::events::EventLogger;
+use crate::{info_elog, warn_elog};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -8,8 +9,7 @@ use tokio_postgres::tls::NoTlsStream;
 use tokio_postgres::{Client, Connection, Socket};
 
 pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
-    let (info, warn, _error, _success, _failure, _log, _incoming, _registrationerror) =
-        helpers::message_prefixes();
+    let ev_log = EventLogger::new(&None).await;
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
         .unwrap_or(String::from("sqlite")))
@@ -18,8 +18,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
         "sqlite" => {
             let db_path =
                 std::env::var("LUMINA_SQLITE_FILE").unwrap_or("instance.sqlite".to_string());
-            println!(
-                "{info} Using SQLite database at path: {}",
+            info_elog!(
+                ev_log,
+                "Using SQLite database at path: {}",
                 db_path.clone().color_bright_cyan().style_bold()
             );
             let manager = SqliteConnectionManager::file(db_path);
@@ -42,6 +43,14 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 						created_at INT NOT NULL)",
                     [],
                 );
+                let _ = conn.execute(
+                    "CREATE TABLE IF NOT EXISTS logs (\
+                    type TEXT NOT NULL, \
+                    message TEXT NOT NULL, \
+                    timestamp TEXT NOT NULL\
+                )",
+                    [],
+                );
                 let _ = conn.execute("PRAGMA journal_mode = WAL;", []);
                 let _ = conn.execute("PRAGMA foreign_keys = ON;", []);
                 let _ = conn.execute("PRAGMA temp_store = '2'", []);
@@ -50,7 +59,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             Ok(DbConn::SqliteConnectionPool(pool))
         }
         "postgres" => {
-            let pg_config = {
+            let pg_config: tokio_postgres::Config = {
                 let mut uuu = (
                     "unspecified database".to_string(),
                     "unspecified host".to_string(),
@@ -65,10 +74,16 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .map_err(|_| ConfMissing("LUMINA_POSTGRES_DATABASE".to_string()))?;
                 uuu.0 = dbname.clone();
                 pg_config.dbname(&dbname);
-                let port = std::env::var("LUMINA_POSTGRES_PORT").unwrap_or_else(|_| {
-                    eprintln!("{warn} No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'.");
-                    "5432".to_string()
-                });
+                let port = match std::env::var("LUMINA_POSTGRES_PORT") {
+                    Err(..) => {
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'."
+                        );
+                        "5432".to_string()
+                    }
+                    Ok(c) => c,
+                };
                 uuu.2 = port.clone();
                 // Parse the port as u16, if it fails, return an error
                 pg_config.port(port.parse::<u16>().map_err(|_| {
@@ -82,8 +97,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                         pg_config.host(&val);
                     }
                     Err(_) => {
-                        eprintln!(
-                            "{warn} No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
                         );
                         // Default to localhost if not set
                         uuu.1 = "localhost".to_string();
@@ -95,13 +111,15 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                         pg_config.password(&val);
                     }
                     Err(_) => {
-                        println!(
-                            "{warn} No Postgres database password provided under environment variable 'LUMINA_POSTGRES_PASSWORD'. Trying passwordless authentication."
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database password provided under environment variable 'LUMINA_POSTGRES_PASSWORD'. Trying passwordless authentication."
                         );
                     }
                 };
-                println!(
-                    "{info} Using Postgres database at: {} on host: {} at port: {}",
+                info_elog!(
+                    ev_log,
+                    "Using Postgres database at: {} on host: {} at port: {}",
                     uuu.0.color_bright_cyan().style_bold(),
                     uuu.1.color_bright_cyan().style_bold(),
                     uuu.2.color_bright_cyan().style_bold(),
@@ -152,9 +170,24 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS logs (\
+                        type VARCHAR NOT NULL, \
+                        message TEXT NOT NULL, \
+                        timestamp TIMESTAMP NOT NULL\
+                    )",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
             };
-            let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(conn_two.0)));
-            Ok(DbConn::PgsqlConnection(conn.0))
+            let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(
+                conn_two.0,
+                pg_config.clone(),
+            )));
+            Ok(DbConn::PgsqlConnection(conn.0, pg_config))
         }
 
         c => {
@@ -170,14 +203,15 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 // This will be an enum containing either a pgsql connection or a sqlite connection
 #[derive()]
 pub enum DbConn {
-    PgsqlConnection(postgres::Client),
+    // The config is also shared, so that for example the logger can set up it's own connection, use this sparingly.
+    PgsqlConnection(postgres::Client, tokio_postgres::Config),
     SqliteConnectionPool(Pool<SqliteConnectionManager>),
 }
 
 // This function will be used to maintain the database, such as deleting old sessions
 pub async fn maintain(db: DbConn) {
     match db {
-        DbConn::PgsqlConnection(client) => {
+        DbConn::PgsqlConnection(client, _) => {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
             loop {
                 interval.tick().await;

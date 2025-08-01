@@ -9,6 +9,9 @@ mod staticroutes;
 mod database;
 mod tests;
 
+use helpers::events::EventLogger;
+use helpers::message_prefixes;
+use rocket::config::LogLevel;
 use std::io::ErrorKind;
 use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
@@ -44,9 +47,8 @@ fn config_get() -> Result<ServerConfig, LuminaError> {
 
 #[rocket::main]
 async fn main() {
-    let (info, warn, error, success, _failure, _log, _incoming, _registrationerror) =
-        helpers::message_prefixes();
     let me = format!("Lumina Server, version {}", env!("CARGO_PKG_VERSION"));
+    let ev_log: EventLogger = EventLogger::new(&None).await;
     let args: Vec<String> = std::env::args().skip(1).collect();
     match (
         args.is_empty(),
@@ -54,51 +56,58 @@ async fn main() {
     ) {
         (true, _) | (false, "start") | (false, "") => {
             dotenv().ok();
-            println!("{info} Starting {}.", me.clone().color_lightblue());
+            info_elog!(ev_log, "Starting {}.", me.clone().color_lightblue());
             println!(
-                "{info} {} and contributors, licenced under {}.",
+                "{} {} and contributors, licenced under {}.",
+                message_prefixes().0,
                 "MLC Bloeiman".color_pink(),
                 "BSD-3".color_blue()
             );
             println!("{}", cynthia_con::horizline());
-            println!(
-                "{warn} Lumina is still in early development, and should not be used in production in any way. Please use at your own risk."
+            warn_elog!(
+                ev_log,
+                "Lumina is still in early development, and should not be used in production in any way. Please use at your own risk."
             );
             match config_get() {
                 Ok(config) => {
                     let mut interval =
                         tokio::time::interval(std::time::Duration::from_millis(3000));
                     let mut db_mut: Option<DbConn> = None;
+                    let mut ev_log: EventLogger = EventLogger::new(&db_mut).await;
+
                     let mut db_tries: usize = 0;
                     while db_mut.is_none() {
                         interval.tick().await;
                         db_mut = match database::setup().await {
                             Ok(db) => Some(db),
                             Err(LuminaError::ConfMissing(a)) => {
-                                eprintln!(
-                                    "{error} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                                error_elog!(
+                                    ev_log,
+                                    "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
                                     a.color_bright_orange()
                                 );
                                 None
                             }
                             Err(LuminaError::ConfInvalid(a)) => {
-                                eprintln!(
-                                    "{error} Invalid environment variable: {}",
+                                error_elog!(
+                                    ev_log,
+                                    "Invalid environment variable: {}",
                                     a.color_bright_orange()
                                 );
                                 None
                             }
                             Err(LuminaError::Sqlite(a)) => {
-                                eprintln!("{error} While opening sqlite database: {}", a);
+                                error_elog!(ev_log, "While opening sqlite database: {}", a);
                                 None
                             }
                             Err(LuminaError::Postgres(a)) => {
-                                eprintln!("{error} While connecting to postgres database: {}", a);
+                                error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }
                             Err(_) => {
-                                eprintln!(
-                                    "{error} Unknown error: could not setup database connection.",
+                                error_elog!(
+                                    ev_log,
+                                    "Unknown error: could not setup database connection.",
                                 );
                                 None
                             }
@@ -106,24 +115,32 @@ async fn main() {
                         if db_mut.is_none() {
                             if db_tries < 4 {
                                 db_tries += 1;
-                                println!(
-                                    "{warn} Retrying database connection in 3 seconds. (try {})",
+                                warn_elog!(
+                                    ev_log,
+                                    "Retrying database connection in 3 seconds. (try {})",
                                     db_tries
                                 )
                             } else {
-                                println!("{error} Failed to connect to database, not retrying.");
+                                error_elog!(ev_log, "Failed to connect to database, not retrying.");
                                 process::exit(1);
                             }
                         } else {
-                            println!("{success} Database connected.")
+                            // update ev_log, since clearly, it's no longer a question
+                            ev_log = EventLogger::new(&db_mut).await;
+
+                            success_elog!(ev_log, "Database connected.")
                         }
                     }
+                    let ev_log = EventLogger::new(&db_mut).await;
                     let db = db_mut.unwrap();
+
                     let appstate = AppState(Arc::from((config.clone(), Mutex::from(db))));
+
                     let def = rocket::Config {
                         port: config.port,
                         address: config.host,
-                        ident: rocket::config::Ident::try_new(me.clone()).unwrap_or_default(),
+                        // TODO: Use Lumina's logging instead, no logging is bad practise.
+                        log_level: LogLevel::Critical,
                         ..rocket::Config::default()
                     };
 
@@ -149,51 +166,56 @@ async fn main() {
                         Ok(_) => {}
                         Err(LuminaError::RocketFaillure(e)) => {
                             // This handling should slowly expand as I run into newer ones, the 'defh' (default handling) is good enough, but for the most-bumped into errors, I'd like to give more human responses.
-                            let defh = || eprintln!("{error} Error starting server: {:?}", e);
+                            let defh =
+                                async || error_elog!(ev_log, "Error starting server: {:?}", e);
                             match e.kind() {
                                 rocket::error::ErrorKind::Bind(e) => match e.kind() {
                                     ErrorKind::AddrInUse => {
-                                        println!(
-                                            "{error} Another program or instance is running on this port or adress."
+                                        error_elog!(
+                                            ev_log,
+                                            "Another program or instance is running on this port or adress."
                                         );
-                                        println!(
-                                            "{error} Make sure you have not double-started Lumina, or have a different program serving on this port!"
+                                        soft_error_elog!(
+                                            ev_log,
+                                            "Make sure you have not double-started Lumina, or have a different program serving on this port!"
                                         );
-                                        println!(
-                                            "{error} {}",
+                                        soft_error_elog!(
+                                            ev_log,
+                                            "{}",
                                             format!("Technical explanation: {}", e).style_dim()
                                         );
                                     }
-                                    _ => defh(),
+                                    _ => defh().await,
                                 },
-                                _ => defh(),
+                                _ => defh().await,
                             }
                             process::exit(1);
                         }
                         Err(_) => {
-                            eprintln!("{error} Unknown error starting server.",);
+                            error_elog!(ev_log, "Unknown error starting server.",);
                         }
                     }
                 }
                 Err(LuminaError::ConfMissing(a)) => {
-                    eprintln!(
-                        "{error} Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                    error_elog!(
+                        ev_log,
+                        "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
                         a.color_bright_orange()
                     );
                     process::exit(1);
                 }
                 Err(LuminaError::ConfInvalid(a)) => {
-                    eprintln!(
-                        "{} Invalid environment variable: {}",
-                        "[ERROR]".color_error_red().style_bold(),
+                    error_elog!(
+                        ev_log,
+                        "Invalid environment variable: {}",
                         a.color_bright_orange()
                     );
                     process::exit(1);
                 }
                 Err(_) => {
-                    eprintln!(
-                        "{} Unknown error: could not setup server configuration.",
-                        "[ERROR]".color_error_red().style_bold()
+                    error_elog!(
+                        ev_log,
+                        "Unknown error: could not setup server configuration.",
                     );
                     process::exit(1);
                 }
@@ -348,8 +370,9 @@ async fn main() {
             }
         }
         (false, unknown) => {
-            println!(
-                "{error} Unknown subcommand, '{}', use '{}' for available commands.'",
+            soft_error_elog!(
+                ev_log,
+                "Unknown subcommand, '{}', use '{}' for available commands.'",
                 unknown.color_blue().style_italic(),
                 "help".color_lightblue().style_italic()
             )
