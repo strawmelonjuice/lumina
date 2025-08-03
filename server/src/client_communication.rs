@@ -1,6 +1,6 @@
 use crate::user::User;
 use crate::{
-    AppState, LuminaError, error_elog, helpers, incoming_elog, info_elog, registration_error_elog,
+    AppState, LuminaError, error_elog, incoming_elog, info_elog, registration_error_elog,
     warn_elog,
 };
 use cynthia_con::{CynthiaColors, CynthiaStyles};
@@ -19,9 +19,8 @@ pub(crate) fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) ->
                 user: None,
             };
             let ev_log = {
-            let appstate = state.0.clone();
-let db = &appstate.1.lock().await;
-helpers::events::EventLogger::from_db(db).await
+                let appstate = state.0.clone();
+            appstate.2.clone().await
             };
             while let Some(message) = stream.next().await {
                 match message? {

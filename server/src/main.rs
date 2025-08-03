@@ -17,7 +17,7 @@ use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
 mod user;
 use tokio_postgres as postgres;
-struct AppState(Arc<(ServerConfig, Mutex<DbConn>)>);
+struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
 
 use database::DbConn;
 
@@ -134,7 +134,7 @@ async fn main() {
                     let ev_log = EventLogger::new(&db_mut).await;
                     let db = db_mut.unwrap();
 
-                    let appstate = AppState(Arc::from((config.clone(), Mutex::from(db))));
+                    let appstate = AppState(Arc::from((config.clone(), Mutex::from(db), ev_log.clone().await)));
 
                     let def = rocket::Config {
                         port: config.port,
