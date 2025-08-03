@@ -2,6 +2,7 @@ use crate::database::DbConn;
 use crate::helpers::message_prefixes;
 use crate::{LuminaError, database};
 use chrono::Utc;
+use cynthia_con::{CynthiaColors, CynthiaStyles};
 
 /// Levels of logging supported by the Logger.
 #[derive(Debug)]
@@ -15,6 +16,7 @@ pub enum EventType {
     Incoming,
     RegistrationError,
     SoftError,
+    HTTPCode(u16),
 }
 
 /// A reusable logger that logs messages to stdout with colored prefixes
@@ -70,6 +72,14 @@ impl EventLogger {
             }
         }
     }
+
+pub async fn clone(&self) -> Self {
+        match self {
+            EventLogger::WithDatabase { db } => Self::from_db(db).await,
+            EventLogger::OnlyStdout => Self::OnlyStdout,
+        }
+    }
+
     /// Logs a message with the specified log level.
     /// This method prints to stdout with a colored prefix and, if a database connection is available,
     /// asynchronously inserts a log entry in the logs table.
@@ -90,6 +100,28 @@ impl EventLogger {
             EventType::Log => (log, false),
             EventType::Incoming => (incoming, false),
             EventType::RegistrationError => (registrationerror, true),
+            EventType::HTTPCode(code) => {
+                let codestring = match code {
+                    101 => format!("[HTTP/{} (Switching Protocols)]", code)
+                        .color_blue()
+                        .style_bold(),
+                    200..=299 => format!("[HTTP/{} (OK)]", code).color_ok_green().style_bold(),
+                    400..=499 => format!("[HTTP/{} (Client Error)]", code)
+                        .color_yellow()
+                        .style_bold(),
+                
+                    500..=599 => format!("[HTTP/{} (Server Error)]", code
+                        )
+                        .color_error_red()
+                        .style_bold(),
+                    _ => format!("[HTTP/{}]", code).color_blue().style_bold(),
+                };
+                match code {
+                    200..=499 => (codestring, false),
+                    500..=599 => (codestring, true),
+                    _ => (codestring, false),
+                }
+            }
         };
 
         let stdoutmsg =
@@ -106,16 +138,18 @@ impl EventLogger {
                 }
                 // Prepare the basic values for the log entry.
                 let level_str = match level {
-                    EventType::Info => "INFO",
-                    EventType::Warn => "WARN",
-                    EventType::SoftError | EventType::Error => "ERROR",
-                    EventType::Success => "SUCCESS",
-                    EventType::Failure => "FAILURE",
-                    EventType::Log => "LOG",
-                    EventType::Incoming => "INCOMING",
-                    EventType::RegistrationError => "REGISTRATION_ERROR",
-                }
-                .to_string();
+                    EventType::Info => String::from("INFO"),
+                    EventType::Warn => String::from("WARN"),
+                    EventType::SoftError | EventType::Error => String::from("ERROR"),
+                    EventType::Success => String::from("SUCCESS"),
+                    EventType::Failure => String::from("FAILURE"),
+                    EventType::Log => String::from("LOG"),
+                    EventType::Incoming => String::from("INCOMING"),
+                    EventType::RegistrationError => String::from("REGISTRATION_ERROR"),
+                    EventType::HTTPCode(code) => 
+                        format!("HTTP/{}", code)
+                    
+                };
                 let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]").unwrap();
 
                 let message_db: String = ansi_regex
@@ -198,6 +232,11 @@ impl EventLogger {
     pub async fn registration_error(&self, message: &str) {
         self.log(EventType::RegistrationError, message).await
     }
+
+    /// Convenience method to log an HTTP code message.
+    pub async fn http_code(&self, code: u16, message: &str) {
+        self.log(EventType::HTTPCode(code), message).await
+    }
 }
 #[macro_export]
 macro_rules! info_elog {
@@ -268,4 +307,14 @@ macro_rules! registration_error_elog {
     ($logger:expr, $($arg:tt)*) => {
         $logger.registration_error(&format!($($arg)*)).await
     };
+}
+
+#[macro_export]
+/// Takes an event log object and then runs .http_code on it, formatting using the other
+/// arguments.
+macro_rules! http_code_elog {
+    ($logger:expr, $code:expr, $($arg:tt)*) =>
+        {
+            $logger.http_code($code, &format!($($arg)*)).await
+        };
 }
