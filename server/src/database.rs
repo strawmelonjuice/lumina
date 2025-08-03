@@ -32,18 +32,18 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 let conn = pool.get().map_err(LuminaError::SqlitePool)?;
                 let _ = conn.execute(
                     "CREATE TABLE IF NOT EXISTS users (
-						id TEXT PRIMARY KEY,
-						email TEXT NOT NULL UNIQUE,
-						username TEXT NOT NULL UNIQUE,
-						password TEXT NOT NULL)",
+	id TEXT PRIMARY KEY,
+	email TEXT NOT NULL UNIQUE,
+	username TEXT NOT NULL UNIQUE,
+	password TEXT NOT NULL)",
                     [],
                 );
                 let _ = conn.execute(
                     "CREATE TABLE IF NOT EXISTS sessions (
-						id TEXT PRIMARY KEY NOT NULL,
-						user_id TEXT NOT NULL,
-						session_key TEXT NOT NULL,
-						created_at INT NOT NULL)",
+	id TEXT PRIMARY KEY NOT NULL,
+	user_id TEXT NOT NULL,
+	session_key TEXT NOT NULL,
+	created_at INT NOT NULL)",
                     [],
                 );
                 let _ = conn.execute(
@@ -150,11 +150,11 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .0
                     .execute(
                         "CREATE TABLE IF NOT EXISTS users (
-						id UUID DEFAULT gen_random_uuid (),
-						email VARCHAR NOT NULL UNIQUE,
-						username VARCHAR NOT NULL UNIQUE,
-						password VARCHAR NOT NULL
-					)",
+	id UUID DEFAULT gen_random_uuid (),
+	email VARCHAR NOT NULL UNIQUE,
+	username VARCHAR NOT NULL UNIQUE,
+	password VARCHAR NOT NULL
+)",
                         &[],
                     )
                     .await
@@ -164,11 +164,11 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .0
                     .execute(
                         "CREATE TABLE IF NOT EXISTS sessions (
-						id UUID DEFAULT gen_random_uuid (),
-						user_id UUID NOT NULL,
-						session_key VARCHAR NOT NULL,
-						created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-					)",
+	id UUID DEFAULT gen_random_uuid (),
+	user_id UUID NOT NULL,
+	session_key VARCHAR NOT NULL,
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+)",
                         &[],
                     )
                     .await
