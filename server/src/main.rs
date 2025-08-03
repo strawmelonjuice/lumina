@@ -134,7 +134,11 @@ async fn main() {
                     let ev_log = EventLogger::new(&db_mut).await;
                     let db = db_mut.unwrap();
 
-                    let appstate = AppState(Arc::from((config.clone(), Mutex::from(db), ev_log.clone().await)));
+                    let appstate = AppState(Arc::from((
+                        config.clone(),
+                        Mutex::from(db),
+                        ev_log.clone().await,
+                    )));
 
                     let def = rocket::Config {
                         port: config.port,
