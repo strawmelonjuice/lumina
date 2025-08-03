@@ -1,6 +1,7 @@
 use crate::user::User;
 use crate::{
-    error_elog, http_code_elog, incoming_elog, info_elog, registration_error_elog, warn_elog, AppState, LuminaError
+    AppState, LuminaError, error_elog, http_code_elog, incoming_elog, info_elog,
+    registration_error_elog, warn_elog,
 };
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
@@ -8,18 +9,20 @@ use rocket::State;
 use uuid::Uuid;
 
 #[get("/connection")]
-pub(crate) async fn wsconnection<'k>(ws: ws::WebSocket, state: &'k State<AppState>) -> ws::Channel<'k> {
+pub(crate) async fn wsconnection<'k>(
+    ws: ws::WebSocket,
+    state: &'k State<AppState>,
+) -> ws::Channel<'k> {
     let ev_log = {
-                let appstate = state.0.clone();
-            appstate.2.clone().await
-            };
+        let appstate = state.0.clone();
+        appstate.2.clone().await
+    };
     http_code_elog!(ev_log, 200, "/connection");
     use rocket::futures::{SinkExt, StreamExt};
 
     ws.channel(move |mut stream| {
         Box::pin(async move {
             http_code_elog!(ev_log, 101, "/connection");
-            
 let mut client_session_data: SessionData = SessionData {
                 client_type: None,
                 user: None,
@@ -301,7 +304,6 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                             }
                                                             Ok(Message::TimelineRequest { by_id: _ }) => {
                                                            	error_elog!(ev_log,"Not yet implemented: Message::TimelineRequest")
-                                                            
                                                             },
                                                             // Responding variants are not supposed to ever arrive here.
                                                             Ok(Message::ClientInit { .. }) |

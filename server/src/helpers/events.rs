@@ -73,7 +73,7 @@ impl EventLogger {
         }
     }
 
-pub async fn clone(&self) -> Self {
+    pub async fn clone(&self) -> Self {
         match self {
             EventLogger::WithDatabase { db } => Self::from_db(db).await,
             EventLogger::OnlyStdout => Self::OnlyStdout,
@@ -105,13 +105,14 @@ pub async fn clone(&self) -> Self {
                     101 => format!("[HTTP/{} (Switching Protocols)]", code)
                         .color_blue()
                         .style_bold(),
-                    200..=299 => format!("[HTTP/{} (OK)]", code).color_ok_green().style_bold(),
+                    200..=299 => format!("[HTTP/{} (OK)]", code)
+                        .color_ok_green()
+                        .style_bold(),
                     400..=499 => format!("[HTTP/{} (Client Error)]", code)
                         .color_yellow()
                         .style_bold(),
-                
-                    500..=599 => format!("[HTTP/{} (Server Error)]", code
-                        )
+
+                    500..=599 => format!("[HTTP/{} (Server Error)]", code)
                         .color_error_red()
                         .style_bold(),
                     _ => format!("[HTTP/{}]", code).color_blue().style_bold(),
@@ -146,9 +147,7 @@ pub async fn clone(&self) -> Self {
                     EventType::Log => String::from("LOG"),
                     EventType::Incoming => String::from("INCOMING"),
                     EventType::RegistrationError => String::from("REGISTRATION_ERROR"),
-                    EventType::HTTPCode(code) => 
-                        format!("HTTP/{}", code)
-                    
+                    EventType::HTTPCode(code) => format!("HTTP/{}", code),
                 };
                 let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]").unwrap();
 
