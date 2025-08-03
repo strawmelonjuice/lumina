@@ -36,72 +36,69 @@ let mut client_session_data: SessionData = SessionData {
                             }
                             possibly_json => {
                                 match serde_json::from_str::<Message>(possibly_json) {
-								                            Ok(Message::Introduction { client_kind, try_revive }) => {
-									                            match client_kind.as_str() {
-										                            "web" => {
-											                            client_session_data.client_type = Some(ClientType::Web)
-										                            }
-										                            _ => {}
-									                            }
-									                            match try_revive {
-										                            Some(token) => {
-											                            let appstate = state.0.clone();
-											                            let db = &appstate.1.lock().await;
-											                            match User::revive_session_from_token(token.clone(), db).await {
-												                            Ok(user) => {
-													                            incoming_elog!(
-																																										ev_log
-																																									,
-														                            "Session revived for user: {}",
-														                            user.clone().username.color_bright_cyan()
-													                            );
-													                            client_session_data.user = Some(user.clone());
-													                            let _ = stream
-														                            .send(ws::Message::from(msgtojson(Message::AuthSuccess {
-															                            token: token,
-															                            username: user.username,
-														                            })))
-														                            .await;
-												                            }
-												                            Err(e) => {
-													                            match e {
-														                            LuminaError::Postgres(postgres_error) => {
-															                            // Check if it's a "no rows returned" type error
-															                            if postgres_error.to_string().contains("no rows") {
-																                            info_elog!( ev_log,"Session revival failed: token not found or expired.");
-															                            } else {
-																                            info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
-															                            }
-														                            }
-														                            LuminaError::Sqlite(sqlite_error) => {
-															                            match sqlite_error {
-																                            r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
-																	                            // No rows returned - session not found or expired
-																	                            info_elog!(ev_log,"Session revival failed: token not found or expired.");
-																                            }
-																                            _ => {
-																	                            info_elog!(ev_log,"Session revival failed: database error: {:?}", sqlite_error);
-																                            }
-															                            }
-														                            }
-														                            _ => {
-															                            info_elog!(ev_log,"Session revival failed: {:?}", e);
-														                            }
-													                            }
-													                            let _ = stream
-														                            .send(ws::Message::from(msgtojson(Message::AuthFailure)))
-														                            .await;
-												                            }
-											                            }
-										                            }
-										                            None =>{ let _ = stream
+			                            Ok(Message::Introduction { client_kind, try_revive }) => {
+				                            match client_kind.as_str() {
+                            "web" => {
+	                            client_session_data.client_type = Some(ClientType::Web)
+                            }
+                            _ => {}
+				                            }
+				                            match try_revive {
+                            Some(token) => {
+	                            let appstate = state.0.clone();
+	                            let db = &appstate.1.lock().await;
+	                            match User::revive_session_from_token(token.clone(), db).await {
+		                            Ok(user) => {
+			                            incoming_elog!(ev_log, "Session revived for user: {}",
+				                            user.clone().username.color_bright_cyan()
+			                            );
+			                            client_session_data.user = Some(user.clone());
+			                            let _ = stream
+				                            .send(ws::Message::from(msgtojson(Message::AuthSuccess {
+                            token,
+                            username: user.username,
+				                            })))
+				                            .await;
+		                            }
+		                            Err(e) => {
+			                            match e {
+				                            LuminaError::Postgres(postgres_error) => {
+                            // Check if it's a "no rows returned" type error
+                            if postgres_error.to_string().contains("no rows") {
+	                            info_elog!( ev_log,"Session revival failed: token not found or expired.");
+                            } else {
+	                            info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
+                            }
+				                            }
+				                            LuminaError::Sqlite(sqlite_error) => {
+                            match sqlite_error {
+	                            r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
+		                            // No rows returned - session not found or expired
+		                            info_elog!(ev_log,"Session revival failed: token not found or expired.");
+	                            }
+	                            _ => {
+		                            info_elog!(ev_log,"Session revival failed: database error: {:?}", sqlite_error);
+	                            }
+                            }
+				                            }
+				                            _ => {
+                            info_elog!(ev_log,"Session revival failed: {:?}", e);
+				                            }
+			                            }
+			                            let _ = stream
+				                            .send(ws::Message::from(msgtojson(Message::AuthFailure)))
+				                            .await;
+		                            }
+	                            }
+                            }
+                            None =>{ let _ = stream
                                                                 .send(ws::Message::from(msgtojson(Message::Greeting {
                                                                     greeting: "Hello from server!".to_string(),
                                                                 })))
                                                                 .await;
-											                            }
-									                            }
-								                            },
+	                            }
+				                            }
+			                            },
                                                             Ok(Message::RegisterRequest {
                                                                 email,
                                                                 username,
@@ -130,9 +127,9 @@ let mut client_session_data: SessionData = SessionData {
                                                                                 Ok((session_reference, user)) => {
                                                                                     client_session_data.user =
                                                                                         Some(user.clone());
-														                            incoming_elog!(ev_log,"User {} authenticated.",
-															                            user.clone().username.color_bright_cyan()
-														                            );
+				                            incoming_elog!(ev_log,"User {} authenticated.",
+                            user.clone().username.color_bright_cyan()
+				                            );
                                                                                     let _ = stream
                                                                                         .send(ws::Message::from(msgtojson(
                                                                                             Message::AuthSuccess {
@@ -146,11 +143,11 @@ let mut client_session_data: SessionData = SessionData {
                                                     	                            match e {
                                                      				                            LuminaError::Postgres(e) =>
                                                                                      error_elog!(ev_log,"While creating session token: {:?}", e),
-                            																                            LuminaError::SqlitePool(e) =>
-                            																	                            warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
-                            																                            LuminaError::Sqlite(e) =>
+                            	                            LuminaError::SqlitePool(e) =>
+                            		                            warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
+                            	                            LuminaError::Sqlite(e) =>
 warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
-																                            _ => {}
+	                            _ => {}
                                                                                  }
                                                                                     // I would return a more specific error message
                                                                                     // to the client here, but if the server knows the
@@ -186,14 +183,14 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                                 }
                                                                                 LuminaError::RegisterPasswordNotValid(why) => {
                                                                                 registration_error_elog!(ev_log, "Password is not valid: {}",
-															                            why
-														                            );
-													                            }
+                            why
+				                            );
+			                            }
                                                                                 e => {
                                                                                 registration_error_elog!(ev_log, "Error creating user: {:?}",
-															                            e
-														                            );
-													                            }
+                            e
+				                            );
+			                            }
                                                                             }
 
                                                                             // I would return a more specific error message
@@ -255,32 +252,32 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                             }
                                                             Ok(Message::LoginAuthenticationRequest { email_username, password }) =>
                                                             {
-									                            let appstate = state.0.clone();
+				                            let appstate = state.0.clone();
                                                                     let db = &appstate.1.lock().await;
-										                            let msgback = match User::authenticate(email_username.clone(), password, db).await {
+                            let msgback = match User::authenticate(email_username.clone(), password, db).await {
                                                                 Ok((session_reference, user)) => {
-										                            incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
-										                            client_session_data.user = Some(user.clone());
-										                            Message::AuthSuccess {token: session_reference.token, username: user.username }
-									                            }
-								                            ,
+                            incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
+                            client_session_data.user = Some(user.clone());
+                            Message::AuthSuccess {token: session_reference.token, username: user.username }
+				                            }
+			                            ,
                                                                 Err(s) => {
-										                            match s {
-											                            LuminaError::AuthenticationWrongPassword => {
-												                            registration_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
-											                            }
-											                            LuminaError::AuthenticationUserNotFound => {
-												                            registration_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
-											                            }
-											                            _ => {
-												                            registration_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
-											                            }
-										                            }
-										                            Message::AuthFailure
+                            match s {
+	                            LuminaError::AuthenticationWrongPassword => {
+		                            registration_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
+	                            }
+	                            LuminaError::AuthenticationUserNotFound => {
+		                            registration_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+	                            }
+	                            _ => {
+		                            registration_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
+	                            }
+                            }
+                            Message::AuthFailure
 
-									                            },
-                								                            };
-									                            let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
+				                            },
+                			                            };
+				                            let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
                                                             }
                                                             Ok(Message::OwnUserInformationRequest) => {
                                                                 // Handle request for user's own information

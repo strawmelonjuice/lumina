@@ -125,14 +125,14 @@ impl User {
                 }
                 let id_str = Uuid::new_v4().to_string();
                 let id = conn
-					.prepare("INSERT INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4) RETURNING id")
-					.map_err(LuminaError::Sqlite)?
-					.query_row(&[&id_str, &email, &username, &password], |row| {
-						let a: String = row.get(0)?;
-						// Unwrap: Not entirely safe. If the database is corrupted, this will panic.
-						Ok(Uuid::from_str(a.as_str()).unwrap())
-					}).map_err(LuminaError::Sqlite)
-					?;
+.prepare("INSERT INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4) RETURNING id")
+.map_err(LuminaError::Sqlite)?
+.query_row(&[&id_str, &email, &username, &password], |row| {
+	let a: String = row.get(0)?;
+	// Unwrap: Not entirely safe. If the database is corrupted, this will panic.
+	Ok(Uuid::from_str(a.as_str()).unwrap())
+}).map_err(LuminaError::Sqlite)
+?;
                 Ok(User {
                     id,
                     email,
@@ -247,9 +247,9 @@ impl User {
         match db {
             DbConn::PgsqlConnection(client, _) => {
                 let user = client
-					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
-					.await
-					.map_err(LuminaError::Postgres)?;
+.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
+.await
+.map_err(LuminaError::Postgres)?;
                 Ok(User {
                     id: user.get(0),
                     email: user.get(1),
@@ -259,13 +259,13 @@ impl User {
             DbConn::SqliteConnectionPool(pool) => {
                 let conn = pool.get().map_err(LuminaError::SqlitePool)?;
                 let user = conn.query_row("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = ?1", &[&token], 
-					|row| {
-					let a: String = row.get(0).unwrap();
-					Ok(User {
-						id: Uuid::from_str(a.as_str()).unwrap(),
-						email: row.get(1).unwrap(),
-						username: row.get(2).unwrap(),
-					})
+|row| {
+let a: String = row.get(0).unwrap();
+Ok(User {
+	id: Uuid::from_str(a.as_str()).unwrap(),
+	email: row.get(1).unwrap(),
+	username: row.get(2).unwrap(),
+})
 				}).map_err(LuminaError::Sqlite)?;
                 Ok(user)
             }
