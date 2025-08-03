@@ -18,10 +18,13 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
         "sqlite" => {
             let db_path =
                 std::env::var("LUMINA_SQLITE_FILE").unwrap_or("instance.sqlite".to_string());
+            let db_full_path = std::fs::canonicalize(&db_path)
+                .map(|p| p.display().to_string())
+                .unwrap_or(db_path.clone());
             info_elog!(
                 ev_log,
                 "Using SQLite database at path: {}",
-                db_path.clone().color_bright_cyan().style_bold()
+                db_full_path.color_bright_cyan().style_bold()
             );
             let manager = SqliteConnectionManager::file(db_path);
             let pool = Pool::new(manager).map_err(LuminaError::SqlitePool)?;
