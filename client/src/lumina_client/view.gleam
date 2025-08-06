@@ -2,9 +2,12 @@
 
 import gleam/bool
 import gleam/dynamic/decode
+import gleam/int
 import gleam/option
 import gleam/result
 import gleam/string
+import gleam/time/calendar
+import gleam/time/timestamp
 import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
@@ -21,6 +24,7 @@ import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+import plinth/javascript/date
 import plinth/javascript/storage
 
 pub fn view(model: Model) -> Element(Msg) {
@@ -485,10 +489,44 @@ fn view_homepage(model: model_type.Model) {
           attribute.type_("checkbox"),
           attribute.id("my-drawer-2"),
         ]),
-        html.div(
+        html.main(
           [
             attribute.class(
-              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)]",
+              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)]"
+              <> {
+                let rn = timestamp.system_time()
+                let #(calendar.Date(year, month, day), _) =
+                  timestamp.to_calendar(rn, calendar.local_offset())
+                // TODO: Actual date classes:
+                " "
+                <> {
+                  // Year
+                  "yearclass-" <> int.to_string(year)
+                }
+                <> " "
+                <> {
+                  // Month
+                  case month {
+                    calendar.January -> "monthclass-1"
+                    calendar.February -> "monthclass-2"
+                    calendar.March -> "monthclass-3"
+                    calendar.April -> "monthclass-4"
+                    calendar.May -> "monthclass-5"
+                    calendar.June -> "monthclass-6"
+                    calendar.July -> "monthclass-7"
+                    calendar.August -> "monthclass-8"
+                    calendar.September -> "monthclass-9"
+                    calendar.October -> "monthclass-10"
+                    calendar.November -> "monthclass-11"
+                    calendar.December -> "monthclass-12"
+                  }
+                }
+                <> " "
+                <> {
+                  // Day
+                  "dayclass-" <> int.to_string(day)
+                }
+              },
             ),
           ],
           [homepage.timeline(model)],
