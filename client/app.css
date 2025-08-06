@@ -92,8 +92,12 @@
 }
 
 @layer base {
+	/* HTML overflow hidden */
+	html {
+		overflow: clip;
+	}
 	/*Pride month banner*/
-	body:has(.monthclass-6)::before {
+	body:has(.monthclass-6) main::before {
 		margin: 0;
 		content: "Happy Pride Month! 💖🏳️‍🌈";
 		justify-content: center;
@@ -125,7 +129,7 @@
 		--bs: 300% 100%;
 	}
 
-	body:has(.monthclass-6):hover::before {
+	body:has(.monthclass-6) main:hover::before {
 		animation: prideBannerAnimation 10s linear infinite;
 	}
 
@@ -170,7 +174,7 @@
 		}
 	}
 
-	body:has(.monthclass-6):active::before {
+	body:has(.monthclass-6):active main::before {
 		animation: none;
 		animation-delay: 3s;
 		animation-duration: 999s;
@@ -200,7 +204,7 @@
 	}
 
 	/*29th of februari is nonexistent in non-leap years*/
-	body:has(.dayclass-29.monthclass-2)::before {
+	body:has(.dayclass-29.monthclass-2) main::before {
 		margin-top: 0.8em;
 		margin-bottom: 0.8em;
 		content: "[This day does not exist]";

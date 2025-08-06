@@ -34,8 +34,7 @@ pub(crate) async fn index<'k>(state: &'k State<AppState>) -> RawHtml<String> {
 	<script type="module" src="/static/lumina.min.mjs"></script>
 </head>
 
-<body>
-<div id="app"></div>
+<body id="app">
 </body>
 </html>"#
             .to_string(),
