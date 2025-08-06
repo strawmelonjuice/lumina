@@ -11,7 +11,7 @@ bun = true
 description = "Run the server in release mode for development"
 depends = "build-server-release"
 run = "../target/release/lumina-server"
-run_windows = "target\\release\\lumina-server.exe"
+run_windows = "..\\target\\release\\lumina-server.exe"
 dir = "{{ config_root }}/data/"
 
 [tasks.format]
@@ -38,7 +38,7 @@ tools.taplo = "latest"
 description = "Run the server in development mode"
 depends = "build-server"
 run = "../target/debug/lumina-server"
-run_windows = "target\\debug\\lumina-server.exe"
+run_windows = "..\\target\\debug\\lumina-server.exe"
 dir = "{{config_root}}/data/"
 
 [tasks.check]
@@ -92,7 +92,11 @@ dir = "./client/"
 description = "Build the server-side of Lumina"
 depends = ["build-client"]
 
-run = ["mkdir -p ./data/", "cargo build"]
+run = ["mkdir -p ./data", "cargo build"]
+run_windows = [
+"if not exist .\\data mkdir .\\data",
+  "cargo build"
+]
 
 [tasks.build-server-release]
 description = "Build the server-side of Lumina optimised for release"
