@@ -1,6 +1,6 @@
 use crate::errors::LuminaError::{self, ConfMissing};
 use crate::helpers::events::EventLogger;
-use crate::{info_elog, warn_elog};
+use crate::{info_elog, success_elog, warn_elog};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -10,6 +10,15 @@ use tokio_postgres::{Client, Connection, Socket};
 
 pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let ev_log = EventLogger::new(&None).await;
+    let redis_url = std::env::var("LUMINA_REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1/".into());
+    let redis_pool: Pool<redis::Client> = {
+        info_elog!(ev_log, "Setting up Redis connection...");
+        let client = redis::Client::open(redis_url.clone()).map_err(LuminaError::Redis)?;
+        r2d2::Pool::builder().build(client).map_err(LuminaError::R2D2Pool)
+    }?;
+    success_elog!(ev_log, "Redis connection to {} created successfully.", redis_url);
+
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
         .unwrap_or(String::from("sqlite")))
@@ -27,9 +36,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 db_full_path.color_bright_cyan().style_bold()
             );
             let manager = SqliteConnectionManager::file(db_path);
-            let pool = Pool::new(manager).map_err(LuminaError::SqlitePool)?;
+            let pool = Pool::new(manager).map_err(LuminaError::R2D2Pool)?;
             {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let _ = conn.execute(
                     "CREATE TABLE IF NOT EXISTS users (
 	id TEXT PRIMARY KEY,
@@ -58,8 +67,8 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 let _ = conn.execute("PRAGMA foreign_keys = ON;", []);
                 let _ = conn.execute("PRAGMA temp_store = '2'", []);
             };
-            let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(pool.clone())));
-            Ok(DbConn::SqliteConnectionPool(pool))
+            let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(pool.clone(), redis_pool.clone())));
+            Ok(DbConn::SqliteConnectionPool(pool, redis_pool))
         }
         "postgres" => {
             let pg_config: tokio_postgres::Config = {
@@ -187,10 +196,10 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .map_err(LuminaError::Postgres)?;
             };
             let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(
-                conn_two.0,
-                pg_config.clone(),
+                (conn_two.0,
+                pg_config.clone()), redis_pool.clone(),
             )));
-            Ok(DbConn::PgsqlConnection(conn.0, pg_config))
+            Ok(DbConn::PgsqlConnection((conn.0, pg_config), redis_pool))
         }
 
         c => {
@@ -207,14 +216,14 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 #[derive()]
 pub enum DbConn {
     // The config is also shared, so that for example the logger can set up it's own connection, use this sparingly.
-    PgsqlConnection(postgres::Client, tokio_postgres::Config),
-    SqliteConnectionPool(Pool<SqliteConnectionManager>),
+    PgsqlConnection((postgres::Client, tokio_postgres::Config), Pool<redis::Client>),
+    SqliteConnectionPool(Pool<SqliteConnectionManager>, Pool<redis::Client>),
 }
 
 // This function will be used to maintain the database, such as deleting old sessions
 pub async fn maintain(db: DbConn) {
     match db {
-        DbConn::PgsqlConnection(client, _) => {
+        DbConn::PgsqlConnection((client, _), _redis) => {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
             loop {
                 interval.tick().await;
@@ -227,7 +236,7 @@ pub async fn maintain(db: DbConn) {
                     .await;
             }
         }
-        DbConn::SqliteConnectionPool(pool) => {
+        DbConn::SqliteConnectionPool(pool, _redis) => {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
             loop {
                 interval.tick().await;

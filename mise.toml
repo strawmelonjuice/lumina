@@ -37,7 +37,7 @@ tools.taplo = "latest"
 [tasks.development-run]
 description = "Run the server in development mode"
 depends = "build-server"
-run = "../target/debug/lumina-server"
+run = ["../target/debug/lumina-server"]
 run_windows = "..\\target\\debug\\lumina-server.exe"
 dir = "{{config_root}}/data/"
 

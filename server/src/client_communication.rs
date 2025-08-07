@@ -143,7 +143,7 @@ let mut client_session_data: SessionData = SessionData {
                                                     	                            match e {
                                                      				                            LuminaError::Postgres(e) =>
                                                                                      error_elog!(ev_log,"While creating session token: {:?}", e),
-                            	                            LuminaError::SqlitePool(e) =>
+                            	                            LuminaError::R2D2Pool(e) =>
                             		                            warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                             	                            LuminaError::Sqlite(e) =>
 warn_elog!(ev_log,"There was an error creating session token: {:?}", e),

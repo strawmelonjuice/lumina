@@ -16,3 +16,10 @@ services:
             - "8085:8085"
         volumes:
             - ../data/:/app/data/
+
+    redis:
+        image: redis:7-alpine
+        container_name: lumina-redis
+        ports:
+            - "6379:6379"
+        restart: unless-stopped

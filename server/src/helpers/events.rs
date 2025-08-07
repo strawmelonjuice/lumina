@@ -43,7 +43,7 @@ impl EventLogger {
 
     pub async fn from_db(db: &DbConn) -> Self {
         match db {
-            DbConn::PgsqlConnection(_, pg_config) => {
+            DbConn::PgsqlConnection((_, pg_config), redis_pool) => {
                 match pg_config
                     .connect(tokio_postgres::tls::NoTls)
                     .await
@@ -51,7 +51,7 @@ impl EventLogger {
                 {
                     Ok((client, _)) => {
                         let new_dbconn =
-                            database::DbConn::PgsqlConnection(client, pg_config.clone());
+                            database::DbConn::PgsqlConnection((client, pg_config.clone()), redis_pool.clone());
                         Self::WithDatabase { db: new_dbconn }
                     }
 
@@ -66,8 +66,8 @@ impl EventLogger {
                     }
                 }
             }
-            DbConn::SqliteConnectionPool(pool) => {
-                let new_dbconn = database::DbConn::SqliteConnectionPool(pool.clone());
+            DbConn::SqliteConnectionPool(pool, redis) => {
+                let new_dbconn = database::DbConn::SqliteConnectionPool(pool.clone(), redis.clone());
                 Self::WithDatabase { db: new_dbconn }
             }
         }
@@ -160,7 +160,7 @@ impl EventLogger {
                 let ts = now.to_rfc3339();
 
                 match db_conn {
-                    crate::database::DbConn::PgsqlConnection(client, _) => {
+                    crate::database::DbConn::PgsqlConnection((client, _), _) => {
                         let _ = client
                             .execute(
                                 "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
@@ -168,7 +168,7 @@ impl EventLogger {
                             )
                             .await;
                     }
-                    crate::database::DbConn::SqliteConnectionPool(pool) => {
+                    crate::database::DbConn::SqliteConnectionPool(pool,_) => {
                         if let Ok(conn) = pool.get() {
                             let _ = conn.execute(
                                 "INSERT INTO logs (type, message, timestamp) VALUES (?1, ?2, ?3)",

@@ -41,8 +41,8 @@ impl User {
     }
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
-            DbConn::SqliteConnectionPool(pool) => {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+            DbConn::SqliteConnectionPool(pool,_) => {
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let user_id_str = self.id.to_string();
                 conn.query_row(
                     "SELECT password FROM users WHERE id = ?1",
@@ -54,7 +54,7 @@ impl User {
                 )
                 .map_err(LuminaError::Sqlite)
             }
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client,_), _) => {
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
@@ -76,7 +76,7 @@ impl User {
         let password =
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
         match db {
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client, _), _) => {
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
@@ -105,8 +105,8 @@ impl User {
                     username,
                 })
             }
-            DbConn::SqliteConnectionPool(pool) => {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+            DbConn::SqliteConnectionPool(pool, _) => {
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let username_exists = conn
                     .prepare("SELECT * FROM users WHERE username = ?1")
                     .map_err(LuminaError::Sqlite)?
@@ -151,7 +151,7 @@ impl User {
             "username"
         };
         match db {
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client, _), _) => {
                 let user = client
                     .query_one(
                         &format!("SELECT * FROM users WHERE {} = $1", identifyer_type),
@@ -165,9 +165,9 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnectionPool(pool) => pool
+            DbConn::SqliteConnectionPool(pool, _) => pool
                 .get()
-                .map_err(LuminaError::SqlitePool)?
+                .map_err(LuminaError::R2D2Pool)?
                 .query_row(
                     &format!("SELECT * FROM users WHERE {} = ?1", identifyer_type),
                     &[&identifier],
@@ -193,7 +193,7 @@ impl User {
         let user = self;
         let user_id = user.id;
         match db {
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client, _), _) => {
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
@@ -215,8 +215,8 @@ impl User {
                     user,
                 ))
             }
-            DbConn::SqliteConnectionPool(pool) => {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+            DbConn::SqliteConnectionPool(pool, _) => {
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let user_id_str = user_id.to_string();
                 let session_key = Uuid::new_v4().to_string();
                 let session_id = Uuid::new_v4();
@@ -245,7 +245,7 @@ impl User {
         db: &DbConn,
     ) -> Result<User, LuminaError> {
         match db {
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client, _), _) => {
                 let user = client
 .query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 .await
@@ -256,8 +256,8 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnectionPool(pool) => {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+            DbConn::SqliteConnectionPool(pool,_) => {
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let user = conn.query_row("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = ?1", &[&token], 
 |row| {
 let a: String = row.get(0).unwrap();
@@ -283,7 +283,7 @@ pub(crate) async fn register_validitycheck(
         // Check if the email or username is already in use
         match db {
             // TODO: Bloom filter for username and email checks using fast-bloom
-            DbConn::PgsqlConnection(client, _) => {
+            DbConn::PgsqlConnection((client,_), redis_pool) => {
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
@@ -302,8 +302,8 @@ pub(crate) async fn register_validitycheck(
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
             }
-            DbConn::SqliteConnectionPool(pool) => {
-                let conn = pool.get().map_err(LuminaError::SqlitePool)?;
+            DbConn::SqliteConnectionPool(pool, redis_pool) => {
+                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let username_exists = conn
                     .prepare("SELECT * FROM users WHERE username = ?1")
                     .map_err(LuminaError::Sqlite)?
