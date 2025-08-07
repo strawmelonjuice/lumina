@@ -93,10 +93,7 @@ description = "Build the server-side of Lumina"
 depends = ["build-client"]
 
 run = ["mkdir -p ./data", "cargo build"]
-run_windows = [
-"if not exist .\\data mkdir .\\data",
-  "cargo build"
-]
+run_windows = ["if not exist .\\data mkdir .\\data", "cargo build"]
 
 [tasks.build-server-release]
 description = "Build the server-side of Lumina optimised for release"
