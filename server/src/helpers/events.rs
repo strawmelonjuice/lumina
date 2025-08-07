@@ -15,6 +15,7 @@ pub enum EventType {
     Log,
     Incoming,
     RegistrationError,
+    AuthenticationError,
     SoftError,
     HTTPCode(u16),
 }
@@ -88,18 +89,18 @@ impl EventLogger {
         let now = Utc::now();
 
         // Determine the appropriate prefix for stdout.
-        let (info, warn, error, success, failure, log, incoming, registrationerror) =
-            message_prefixes();
+        // These prefixes are colored and styled matching helpers::prefixes().
         let (prefix, use_eprintln) = match level {
-            EventType::Info => (info, false),
-            EventType::Warn => (warn, false),
-            EventType::Error => (error, true),
-            EventType::SoftError => (error, false),
-            EventType::Success => (success, false),
-            EventType::Failure => (failure, false),
-            EventType::Log => (log, false),
-            EventType::Incoming => (incoming, false),
-            EventType::RegistrationError => (registrationerror, true),
+            EventType::Info => ("[INFO]".color_green().style_bold(), false),
+            EventType::Warn => ("[WARN]".color_yellow().style_bold(), false),
+            EventType::Error => ("[ERROR]".color_error_red().style_bold(), true),
+            EventType::SoftError => ("[ERROR]".color_error_red().style_bold(), false),
+            EventType::Success => ("[✅ SUCCES]".color_ok_green().style_bold(), false),
+            EventType::Failure => ("[✖️ FAILURE]".color_error_red().style_bold(), false),
+            EventType::Log => ("[LOG]".color_blue().style_bold(), false),
+            EventType::Incoming => ("[INCOMING]".color_lilac().style_bold(), false),
+            EventType::RegistrationError => ("[RegistrationError]".color_bright_red().style_bold(), true),
+            EventType::AuthenticationError => ("[AuthenticationError]".color_bright_red().style_bold(), true),
             EventType::HTTPCode(code) => {
                 let codestring = match code {
                     101 => format!("[HTTP/{} (Switching Protocols)]", code)
@@ -147,6 +148,7 @@ impl EventLogger {
                     EventType::Log => String::from("LOG"),
                     EventType::Incoming => String::from("INCOMING"),
                     EventType::RegistrationError => String::from("REGISTRATION_ERROR"),
+                    EventType::AuthenticationError => String::from("AUTHENTICATION_ERROR"),
                     EventType::HTTPCode(code) => format!("HTTP/{}", code),
                 };
                 let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]").unwrap();
@@ -231,6 +233,10 @@ impl EventLogger {
     pub async fn registration_error(&self, message: &str) {
         self.log(EventType::RegistrationError, message).await
     }
+    /// Convenience method to log a registration error message.
+    pub async fn authentication_error(&self, message: &str) {
+        self.log(EventType::AuthenticationError, message).await
+    }
 
     /// Convenience method to log an HTTP code message.
     pub async fn http_code(&self, code: u16, message: &str) {
@@ -305,6 +311,15 @@ macro_rules! incoming_elog {
 macro_rules! registration_error_elog {
     ($logger:expr, $($arg:tt)*) => {
         $logger.registration_error(&format!($($arg)*)).await
+    };
+}
+
+#[macro_export]
+/// Takes an event log object and then runs .authentication_error on it, formatting using the other
+/// arguments.
+macro_rules! authentication_error_elog {
+    ($logger:expr, $($arg:tt)*) => {
+        $logger.authentication_error(&format!($($arg)*)).await
     };
 }
 
