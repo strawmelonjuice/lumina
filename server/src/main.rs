@@ -5,7 +5,7 @@ mod client_communication;
 pub mod errors;
 pub mod helpers;
 mod staticroutes;
-
+mod timeline;
 mod database;
 mod tests;
 

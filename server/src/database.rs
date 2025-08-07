@@ -10,14 +10,20 @@ use tokio_postgres::{Client, Connection, Socket};
 
 pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let ev_log = EventLogger::new(&None).await;
-    let redis_url = std::env::var("LUMINA_REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1/".into());
+    let redis_url =
+        std::env::var("LUMINA_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".into());
     let redis_pool: Pool<redis::Client> = {
         info_elog!(ev_log, "Setting up Redis connection...");
         let client = redis::Client::open(redis_url.clone()).map_err(LuminaError::Redis)?;
-        r2d2::Pool::builder().build(client).map_err(LuminaError::R2D2Pool)
+        r2d2::Pool::builder()
+            .build(client)
+            .map_err(LuminaError::R2D2Pool)
     }?;
-    success_elog!(ev_log, "Redis connection to {} created successfully.", redis_url);
+    success_elog!(
+        ev_log,
+        "Redis connection to {} created successfully.",
+        redis_url
+    );
 
     match (std::env::var("LUMINA_DB_TYPE")
         .map_err(|_| ConfMissing("LUMINA_DB_TYPE".to_string()))
@@ -41,33 +47,53 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let _ = conn.execute(
                     "CREATE TABLE IF NOT EXISTS users (
-	id TEXT PRIMARY KEY,
-	email TEXT NOT NULL UNIQUE,
-	username TEXT NOT NULL UNIQUE,
-	password TEXT NOT NULL)",
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL)",
                     [],
-                );
+                ).map_err(LuminaError::Sqlite)?;
                 let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS sessions (
-	id TEXT PRIMARY KEY NOT NULL,
-	user_id TEXT NOT NULL,
-	session_key TEXT NOT NULL,
-	created_at INT NOT NULL)",
-                    [],
-                );
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS logs (\
-                    type TEXT NOT NULL, \
-                    message TEXT NOT NULL, \
-                    timestamp TEXT NOT NULL\
+                    "CREATE TABLE IF NOT EXISTS timelines ( 
+                    tlid TEXT NOT NULL,
+                    item_id TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
                 )",
                     [],
-                );
-                let _ = conn.execute("PRAGMA journal_mode = WAL;", []);
-                let _ = conn.execute("PRAGMA foreign_keys = ON;", []);
-                let _ = conn.execute("PRAGMA temp_store = '2'", []);
+                ).map_err(LuminaError::Sqlite)?;
+                
+                let _ = conn.execute(
+                    "CREATE TABLE IF NOT EXISTS itemtypelookupdb (
+                    itemtype TEXT,
+                    item_id TEXT NOT NULL
+                )",
+                    [],
+                ).map_err(LuminaError::Sqlite)?;
+                let _ = conn.execute(
+                    "CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL,
+    session_key TEXT NOT NULL,
+    created_at INT NOT NULL)",
+                    [],
+                ).map_err(LuminaError::Sqlite)?;
+               
+                let _ = conn.execute(
+                    "CREATE TABLE IF NOT EXISTS logs (
+                    type TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
+                )",
+                    [],
+                ).map_err(LuminaError::Sqlite)?;
+                let _ = conn.pragma_update(None, "journal_mode", "WAL").map_err(LuminaError::Sqlite)?;
+                let _ = conn.pragma_update(None, "foreign_keys", "ON").map_err(LuminaError::Sqlite)?;
+                let _ = conn.pragma_update(None, "temp_store", "2").map_err(LuminaError::Sqlite)?;
             };
-            let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(pool.clone(), redis_pool.clone())));
+            let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(
+                pool.clone(),
+                redis_pool.clone(),
+            )));
             Ok(DbConn::SqliteConnectionPool(pool, redis_pool))
         }
         "postgres" => {
@@ -159,10 +185,35 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .0
                     .execute(
                         "CREATE TABLE IF NOT EXISTS users (
-	id UUID DEFAULT gen_random_uuid (),
-	email VARCHAR NOT NULL UNIQUE,
-	username VARCHAR NOT NULL UNIQUE,
-	password VARCHAR NOT NULL
+    id UUID DEFAULT gen_random_uuid (),
+    email VARCHAR NOT NULL UNIQUE,
+    username VARCHAR NOT NULL UNIQUE,
+    password VARCHAR NOT NULL
+)",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                // Timelines table
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS timelines (
+    tlid UUID DEFAULT gen_random_uuid (),
+    item_id UUID NOT NULL,
+    timestamp TIMESTAMP NOT NULL
+)",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+                // Item type lookup table
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS itemtypelookupdb (
+    itemtype VARCHAR NOT NULL,
+    item_id UUID NOT NULL
 )",
                         &[],
                     )
@@ -173,10 +224,10 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .0
                     .execute(
                         "CREATE TABLE IF NOT EXISTS sessions (
-	id UUID DEFAULT gen_random_uuid (),
-	user_id UUID NOT NULL,
-	session_key VARCHAR NOT NULL,
-	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id UUID DEFAULT gen_random_uuid (),
+    user_id UUID NOT NULL,
+    session_key VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )",
                         &[],
                     )
@@ -196,8 +247,8 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .map_err(LuminaError::Postgres)?;
             };
             let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(
-                (conn_two.0,
-                pg_config.clone()), redis_pool.clone(),
+                (conn_two.0, pg_config.clone()),
+                redis_pool.clone(),
             )));
             Ok(DbConn::PgsqlConnection((conn.0, pg_config), redis_pool))
         }
@@ -216,7 +267,10 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 #[derive()]
 pub enum DbConn {
     // The config is also shared, so that for example the logger can set up it's own connection, use this sparingly.
-    PgsqlConnection((postgres::Client, tokio_postgres::Config), Pool<redis::Client>),
+    PgsqlConnection(
+        (postgres::Client, tokio_postgres::Config),
+        Pool<redis::Client>,
+    ),
     SqliteConnectionPool(Pool<SqliteConnectionManager>, Pool<redis::Client>),
 }
 

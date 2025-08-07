@@ -471,7 +471,7 @@ fn view_register(model_: Model) -> Element(Msg) {
 fn view_homepage(model: model_type.Model) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_id:, pop_up:),
+    page: model_type.HomeTimeline(timeline_name:, pop_up:),
     user:,
     ws: _,
     token:,
@@ -479,7 +479,7 @@ fn view_homepage(model: model_type.Model) {
     cache:,
     ticks:,
   ) = model
-  let timeline_id = option.unwrap(timeline_id, "global")
+  let timeline_name = option.unwrap(timeline_name, "global")
   [
     html.div(
       [attribute.class("drawer lg:drawer-open max-h-[calc(100vh-4rem)]")],
@@ -555,7 +555,7 @@ fn view_homepage(model: model_type.Model) {
                   html.a(
                     [
                       bool.lazy_guard(
-                        when: timeline_id == "global",
+                        when: timeline_name == "global",
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
@@ -568,7 +568,7 @@ fn view_homepage(model: model_type.Model) {
                   html.a(
                     [
                       bool.lazy_guard(
-                        when: timeline_id == "mutuals",
+                        when: timeline_name == "mutuals",
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),

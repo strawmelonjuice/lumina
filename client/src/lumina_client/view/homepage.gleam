@@ -24,7 +24,7 @@ import plinth/javascript/storage
 pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_id:, pop_up: _),
+    page: model_type.HomeTimeline(timeline_name:, pop_up: _),
     user: _,
     ws: _,
     token: _,
@@ -32,10 +32,10 @@ pub fn timeline(model: Model) -> Element(Msg) {
     cache:,
     ticks: _,
   ) = model
-  // let timeline_id = option.unwrap(timeline_id, "global")
-  case timeline_id {
-    Some(timeline_id) -> {
-      let timeline_posts = dict.get(cache.cached_timelines, timeline_id)
+  // let timeline_name = option.unwrap(timeline_name, "global")
+  case timeline_name {
+    Some(timeline_name) -> {
+      let timeline_posts = dict.get(cache.cached_timelines, timeline_name)
       case timeline_posts {
         Ok(post_ids) -> {
           let posts: List(String) = post_ids
@@ -43,7 +43,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
         }
         Error(..) ->
           html.div([attribute.class("flex w-4/6 flex-col gap-4 items-start")], [
-            element.text("Loading timeline \"" <> timeline_id <> "\" ..."),
+            element.text("Loading timeline \"" <> timeline_name <> "\" ..."),
             html.div([attribute.class("skeleton h-32 w-full")], []),
             html.div([attribute.class("skeleton h-4 w-28")], []),
             html.div([attribute.class("skeleton h-4 w-full")], []),
