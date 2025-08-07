@@ -45,67 +45,98 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             let pool = Pool::new(manager).map_err(LuminaError::R2D2Pool)?;
             {
                 let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS users (
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL)",
-                    [],
-                ).map_err(LuminaError::Sqlite)?;
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS timelines ( 
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS timelines ( 
                     tlid TEXT NOT NULL,
                     item_id TEXT NOT NULL,
                     timestamp TEXT NOT NULL
                 )",
-                    [],
-                ).map_err(LuminaError::Sqlite)?;
-                
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS itemtypelookupdb (
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS itemtypelookupdb (
                     itemtype TEXT,
                     item_id TEXT NOT NULL
                 )",
-                    [],
-                ).map_err(LuminaError::Sqlite)?;
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS sessions (
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY NOT NULL,
     user_id TEXT NOT NULL,
     session_key TEXT NOT NULL,
     created_at INT NOT NULL)",
-                    [],
-                ).map_err(LuminaError::Sqlite)?;
-               
-                let _ = conn.execute(
-                    "CREATE TABLE IF NOT EXISTS logs (
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS logs (
                     type TEXT NOT NULL,
                     message TEXT NOT NULL,
                     timestamp TEXT NOT NULL
                 )",
-                    [],
-                ).map_err(LuminaError::Sqlite)?;
-                let _ = conn.pragma_update(None, "journal_mode", "WAL").map_err(LuminaError::Sqlite)?;
-                let _ = conn.pragma_update(None, "foreign_keys", "ON").map_err(LuminaError::Sqlite)?;
-                let _ = conn.pragma_update(None, "temp_store", "2").map_err(LuminaError::Sqlite)?;
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+                let _ = conn
+                    .pragma_update(None, "journal_mode", "WAL")
+                    .map_err(LuminaError::Sqlite)?;
+                let _ = conn
+                    .pragma_update(None, "foreign_keys", "ON")
+                    .map_err(LuminaError::Sqlite)?;
+                let _ = conn
+                    .pragma_update(None, "temp_store", "2")
+                    .map_err(LuminaError::Sqlite)?;
 
                 // Populate bloom filters
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 let email_key = "bloom:email";
                 let username_key = "bloom:username";
 
-                let mut stmt = conn.prepare("SELECT email, username FROM users").map_err(LuminaError::Sqlite)?;
-                let user_iter = stmt.query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-                }).map_err(LuminaError::Sqlite)?;
+                let mut stmt = conn
+                    .prepare("SELECT email, username FROM users")
+                    .map_err(LuminaError::Sqlite)?;
+                let user_iter = stmt
+                    .query_map([], |row| {
+                        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                    })
+                    .map_err(LuminaError::Sqlite)?;
 
                 for user in user_iter {
                     let (email, username) = user.map_err(LuminaError::Sqlite)?;
-                    let _: () = redis::cmd("BF.ADD").arg(email_key).arg(email).query(&mut *redis_conn).map_err(LuminaError::Redis)?;
-                    let _: () = redis::cmd("BF.ADD").arg(username_key).arg(username).query(&mut *redis_conn).map_err(LuminaError::Redis)?;
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(email_key)
+                        .arg(email)
+                        .query(&mut *redis_conn)
+                        .map_err(LuminaError::Redis)?;
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(username_key)
+                        .arg(username)
+                        .query(&mut *redis_conn)
+                        .map_err(LuminaError::Redis)?;
                 }
-                println!("{} Bloom filters populated from SQLite.", crate::helpers::message_prefixes().0);
+                println!(
+                    "{} Bloom filters populated from SQLite.",
+                    crate::helpers::message_prefixes().0
+                );
             };
             let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(
                 pool.clone(),
@@ -262,20 +293,35 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
-                
+
                 // Populate bloom filters
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 let email_key = "bloom:email";
                 let username_key = "bloom:username";
 
-                let rows = conn.0.query("SELECT email, username FROM users", &[]).await.map_err(LuminaError::Postgres)?;
+                let rows = conn
+                    .0
+                    .query("SELECT email, username FROM users", &[])
+                    .await
+                    .map_err(LuminaError::Postgres)?;
                 for row in rows {
                     let email: String = row.get(0);
                     let username: String = row.get(1);
-                    let _: () = redis::cmd("BF.ADD").arg(email_key).arg(email).query(&mut *redis_conn).map_err(LuminaError::Redis)?;
-                    let _: () = redis::cmd("BF.ADD").arg(username_key).arg(username).query(&mut *redis_conn).map_err(LuminaError::Redis)?;
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(email_key)
+                        .arg(email)
+                        .query(&mut *redis_conn)
+                        .map_err(LuminaError::Redis)?;
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(username_key)
+                        .arg(username)
+                        .query(&mut *redis_conn)
+                        .map_err(LuminaError::Redis)?;
                 }
-                println!("{} Bloom filters populated from PostgreSQL.", crate::helpers::message_prefixes().0);
+                println!(
+                    "{} Bloom filters populated from PostgreSQL.",
+                    crate::helpers::message_prefixes().0
+                );
             };
             let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(
                 (conn_two.0, pg_config.clone()),
