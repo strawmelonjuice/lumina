@@ -1,8 +1,7 @@
 use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
 use crate::{
-    AppState, LuminaError, error_elog, http_code_elog, incoming_elog, info_elog,
-    registration_error_elog, warn_elog,
+    authentication_error_elog, error_elog, http_code_elog, incoming_elog, info_elog, registration_error_elog, warn_elog, AppState, LuminaError
 };
 use chrono::format;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
@@ -266,13 +265,13 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                 Err(s) => {
                             match s {
 	                            LuminaError::AuthenticationWrongPassword => {
-		                            registration_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
+		                            authentication_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
 	                            }
 	                            LuminaError::AuthenticationUserNotFound => {
-		                            registration_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+		                            authentication_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
 	                            }
 	                            _ => {
-		                            registration_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
+		                            authentication_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
 	                            }
                             }
                             Message::AuthFailure
