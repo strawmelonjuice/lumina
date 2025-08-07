@@ -104,6 +104,14 @@ async fn main() {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }
+                            Err(LuminaError::R2D2Pool(a)) => {
+                                error_elog!(ev_log, "While setting up database pool: {}", a);
+                                None
+                            }
+                            Err(LuminaError::Redis(a)) => {
+                                error_elog!(ev_log, "While connecting to Redis: {}", a);
+                                None
+                            }
                             Err(_) => {
                                 error_elog!(
                                     ev_log,
@@ -121,7 +129,7 @@ async fn main() {
                                     db_tries
                                 )
                             } else {
-                                error_elog!(ev_log, "Failed to connect to database, not retrying.");
+                                error_elog!(ev_log, "Failed to connect to database four times, not retrying.");
                                 process::exit(1);
                             }
                         } else {
@@ -274,6 +282,11 @@ async fn main() {
                 let mut builder = tabled::builder::Builder::new();
                 builder.push_record(["Name", "Default value", "Description"]);
                 builder.push_record(["LUMINA_DB_TYPE", r#"sqlite"#, r#"The kind of database to use. Options are 'postgres' (recommended) or 'sqlite'."#]);
+                builder.push_record([
+                    "LUMINA_REDIS_URL",
+                    r#"redis://127.0.0.1/"#,
+                    r#"The URL for the Redis server."#,
+                ]);
                 builder.push_record([
                     "LUMINA_DB_SALT",
                     r#"sal"#,

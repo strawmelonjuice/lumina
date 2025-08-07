@@ -1,12 +1,10 @@
-use crate::postgres;
-use r2d2_sqlite::rusqlite;
 #[derive(Debug)]
 pub(crate) enum LuminaError {
     ConfMissing(String),
     ConfInvalid(String),
-    Sqlite(rusqlite::Error),
-    SqlitePool(r2d2::Error),
-    Postgres(postgres::Error),
+    Sqlite(r2d2_sqlite::rusqlite::Error),
+    R2D2Pool(r2d2::Error),
+    Postgres(crate::postgres::Error),
     Unknown,
     RocketFaillure(rocket::Error),
     UuidConversion(uuid::Error),
@@ -21,4 +19,5 @@ pub(crate) enum LuminaError {
     AuthenticationUserNotFound,
     UUidError(uuid::Error),
     RegexError(regex::Error),
+    Redis(redis::RedisError),
 }
