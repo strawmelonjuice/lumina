@@ -2,12 +2,12 @@ extern crate dotenv;
 #[macro_use]
 extern crate rocket;
 mod client_communication;
+mod database;
 pub mod errors;
 pub mod helpers;
 mod staticroutes;
-mod timeline;
-mod database;
 mod tests;
+mod timeline;
 
 use helpers::events::EventLogger;
 use helpers::message_prefixes;
@@ -129,7 +129,10 @@ async fn main() {
                                     db_tries
                                 )
                             } else {
-                                error_elog!(ev_log, "Failed to connect to database four times, not retrying.");
+                                error_elog!(
+                                    ev_log,
+                                    "Failed to connect to database four times, not retrying."
+                                );
                                 process::exit(1);
                             }
                         } else {

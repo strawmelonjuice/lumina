@@ -289,14 +289,25 @@ pub(crate) async fn register_validitycheck(
                 let username_key = format!("bloom:username");
                 let email_exists: bool = redis::cmd("BF.EXISTS").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(false);
                 if email_exists {
-                    // Update bloom filter to ensure future checks are fast
-                    let _: () = redis::cmd("BF.ADD").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(());
-                    return Err(LuminaError::RegisterEmailInUse);
+                    // Fallback to DB check if in bloom filter
+                    let email_db = client
+                        .query("SELECT * FROM users WHERE email = $1", &[&email])
+                        .await
+                        .map_err(LuminaError::Postgres)?;
+                    if !email_db.is_empty() {
+                        return Err(LuminaError::RegisterEmailInUse);
+                    }
                 }
                 let username_exists: bool = redis::cmd("BF.EXISTS").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(false);
                 if username_exists {
-                    let _: () = redis::cmd("BF.ADD").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(());
-                    return Err(LuminaError::RegisterUsernameInUse);
+                    // Fallback to DB check if in bloom filter
+                    let username_db = client
+                        .query("SELECT * FROM users WHERE username = $1", &[&username])
+                        .await
+                        .map_err(LuminaError::Postgres)?;
+                    if !username_db.is_empty() {
+                        return Err(LuminaError::RegisterUsernameInUse);
+                    }
                 }
                 // Fallback to DB check if not in bloom filter
                 let email_db = client
@@ -323,13 +334,29 @@ pub(crate) async fn register_validitycheck(
                 let username_key = format!("bloom:username");
                 let username_exists: bool = redis::cmd("BF.EXISTS").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(false);
                 if username_exists {
-                    let _: () = redis::cmd("BF.ADD").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(());
-                    return Err(LuminaError::RegisterUsernameInUse);
+                    // Fallback to DB check if in bloom filter
+                    let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
+                    let username_db = conn
+                        .prepare("SELECT * FROM users WHERE username = ?1")
+                        .map_err(LuminaError::Sqlite)?
+                        .exists(&[&username])
+                        .map_err(LuminaError::Sqlite)?;
+                    if username_db {
+                        return Err(LuminaError::RegisterUsernameInUse);
+                    }
                 }
                 let email_exists: bool = redis::cmd("BF.EXISTS").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(false);
                 if email_exists {
-                    let _: () = redis::cmd("BF.ADD").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(());
-                    return Err(LuminaError::RegisterEmailInUse);
+                    // Fallback to DB check if in bloom filter
+                    let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
+                    let email_db = conn
+                        .prepare("SELECT * FROM users WHERE email = ?1")
+                        .map_err(LuminaError::Sqlite)?
+                        .exists(&[&email])
+                        .map_err(LuminaError::Sqlite)?;
+                    if email_db {
+                        return Err(LuminaError::RegisterEmailInUse);
+                    }
                 }
                 // Fallback to DB check if not in bloom filter
                 let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
