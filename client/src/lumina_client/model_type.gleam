@@ -115,7 +115,7 @@ pub type Page {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields, success: Option(Bool))
-  HomeTimeline(timeline_id: Option(String), pop_up: Option(String))
+  HomeTimeline(timeline_name: Option(String), pop_up: Option(String))
 }
 
 fn encode_page(page: Page) -> json.Json {
@@ -154,12 +154,12 @@ fn encode_page(page: Page) -> json.Json {
           ])
         }),
       ])
-    HomeTimeline(timeline_id:, pop_up:) ->
+    HomeTimeline(timeline_name:, pop_up:) ->
       json.object(
         [#("type", json.string("home_timeline"))]
-        |> list.append(case timeline_id {
+        |> list.append(case timeline_name {
           None -> []
-          Some(i) -> [#("timeline_id", json.string(i))]
+          Some(i) -> [#("timeline_name", json.string(i))]
         })
         |> list.append(case pop_up {
           None -> []
@@ -201,8 +201,8 @@ fn page_decoder() -> decode.Decoder(Page) {
       decode.success(Login(fields:, success: None))
     }
     "home_timeline" -> {
-      use timeline_id: Option(String) <- decode.optional_field(
-        "timeline_id",
+      use timeline_name: Option(String) <- decode.optional_field(
+        "timeline_name",
         None,
         decode.optional(decode.string),
       )
@@ -211,7 +211,7 @@ fn page_decoder() -> decode.Decoder(Page) {
         None,
         decode.optional(decode.string),
       )
-      decode.success(HomeTimeline(timeline_id:, pop_up:))
+      decode.success(HomeTimeline(timeline_name:, pop_up:))
     }
     _ -> decode.failure(Landing, "Page")
   }

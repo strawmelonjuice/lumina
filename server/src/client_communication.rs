@@ -1,8 +1,10 @@
+use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
 use crate::{
     AppState, LuminaError, error_elog, http_code_elog, incoming_elog, info_elog,
     registration_error_elog, warn_elog,
 };
+use chrono::format;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
@@ -299,8 +301,27 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                     }
                                                                 }
                                                             }
-                                                            Ok(Message::TimelineRequest { by_id: _ }) => {
-                                                           	error_elog!(ev_log,"Not yet implemented: Message::TimelineRequest")
+                                                            Ok(Message::TimelineRequest { by_name: name }) => {
+                                                                                   let appstate = state.0.clone();
+                                                                let db = &appstate.1.lock().await;
+                                                                // Fetch post IDs for the requested timeline
+                                                                match fetch_timeline_post_ids_by_timeline_name(
+                                                                    ev_log.clone().await,
+                                                                    db,
+                                                                    &name,
+                                                                    client_session_data.user.clone().unwrap(),
+                                                                ).await {
+                                                                    Ok((tlid , post_ids)) => {
+                                                                        let response = Message::TimelineResponse {post_ids, timeline_name: name, timeline_id: tlid };
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(response))).await;
+                                                                    }
+                                                                    Err(e) => {
+                                                                        error_elog!(ev_log, "Error fetching timeline: {:?}", e);
+                                                                        let _ = stream.send(ws::Message::from(msgtojson(Message::SerialisationError {
+                                                                            error: format!("{:?}", e),
+                                                                        }))).await;
+                                                                    }
+                                                                }
                                                             },
                                                             // Responding variants are not supposed to ever arrive here.
                                                             Ok(Message::ClientInit { .. }) |
@@ -312,8 +333,8 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                             | Ok(Message::TextPostDataSent {..} )
                                                             | Ok(Message::ArticlePostDataSent {..} )
                                                             | Ok(Message::OwnUserInformationResponse {..} )
-                                                            => {
-                                                            	panic!("These messages should never arrive here.")
+                                                            | Ok(Message::TimelineResponse {..} ) => {
+                                                                panic!("These messages should never arrive here.")
                                                             }
                                                             // This one makes sense.
                                                             Ok(Message::Unknown) => {
@@ -321,7 +342,10 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                             }
                                                             // And to handle straight up errors:
                                                             Err(e) => {
-                                                                error!("Error deserialising message: {:?}", e);
+                                                                error_elog!(ev_log, "Error deserialising message: {:?}\n\n{}" , e,
+                                                            format!("The message: {}", possibly_json).style_dim()
+                                                            );
+                                                                
                                                                 let _ = stream.send(ws::Message::from("unknown")).await;
                                                             }
                                                         }
@@ -428,7 +452,14 @@ pub(crate) enum Message {
     },
     /// Requests a list of strings to represent a certain timeline or bubble timeline.
     #[serde(rename = "timeline_request")]
-    TimelineRequest { by_id: String },
+    TimelineRequest { by_name: String },
+TimelineResponse {
+    timeline_name: String,
+    timeline_id: Uuid,
+        /// A list of post IDs for the requested timeline.
+        post_ids: Vec<String>,
+    },
+
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,

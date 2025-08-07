@@ -400,7 +400,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let assert model_type.WsConnectionConnected(socket) = model.ws
         as "Socket not connected"
       let model = case model.page {
-        HomeTimeline(timeline_id: _, pop_up:) -> {
+        HomeTimeline(timeline_name: _, pop_up:) -> {
           model_type.Model(..model, page: HomeTimeline(Some(tid), pop_up:))
         }
         _ -> model
@@ -499,10 +499,34 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         | Ok(RegisterRequest(..)) -> {
           #(model, effect.none())
         }
-        Error(_err) -> {
+        Ok(TimeLineResponse(timeline_name:, timeline_id:, items:)) -> {
+          console.log(
+            "Received timeline response for "
+            <> timeline_name
+            <> " with "
+            <> int.to_string(list.length(items))
+            <> " items.",
+          )
+          let assert model_type.WsConnectionConnected(socket) = model.ws
+            as "Socket not connected"
+          let cached_timelines =
+            model.cache.cached_timelines
+            |> echo
+            |> dict.insert(timeline_name, items)
+
+          #(
+            Model(
+              ..model,
+              cache: model_type.Cached(..model.cache, cached_timelines:),
+            ),
+            effect.none(),
+          )
+        }
+        Error(err) -> {
           console.error(
             "Message could not be parsed:"
-            // <> premixed.text_error_red(string.inspect(err)),
+            <> premixed.text_error_red(string.inspect(err))
+            <> "\nin:\n"
             <> premixed.text_error_red(notice),
           )
           #(model, effect.none())
@@ -600,7 +624,13 @@ type WsMsg {
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
   OwnUserInformationRequest
-  TimeLineRequest(timeline_id: String)
+  TimeLineRequest(timeline_name: String)
+  TimeLineResponse(
+    timeline_name: String,
+    timeline_id: String,
+    /// List of post ids as string.
+    items: List(String),
+  )
   OwnUserInformationResponse(
     username: String,
     email: String,
@@ -636,10 +666,10 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("username", json.string(username)),
         #("password", json.string(password)),
       ])
-    TimeLineRequest(timeline_id:) ->
+    TimeLineRequest(timeline_name:) ->
       json.object([
         #("type", json.string("timeline_request")),
-        #("by_id", json.string(timeline_id)),
+        #("by_name", json.string(timeline_name)),
       ])
     // And the client should never have to encode the next few:
     Greeting(..)
@@ -647,6 +677,7 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
     | RegisterPrecheckResponse(..)
     | AuthenticationFailure
     | AuthenticationSuccess(..)
+    | TimeLineResponse(..)
     | OwnUserInformationResponse(..) ->
       json.object([#("type", json.string("unknown"))])
   }
@@ -688,6 +719,13 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
     "greeting" -> {
       use greeting <- decode.field("greeting", decode.string)
       decode.success(Greeting(greeting:))
+    }
+    "timeline_response" -> {
+      console.log("Decoding timeline response: " <> variant)
+      use timeline_name <- decode.field("timeline_name", decode.string)
+      use timeline_id <- decode.field("timeline_id", decode.string)
+      use items <- decode.field("post_ids", decode.list(decode.string))
+      decode.success(TimeLineResponse(timeline_name:, timeline_id:, items:))
     }
     g -> {
       console.error("Unknown message type: " <> g)
