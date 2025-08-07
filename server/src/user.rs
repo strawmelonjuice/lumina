@@ -41,7 +41,7 @@ impl User {
     }
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
-            DbConn::SqliteConnectionPool(pool,_) => {
+            DbConn::SqliteConnectionPool(pool, _) => {
                 let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let user_id_str = self.id.to_string();
                 conn.query_row(
@@ -54,7 +54,7 @@ impl User {
                 )
                 .map_err(LuminaError::Sqlite)
             }
-            DbConn::PgsqlConnection((client,_), _) => {
+            DbConn::PgsqlConnection((client, _), _) => {
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
@@ -256,7 +256,7 @@ impl User {
                     username: user.get(2),
                 })
             }
-            DbConn::SqliteConnectionPool(pool,_) => {
+            DbConn::SqliteConnectionPool(pool, _) => {
                 let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
                 let user = conn.query_row("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = ?1", &[&token], 
 |row| {
@@ -282,12 +282,16 @@ pub(crate) async fn register_validitycheck(
     {
         // Check if the email or username is already in use using fastbloom algorithm with Redis, and fallback to DB check if not found. If not in either, we can go on.
         match db {
-            DbConn::PgsqlConnection((client,_), redis_pool) => {
+            DbConn::PgsqlConnection((client, _), redis_pool) => {
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = format!("bloom:email");
                 let username_key = format!("bloom:username");
-                let email_exists: bool = redis::cmd("BF.EXISTS").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(false);
+                let email_exists: bool = redis::cmd("BF.EXISTS")
+                    .arg(&email_key)
+                    .arg(&email)
+                    .query(&mut *redis_conn)
+                    .unwrap_or(false);
                 if email_exists {
                     // Fallback to DB check if in bloom filter
                     let email_db = client
@@ -298,7 +302,11 @@ pub(crate) async fn register_validitycheck(
                         return Err(LuminaError::RegisterEmailInUse);
                     }
                 }
-                let username_exists: bool = redis::cmd("BF.EXISTS").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(false);
+                let username_exists: bool = redis::cmd("BF.EXISTS")
+                    .arg(&username_key)
+                    .arg(&username)
+                    .query(&mut *redis_conn)
+                    .unwrap_or(false);
                 if username_exists {
                     // Fallback to DB check if in bloom filter
                     let username_db = client
@@ -316,7 +324,11 @@ pub(crate) async fn register_validitycheck(
                     .map_err(LuminaError::Postgres)?;
                 if !email_db.is_empty() {
                     // Update bloom filter after DB check
-                    let _: () = redis::cmd("BF.ADD").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(());
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(&email_key)
+                        .arg(&email)
+                        .query(&mut *redis_conn)
+                        .unwrap_or(());
                     return Err(LuminaError::RegisterEmailInUse);
                 }
                 let username_db = client
@@ -324,7 +336,11 @@ pub(crate) async fn register_validitycheck(
                     .await
                     .map_err(LuminaError::Postgres)?;
                 if !username_db.is_empty() {
-                    let _: () = redis::cmd("BF.ADD").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(());
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(&username_key)
+                        .arg(&username)
+                        .query(&mut *redis_conn)
+                        .unwrap_or(());
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
             }
@@ -332,7 +348,11 @@ pub(crate) async fn register_validitycheck(
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 let email_key = format!("bloom:email");
                 let username_key = format!("bloom:username");
-                let username_exists: bool = redis::cmd("BF.EXISTS").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(false);
+                let username_exists: bool = redis::cmd("BF.EXISTS")
+                    .arg(&username_key)
+                    .arg(&username)
+                    .query(&mut *redis_conn)
+                    .unwrap_or(false);
                 if username_exists {
                     // Fallback to DB check if in bloom filter
                     let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
@@ -345,7 +365,11 @@ pub(crate) async fn register_validitycheck(
                         return Err(LuminaError::RegisterUsernameInUse);
                     }
                 }
-                let email_exists: bool = redis::cmd("BF.EXISTS").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(false);
+                let email_exists: bool = redis::cmd("BF.EXISTS")
+                    .arg(&email_key)
+                    .arg(&email)
+                    .query(&mut *redis_conn)
+                    .unwrap_or(false);
                 if email_exists {
                     // Fallback to DB check if in bloom filter
                     let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
@@ -366,7 +390,11 @@ pub(crate) async fn register_validitycheck(
                     .exists(&[&username])
                     .map_err(LuminaError::Sqlite)?;
                 if username_db {
-                    let _: () = redis::cmd("BF.ADD").arg(&username_key).arg(&username).query(&mut *redis_conn).unwrap_or(());
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(&username_key)
+                        .arg(&username)
+                        .query(&mut *redis_conn)
+                        .unwrap_or(());
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
                 let email_db = conn
@@ -375,7 +403,11 @@ pub(crate) async fn register_validitycheck(
                     .exists(&[&email])
                     .map_err(LuminaError::Sqlite)?;
                 if email_db {
-                    let _: () = redis::cmd("BF.ADD").arg(&email_key).arg(&email).query(&mut *redis_conn).unwrap_or(());
+                    let _: () = redis::cmd("BF.ADD")
+                        .arg(&email_key)
+                        .arg(&email)
+                        .query(&mut *redis_conn)
+                        .unwrap_or(());
                     return Err(LuminaError::RegisterEmailInUse);
                 }
             }

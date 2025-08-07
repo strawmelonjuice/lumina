@@ -29,10 +29,11 @@ for writing maintainable and scalable code. It's simplicity and the
 young yet strong community set a good foundation for Lumina.
 
 ## Timeline-carries-most
+
 One of the bussiest tables you'll see is the timeline, containing just some ID's and timestamps.
 
 | Kind                                     | timeline ID | item ID | Timestamp          |
-|------------------------------------------|-------------|---------|--------------------|
+| ---------------------------------------- | ----------- | ------- | ------------------ |
 | `'USER'`, `'DIRECT'`, `'TL'`, `'BUBBLE'` | uuidv4      | uuidv4  | Database timestamp |
 
 The `global` timeline, here being `00000000-0000-0000-0000-000000000000` as the only constant-assigned timeline ID. The user-profiles being the same as their user id counterpart.

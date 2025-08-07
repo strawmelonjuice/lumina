@@ -1,7 +1,8 @@
 use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
 use crate::{
-    authentication_error_elog, error_elog, http_code_elog, incoming_elog, info_elog, registration_error_elog, warn_elog, AppState, LuminaError
+    AppState, LuminaError, authentication_error_elog, error_elog, http_code_elog, incoming_elog,
+    info_elog, registration_error_elog, warn_elog,
 };
 use chrono::format;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
@@ -452,9 +453,9 @@ pub(crate) enum Message {
     /// Requests a list of strings to represent a certain timeline or bubble timeline.
     #[serde(rename = "timeline_request")]
     TimelineRequest { by_name: String },
-TimelineResponse {
-    timeline_name: String,
-    timeline_id: Uuid,
+    TimelineResponse {
+        timeline_name: String,
+        timeline_id: Uuid,
         /// A list of post IDs for the requested timeline.
         post_ids: Vec<String>,
     },

@@ -51,8 +51,10 @@ impl EventLogger {
                     .map_err(LuminaError::Postgres)
                 {
                     Ok((client, _)) => {
-                        let new_dbconn =
-                            database::DbConn::PgsqlConnection((client, pg_config.clone()), redis_pool.clone());
+                        let new_dbconn = database::DbConn::PgsqlConnection(
+                            (client, pg_config.clone()),
+                            redis_pool.clone(),
+                        );
                         Self::WithDatabase { db: new_dbconn }
                     }
 
@@ -68,7 +70,8 @@ impl EventLogger {
                 }
             }
             DbConn::SqliteConnectionPool(pool, redis) => {
-                let new_dbconn = database::DbConn::SqliteConnectionPool(pool.clone(), redis.clone());
+                let new_dbconn =
+                    database::DbConn::SqliteConnectionPool(pool.clone(), redis.clone());
                 Self::WithDatabase { db: new_dbconn }
             }
         }
@@ -99,8 +102,13 @@ impl EventLogger {
             EventType::Failure => ("[✖️ FAILURE]".color_error_red().style_bold(), false),
             EventType::Log => ("[LOG]".color_blue().style_bold(), false),
             EventType::Incoming => ("[INCOMING]".color_lilac().style_bold(), false),
-            EventType::RegistrationError => ("[RegistrationError]".color_bright_red().style_bold(), true),
-            EventType::AuthenticationError => ("[AuthenticationError]".color_bright_red().style_bold(), true),
+            EventType::RegistrationError => {
+                ("[RegistrationError]".color_bright_red().style_bold(), true)
+            }
+            EventType::AuthenticationError => (
+                "[AuthenticationError]".color_bright_red().style_bold(),
+                true,
+            ),
             EventType::HTTPCode(code) => {
                 let codestring = match code {
                     101 => format!("[HTTP/{} (Switching Protocols)]", code)
@@ -170,7 +178,7 @@ impl EventLogger {
                             )
                             .await;
                     }
-                    crate::database::DbConn::SqliteConnectionPool(pool,_) => {
+                    crate::database::DbConn::SqliteConnectionPool(pool, _) => {
                         if let Ok(conn) = pool.get() {
                             let _ = conn.execute(
                                 "INSERT INTO logs (type, message, timestamp) VALUES (?1, ?2, ?3)",
