@@ -455,5 +455,7 @@ pub(crate) struct SessionData {
 
 pub enum ClientType {
     Web,
+    // NativeApp will one day mean a native application, like a mobile app.
+    // For now, it is nothing.
     NativeApp,
 }
