@@ -345,7 +345,6 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                 error_elog!(ev_log, "Error deserialising message: {:?}\n\n{}" , e,
                                                             format!("The message: {}", possibly_json).style_dim()
                                                             );
-                                                                
                                                                 let _ = stream.send(ws::Message::from("unknown")).await;
                                                             }
                                                         }
