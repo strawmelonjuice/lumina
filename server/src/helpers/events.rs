@@ -159,13 +159,15 @@ impl EventLogger {
                     EventType::AuthenticationError => String::from("AUTHENTICATION_ERROR"),
                     EventType::HTTPCode(code) => format!("HTTP/{}", code),
                 };
-                let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]").unwrap();
+                let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]")
+                    .map_err(LuminaError::RegexError)
+                    .unwrap();
 
                 let message_db: String = ansi_regex
                     .replace_all(message, "")
                     .to_string()
                     .chars()
-                    .filter(|c| c.is_alphanumeric() || c.is_whitespace())
+                    .filter(|c| !c.is_control() || c.is_whitespace())
                     .collect();
                 let ts = now.to_rfc3339();
 
