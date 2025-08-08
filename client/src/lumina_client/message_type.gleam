@@ -19,6 +19,8 @@ pub type Msg {
   FocusLostEmailField
   /// Travel to a different timeline.
   TimeLineTo(String)
+  /// Load more posts for the current timeline
+  LoadMorePosts(String)
   /// Log the user out (destroys session and recreates model)
   Logout
 }

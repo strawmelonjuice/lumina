@@ -1,9 +1,11 @@
 use crate::errors::LuminaError::{self, ConfMissing};
 use crate::helpers::events::EventLogger;
+use crate::timeline;
 use crate::{info_elog, success_elog, warn_elog};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
+use redis::Commands;
 use tokio_postgres as postgres;
 use tokio_postgres::tls::NoTlsStream;
 use tokio_postgres::{Client, Connection, Socket};
@@ -57,7 +59,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .map_err(LuminaError::Sqlite)?;
                 let _ = conn
                     .execute(
-                        "CREATE TABLE IF NOT EXISTS timelines ( 
+                        "CREATE TABLE IF NOT EXISTS timelines (
                     tlid TEXT NOT NULL,
                     item_id TEXT NOT NULL,
                     timestamp TEXT NOT NULL
@@ -138,10 +140,11 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     crate::helpers::message_prefixes().0
                 );
             };
-            let _ = tokio::spawn(maintain(DbConn::SqliteConnectionPool(
-                pool.clone(),
-                redis_pool.clone(),
-            )));
+            let pool_clone = pool.clone();
+            let redis_pool_clone = redis_pool.clone();
+            let _ = tokio::spawn(async move {
+                maintain(DbConn::SqliteConnectionPool(pool_clone, redis_pool_clone)).await
+            });
             Ok(DbConn::SqliteConnectionPool(pool, redis_pool))
         }
         "postgres" => {
@@ -323,10 +326,16 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     crate::helpers::message_prefixes().0
                 );
             };
-            let _ = tokio::spawn(maintain(DbConn::PgsqlConnection(
-                (conn_two.0, pg_config.clone()),
-                redis_pool.clone(),
-            )));
+            let conn_clone = conn_two.0;
+            let pg_config_clone = pg_config.clone();
+            let redis_pool_clone = redis_pool.clone();
+            let _ = tokio::spawn(async move {
+                maintain(DbConn::PgsqlConnection(
+                    (conn_clone, pg_config_clone),
+                    redis_pool_clone,
+                ))
+                .await
+            });
             Ok(DbConn::PgsqlConnection((conn.0, pg_config), redis_pool))
         }
 
@@ -352,32 +361,195 @@ pub enum DbConn {
 }
 
 // This function will be used to maintain the database, such as deleting old sessions
+// and managing timeline caches
 pub async fn maintain(db: DbConn) {
     match db {
-        DbConn::PgsqlConnection((client, _), _redis) => {
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        DbConn::PgsqlConnection((client, _), redis_pool) => {
+            let mut session_interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            let mut cache_interval = tokio::time::interval(std::time::Duration::from_secs(300)); // 5 minutes
+
             loop {
-                interval.tick().await;
-                // Delete any sessions older than 20 days
-                let _ = client
-                    .execute(
-                        "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
-                        &[],
-                    )
-                    .await;
+                tokio::select! {
+                    _ = session_interval.tick() => {
+                        // Delete any sessions older than 20 days
+                        let _ = client
+                            .execute(
+                                "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
+                                &[],
+                            )
+                            .await;
+                    }
+                    _ = cache_interval.tick() => {
+                        // Clean up expired timeline caches and manage cache invalidation
+                        if let Ok(mut redis_conn) = redis_pool.get() {
+                            let _ = cleanup_timeline_caches(&mut redis_conn).await;
+                            let _ = check_timeline_invalidations(&mut redis_conn, &client).await;
+                        }
+                    }
+                }
             }
         }
-        DbConn::SqliteConnectionPool(pool, _redis) => {
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        DbConn::SqliteConnectionPool(pool, redis_pool) => {
+            let mut session_interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            let mut cache_interval = tokio::time::interval(std::time::Duration::from_secs(300)); // 5 minutes
+
             loop {
-                interval.tick().await;
-                let conn = pool.get().unwrap();
-                // Delete any sessions older than 20 days
-                let _ = conn.execute(
-                    "DELETE FROM sessions WHERE created_at < strftime('%s', 'now') - 1728000",
-                    [],
-                );
+                tokio::select! {
+                    _ = session_interval.tick() => {
+                        if let Ok(conn) = pool.get() {
+                            // Delete any sessions older than 20 days
+                            let _ = conn.execute(
+                                "DELETE FROM sessions WHERE created_at < strftime('%s', 'now') - 1728000",
+                                [],
+                            );
+                        }
+                    }
+                    _ = cache_interval.tick() => {
+                        // Clean up expired timeline caches and manage cache invalidation
+                        if let Ok(mut redis_conn) = redis_pool.get() {
+                            let _ = cleanup_timeline_caches(&mut redis_conn).await;
+                            let _ = check_timeline_invalidations_sqlite(&mut redis_conn, &pool).await;
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+// Clean up expired timeline cache entries
+async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(), LuminaError> {
+    let pattern = "timeline_cache:*";
+    let mut cursor = 0;
+
+    loop {
+        let result: (u64, Vec<String>) = redis::cmd("SCAN")
+            .cursor_arg(cursor)
+            .arg("MATCH")
+            .arg(pattern)
+            .query(redis_conn)
+            .map_err(LuminaError::Redis)?;
+
+        cursor = result.0;
+        let keys = result.1;
+
+        let mut expired_keys = Vec::new();
+
+        for key in keys {
+            // Check TTL, if -1 or 0, it should be cleaned up
+            let ttl: i64 = redis_conn.ttl(&key).map_err(LuminaError::Redis)?;
+            if ttl == -1 || ttl == 0 {
+                expired_keys.push(key);
+            }
+        }
+
+        if !expired_keys.is_empty() {
+            let _: () = redis_conn.del(&expired_keys).map_err(LuminaError::Redis)?;
+        }
+
+        if cursor == 0 {
+            break;
+        }
+    }
+
+    Ok(())
+}
+
+// Check for timeline changes and invalidate caches accordingly (PostgreSQL)
+async fn check_timeline_invalidations(
+    redis_conn: &mut redis::Connection,
+    client: &postgres::Client,
+) -> Result<(), LuminaError> {
+    // Get the last check timestamp
+    let last_check: Option<String> = redis_conn.get("timeline_cache_last_check").unwrap_or(None);
+
+    let query = if let Some(timestamp) = last_check {
+        client
+            .query(
+                "SELECT DISTINCT tlid FROM timelines WHERE timestamp > $1",
+                &[&timestamp],
+            )
+            .await
+    } else {
+        // First run, don't invalidate anything
+        let _: () = redis_conn
+            .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+            .map_err(LuminaError::Redis)?;
+        return Ok(());
+    };
+
+    match query {
+        Ok(rows) => {
+            for row in rows {
+                let timeline_id: String = row.get(0);
+                let _ = timeline::invalidate_timeline_cache(redis_conn, &timeline_id).await;
+            }
+
+            // Update last check timestamp
+            let _: () = redis_conn
+                .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+                .map_err(LuminaError::Redis)?;
+        }
+        Err(_) => {
+            // If query fails, just update timestamp to avoid repeated failures
+            let _: () = redis_conn
+                .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+                .map_err(LuminaError::Redis)?;
+        }
+    }
+
+    Ok(())
+}
+
+// Check for timeline changes and invalidate caches accordingly (SQLite)
+async fn check_timeline_invalidations_sqlite(
+    redis_conn: &mut redis::Connection,
+    pool: &Pool<SqliteConnectionManager>,
+) -> Result<(), LuminaError> {
+    // Get the last check timestamp
+    let last_check: Option<String> = redis_conn.get("timeline_cache_last_check").unwrap_or(None);
+
+    let result: Result<Vec<String>, LuminaError> = if let Some(timestamp) = last_check {
+        let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
+        let mut stmt = conn
+            .prepare("SELECT DISTINCT tlid FROM timelines WHERE timestamp > ?")
+            .map_err(LuminaError::Sqlite)?;
+
+        let mut rows = stmt.query([timestamp]).map_err(LuminaError::Sqlite)?;
+        let mut timeline_ids = Vec::new();
+
+        while let Some(row) = rows.next().map_err(LuminaError::Sqlite)? {
+            let timeline_id: String = row.get(0).map_err(LuminaError::Sqlite)?;
+            timeline_ids.push(timeline_id);
+        }
+
+        Ok(timeline_ids)
+    } else {
+        // First run, don't invalidate anything
+        let _: () = redis_conn
+            .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+            .map_err(LuminaError::Redis)?;
+        return Ok(());
+    };
+
+    match result {
+        Ok(timeline_ids) => {
+            for timeline_id in timeline_ids {
+                let _ = timeline::invalidate_timeline_cache(redis_conn, &timeline_id).await;
+            }
+
+            // Update last check timestamp
+            let _: () = redis_conn
+                .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+                .map_err(LuminaError::Redis)?;
+        }
+        Err(_) => {
+            // If query fails, just update timestamp to avoid repeated failures
+            let _: () = redis_conn
+                .set("timeline_cache_last_check", chrono::Utc::now().to_rfc3339())
+                .map_err(LuminaError::Redis)?;
+        }
+    }
+
+    Ok(())
 }

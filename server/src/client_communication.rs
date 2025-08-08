@@ -300,7 +300,7 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                     }
                                                                 }
                                                             }
-                                                            Ok(Message::TimelineRequest { by_name: name }) => {
+                                                            Ok(Message::TimelineRequest { by_name: name, page }) => {
                                                                                    let appstate = state.0.clone();
                                                                 let db = &appstate.1.lock().await;
                                                                 // Fetch post IDs for the requested timeline
@@ -309,9 +309,17 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                     db,
                                                                     &name,
                                                                     client_session_data.user.clone().unwrap(),
+                                                                    page,
                                                                 ).await {
-                                                                    Ok((tlid , post_ids)) => {
-                                                                        let response = Message::TimelineResponse {post_ids, timeline_name: name, timeline_id: tlid };
+                                                                    Ok((tlid, post_ids, total_count, has_more)) => {
+                                                                        let response = Message::TimelineResponse {
+                                                                            post_ids,
+                                                                            timeline_name: name,
+                                                                            timeline_id: tlid,
+                                                                            total_count,
+                                                                            page: page.unwrap_or(0),
+                                                                            has_more,
+                                                                        };
                                                                         let _ = stream.send(ws::Message::from(msgtojson(response))).await;
                                                                     }
                                                                     Err(e) => {
@@ -450,12 +458,22 @@ pub(crate) enum Message {
     },
     /// Requests a list of strings to represent a certain timeline or bubble timeline.
     #[serde(rename = "timeline_request")]
-    TimelineRequest { by_name: String },
+    TimelineRequest {
+        by_name: String,
+        #[serde(default)]
+        page: Option<usize>,
+    },
     TimelineResponse {
         timeline_name: String,
         timeline_id: Uuid,
         /// A list of post IDs for the requested timeline.
         post_ids: Vec<String>,
+        /// Total number of posts in timeline
+        total_count: usize,
+        /// Current page number
+        page: usize,
+        /// Whether there are more pages available
+        has_more: bool,
     },
 
     /// "Yeah I don't know what I'm sending either!"
