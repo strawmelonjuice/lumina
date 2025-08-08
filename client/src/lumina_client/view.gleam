@@ -543,7 +543,7 @@ fn view_homepage(model: model_type.Model) {
           html.ul(
             [
               attribute.class(
-                "menu bg-base-200 text-base-content h-screen lg:max-h-[calc(100vh-4rem)] w-80 p-4",
+                "menu bg-base-200 bg-opacity-75 text-base-content h-screen lg:max-h-[calc(100vh-4rem)] w-80 p-4",
               ),
             ],
             [
@@ -561,7 +561,20 @@ fn view_homepage(model: model_type.Model) {
                       ),
                       event.on_click(message_type.TimeLineTo("global")),
                     ],
-                    [element.text("Global")],
+                    [element.text("🌐 Global")],
+                  ),
+                ]),
+                html.li([], [
+                  html.a(
+                    [
+                      bool.lazy_guard(
+                        when: timeline_name == "following",
+                        return: fn() { attribute.class("menu-active") },
+                        otherwise: fn() { attribute.none() },
+                      ),
+                      event.on_click(message_type.TimeLineTo("following")),
+                    ],
+                    [element.text("👋 Following")],
                   ),
                 ]),
                 html.li([], [
@@ -574,7 +587,7 @@ fn view_homepage(model: model_type.Model) {
                       ),
                       event.on_click(message_type.TimeLineTo("mutuals")),
                     ],
-                    [element.text("Mutuals")],
+                    [element.text("🤝 Mutuals")],
                   ),
                 ]),
               ]),
