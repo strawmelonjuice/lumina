@@ -4,7 +4,6 @@ use crate::{
     AppState, LuminaError, authentication_error_elog, error_elog, http_code_elog, incoming_elog,
     info_elog, registration_error_elog, warn_elog,
 };
-use chrono::format;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
