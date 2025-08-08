@@ -492,7 +492,7 @@ fn view_homepage(model: model_type.Model) {
         html.main(
           [
             attribute.class(
-              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)]"
+              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)] overflow-y-auto"
               <> {
                 let rn = timestamp.system_time()
                 let #(calendar.Date(year, month, day), _) =
