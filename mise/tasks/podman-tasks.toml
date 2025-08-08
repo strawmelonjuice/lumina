@@ -24,6 +24,7 @@ run = [
   "podman build --build-arg optimize_build=false -t lumina-server:debug .",
   "podman pod create --name lumina-postgres-pod -p 8085:8085 -p 5432:5432",
   "podman run -d --name luminadb --pod lumina-postgres-pod -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z postgres:17-alpine3.22",
+  "podman run -d --name lumina-redis --pod lumina-postgres-pod -p 6379:6379 -v ./data/redis:/data:Z redis",
   "podman run -d --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:debug",
 ]
 
@@ -39,6 +40,7 @@ run = [
   # Build and run
   "podman build --build-arg optimize_build=true -t lumina-server:latest .",
   "podman pod create --name lumina-postgres-pod -p 8085:8085 -p 5432:5432",
+  "podman run -d --name lumina-redis --pod lumina-postgres-pod -p 6379:6379 -v ./data/redis:/data redis",
   "podman run -d --name luminadb --pod lumina-postgres-pod -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z postgres:17-alpine3.22",
   "podman run -d --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:latest",
 ]
@@ -57,6 +59,7 @@ run = [
   # Build and run
   "podman build --build-arg optimize_build=false -t lumina-server:debug .",
   "podman pod create --name lumina-sqlite-pod -p 8085:8085",
+  "podman run -d --name lumina-redis -p 6379:6379 -v ./data/redis:/data --pod lumina-sqlite-pod redis",
   "podman run -d --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:debug",
 ]
 
@@ -72,5 +75,6 @@ run = [
   # Build and run
   "podman build --build-arg optimize_build=true -t lumina-server:latest .",
   "podman pod create --name lumina-sqlite-pod -p 8085:8085",
+  "podman run -d --name lumina-redis -p 6379:6379 -v ./data/redis:/data --pod lumina-sqlite-pod redis",
   "podman run -d --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:latest",
 ]
