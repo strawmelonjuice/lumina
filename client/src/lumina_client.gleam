@@ -1,3 +1,5 @@
+import lumina_client/view/homepage
+import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/int
@@ -10,7 +12,7 @@ import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, Logout, SubmitLogin, SubmitSignup, TickUp,
+  type Msg, FocusLostEmailField, LoadMorePosts, Logout, SubmitLogin, SubmitSignup, TickUp,
   ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
   UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
   WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
@@ -24,6 +26,48 @@ import lustre
 import lustre/effect.{type Effect}
 import lustre_websocket
 import plinth/javascript/storage
+
+// HELPER FUNCTIONS ------------------------------------------------------------
+
+/// Get posts for display from a timeline cache
+/// Returns a list of all cached posts in order, or empty list if timeline not found
+pub fn get_timeline_posts_for_display(model: Model, timeline_name: String) -> List(String) {
+  case model.cache.cached_timelines |> dict.get(timeline_name) {
+    Ok(timeline) -> homepage.get_all_posts(timeline)
+    Error(_) -> []
+  }
+}
+
+/// Check if a timeline needs more data to be loaded
+pub fn timeline_needs_more_data(model: Model, timeline_name: String, position: Int) -> Bool {
+  case model.cache.cached_timelines |> dict.get(timeline_name) {
+    Ok(timeline) -> homepage.should_load_more(timeline, position, 10)
+    Error(_) -> True  // If no timeline cached, we definitely need data
+  }
+}
+
+/// Request next page for a timeline
+pub fn request_next_timeline_page(model: Model, timeline_name: String) -> Effect(Msg) {
+  let assert model_type.WsConnectionConnected(socket) = model.ws as "Socket not connected"
+
+  case model.cache.cached_timelines |> dict.get(timeline_name) {
+    Ok(timeline) -> {
+      case homepage.get_next_page_to_load(timeline) {
+        Some(next_page) ->
+          TimeLineRequest(timeline_name, next_page)
+          |> encode_ws_msg
+          |> json.to_string
+          |> lustre_websocket.send(socket, _)
+        None -> effect.none()
+      }
+    }
+    Error(_) ->
+      TimeLineRequest(timeline_name, 0)
+      |> encode_ws_msg
+      |> json.to_string
+      |> lustre_websocket.send(socket, _)
+  }
+}
 
 // MAIN ------------------------------------------------------------------------
 
@@ -405,16 +449,35 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
         _ -> model
       }
-      // Request unles cached.
+      // Request unless cached or load next page if needed.
       let requ = case model.cache.cached_timelines |> dict.get(tid) {
         Error(..) ->
-          TimeLineRequest(tid)
+          TimeLineRequest(tid, 0)
           |> encode_ws_msg
           |> json.to_string
           |> lustre_websocket.send(socket, _)
-        Ok(..) -> effect.none()
+        Ok(timeline) -> {
+          // Check if we need to load more pages
+          case homepage.should_load_more(timeline, 20, 10) {
+            True -> {
+              case homepage.get_next_page_to_load(timeline) {
+                Some(next_page) ->
+                  TimeLineRequest(tid, next_page)
+                  |> encode_ws_msg
+                  |> json.to_string
+                  |> lustre_websocket.send(socket, _)
+                None -> effect.none()
+              }
+            }
+            False -> effect.none()
+          }
+        }
       }
       #(model, requ)
+    }
+    message_type.LoadMorePosts(timeline_name) -> {
+      let effect = request_next_timeline_page(model, timeline_name)
+      #(model, effect)
     }
   }
 }
@@ -471,7 +534,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
               // Even though 'officially' we don't show the global timeline, this should be the one requested firstly.
-              TimeLineRequest("global")
+              TimeLineRequest("global", 0)
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
@@ -499,20 +562,39 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         | Ok(RegisterRequest(..)) -> {
           #(model, effect.none())
         }
-        Ok(TimeLineResponse(timeline_name:, timeline_id:, items:)) -> {
+        Ok(TimeLineResponse(timeline_name:, timeline_id:, items:, total_count:, page:, has_more:)) -> {
           console.log(
             "Received timeline response for "
             <> timeline_name
             <> " with "
             <> int.to_string(list.length(items))
-            <> " items.",
+            <> " items (page "
+            <> int.to_string(page)
+            <> " of "
+            <> int.to_string(total_count)
+            <> " total, has_more: "
+            <> bool.to_string(has_more)
+            <> ").",
           )
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
+
+          // Create or update timeline cache using utilities
+          let cached_timeline = case model.cache.cached_timelines |> dict.get(timeline_name) {
+            Ok(existing) -> {
+              homepage.add_page_to_timeline(existing, page, items, total_count, has_more)
+            }
+            Error(..) -> {
+              homepage.create_empty_timeline()
+              |> homepage.add_page_to_timeline(page, items, total_count, has_more)
+            }
+          }
+
+          console.log(homepage.timeline_info_string(cached_timeline, timeline_name))
+
           let cached_timelines =
             model.cache.cached_timelines
-            |> echo
-            |> dict.insert(timeline_name, items)
+            |> dict.insert(timeline_name, cached_timeline)
 
           #(
             Model(
@@ -624,12 +706,18 @@ type WsMsg {
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
   OwnUserInformationRequest
-  TimeLineRequest(timeline_name: String)
+  TimeLineRequest(timeline_name: String, page: Int)
   TimeLineResponse(
     timeline_name: String,
     timeline_id: String,
     /// List of post ids as string.
     items: List(String),
+    /// Total number of posts in timeline
+    total_count: Int,
+    /// Current page number
+    page: Int,
+    /// Whether there are more pages available
+    has_more: Bool,
   )
   OwnUserInformationResponse(
     username: String,
@@ -666,10 +754,11 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("username", json.string(username)),
         #("password", json.string(password)),
       ])
-    TimeLineRequest(timeline_name:) ->
+    TimeLineRequest(timeline_name:, page:) ->
       json.object([
         #("type", json.string("timeline_request")),
         #("by_name", json.string(timeline_name)),
+        #("page", json.int(page)),
       ])
     // And the client should never have to encode the next few:
     Greeting(..)
@@ -725,7 +814,10 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       use timeline_name <- decode.field("timeline_name", decode.string)
       use timeline_id <- decode.field("timeline_id", decode.string)
       use items <- decode.field("post_ids", decode.list(decode.string))
-      decode.success(TimeLineResponse(timeline_name:, timeline_id:, items:))
+      use total_count <- decode.field("total_count", decode.int)
+      use page <- decode.field("page", decode.int)
+      use has_more <- decode.field("has_more", decode.bool)
+      decode.success(TimeLineResponse(timeline_name:, timeline_id:, items:, total_count:, page:, has_more:))
     }
     g -> {
       console.error("Unknown message type: " <> g)

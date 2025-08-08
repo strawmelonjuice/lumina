@@ -58,8 +58,23 @@ pub type Cached {
     // cached_comments: List(CachedComment)
     // /// Users received:
     // cached_users: Dict(String, CachedUser)
-    /// Cached timelines are lists containing post id's as string, in, again a dict, for there are multiple timelines possible.
-    cached_timelines: Dict(String, List(String)),
+    /// Cached timelines with pagination support
+    cached_timelines: Dict(String, CachedTimeline),
+  )
+}
+
+pub type CachedTimeline {
+  CachedTimeline(
+    /// Post IDs for all loaded pages, organized by page number
+    pages: Dict(Int, List(String)),
+    /// Total number of posts in the timeline
+    total_count: Int,
+    /// Current page being displayed
+    current_page: Int,
+    /// Whether there are more pages available
+    has_more: Bool,
+    /// Last updated timestamp to help with cache invalidation
+    last_updated: Int,
   )
 }
 
@@ -107,7 +122,7 @@ pub type CachedPost {
 }
 
 /// # Page
-/// 
+///
 /// Lumina has always been an SPA behind the login page, splitting the three "main" pages: Login, Signup, and Home from "subpages". Home contained subpages like Dashboard, Profile, and Settings, etc.
 /// In this model, Login and Dashboard would be equal. The model keeps track of the current page and the user's authentication status.
 /// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
@@ -231,7 +246,7 @@ pub type LoginFields {
 }
 
 /// # User
-/// 
+///
 /// The User type is a struct that holds the user's data. It's an Option in the Model because the user might not be logged in.
 /// Authentication STATUS is not stored in the Model, but in the websocket connection (the token is). The user is only stored in the Model for the UI to easy displaying the user's data.
 pub type User {

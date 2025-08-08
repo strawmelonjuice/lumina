@@ -18,4 +18,5 @@ pub(crate) enum LuminaError {
     UUidError(uuid::Error),
     RegexError(regex::Error),
     Redis(redis::RedisError),
+    SerializationError(String),
 }
