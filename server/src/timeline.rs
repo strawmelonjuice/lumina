@@ -147,10 +147,11 @@ pub async fn invalidate_timeline_cache(
 async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<usize, LuminaError> {
     match db {
         DbConn::PgsqlConnection((client, _pg_config), _redis_pool) => {
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
             let row = client
                 .query_one(
                     "SELECT COUNT(*) FROM timelines WHERE tlid = $1",
-                    &[&timeline_id],
+                    &[&timeline_uuid],
                 )
                 .await
                 .map_err(LuminaError::Postgres)?;
@@ -182,17 +183,18 @@ async fn fetch_timeline_from_db(
 ) -> Result<Vec<String>, LuminaError> {
     match db {
         DbConn::PgsqlConnection((client, _pg_config), _redis_pool) => {
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
             let rows = client
                 .query(
                     "SELECT item_id FROM timelines WHERE tlid = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
-                    &[&timeline_id, &(limit as i64), &(offset as i64)],
+                    &[&timeline_uuid, &(limit as i64), &(offset as i64)],
                 )
                 .await
                 .map_err(LuminaError::Postgres)?;
 
             let post_ids = rows
                 .into_iter()
-                .map(|row| row.get::<_, String>(0))
+                .map(|row| row.get::<_, Uuid>(0).to_string())
                 .collect();
             Ok(post_ids)
         }
@@ -317,10 +319,12 @@ pub async fn add_to_timeline(
     // Add to database
     match db {
         DbConn::PgsqlConnection((client, _pg_config), redis_pool) => {
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
+            let item_uuid = Uuid::parse_str(item_id).map_err(LuminaError::UUidError)?;
             client
                 .execute(
                     "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
-                    &[&timeline_id, &item_id],
+                    &[&timeline_uuid, &item_uuid],
                 )
                 .await
                 .map_err(LuminaError::Postgres)?;
@@ -370,10 +374,12 @@ pub async fn remove_from_timeline(
     // Remove from database
     match db {
         DbConn::PgsqlConnection((client, _pg_config), redis_pool) => {
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
+            let item_uuid = Uuid::parse_str(item_id).map_err(LuminaError::UUidError)?;
             client
                 .execute(
                     "DELETE FROM timelines WHERE tlid = $1 AND item_id = $2",
-                    &[&timeline_id, &item_id],
+                    &[&timeline_uuid, &item_uuid],
                 )
                 .await
                 .map_err(LuminaError::Postgres)?;
