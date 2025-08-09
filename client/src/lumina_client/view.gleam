@@ -614,7 +614,7 @@ fn common_view_parts(
   with_menu menuitems: List(Element(Msg)),
 ) {
   html.div([], [
-    html.div([attribute.class("navbar bg-base-100 shadow-sm")], [
+    html.div([attribute.class("navbar bg-base-100 dark:bg-neutral-800 shadow-sm")], [
       html.div([attribute.class("flex-none")], [
         html.button([attribute.class("btn btn-square btn-ghost")], [
           html.img([
