@@ -19,7 +19,7 @@ services:
             - ../data/:/app/data/
 
     redis:
-        image: redis:7-alpine
+        image: redis/redis-stack:7.2.0-v18
         container_name: lumina-redis
         ports:
             - "6379:6379"
