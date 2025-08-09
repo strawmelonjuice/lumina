@@ -10,6 +10,7 @@ services:
         environment:
             - LUMINA_DB_TYPE=postgres
             - LUMINA_POSTGRES_HOST=luminadb
+            - LUMINA_REDIS_URL=redis://lumina-redis
             - LUMINA_POSTGRES_PORT=5432
             - LUMINA_POSTGRES_USERNAME=lumina
             - LUMINA_POSTGRES_PASSWORD=lumina_pw
@@ -39,4 +40,4 @@ services:
             - "6379:6379"
         restart: unless-stopped
         volumes:
-            - "./data/redis:/data"
+            - "../data/redis:/data"

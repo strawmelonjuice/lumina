@@ -10,6 +10,7 @@ services:
         environment:
             - LUMINA_DB_TYPE=sqlite
             - LUMINA_SQLITE_FILE=data/instance.sqlite
+            - LUMINA_REDIS_URL=redis://lumina-redis
             - LUMINA_SERVER_PORT=8085
             - LUMINA_SERVER_ADDR=0.0.0.0
         ports:
