@@ -15,7 +15,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let redis_url =
         std::env::var("LUMINA_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".into());
     let redis_pool: Pool<redis::Client> = {
-        info_elog!(ev_log, "Setting up Redis connection...");
+        info_elog!(ev_log, "Setting up Redis connection to {}...", redis_url);
         let client = redis::Client::open(redis_url.clone()).map_err(LuminaError::Redis)?;
         r2d2::Pool::builder()
             .build(client)
@@ -50,7 +50,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 let _ = conn
                     .execute(
                         "CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY UNIQUE,
+    foreign_instance_id TEXT,
+    foreign_user_id TEXT,
     email TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL)",
@@ -84,6 +86,53 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     user_id TEXT NOT NULL,
     session_key TEXT NOT NULL,
     created_at INT NOT NULL)",
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS post_text (
+    id TEXT PRIMARY KEY,
+    author_id TEXT,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    foreign_instance_id TEXT,
+    foreign_post_id TEXT,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+)",
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS post_media (
+    id TEXT PRIMARY KEY,
+    author_id TEXT,
+    minio_object_id TEXT NOT NULL,
+    caption TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    foreign_instance_id TEXT,
+    foreign_post_id TEXT,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+)",
+                        [],
+                    )
+                    .map_err(LuminaError::Sqlite)?;
+
+                let _ = conn
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS post_article (
+    id TEXT PRIMARY KEY,
+    author_id TEXT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    foreign_instance_id TEXT,
+    foreign_post_id TEXT,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+)",
                         [],
                     )
                     .map_err(LuminaError::Sqlite)?;
@@ -236,7 +285,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .0
                     .execute(
                         "CREATE TABLE IF NOT EXISTS users (
-    id UUID DEFAULT gen_random_uuid (),
+    id UUID DEFAULT gen_random_uuid () UNIQUE PRIMARY KEY,
+    foreign_instance_id VARCHAR,
+    foreign_user_id UUID,
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     password VARCHAR NOT NULL
@@ -284,13 +335,64 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
+
                 let _ = conn
                     .0
                     .execute(
-                        "CREATE TABLE IF NOT EXISTS logs (\
-                        type VARCHAR NOT NULL, \
-                        message TEXT NOT NULL, \
-                        timestamp TIMESTAMP NOT NULL\
+                        "CREATE TABLE IF NOT EXISTS post_text (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    author_id UUID REFERENCES users(id),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    foreign_instance_id VARCHAR,
+    foreign_post_id VARCHAR
+)",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS post_media (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    author_id UUID REFERENCES users(id),
+    minio_object_id VARCHAR NOT NULL,
+    caption TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    foreign_instance_id VARCHAR,
+    foreign_post_id VARCHAR
+)",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS post_article (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    author_id UUID REFERENCES users(id),
+    title VARCHAR NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    foreign_instance_id VARCHAR,
+    foreign_post_id VARCHAR
+)",
+                        &[],
+                    )
+                    .await
+                    .map_err(LuminaError::Postgres)?;
+
+                let _ = conn
+                    .0
+                    .execute(
+                        "CREATE TABLE IF NOT EXISTS logs (
+                        type VARCHAR NOT NULL,
+                        message TEXT NOT NULL,
+                        timestamp TIMESTAMP NOT NULL
                     )",
                         &[],
                     )
