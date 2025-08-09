@@ -43,16 +43,12 @@ dir = "{{config_root}}/data/"
 
 [tasks.development-run-redis-docker]
 description = "Just runs the Docker image for a Redis server so that the development run can connect to it"
-run = "docker run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis"
+run = "docker run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis/redis-stack:7.2.0-v18"
 
 [tasks.development-run-redis-podman]
 description = "Just runs the Podman image for a Redis server so that the development run can connect to it"
-run = "podman run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis"
+run = "podman run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis/redis-stack:7.2.0-v18"
 
-
-[tasks.development-run-redis-docker-compose-down]
-description = "Just stops the Docker Compose file for a Redis server so that the development run can connect to it"
-run = "docker-compose down"
 
 [tasks.check]
 description = "Run the check command on both server and client."
