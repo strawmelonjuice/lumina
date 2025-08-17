@@ -528,8 +528,21 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) ->
-          todo as "TODO: Handle own user information response"
+        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) -> {
+          // avatar is Option(#(String, String)) == Option((mime, base64))
+          let avatar_string = case avatar {
+            Some(#(mime, b64)) -> "data:" <> mime <> ";base64," <> b64
+            None -> ""
+          }
+
+          #(
+            Model(
+              ..model,
+              user: Some(model_type.User(username, email, avatar_string)),
+            ),
+            effect.none(),
+          )
+        }
         Ok(AuthenticationSuccess(username:, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
@@ -859,6 +872,30 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
         total_count:,
         page:,
         has_more:,
+      ))
+    }
+    "own_user_information_response" -> {
+      use username <- decode.field("username", decode.string)
+      use email <- decode.field("email", decode.string)
+      // avatar may be null or an array [mime, base64]
+      use avatar_list_opt <- decode.field(
+        "avatar",
+        decode.optional(decode.list(decode.string)),
+      )
+      let avatar = case avatar_list_opt {
+        Some(list) ->
+          case list {
+            [mime, b64] -> Some(#(mime, b64))
+            _ -> None
+          }
+        None -> None
+      }
+      use uuid <- decode.field("uuid", decode.string)
+      decode.success(OwnUserInformationResponse(
+        username:,
+        email:,
+        avatar:,
+        uuid:,
       ))
     }
     g -> {
