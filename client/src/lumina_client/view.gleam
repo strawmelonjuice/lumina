@@ -3,7 +3,7 @@
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
-import gleam/option
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/time/calendar
@@ -24,7 +24,6 @@ import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import plinth/javascript/date
 import plinth/javascript/storage
 
 pub fn view(model: Model) -> Element(Msg) {
@@ -174,11 +173,11 @@ fn view_login(model: Model) -> Element(Msg) {
                   "card delay-150 duration-300 ease-in-out w-full max-w-sm shrink-0 shadow-2xl transition-colors ",
                 ),
                 attribute.class(case successful {
-                  option.None -> "bg-base-100"
-                  option.Some(False) -> "bg-error/50"
+                  None -> "bg-base-100"
+                  Some(False) -> "bg-error/50"
                   // If this is actually the case, we'll be on another page!
                   // This shouldn't generally ever be actually constructed in the Login view.
-                  option.Some(True) -> "bg-success"
+                  Some(True) -> "bg-success"
                 }),
               ],
               [
@@ -218,7 +217,7 @@ fn view_login(model: Model) -> Element(Msg) {
                         ]),
                       ]),
                       case successful {
-                        option.Some(False) ->
+                        Some(False) ->
                           html.div(
                             [
                               attribute.class(
@@ -642,14 +641,50 @@ fn view_homepage(model: model_type.Model) {
     ),
   ]
   |> common_view_parts(with_menu: [
-    html.li([], [html.a([event.on_click(Logout)], [element.text("Log out")])]),
-    html.li([], [html.a([], [element.text("Settings")])]),
+    html.li([attribute.class("hidden md:flex")], [
+      // Todo: Logout button not available on smaller than md screens, and we want it and the settings button under the profile picture button.
+      html.button(
+        [
+          attribute.class("btn md:btn-neutral btn-ghost"),
+          event.on_click(Logout),
+        ],
+        [element.text("Log out")],
+      ),
+    ]),
+    html.li([attribute.class("hidden md:flex")], [
+      html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
+        element.text("Settings"),
+      ]),
+    ]),
     html.li([attribute.class("lg:hidden ")], [
       html.label(
-        [attribute.class("drawer-button"), attribute.for("my-drawer-2")],
+        [
+          attribute.class("drawer-button btn md:btn-neutral btn-ghost"),
+          attribute.for("my-drawer-2"),
+        ],
         [element.text("Switch timeline")],
       ),
     ]),
+    case user {
+      Some(user) -> {
+        html.li([], [
+          html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
+            html.div([attribute.class("avatar")], [
+              html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
+                html.img([
+                  attribute.src(user.avatar),
+                  attribute.alt(user.username),
+                ]),
+              ]),
+            ]),
+            html.span([attribute.class("hidden md:inline")], [
+              element.text("@" <> user.username),
+            ]),
+          ]),
+        ])
+      }
+      None -> element.none()
+    },
   ])
 }
 
@@ -662,7 +697,7 @@ fn common_view_parts(
       [attribute.class("navbar bg-base-100 dark:bg-neutral-800 shadow-sm")],
       [
         html.div([attribute.class("flex-none")], [
-          html.button([attribute.class("btn btn-square btn-ghost")], [
+          html.button([attribute.class("")], [
             html.img([
               attribute.src("/static/logo.svg"),
               attribute.alt("Lumina logo"),

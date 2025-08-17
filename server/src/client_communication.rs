@@ -8,6 +8,8 @@ use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
 use uuid::Uuid;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 
 #[get("/connection")]
 pub(crate) async fn wsconnection<'k>(
@@ -289,11 +291,18 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                         let response = Message::OwnUserInformationResponse {
                                                                             username: user.username.clone(),
                                                                             email: user.email.clone(),
-                                                                            // TODO: Populate avatar if available
-                                                                            avatar: None,
+                                                                            // Provide a compile-time included SVG placeholder avatar when none is available.
+                                                                            // The SVG file is included as bytes and base64-encoded here.
+                                                                            avatar: Some((
+                                                                                "image/svg+xml".to_string(),
+                                                                                // Encode the included SVG bytes as base64 at compile time.
+                                                                                STANDARD.encode(include_bytes!("../../assets/svgs/dummy_user_120px.svg")),
+                                                                            )),
                                                                             uuid: user.id.to_string(),
                                                                         };
-                                                                        let _ = stream.send(ws::Message::from(msgtojson(response))).await;
+                                                                        let msg_json = msgtojson(response);
+                                                                        // println!("Sending own user information response: {}", msg_json);
+                                                                        let _ = stream.send(ws::Message::from(msg_json)).await;
                                                                     }
                                                                     None => {
                                                                         let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
