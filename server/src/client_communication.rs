@@ -7,6 +7,8 @@ use crate::{
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
 use rocket::State;
+use crate::rate_limiter::RateLimit;
+use std::net::IpAddr;
 use uuid::Uuid;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -15,6 +17,10 @@ use base64::Engine;
 pub(crate) async fn wsconnection<'k>(
     ws: ws::WebSocket,
     state: &'k State<AppState>,
+    _rate_limit: RateLimit,
+    _limiter: &'k State<crate::rate_limiter::GeneralRateLimiter>,
+    auth_limiter: &'k State<crate::rate_limiter::AuthRateLimiter>,
+    client_ip: Option<IpAddr>,
 ) -> ws::Channel<'k> {
     let ev_log = {
         let appstate = state.0.clone();
@@ -253,35 +259,39 @@ warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
                                                                     _ => {}
                                                                 }
                                                             }
-                                                            Ok(Message::LoginAuthenticationRequest { email_username, password }) =>
-                                                            {
-				                            let appstate = state.0.clone();
-                                                                    let db = &appstate.1.lock().await;
-                            let msgback = match User::authenticate(email_username.clone(), password, db).await {
-                                                                Ok((session_reference, user)) => {
-                            incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
-                            client_session_data.user = Some(user.clone());
-                            Message::AuthSuccess {token: session_reference.token, username: user.username }
-				                            }
-			                            ,
-                                                                Err(s) => {
-                            match s {
-	                            LuminaError::AuthenticationWrongPassword => {
-		                            authentication_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
-	                            }
-	                            LuminaError::AuthenticationUserNotFound => {
-		                            authentication_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
-	                            }
-	                            _ => {
-		                            authentication_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
-	                            }
+                                                            Ok(Message::LoginAuthenticationRequest { email_username, password }) => {
+                                // Quick pre-check: if the limiter says this IP is blocked, avoid DB work.
+                                if !auth_limiter.allow_ip(client_ip).await {
+                                    authentication_error_elog!(ev_log, "Rate-limited authentication attempt from IP: {:?}", client_ip);
+                                    let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
+                                } else {
+                                    let appstate = state.0.clone();
+                                    let db = &appstate.1.lock().await;
+                                    let msgback = match User::authenticate(email_username.clone(), password, db).await {
+                                        Ok((session_reference, user)) => {
+                                            incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
+                                            client_session_data.user = Some(user.clone());
+                                            Message::AuthSuccess {token: session_reference.token, username: user.username }
+                                        }
+                                        ,
+                                        Err(s) => {
+                                            match s {
+                                                LuminaError::AuthenticationWrongPassword => {
+                                                    authentication_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
+                                                }
+                                                LuminaError::AuthenticationUserNotFound => {
+                                                    authentication_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+                                                }
+                                                _ => {
+                                                    authentication_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
+                                                }
+                                            }
+                                            Message::AuthFailure
+                                        },
+                                    };
+                                    let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
+                                }
                             }
-                            Message::AuthFailure
-
-				                            },
-                			                            };
-				                            let _ = stream.send(ws::Message::from(msgtojson(msgback))).await;
-                                                            }
                                                             Ok(Message::OwnUserInformationRequest) => {
                                                                 // Handle request for user's own information
                                                                 match &client_session_data.user {
