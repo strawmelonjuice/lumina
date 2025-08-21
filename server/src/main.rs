@@ -19,6 +19,9 @@ mod user;
 use tokio_postgres as postgres;
 struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
 
+mod rate_limiter;
+use rate_limiter::{GeneralRateLimiter, AuthRateLimiter};
+
 use database::DbConn;
 
 #[derive(Debug, Clone)]
@@ -151,6 +154,14 @@ async fn main() {
                         ev_log.clone().await,
                     )));
 
+                    // Create a simple in-memory IP-based rate limiter.
+                    // Default: allow 5 events per 10 seconds (0.5 tokens/sec) with capacity 10.
+                    let rate_limiter = GeneralRateLimiter::new(0.5, 10.0);
+
+                    // Dedicated, stricter limiter for authentication attempts (helps stop brute-force):
+                    // e.g. allow 2 attempts per 10 seconds (0.2 tokens/sec) with capacity 4.
+                    let auth_rate_limiter = AuthRateLimiter::new(0.2, 4.0);
+
                     let def = rocket::Config {
                         port: config.port,
                         address: config.host,
@@ -174,6 +185,8 @@ async fn main() {
                             ],
                         )
                         .manage(appstate)
+                        .manage(rate_limiter)
+                        .manage(auth_rate_limiter)
                         .launch()
                         .await
                         .map_err(LuminaError::RocketFaillure);
