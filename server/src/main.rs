@@ -20,7 +20,7 @@ use tokio_postgres as postgres;
 struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
 
 mod rate_limiter;
-use rate_limiter::{GeneralRateLimiter, AuthRateLimiter};
+use rate_limiter::{AuthRateLimiter, GeneralRateLimiter};
 
 use database::DbConn;
 
@@ -166,6 +166,8 @@ async fn main() {
                         port: config.port,
                         address: config.host,
                         // TODO: Use Lumina's logging instead, no logging is bad practise.
+                        // Technically, we currently do this by just shipping it into each http
+                        // route. HOWEVER, we don't have a 404 route!
                         log_level: LogLevel::Critical,
                         ..rocket::Config::default()
                     };
