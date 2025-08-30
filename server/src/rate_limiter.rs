@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use std::time::Instant;
-use std::net::IpAddr;
-use tokio::sync::Mutex;
 use rocket::State;
-use rocket::request::{FromRequest, Outcome, Request};
 use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
+use std::collections::HashMap;
+use std::net::IpAddr;
+use std::time::Instant;
+use tokio::sync::Mutex;
 
 /// A request guard that enforces the rate limit. Add as a parameter to handlers
 /// (e.g. `rate: RateLimit`) to have the connection checked before the handler
@@ -25,7 +25,7 @@ impl<'r> FromRequest<'r> for RateLimit {
             _ => return Outcome::Success(RateLimit), // If limiter not present, allow through
         };
 
-    let allowed = limiter.allow_ip(ip).await;
+        let allowed = limiter.allow_ip(ip).await;
         if allowed {
             Outcome::Success(RateLimit)
         } else {

@@ -6,12 +6,12 @@ use crate::{
 };
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 extern crate rocket;
-use rocket::State;
 use crate::rate_limiter::RateLimit;
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+use rocket::State;
 use std::net::IpAddr;
 use uuid::Uuid;
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
 
 #[get("/connection")]
 pub(crate) async fn wsconnection<'k>(
