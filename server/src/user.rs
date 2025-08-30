@@ -8,6 +8,7 @@ pub struct User {
     pub id: Uuid,
     pub email: String,
     pub username: String,
+    pub foreign_instance_id: String, // Added to handle foreign_instance_id
 }
 
 #[derive(Debug, Clone)]
@@ -103,6 +104,7 @@ impl User {
                     id: id.get(0),
                     email,
                     username,
+                    foreign_instance_id: "".to_string(), // Default value for new users
                 })
             }
             DbConn::SqliteConnectionPool(pool, _) => {
@@ -137,6 +139,7 @@ impl User {
                     id,
                     email,
                     username,
+                    foreign_instance_id: "".to_string(), // Default value for new users
                 })
             }
         }
@@ -154,7 +157,7 @@ impl User {
             DbConn::PgsqlConnection((client, _), _) => {
                 let user = client
                     .query_one(
-                        &format!("SELECT * FROM users WHERE {} = $1", identifyer_type),
+                        &format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
                         &[&identifier],
                     )
                     .await
@@ -163,20 +166,21 @@ impl User {
                     id: user.get(0),
                     email: user.get(1),
                     username: user.get(2),
+                    foreign_instance_id: user.get(3),
                 })
             }
             DbConn::SqliteConnectionPool(pool, _) => pool
                 .get()
                 .map_err(LuminaError::R2D2Pool)?
                 .query_row(
-                    &format!("SELECT * FROM users WHERE {} = ?1", identifyer_type),
+                    &format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = ?1", identifyer_type),
                     &[&identifier],
                     |row| {
-                        let a: String = row.get(0)?;
                         Ok(User {
-                            id: Uuid::from_str(a.as_str()).unwrap(),
+                            id: Uuid::from_str(row.get::<_, String>(0)?.as_str()).unwrap(),
                             email: row.get(1)?,
                             username: row.get(2)?,
+                            foreign_instance_id: row.get(3)?,
                         })
                     },
                 )
@@ -254,6 +258,7 @@ impl User {
                     id: user.get(0),
                     email: user.get(1),
                     username: user.get(2),
+                    foreign_instance_id: "".to_string(), // Default value for revived sessions
                 })
             }
             DbConn::SqliteConnectionPool(pool, _) => {
@@ -265,6 +270,7 @@ Ok(User {
     id: Uuid::from_str(a.as_str()).unwrap(),
     email: row.get(1).unwrap(),
     username: row.get(2).unwrap(),
+    foreign_instance_id: "".to_string(), // Default value for revived sessions
 })
                 }).map_err(LuminaError::Sqlite)?;
                 Ok(user)
