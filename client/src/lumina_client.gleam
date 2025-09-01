@@ -456,8 +456,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let assert model_type.WsConnectionConnected(socket) = model.ws
         as "Socket not connected"
       let model = case model.page {
-        HomeTimeline(timeline_name: _, pop_up:) -> {
-          model_type.Model(..model, page: HomeTimeline(Some(tid), pop_up:))
+        HomeTimeline(timeline_name: _, modal:) -> {
+          model_type.Model(..model, page: HomeTimeline(Some(tid), modal:))
         }
         _ -> model
       }
@@ -490,6 +490,24 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     message_type.LoadMorePosts(timeline_name) -> {
       let effect = request_next_timeline_page(model, timeline_name)
       #(model, effect)
+    }
+    message_type.SetModal(to) -> {
+      case model.page {
+        HomeTimeline(timeline_name:, modal: _) -> #(
+          Model(..model, page: HomeTimeline(timeline_name:, modal: Some(to))),
+          effect.none(),
+        )
+        _ -> #(model, effect.none())
+      }
+    }
+    message_type.CloseModal -> {
+      case model.page {
+        HomeTimeline(timeline_name:, modal: _) -> #(
+          Model(..model, page: HomeTimeline(timeline_name:, modal: None)),
+          effect.none(),
+        )
+        _ -> #(model, effect.none())
+      }
     }
   }
 }

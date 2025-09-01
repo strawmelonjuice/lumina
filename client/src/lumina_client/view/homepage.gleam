@@ -6,7 +6,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/time/calendar
 import gleam/time/timestamp
-import lumina_client/message_type.{type Msg, Logout}
+import lumina_client/message_type.{type Msg, CloseModal, Logout, SetModal}
 import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lustre/attribute.{attribute}
@@ -17,20 +17,57 @@ import lustre/event
 pub fn view(model: model_type.Model) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(
-      timeline_name:,
-      // TODO: consume and display pop_up
-      pop_up: _,
-    ),
-    user: _,
+    page: model_type.HomeTimeline(timeline_name:, modal:),
+    user:,
     ws: _,
     token: _,
     status: _,
     cache: _,
     ticks: _,
   ) = model
+
   let timeline_name = option.unwrap(timeline_name, "global")
+  let modal_element = case modal {
+    Some(id) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-[80vw] max-w-[unset] h-[80vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                  ),
+
+                  event.on_click(CloseModal),
+                ],
+                [
+                  element.text(
+                    // &times;
+                    "×",
+                  ),
+                ],
+              ),
+              modal_by_id(id, model),
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
+    None -> element.none()
+  }
   [
+    modal_element,
     html.div(
       [attribute.class("drawer lg:drawer-open max-h-[calc(100vh-4rem)]")],
       [
@@ -147,21 +184,53 @@ pub fn view(model: model_type.Model) {
     ),
   ]
   |> common_view_parts(with_menu: [
-    html.li([], [html.a([event.on_click(Logout)], [element.text("Log out")])]),
-    html.li([], [html.a([], [element.text("Settings")])]),
+    html.li([attribute.class("hidden md:flex")], [
+      html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
+        element.text("Settings"),
+      ]),
+    ]),
     html.li([attribute.class("lg:hidden ")], [
       html.label(
-        [attribute.class("drawer-button"), attribute.for("my-drawer-2")],
+        [
+          attribute.class("drawer-button btn md:btn-neutral btn-ghost"),
+          attribute.for("my-drawer-2"),
+        ],
         [element.text("Switch timeline")],
       ),
     ]),
+    case user {
+      Some(user) -> {
+        html.li([], [
+          html.button(
+            [
+              attribute.class("btn md:btn-neutral btn-ghost"),
+              event.on_click(SetModal("selfmenu")),
+            ],
+            [
+              html.div([attribute.class("avatar")], [
+                html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
+                  html.img([
+                    attribute.src(user.avatar),
+                    attribute.alt(user.username),
+                  ]),
+                ]),
+              ]),
+              html.span([attribute.class("hidden md:inline")], [
+                element.text("@" <> user.username),
+              ]),
+            ],
+          ),
+        ])
+      }
+      None -> element.none()
+    },
   ])
 }
 
 pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
   let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_name:, pop_up: _),
+    page: model_type.HomeTimeline(timeline_name:, modal: _),
     user: _,
     ws: _,
     token: _,
@@ -415,4 +484,53 @@ pub fn merge_timelines(
     has_more: new.has_more,
     last_updated: new.last_updated,
   )
+}
+// TODO: Think about different VARIANTS of modals, like for the user menu a right-side one for example.
+fn modal_by_id(id: String, model: Model) -> Element(Msg) {
+  let assert model_type.Model(
+    page: model_type.HomeTimeline(timeline_name: _, modal: _),
+    user: Some(user),
+    ws: _,
+    token: _,
+    status: _,
+    cache: _,
+    ticks: _,
+  ): Model = model
+  case id {
+    "test" ->
+      html.div([], [
+        element.text("Welcome to Lumina! This is a test modal screen."),
+      ])
+    "selfmenu" ->
+      html.ul(
+        [
+          attribute.class(
+            "menu menu-xl rounded-box w-2/3 justify-center text-center items-center space-y-4",
+          ),
+        ],
+        [
+          html.li([attribute.class("menu-title")], [
+            element.text("Hi, @" <> user.username),
+          ]),
+          html.li([attribute.class("md:hidden")], [
+            html.a(
+              [
+                attribute.class("btn btn-info"),
+                event.on_click(SetModal("selfsettings")),
+              ],
+              [
+                element.text("Settings"),
+              ],
+            ),
+          ]),
+          html.li([], [
+            html.a([attribute.class("btn btn-warn"), event.on_click(Logout)], [
+              element.text("Log out"),
+            ]),
+          ]),
+        ],
+      )
+
+    _ -> element.none()
+  }
 }
