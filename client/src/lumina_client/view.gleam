@@ -1,26 +1,23 @@
 //// Module containing the view function and it's splits
 
-import gleam/bool
 import gleam/dynamic/decode
-import gleam/int
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import gleam/time/calendar
-import gleam/time/timestamp
 import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
 import lumina_client/message_type.{
-  type Msg, Logout, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
+  type Msg, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
   ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
   UpdatePasswordField, UpdateUsernameField, WSTryReconnect,
 }
 import lumina_client/model_type.{
   type Model, HomeTimeline, Landing, Login, Register,
 }
-import lumina_client/view/homepage
-import lustre/attribute.{attribute}
+import lumina_client/view/common_view_parts.{common_view_parts}
+import lumina_client/view/homepage.{view as view_homepage}
+import lustre/attribute.{}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
@@ -508,216 +505,5 @@ fn view_register(model_: Model) -> Element(Msg) {
       ]),
     ]),
     html.li([event.on_click(ToLoginPage)], [html.a([], [element.text("Login")])]),
-  ])
-}
-
-fn view_homepage(model: model_type.Model) {
-  // Dissect the model
-  let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_name:, pop_up:),
-    user:,
-    ws: _,
-    token:,
-    status:,
-    cache:,
-    ticks:,
-  ) = model
-  let timeline_name = option.unwrap(timeline_name, "global")
-  [
-    html.div(
-      [attribute.class("drawer lg:drawer-open max-h-[calc(100vh-4rem)]")],
-      [
-        html.input([
-          attribute.class("drawer-toggle"),
-          attribute.type_("checkbox"),
-          attribute.id("my-drawer-2"),
-        ]),
-        html.main(
-          [
-            attribute.class(
-              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)] overflow-y-auto"
-              <> {
-                let rn = timestamp.system_time()
-                let #(calendar.Date(year, month, day), _) =
-                  timestamp.to_calendar(rn, calendar.local_offset())
-                // TODO: Actual date classes:
-                " "
-                <> {
-                  // Year
-                  "yearclass-" <> int.to_string(year)
-                }
-                <> " "
-                <> {
-                  // Month
-                  case month {
-                    calendar.January -> "monthclass-1"
-                    calendar.February -> "monthclass-2"
-                    calendar.March -> "monthclass-3"
-                    calendar.April -> "monthclass-4"
-                    calendar.May -> "monthclass-5"
-                    calendar.June -> "monthclass-6"
-                    calendar.July -> "monthclass-7"
-                    calendar.August -> "monthclass-8"
-                    calendar.September -> "monthclass-9"
-                    calendar.October -> "monthclass-10"
-                    calendar.November -> "monthclass-11"
-                    calendar.December -> "monthclass-12"
-                  }
-                }
-                <> " "
-                <> {
-                  // Day
-                  "dayclass-" <> int.to_string(day)
-                }
-              },
-            ),
-          ],
-          [homepage.timeline(model)],
-        ),
-        html.div([attribute.class("drawer-side")], [
-          html.label(
-            [
-              attribute.class("drawer-overlay"),
-              attribute("aria-label", "close sidebar"),
-              attribute.for("my-drawer-2"),
-            ],
-            [],
-          ),
-          html.ul(
-            [
-              attribute.class(
-                "menu bg-base-200 bg-opacity-75 text-base-content h-screen lg:max-h-[calc(100vh-4rem)] w-80 p-4",
-              ),
-            ],
-            [
-              html.li([attribute.class("menu-title")], [
-                element.text("Timeline"),
-              ]),
-              html.ul([], [
-                html.li([], [
-                  html.a(
-                    [
-                      bool.lazy_guard(
-                        when: timeline_name == "global",
-                        return: fn() { attribute.class("menu-active") },
-                        otherwise: fn() { attribute.none() },
-                      ),
-                      event.on_click(message_type.TimeLineTo("global")),
-                    ],
-                    [element.text("🌐 Global")],
-                  ),
-                ]),
-                html.li([], [
-                  html.a(
-                    [
-                      bool.lazy_guard(
-                        when: timeline_name == "following",
-                        return: fn() { attribute.class("menu-active") },
-                        otherwise: fn() { attribute.none() },
-                      ),
-                      event.on_click(message_type.TimeLineTo("following")),
-                    ],
-                    [element.text("👋 Following")],
-                  ),
-                ]),
-                html.li([], [
-                  html.a(
-                    [
-                      bool.lazy_guard(
-                        when: timeline_name == "mutuals",
-                        return: fn() { attribute.class("menu-active") },
-                        otherwise: fn() { attribute.none() },
-                      ),
-                      event.on_click(message_type.TimeLineTo("mutuals")),
-                    ],
-                    [element.text("🤝 Mutuals")],
-                  ),
-                ]),
-              ]),
-            ],
-          ),
-        ]),
-      ],
-    ),
-  ]
-  |> common_view_parts(with_menu: [
-    html.li([attribute.class("hidden md:flex")], [
-      // Todo: Logout button not available on smaller than md screens, and we want it and the settings button under the profile picture button.
-      html.button(
-        [
-          attribute.class("btn md:btn-neutral btn-ghost"),
-          event.on_click(Logout),
-        ],
-        [element.text("Log out")],
-      ),
-    ]),
-    html.li([attribute.class("hidden md:flex")], [
-      html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
-        element.text("Settings"),
-      ]),
-    ]),
-    html.li([attribute.class("lg:hidden ")], [
-      html.label(
-        [
-          attribute.class("drawer-button btn md:btn-neutral btn-ghost"),
-          attribute.for("my-drawer-2"),
-        ],
-        [element.text("Switch timeline")],
-      ),
-    ]),
-    case user {
-      Some(user) -> {
-        html.li([], [
-          html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
-            html.div([attribute.class("avatar")], [
-              html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
-                html.img([
-                  attribute.src(user.avatar),
-                  attribute.alt(user.username),
-                ]),
-              ]),
-            ]),
-            html.span([attribute.class("hidden md:inline")], [
-              element.text("@" <> user.username),
-            ]),
-          ]),
-        ])
-      }
-      None -> element.none()
-    },
-  ])
-}
-
-fn common_view_parts(
-  main_body: List(Element(Msg)),
-  with_menu menuitems: List(Element(Msg)),
-) {
-  html.div([], [
-    html.div(
-      [attribute.class("navbar bg-base-100 dark:bg-neutral-800 shadow-sm")],
-      [
-        html.div([attribute.class("flex-none")], [
-          html.button([attribute.class("")], [
-            html.img([
-              attribute.src("/static/logo.svg"),
-              attribute.alt("Lumina logo"),
-              attribute.class("h-8"),
-            ]),
-          ]),
-        ]),
-        html.div([attribute.class("flex-1")], [
-          html.a([attribute.class("btn btn-ghost text-xl")], [
-            element.text("Lumina"),
-          ]),
-        ]),
-        html.div([attribute.class("flex-none")], [
-          html.ul([attribute.class("menu menu-horizontal px-1")], menuitems),
-        ]),
-      ],
-    ),
-    html.div(
-      [attribute.class("bg-base-200 h-screen max-h-[calc(100vh-4rem)]")],
-      main_body,
-    ),
   ])
 }

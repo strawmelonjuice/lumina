@@ -4,12 +4,159 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
-import lumina_client/message_type.{type Msg}
+import gleam/time/calendar
+import gleam/time/timestamp
+import lumina_client/message_type.{type Msg, Logout}
 import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
-import lustre/attribute
+import lumina_client/view/common_view_parts.{common_view_parts}
+import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+
+pub fn view(model: model_type.Model) {
+  // Dissect the model
+  let assert model_type.Model(
+    page: model_type.HomeTimeline(
+      timeline_name:,
+      // TODO: consume and display pop_up
+      pop_up: _,
+    ),
+    user: _,
+    ws: _,
+    token: _,
+    status: _,
+    cache: _,
+    ticks: _,
+  ) = model
+  let timeline_name = option.unwrap(timeline_name, "global")
+  [
+    html.div(
+      [attribute.class("drawer lg:drawer-open max-h-[calc(100vh-4rem)]")],
+      [
+        html.input([
+          attribute.class("drawer-toggle"),
+          attribute.type_("checkbox"),
+          attribute.id("my-drawer-2"),
+        ]),
+        html.main(
+          [
+            attribute.class(
+              "drawer-content items-center flex flex-col bg-neutral text-neutral-content h-screen max-h-[calc(100vh-4rem)] overflow-y-auto"
+              <> {
+                let rn = timestamp.system_time()
+                let #(calendar.Date(year, month, day), _) =
+                  timestamp.to_calendar(rn, calendar.local_offset())
+                " "
+                <> {
+                  // Year
+                  "yearclass-" <> int.to_string(year)
+                }
+                <> " "
+                <> {
+                  // Month
+                  case month {
+                    calendar.January -> "monthclass-1"
+                    calendar.February -> "monthclass-2"
+                    calendar.March -> "monthclass-3"
+                    calendar.April -> "monthclass-4"
+                    calendar.May -> "monthclass-5"
+                    calendar.June -> "monthclass-6"
+                    calendar.July -> "monthclass-7"
+                    calendar.August -> "monthclass-8"
+                    calendar.September -> "monthclass-9"
+                    calendar.October -> "monthclass-10"
+                    calendar.November -> "monthclass-11"
+                    calendar.December -> "monthclass-12"
+                  }
+                }
+                <> " "
+                <> {
+                  // Day
+                  "dayclass-" <> int.to_string(day)
+                }
+              },
+            ),
+          ],
+          [timeline(model)],
+        ),
+        html.div([attribute.class("drawer-side")], [
+          html.label(
+            [
+              attribute.class("drawer-overlay"),
+              attribute("aria-label", "close sidebar"),
+              attribute.for("my-drawer-2"),
+            ],
+            [],
+          ),
+          html.ul(
+            [
+              attribute.class(
+                "menu bg-base-200 bg-opacity-75 text-base-content h-screen lg:max-h-[calc(100vh-4rem)] w-80 p-4",
+              ),
+            ],
+            [
+              html.li([attribute.class("menu-title")], [
+                element.text("Timeline"),
+              ]),
+              html.ul([], [
+                html.li([], [
+                  html.a(
+                    [
+                      bool.lazy_guard(
+                        when: timeline_name == "global",
+                        return: fn() { attribute.class("menu-active") },
+                        otherwise: fn() { attribute.none() },
+                      ),
+                      event.on_click(message_type.TimeLineTo("global")),
+                    ],
+                    [element.text("🌐 Global")],
+                  ),
+                ]),
+                html.li([], [
+                  html.a(
+                    [
+                      bool.lazy_guard(
+                        when: timeline_name == "following",
+                        return: fn() { attribute.class("menu-active") },
+                        otherwise: fn() { attribute.none() },
+                      ),
+                      event.on_click(message_type.TimeLineTo("following")),
+                    ],
+                    [element.text("👋 Following")],
+                  ),
+                ]),
+                html.li([], [
+                  html.a(
+                    [
+                      bool.lazy_guard(
+                        when: timeline_name == "mutuals",
+                        return: fn() { attribute.class("menu-active") },
+                        otherwise: fn() { attribute.none() },
+                      ),
+                      event.on_click(message_type.TimeLineTo("mutuals")),
+                    ],
+                    [element.text("🤝 Mutuals")],
+                  ),
+                ]),
+              ]),
+            ],
+          ),
+        ]),
+      ],
+    ),
+  ]
+  |> common_view_parts(with_menu: [
+    html.li([], [html.a([event.on_click(Logout)], [element.text("Log out")])]),
+    html.li([], [html.a([], [element.text("Settings")])]),
+    html.li([attribute.class("lg:hidden ")], [
+      html.label(
+        [attribute.class("drawer-button"), attribute.for("my-drawer-2")],
+        [element.text("Switch timeline")],
+      ),
+    ]),
+  ])
+}
 
 pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
@@ -203,7 +350,7 @@ pub fn add_page_to_timeline(
 }
 
 /// Clear all cached pages (useful for timeline refresh)
-pub fn clear_timeline_cache(timeline: CachedTimeline) -> CachedTimeline {
+pub fn clear_timeline_cache() -> CachedTimeline {
   CachedTimeline(
     pages: dict.new(),
     total_count: 0,
