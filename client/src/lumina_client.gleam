@@ -598,6 +598,9 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           console.log(
             "Received timeline response for "
             <> timeline_name
+            <> " (id: "
+            <> timeline_id
+            <> ")"
             <> " with "
             <> int.to_string(list.length(items))
             <> " items (page "
