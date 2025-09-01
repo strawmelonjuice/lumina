@@ -17,7 +17,7 @@ import lumina_client/model_type.{
 }
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/homepage.{view as view_homepage}
-import lustre/attribute.{}
+import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
