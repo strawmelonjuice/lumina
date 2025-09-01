@@ -130,7 +130,7 @@ pub type Page {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields, success: Option(Bool))
-  HomeTimeline(timeline_name: Option(String), pop_up: Option(String))
+  HomeTimeline(timeline_name: Option(String), modal: Option(String))
 }
 
 fn encode_page(page: Page) -> json.Json {
@@ -169,16 +169,16 @@ fn encode_page(page: Page) -> json.Json {
           ])
         }),
       ])
-    HomeTimeline(timeline_name:, pop_up:) ->
+    HomeTimeline(timeline_name:, modal:) ->
       json.object(
         [#("type", json.string("home_timeline"))]
         |> list.append(case timeline_name {
           None -> []
           Some(i) -> [#("timeline_name", json.string(i))]
         })
-        |> list.append(case pop_up {
+        |> list.append(case modal {
           None -> []
-          Some(i) -> [#("pop_up", json.string(i))]
+          Some(i) -> [#("modal", json.string(i))]
         }),
       )
   }
@@ -221,12 +221,12 @@ fn page_decoder() -> decode.Decoder(Page) {
         None,
         decode.optional(decode.string),
       )
-      use pop_up <- decode.optional_field(
-        "pop_up",
+      use modal <- decode.optional_field(
+        "modal",
         None,
         decode.optional(decode.string),
       )
-      decode.success(HomeTimeline(timeline_name:, pop_up:))
+      decode.success(HomeTimeline(timeline_name:, modal:))
     }
     _ -> decode.failure(Landing, "Page")
   }

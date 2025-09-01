@@ -23,4 +23,8 @@ pub type Msg {
   LoadMorePosts(String)
   /// Log the user out (destroys session and recreates model)
   Logout
+  /// Close current modal
+  CloseModal
+  /// Browse modal to different page
+  SetModal(String)
 }
