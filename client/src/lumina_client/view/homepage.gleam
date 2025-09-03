@@ -485,6 +485,7 @@ pub fn merge_timelines(
     last_updated: new.last_updated,
   )
 }
+
 // TODO: Think about different VARIANTS of modals, like for the user menu a right-side one for example.
 fn modal_by_id(id: String, model: Model) -> Element(Msg) {
   let assert model_type.Model(
@@ -512,6 +513,7 @@ fn modal_by_id(id: String, model: Model) -> Element(Msg) {
           html.li([attribute.class("menu-title")], [
             element.text("Hi, @" <> user.username),
           ]),
+          html.li([], [element.text("There's not much in this menu as of yet.")]),
           html.li([attribute.class("md:hidden")], [
             html.a(
               [
