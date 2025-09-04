@@ -1,9 +1,11 @@
 import gleam/bool
 import gleam/dict
+import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
+import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
 import lumina_client/message_type.{type Msg, CloseModal, Logout, SetModal}
@@ -13,6 +15,14 @@ import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+
+fn closemodal_not_for_modal_box() {
+  use classes <- decode.subfield(["target", "className"], decode.string)
+  case bool.negate(string.contains(classes, "modal-box")) {
+    True -> decode.success(CloseModal)
+    False -> decode.failure(CloseModal, "Clicked inside modal-box, ignoring")
+  }
+}
 
 pub fn view(model: model_type.Model) {
   // Dissect the model
@@ -36,6 +46,7 @@ pub fn view(model: model_type.Model) {
           attribute.class(
             "modal modal-open fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 w-screen h-screen",
           ),
+          event.on("click", closemodal_not_for_modal_box()),
         ],
         [
           html.div(
@@ -66,11 +77,161 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-    SideOrCentral(Right, _) -> todo
-    SideOrCentral(Bottom, _) -> todo
-    SideOrCentral(Left, _) -> todo
-    SideOrCentral(Top, _) -> todo
-    CentralSmall(_) -> todo
+    SideOrCentral(Right, mod) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-end justify-end z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+          event.on("click", closemodal_not_for_modal_box()),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-[24rem] h-full max-h-[100vh] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-l-xl",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 left-4 text-2xl",
+                  ),
+                  event.on_click(CloseModal),
+                ],
+                [element.text("×")],
+              ),
+              mod,
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
+    SideOrCentral(Bottom, mod) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-end justify-center z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+          event.on("click", closemodal_not_for_modal_box()),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-full max-w-[unset] h-[30vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative rounded-t-xl",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                  ),
+                  event.on_click(CloseModal),
+                ],
+                [element.text("×")],
+              ),
+              mod,
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
+    SideOrCentral(Left, mod) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-end justify-start z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+          event.on("click", closemodal_not_for_modal_box()),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-[24rem] h-full max-h-[100vh] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-r-xl",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                  ),
+                  event.on_click(CloseModal),
+                ],
+                [element.text("×")],
+              ),
+              mod,
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
+    SideOrCentral(Top, mod) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-start justify-center z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+          event.on("click", closemodal_not_for_modal_box()),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-full max-w-[unset] h-[30vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative rounded-b-xl",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                  ),
+                  event.on_click(CloseModal),
+                ],
+                [element.text("×")],
+              ),
+              mod,
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
+    CentralSmall(mod) ->
+      html.div(
+        [
+          attribute.class(
+            "modal modal-open fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 w-screen h-screen",
+          ),
+          event.on("click", closemodal_not_for_modal_box()),
+        ],
+        [
+          html.div(
+            [
+              attribute.class(
+                "modal-box w-[32rem] max-w-[90vw] h-[32rem] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
+              ),
+            ],
+            [
+              html.button(
+                [
+                  attribute.class(
+                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                  ),
+                  event.on_click(CloseModal),
+                ],
+                [element.text("×")],
+              ),
+              mod,
+              html.div([attribute.class("modal-action")], []),
+            ],
+          ),
+        ],
+      )
     NoModal -> element.none()
   }
   [
