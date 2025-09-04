@@ -120,7 +120,7 @@ pub fn view(model: model_type.Model) {
           html.div(
             [
               attribute.class(
-                "modal-box w-[24rem] lg:h-full lg:max-h-[calc(100vh-4rem)] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-xl md:h-full md:max-h-[calc(100vh-4rem)] h-[60vh] max-h-[60vh] mb-[20vh] lg:top-[10rem]",
+                "modal-box w-[24rem]  lg:max-h-[calc(100vh-4rem)] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-xl md:max-h-[calc(100vh-4rem)] h-[60vh] max-h-[60vh] mb-[20vh]",
               ),
             ],
             [
@@ -151,7 +151,7 @@ pub fn view(model: model_type.Model) {
           html.div(
             [
               attribute.class(
-                "modal-box w-[24rem] lg:h-full lg:max-h-[calc(100vh-4rem)] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-xl md:h-full md:max-h-[calc(100vh-4rem)] h-[60vh] max-h-[60vh] mb-[20vh] lg:top-[10rem]",
+                "modal-box w-[24rem] lg:max-h-[calc(100vh-4rem)] flex flex-col justify-start items-center bg-base-100 shadow-2xl relative rounded-xl md:max-h-[calc(100vh-4rem)] h-[60vh] max-h-[60vh] mb-[20vh]",
               ),
             ],
             [
@@ -292,11 +292,17 @@ pub fn view(model: model_type.Model) {
     ),
   ]
   |> common_view_parts(with_menu: [
-    html.li([attribute.class("hidden md:flex")], [
-      html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
-        element.text("Settings"),
-      ]),
-    ]),
+    html.li(
+      [
+        attribute.class("hidden md:flex"),
+        event.on_click(SetModal("selfsettings")),
+      ],
+      [
+        html.button([attribute.class("btn md:btn-neutral btn-ghost")], [
+          element.text("Settings"),
+        ]),
+      ],
+    ),
     html.li([attribute.class("lg:hidden ")], [
       html.label(
         [
@@ -315,6 +321,9 @@ pub fn view(model: model_type.Model) {
               event.on_click(SetModal("selfmenu")),
             ],
             [
+              html.span([attribute.class("hidden md:inline")], [
+                element.text("@" <> user.username),
+              ]),
               html.div([attribute.class("avatar")], [
                 html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
                   html.img([
@@ -322,9 +331,6 @@ pub fn view(model: model_type.Model) {
                     attribute.alt(user.username),
                   ]),
                 ]),
-              ]),
-              html.span([attribute.class("hidden md:inline")], [
-                element.text("@" <> user.username),
               ]),
             ],
           ),
@@ -665,7 +671,12 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
           ],
         ),
       )
-
+    "selfsettings" ->
+      CentralBig(
+        html.div([], [
+          element.text("User settings will be here eventually."),
+        ]),
+      )
     _ -> NoModal
   }
 }
