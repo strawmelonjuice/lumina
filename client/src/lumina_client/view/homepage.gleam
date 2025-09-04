@@ -27,8 +27,10 @@ pub fn view(model: model_type.Model) {
   ) = model
 
   let timeline_name = option.unwrap(timeline_name, "global")
-  let modal_element = case modal {
-    Some(id) ->
+  let modal_element = case
+    modal |> option.map(modal_by_id(_, model)) |> option.unwrap(NoModal)
+  {
+    CentralBig(mod) ->
       html.div(
         [
           attribute.class(
@@ -58,13 +60,18 @@ pub fn view(model: model_type.Model) {
                   ),
                 ],
               ),
-              modal_by_id(id, model),
+              mod,
               html.div([attribute.class("modal-action")], []),
             ],
           ),
         ],
       )
-    None -> element.none()
+    SideOrCentral(Right, _) -> todo
+    SideOrCentral(Bottom, _) -> todo
+    SideOrCentral(Left, _) -> todo
+    SideOrCentral(Top, _) -> todo
+    CentralSmall(_) -> todo
+    NoModal -> element.none()
   }
   [
     modal_element,
@@ -486,8 +493,26 @@ pub fn merge_timelines(
   )
 }
 
+type ModalSide {
+  Right
+  Left
+  Bottom
+  Top
+}
+
+type ModalWithShape {
+  /// Central takes up most of the screen space, and is used for things like a settings screen.
+  CentralBig(Element(Msg))
+  /// Central takes up less of the screen space, and is used for things like a 'write a post' editor.
+  CentralSmall(Element(Msg))
+  /// Side or central takes up a little less screen space, looks roughly the same as Central(Big) on mobile screens but tries to out-center itself if possible.
+  /// Used for for example the user menu.
+  SideOrCentral(ModalSide, Element(Msg))
+  NoModal
+}
+
 // TODO: Think about different VARIANTS of modals, like for the user menu a right-side one for example.
-fn modal_by_id(id: String, model: Model) -> Element(Msg) {
+fn modal_by_id(id: String, model: Model) -> ModalWithShape {
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name: _, modal: _),
     user: Some(user),
@@ -499,40 +524,47 @@ fn modal_by_id(id: String, model: Model) -> Element(Msg) {
   ): Model = model
   case id {
     "test" ->
-      html.div([], [
-        element.text("Welcome to Lumina! This is a test modal screen."),
-      ])
+      CentralBig(
+        html.div([], [
+          element.text("Welcome to Lumina! This is a test modal screen."),
+        ]),
+      )
     "selfmenu" ->
-      html.ul(
-        [
-          attribute.class(
-            "menu menu-xl rounded-box w-2/3 justify-center text-center items-center space-y-4",
-          ),
-        ],
-        [
-          html.li([attribute.class("menu-title")], [
-            element.text("Hi, @" <> user.username),
-          ]),
-          html.li([], [element.text("There's not much in this menu as of yet.")]),
-          html.li([attribute.class("md:hidden")], [
-            html.a(
-              [
-                attribute.class("btn btn-info"),
-                event.on_click(SetModal("selfsettings")),
-              ],
-              [
-                element.text("Settings"),
-              ],
+      SideOrCentral(
+        Right,
+        html.ul(
+          [
+            attribute.class(
+              "menu menu-xl rounded-box w-2/3 justify-center text-center items-center space-y-4",
             ),
-          ]),
-          html.li([], [
-            html.a([attribute.class("btn btn-warn"), event.on_click(Logout)], [
-              element.text("Log out"),
+          ],
+          [
+            html.li([attribute.class("menu-title")], [
+              element.text("Hi, @" <> user.username),
             ]),
-          ]),
-        ],
+            html.li([], [
+              element.text("There's not much in this menu as of yet."),
+            ]),
+            html.li([attribute.class("md:hidden")], [
+              html.a(
+                [
+                  attribute.class("btn btn-info"),
+                  event.on_click(SetModal("selfsettings")),
+                ],
+                [
+                  element.text("Settings"),
+                ],
+              ),
+            ]),
+            html.li([], [
+              html.a([attribute.class("btn btn-warn"), event.on_click(Logout)], [
+                element.text("Log out"),
+              ]),
+            ]),
+          ],
+        ),
       )
 
-    _ -> element.none()
+    _ -> NoModal
   }
 }
