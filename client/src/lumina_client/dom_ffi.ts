@@ -6,3 +6,15 @@ export function get_color_scheme() {
 	}
 	return "light";
 }
+
+
+export function classfoundintree(starting_element: HTMLElement, className: string): boolean {
+	let element: HTMLElement | null = starting_element;
+	do {
+		if (element.classList && element.classList.contains(className)) {
+			return true;
+		}
+		element = element.parentElement as HTMLElement | null;
+	} while (element);
+	return false;
+}
