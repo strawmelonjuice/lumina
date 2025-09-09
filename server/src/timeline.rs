@@ -1,7 +1,6 @@
 use crate::errors::LuminaError;
 use crate::helpers::events::EventLogger;
 use redis::Commands;
-use crate::rocket::futures::TryFutureExt;
 use crate::{DbConn, user, info_elog, success_elog, warn_elog, error_elog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
