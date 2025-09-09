@@ -1,6 +1,7 @@
 import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -172,8 +173,8 @@ pub fn view(model: model_type.Model) {
         ],
       )
     NoModal -> element.none()
-    SideOrCentral(Bottom, _) -> todo
-    SideOrCentral(Top, _) -> todo
+    // SideOrCentral(Bottom, _) -> todo
+    // SideOrCentral(Top, _) -> todo
   }
   [
     modal_element,
@@ -300,14 +301,20 @@ pub fn view(model: model_type.Model) {
                             attribute.attribute("stroke-linejoin", "round"),
                             attribute.attribute("opacity", "0.6"),
                             attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("d", "M6.6 6.6a9 9 0 0 1 0 10.8"),
+                            attribute.attribute(
+                              "d",
+                              "M6.6 6.6a9 9 0 0 1 0 10.8",
+                            ),
                           ]),
                           svg.path([
                             attribute.attribute("stroke-linecap", "round"),
                             attribute.attribute("opacity", "0.6"),
                             attribute.attribute("stroke-linejoin", "round"),
                             attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("d", "M17.4 6.6a9 9 0 0 0 0 10.8"),
+                            attribute.attribute(
+                              "d",
+                              "M17.4 6.6a9 9 0 0 0 0 10.8",
+                            ),
                           ]),
                           // Additional latitude lines
                           svg.path([
@@ -553,8 +560,8 @@ pub fn timeline(model: Model) -> Element(Msg) {
                     attribute.class(
                       "flex flex-col gap-2 p-4 m-8 bg-base-300 text-base-300-content rounded-md w-full bg-opacity-25",
                       // Other candidates were:
-                      // // "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
-                      // // "flex flex-col gap-2 p-4 m-8 bg-info text-info-content rounded-md w-full bg-opacity-25",
+                    // // "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
+                    // // "flex flex-col gap-2 p-4 m-8 bg-info text-info-content rounded-md w-full bg-opacity-25",
                     ),
                   ],
                   [
@@ -704,6 +711,7 @@ pub fn should_load_more(
 pub fn create_empty_timeline() -> CachedTimeline {
   CachedTimeline(
     pages: dict.new(),
+    id: "",
     total_count: 0,
     current_page: 0,
     has_more: False,
@@ -713,26 +721,30 @@ pub fn create_empty_timeline() -> CachedTimeline {
 
 /// Add a page of posts to a timeline cache
 pub fn add_page_to_timeline(
-  timeline: CachedTimeline,
-  page: Int,
-  posts: List(String),
-  total_count: Int,
-  has_more: Bool,
+  to_timeline timeline: CachedTimeline,
+  timeline_id tlid: String,
+  page page: Int,
+  items posts: List(String),
+  count total_count: Int,
+  has_more has_more: Bool,
 ) -> CachedTimeline {
   CachedTimeline(
     pages: timeline.pages |> dict.insert(page, posts),
+    id: tlid,
     total_count: total_count,
     current_page: page,
     has_more: has_more,
-    last_updated: 0,
-    // TODO: Add proper timestamp when available
+    last_updated: float.truncate(
+      timestamp.to_unix_seconds(timestamp.system_time()),
+    ),
   )
 }
 
 /// Clear all cached pages (useful for timeline refresh)
-pub fn clear_timeline_cache() -> CachedTimeline {
+pub fn clear_timeline_cache(old: CachedTimeline) -> CachedTimeline {
   CachedTimeline(
     pages: dict.new(),
+    id: old.id,
     total_count: 0,
     current_page: 0,
     has_more: False,
@@ -789,6 +801,7 @@ pub fn merge_timelines(
 
   CachedTimeline(
     pages: merged_pages,
+    id: new.id,
     total_count: new.total_count,
     // Use new total count
     current_page: new.current_page,
@@ -800,8 +813,8 @@ pub fn merge_timelines(
 type ModalSide {
   Right
   Left
-  Bottom
-  Top
+  // Bottom
+  // Top
 }
 
 type ModalWithShape {

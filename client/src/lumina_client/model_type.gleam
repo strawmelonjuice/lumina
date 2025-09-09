@@ -31,6 +31,37 @@ pub type Model {
   )
 }
 
+pub fn create_cache_inventory(model: Model) -> CacheInventory {
+  let cache = model.cache
+  let timelines =
+    cache.cached_timelines
+    |> dict.to_list()
+    |> list.map(fn(timeline) {
+      let timeline = timeline.1
+      #(timeline.id, timeline.last_updated)
+    })
+  let users =
+    cache.cached_users
+    |> dict.to_list()
+    |> list.map(fn(user) { #(user.0, { user.1 }.last_updated) })
+  let posts =
+    cache.cached_posts
+    |> dict.to_list()
+    |> list.map(fn(post) { #(post.0, { post.1 }.last_updated) })
+  CacheInventory(timelines:, users:, posts:)
+}
+
+pub type CacheInventory {
+  CacheInventory(
+    /// Timelines by #(id, last_updated)
+    timelines: List(#(String, Int)),
+    /// Users by #(id, last_updated)
+    users: List(#(String, Int)),
+    /// Posts by #(id, last_updated)
+    posts: List(#(String, Int)),
+  )
+}
+
 pub type WsConnectionStatus {
   /// Before connection is created
   WsConnectionInitial
@@ -50,21 +81,36 @@ pub type Cached {
     /// Posts are requested if nonexistent in the dict, and a loading screen can be displayed immediately
     /// The server will afterwards send all corresponding comments, which can also be stored and, if deemed
     /// necessary by the Lustre runtime, also update the DOM.
-    /// Only drawback is that the view function might run a lot, but I don't believe that'd have such a big impact.
+    ///
+    /// Commnents under a post are in fact stored as a timeline and possess the exact same capabilities.
     ///
     /// `Dict(post_uuid, CachedPost)`
     cached_posts: dict.Dict(String, CachedPost),
-    // /// Comments received:
-    // cached_comments: List(CachedComment)
-    // /// Users received:
-    // cached_users: Dict(String, CachedUser)
+    /// Users received:
+    cached_users: Dict(String, CachedUser),
     /// Cached timelines with pagination support
+    /// `Dict(timeline_id, CachedTimeline)`
     cached_timelines: Dict(String, CachedTimeline),
+  )
+}
+
+pub type CachedUser {
+  CachedUser(
+    /// Source instance. 'local' by default, hostname if external.
+    source_instance: String,
+    /// Username
+    username: String,
+    /// Avatar as uri string, either a full URL or a base64-encoded 'data:'-string
+    avatar: String,
+    /// Last updated timestamp (seconds) to help with cache invalidation
+    last_updated: Int,
   )
 }
 
 pub type CachedTimeline {
   CachedTimeline(
+    /// Timeline ID, as given by the server
+    id: String,
     /// Post IDs for all loaded pages, organized by page number
     pages: Dict(Int, List(String)),
     /// Total number of posts in the timeline
@@ -73,39 +119,43 @@ pub type CachedTimeline {
     current_page: Int,
     /// Whether there are more pages available
     has_more: Bool,
-    /// Last updated timestamp to help with cache invalidation
+    /// Last updated timestamp (seconds) to help with cache invalidation
     last_updated: Int,
   )
 }
 
 pub type CachedPost {
-  /// A media post, embedded is either webp or mp4.
-  CachedMediaPost(
+  CachedPost(
+    /// Post ID -- taken from the current instance, we don't have to deal with remote IDs here.
+    id: String,
     /// Source instance. 'local' by default, hostname if external.
     source_instance: String,
+    /// User id of poster, which is why the source_instance matters.
+    /// This means that client will do a lookup and stores the user once it gets it.
+    author_id: String,
+    /// Unix timestamp of the moment of posting
+    timestamp: Int,
+    /// Last updated timestamp (seconds) to help with cache invalidation
+    last_updated: Int,
+    /// Cached post interior
+    interior: CachedPostInterior,
+  )
+}
+
+pub type CachedPostInterior {
+  /// A media post, embedded is either webp or mp4.
+  CachedMediaPost(
     /// Media description
     description: String,
     /// Media files as base64-encoded 'data:'-strings
     /// Try matching on the substring of content-type
     /// to determine the valid HTML embed element to put it in.
     medias: List(String),
-    /// Unix timestamp of the moment of posting
-    timestamp: Int,
-    /// User id of poster, which is why the source_instance matters.
-    /// This means that client will do a lookup and stores the user once it gets it.
-    author_id: String,
   )
   /// The 'default', bluesky-like post, contains markdown and not much else.
   CachedTextualPost(
-    /// Source instance. 'local' by default, hostname if external.
-    source_instance: String,
     /// Markdown content.
     content: String,
-    /// Unix timestamp of the moment of posting
-    timestamp: Int,
-    /// User id of poster, which is why the source_instance matters.
-    /// This means that client will do a lookup and stores the user once it gets it.
-    author_id: String,
   )
   /// Article posts
   CachedArticlePost(
@@ -113,11 +163,6 @@ pub type CachedPost {
     title: String,
     /// Markdown content
     content: String,
-    /// Unix timestamp of the moment of posting
-    timestamp: Int,
-    /// User id of poster, which is why the source_instance matters.
-    /// This means that client will do a lookup and stores the user once it gets it.
-    author_id: String,
   )
 }
 
