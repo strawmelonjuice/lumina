@@ -463,17 +463,16 @@ pub(crate) enum DbConn {
 }
 
 impl DbConn {
-/// Get a reference to the redis pool
-/// This is useful for functions that need to access redis but not the main database
-/// such as timeline cache management
-/// This returns a clone of the pool, so it is cheap to call
+    /// Get a reference to the redis pool
+    /// This is useful for functions that need to access redis but not the main database
+    /// such as timeline cache management
+    /// This returns a clone of the pool, so it is cheap to call
     pub(crate) fn get_redis_pool(&self) -> Pool<redis::Client> {
         match self {
             DbConn::PgsqlConnection((_, _), redis_pool) => redis_pool.clone(),
             DbConn::SqliteConnectionPool(_, redis_pool) => redis_pool.clone(),
         }
     }
-
 
     /// Recreate the database connection.
     /// This clones the pool on sqlite and for redis, and creates a new connection on postgres.

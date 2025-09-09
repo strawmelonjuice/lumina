@@ -531,7 +531,11 @@ pub fn timeline(model: Model) -> Element(Msg) {
                     html.p([], [
                       element.text("Loading post..."),
                       html.span(
-                        [attribute.class("loading loading-spinner loading-md float-right")],
+                        [
+                          attribute.class(
+                            "loading loading-spinner loading-md float-right",
+                          ),
+                        ],
                         [],
                       ),
                     ]),
