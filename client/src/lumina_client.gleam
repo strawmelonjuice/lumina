@@ -1,20 +1,22 @@
 import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/float
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
+import gleam/time/timestamp
 import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, LoadMorePosts, Logout, SubmitLogin,
-  SubmitSignup, TickUp, ToLandingPage, ToLoginPage, ToRegisterPage,
-  UpdateEmailField, UpdatePasswordConfirmField, UpdatePasswordField,
-  UpdateUsernameField, WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
+  type Msg, FocusLostEmailField, Logout, SubmitLogin, SubmitSignup, TickUp,
+  ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
+  UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
+  WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
 }
 import lumina_client/model_type.{
   type Model, HomeTimeline, Landing, Login, LoginFields, Model, Register,
@@ -103,6 +105,7 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
       cache: model_type.Cached(
         cached_posts: dict.new(),
         cached_timelines: dict.new(),
+        cached_users: dict.new(),
       ),
       ticks: initial_ticks,
     )
@@ -125,6 +128,7 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
               cache: model_type.Cached(
                 cached_posts: dict.new(),
                 cached_timelines: dict.new(),
+                cached_users: dict.new(),
               ),
               ticks: initial_ticks,
             )
@@ -172,9 +176,14 @@ fn let_definitely_disconnect(model: Model) {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     TickUp -> {
+      let ticks = model.ticks + 1
+      let s = case ticks |> int.to_string() |> string.ends_with("00") {
+        True -> send_refresh_request(model)
+        False -> effect.none()
+      }
       #(
-        Model(..model, ticks: model.ticks + 1),
-        effect.batch([up_next_tick(), let_definitely_disconnect(model)]),
+        Model(..model, ticks:),
+        effect.batch([up_next_tick(), let_definitely_disconnect(model), s]),
       )
     }
     WSTryReconnect -> {
@@ -561,16 +570,29 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Some(#(mime, b64)) -> "data:" <> mime <> ";base64," <> b64
             None -> ""
           }
-
+          let new_users =
+            model.cache.cached_users
+            |> dict.insert(
+              uuid,
+              model_type.CachedUser(
+                username:,
+                source_instance: "local",
+                avatar: avatar_string,
+                last_updated: float.truncate(
+                  timestamp.to_unix_seconds(timestamp.system_time()),
+                ),
+              ),
+            )
           #(
             Model(
               ..model,
+              cache: model_type.Cached(..model.cache, cached_users: new_users),
               user: Some(model_type.User(username, email, avatar_string)),
             ),
             effect.none(),
           )
         }
-        Ok(AuthenticationSuccess(username:, token:)) -> {
+        Ok(AuthenticationSuccess(_username, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
           #(
@@ -600,9 +622,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
             )
-            Register(fields:, ready:) -> {
-              todo as "TODO: what to do AuthenticationFailure when on a register page?"
-            }
+            // If on register page, do nothing.
+            Register(..) -> #(model, effect.none())
           }
         }
         // Ws messages we can't receive
@@ -638,7 +659,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             <> bool.to_string(has_more)
             <> ").",
           )
-          let assert model_type.WsConnectionConnected(socket) = model.ws
+          let assert model_type.WsConnectionConnected(_socket) = model.ws
             as "Socket not connected"
 
           // Create or update timeline cache using utilities
@@ -648,6 +669,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Ok(existing) -> {
               homepage.add_page_to_timeline(
                 existing,
+                timeline_id,
                 page,
                 items,
                 total_count,
@@ -657,10 +679,11 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Error(..) -> {
               homepage.create_empty_timeline()
               |> homepage.add_page_to_timeline(
-                page,
-                items,
-                total_count,
-                has_more,
+                page:,
+                timeline_id:,
+                items:,
+                count: total_count,
+                has_more:,
               )
             }
           }
@@ -848,6 +871,17 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
     | OwnUserInformationResponse(..) ->
       json.object([#("type", json.string("unknown"))])
   }
+}
+
+fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
+  let inventory = model |> model_type.create_cache_inventory()
+  // Todo: send this to server to get updates on cached items.
+  console.log(
+    "Would send cache inventory to server: \n"
+    <> string.inspect(inventory)
+    <> "\n\nNot yet implemented.",
+  )
+  effect.none()
 }
 
 fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
