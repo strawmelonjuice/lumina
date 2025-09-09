@@ -178,17 +178,26 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
     WSTryReconnect -> {
-      init(model.ticks)
+      case model.ws {
+        model_type.WsConnectionDisconnected -> init(model.ticks)
+        _ -> #(model, effect.none())
+      }
     }
     WsDisconnectDefinitive -> {
-      let timed_trigger_to_retry_connect = fn() {
+      let timed_trigger_to_retry_connect = fn(h) {
         use dispatch <- effect.from
-        use <- helpers.set_timeout_nilled(1500)
+        use <- helpers.set_timeout_nilled(h)
         dispatch(WSTryReconnect)
       }
       #(
         Model(..model, ws: model_type.WsConnectionDisconnected),
-        timed_trigger_to_retry_connect(),
+        effect.batch([
+          timed_trigger_to_retry_connect(1500),
+          timed_trigger_to_retry_connect(3000),
+          timed_trigger_to_retry_connect(6000),
+          timed_trigger_to_retry_connect(12_000),
+          timed_trigger_to_retry_connect(24_000),
+        ]),
       )
     }
     // Catch other Ws Events in a different function, since that is generally very different stuff.
