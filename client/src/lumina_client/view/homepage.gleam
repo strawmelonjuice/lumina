@@ -278,6 +278,7 @@ pub fn view(model: model_type.Model) {
                             attribute.attribute("r", "9"),
                             attribute.attribute("stroke-width", "2"),
                           ]),
+                          // Equator
                           svg.path([
                             attribute.attribute("stroke-linecap", "round"),
                             attribute.attribute("stroke-linejoin", "round"),
@@ -285,6 +286,7 @@ pub fn view(model: model_type.Model) {
                             attribute.attribute("stroke-width", "2"),
                             attribute.attribute("d", "M3 12h18"),
                           ]),
+                          // Prime meridian
                           svg.path([
                             attribute.attribute("opacity", "0.6"),
                             attribute.attribute("stroke-linecap", "round"),
@@ -292,25 +294,50 @@ pub fn view(model: model_type.Model) {
                             attribute.attribute("stroke-width", "2"),
                             attribute.attribute("d", "M12 3a9 9 0 0 1 0 18"),
                           ]),
+                          // Longitude lines
                           svg.path([
                             attribute.attribute("stroke-linecap", "round"),
                             attribute.attribute("stroke-linejoin", "round"),
                             attribute.attribute("opacity", "0.6"),
                             attribute.attribute("stroke-width", "2"),
-                            attribute.attribute(
-                              "d",
-                              "M6.6 6.6a9 9 0 0 1 0 10.8",
-                            ),
+                            attribute.attribute("d", "M6.6 6.6a9 9 0 0 1 0 10.8"),
                           ]),
                           svg.path([
                             attribute.attribute("stroke-linecap", "round"),
                             attribute.attribute("opacity", "0.6"),
                             attribute.attribute("stroke-linejoin", "round"),
                             attribute.attribute("stroke-width", "2"),
-                            attribute.attribute(
-                              "d",
-                              "M17.4 6.6a9 9 0 0 0 0 10.8",
-                            ),
+                            attribute.attribute("d", "M17.4 6.6a9 9 0 0 0 0 10.8"),
+                          ]),
+                          // Additional latitude lines
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.4"),
+                            attribute.attribute("stroke-width", "1.5"),
+                            attribute.attribute("d", "M4.5 8.5a9 9 0 0 1 15 0"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.4"),
+                            attribute.attribute("stroke-width", "1.5"),
+                            attribute.attribute("d", "M4.5 15.5a9 9 0 0 0 15 0"),
+                          ]),
+                          // Additional longitude lines
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.4"),
+                            attribute.attribute("stroke-width", "1.5"),
+                            attribute.attribute("d", "M8.5 4.5a9 9 0 0 1 0 15"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.4"),
+                            attribute.attribute("stroke-width", "1.5"),
+                            attribute.attribute("d", "M15.5 4.5a9 9 0 0 0 0 15"),
                           ]),
                         ],
                       ),
