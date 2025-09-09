@@ -149,14 +149,17 @@ async fn main() {
                     let db = db_mut.unwrap();
 
                     if cfg!(debug_assertions) {
+                        let global = timeline::fetch_timeline_post_ids(ev_log.clone().await, &db, "00000000-0000-0000-0000-000000000000", None).await.unwrap_or_default();
+                        if global.0.is_empty() {
                         println!("Debug mode: Inserting Hello World post by local user with zero UUID if not exists.");
 
-                        let zero_uuid = "00000000-0000-0000-0000-000000000000";
+                        let zero_uuid = uui;
                         let hello_content = "Hello world";
-                        let author_id = zero_uuid;
+                        let author_id = "00000000-0000-0000-0000-000000000000";
                         match db.recreate().await.unwrap() {
                             DbConn::PgsqlConnection((client, _),_) => {
                                 // Insert Hello World post and timeline entry if not exists
+                                
                                 let _ = client
                                     
                                     .execute(
@@ -196,7 +199,7 @@ async fn main() {
                                     );
                                 });
                             }
-                        }
+                        }}
                     }
 
                     let appstate = AppState(Arc::from((
