@@ -1,7 +1,8 @@
 use crate::errors::LuminaError;
 use crate::helpers::events::EventLogger;
-use crate::{DbConn, error_elog, user};
 use redis::Commands;
+use crate::rocket::futures::TryFutureExt;
+use crate::{DbConn, user, info_elog, success_elog, warn_elog, error_elog};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -289,9 +290,15 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
     event_logger: EventLogger,
     db: &DbConn,
     timeline_name: &str,
-    _user: user::User,
+    user: user::User,
     page: Option<usize>,
 ) -> Result<(uuid::Uuid, Vec<String>, usize, bool), LuminaError> {
+    info_elog!(
+        event_logger,
+        "Fetching timeline '{}' for user '{}'",
+        timeline_name,
+        user.username
+    );
     // For now, only global timeline is supported.
     if timeline_name == "global" {
         let timeline_uuid = Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(LuminaError::UUidError)?;

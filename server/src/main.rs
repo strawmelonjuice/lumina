@@ -148,6 +148,57 @@ async fn main() {
                     let ev_log = EventLogger::new(&db_mut).await;
                     let db = db_mut.unwrap();
 
+                    if cfg!(debug_assertions) {
+                        println!("Debug mode: Inserting Hello World post by local user with zero UUID if not exists.");
+
+                        let zero_uuid = "00000000-0000-0000-0000-000000000000";
+                        let hello_content = "Hello world";
+                        let author_id = zero_uuid;
+                        match db.recreate().await.unwrap() {
+                            DbConn::PgsqlConnection((client, _),_) => {
+                                // Insert Hello World post and timeline entry if not exists
+                                let _ = client
+                                    
+                                    .execute(
+                                        "INSERT INTO users (id, email, username, password) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
+                                        &[&author_id, &"local@localhost", &"localuser", &"debugpassword"],
+                                    )
+                                    .await;
+                                let _ = client
+                                    
+                                    .execute(
+                                        "INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
+                                        &[&zero_uuid, &author_id, &hello_content],
+                                    )
+                                    .await;
+                                let add_clone = ev_log.clone().await;
+                                timeline::add_to_timeline(
+                                    add_clone,
+                                    &db,
+                                    zero_uuid,
+                                    zero_uuid,
+                                ).await.unwrap_or(());
+                            }
+                            DbConn::SqliteConnectionPool(conn,_) => {
+                                // Insert Hello World post and timeline entry if not exists
+                                let _ = conn.get().map(|c| {
+                                    let _ = c.execute(
+                                        "INSERT OR IGNORE INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4)",
+                                        &[author_id, "local@localhost", "localuser", "debugpassword"],
+                                    );
+                                    let _ = c.execute(
+                                        "INSERT OR IGNORE INTO post_text (id, author_id, content, created_at) VALUES (?1, ?2, ?3, strftime('%Y-%m-%d %H:%M:%f', 'now'))",
+                                        &[zero_uuid, author_id, hello_content],
+                                    );
+                                    let _ = c.execute(
+                                        "INSERT OR IGNORE INTO timelines (tlid, item_id, timestamp) VALUES (?1, ?2, datetime('now'))",
+                                        &[zero_uuid, zero_uuid],
+                                    );
+                                });
+                            }
+                        }
+                    }
+
                     let appstate = AppState(Arc::from((
                         config.clone(),
                         Mutex::from(db),
