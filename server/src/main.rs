@@ -151,7 +151,12 @@ async fn main() {
 
                     if cfg!(debug_assertions) {
                         let mut redis_conn = db.get_redis_pool().get().unwrap();
-                        timeline::invalidate_timeline_cache(&mut redis_conn, "00000000-0000-0000-0000-000000000000").await.unwrap();
+                        timeline::invalidate_timeline_cache(
+                            &mut redis_conn,
+                            "00000000-0000-0000-0000-000000000000",
+                        )
+                        .await
+                        .unwrap();
                         let global = timeline::fetch_timeline_post_ids(
                             ev_log.clone().await,
                             &db,
