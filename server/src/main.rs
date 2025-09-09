@@ -12,6 +12,7 @@ mod timeline;
 use helpers::events::EventLogger;
 use helpers::message_prefixes;
 use rocket::config::LogLevel;
+use uuid::Uuid;
 use std::io::ErrorKind;
 use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
@@ -153,7 +154,8 @@ async fn main() {
                         if global.0.is_empty() {
                         println!("Debug mode: Inserting Hello World post by local user with zero UUID if not exists.");
 
-                        let zero_uuid = uui;
+                        let generated_uuid = Uuid::new_v4();
+                        let generated_uuid_str = generated_uuid.to_string();
                         let hello_content = "Hello world";
                         let author_id = "00000000-0000-0000-0000-000000000000";
                         match db.recreate().await.unwrap() {
@@ -171,15 +173,15 @@ async fn main() {
                                     
                                     .execute(
                                         "INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
-                                        &[&zero_uuid, &author_id, &hello_content],
+                                        &[&generated_uuid, &author_id, &hello_content],
                                     )
                                     .await;
                                 let add_clone = ev_log.clone().await;
                                 timeline::add_to_timeline(
                                     add_clone,
                                     &db,
-                                    zero_uuid,
-                                    zero_uuid,
+                                    &generated_uuid_str.as_str(),
+                                    &generated_uuid_str.as_str(),
                                 ).await.unwrap_or(());
                             }
                             DbConn::SqliteConnectionPool(conn,_) => {
@@ -191,11 +193,11 @@ async fn main() {
                                     );
                                     let _ = c.execute(
                                         "INSERT OR IGNORE INTO post_text (id, author_id, content, created_at) VALUES (?1, ?2, ?3, strftime('%Y-%m-%d %H:%M:%f', 'now'))",
-                                        &[zero_uuid, author_id, hello_content],
+                                        &[&generated_uuid_str.as_str(), &author_id, &hello_content],
                                     );
                                     let _ = c.execute(
                                         "INSERT OR IGNORE INTO timelines (tlid, item_id, timestamp) VALUES (?1, ?2, datetime('now'))",
-                                        &[zero_uuid, zero_uuid],
+                                        &[&generated_uuid_str.as_str(), &generated_uuid_str.as_str()],
                                     );
                                 });
                             }
