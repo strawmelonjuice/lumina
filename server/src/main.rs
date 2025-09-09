@@ -12,10 +12,10 @@ mod timeline;
 use helpers::events::EventLogger;
 use helpers::message_prefixes;
 use rocket::config::LogLevel;
-use uuid::Uuid;
 use std::io::ErrorKind;
 use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
+use uuid::Uuid;
 mod user;
 use tokio_postgres as postgres;
 struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
@@ -150,43 +150,55 @@ async fn main() {
                     let db = db_mut.unwrap();
 
                     if cfg!(debug_assertions) {
-                        let global = timeline::fetch_timeline_post_ids(ev_log.clone().await, &db, "00000000-0000-0000-0000-000000000000", None).await.unwrap_or_default();
-                        if global.0.is_empty() {
-                        println!("Debug mode: Inserting Hello World post by local user with zero UUID if not exists.");
+                        let mut redis_conn = db.get_redis_pool().get().unwrap();
+                        timeline::invalidate_timeline_cache(&mut redis_conn, "00000000-0000-0000-0000-000000000000").await.unwrap();
+                        let global = timeline::fetch_timeline_post_ids(
+                            ev_log.clone().await,
+                            &db,
+                            "00000000-0000-0000-0000-000000000000",
+                            None,
+                        )
+                        .await
+                        .unwrap_or_default();
+                        if global.1 == 0 {
+                            println!(
+                                "Debug mode: Inserting Hello World post by local user with zero UUID if not exists."
+                            );
 
-                        let generated_uuid = Uuid::new_v4();
-                        let generated_uuid_str = generated_uuid.to_string();
-                        let hello_content = "Hello world";
-                        let author_id = "00000000-0000-0000-0000-000000000000";
-                        match db.recreate().await.unwrap() {
-                            DbConn::PgsqlConnection((client, _),_) => {
-                                // Insert Hello World post and timeline entry if not exists
-                                
-                                let _ = client
-                                    
+                            let generated_uuid = Uuid::new_v4();
+                            let generated_uuid_str = generated_uuid.to_string();
+                            let hello_content = "Hello world";
+                            let author_id = "00000000-0000-0000-0000-000000000000";
+                            match db.recreate().await.unwrap() {
+                                DbConn::PgsqlConnection((client, _), _) => {
+                                    // Insert Hello World post and timeline entry if not exists
+
+                                    let _ = client
                                     .execute(
                                         "INSERT INTO users (id, email, username, password) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
                                         &[&author_id, &"local@localhost", &"localuser", &"debugpassword"],
                                     )
                                     .await;
-                                let _ = client
-                                    
+                                    let _ = client
                                     .execute(
                                         "INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
                                         &[&generated_uuid, &author_id, &hello_content],
                                     )
                                     .await;
-                                let add_clone = ev_log.clone().await;
-                                timeline::add_to_timeline(
-                                    add_clone,
-                                    &db,
-                                    &generated_uuid_str.as_str(),
-                                    &generated_uuid_str.as_str(),
-                                ).await.unwrap_or(());
-                            }
-                            DbConn::SqliteConnectionPool(conn,_) => {
-                                // Insert Hello World post and timeline entry if not exists
-                                let _ = conn.get().map(|c| {
+                                    let add_clone = ev_log.clone().await;
+                                    timeline::add_to_timeline(
+                                        add_clone,
+                                        &db,
+                                        "00000000-0000-0000-0000-000000000000",
+                                        &generated_uuid_str.as_str(),
+                                    )
+                                    .await
+                                    .unwrap_or(());
+                                }
+                                DbConn::SqliteConnectionPool(conn, _) => {
+                                    // Insert Hello World post and timeline entry if not exists
+                                    let c = conn.get().unwrap();
+
                                     let _ = c.execute(
                                         "INSERT OR IGNORE INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4)",
                                         &[author_id, "local@localhost", "localuser", "debugpassword"],
@@ -195,13 +207,18 @@ async fn main() {
                                         "INSERT OR IGNORE INTO post_text (id, author_id, content, created_at) VALUES (?1, ?2, ?3, strftime('%Y-%m-%d %H:%M:%f', 'now'))",
                                         &[&generated_uuid_str.as_str(), &author_id, &hello_content],
                                     );
-                                    let _ = c.execute(
-                                        "INSERT OR IGNORE INTO timelines (tlid, item_id, timestamp) VALUES (?1, ?2, datetime('now'))",
-                                        &[&generated_uuid_str.as_str(), &generated_uuid_str.as_str()],
-                                    );
-                                });
+                                    let add_clone = ev_log.clone().await;
+                                    timeline::add_to_timeline(
+                                        add_clone,
+                                        &db,
+                                        "00000000-0000-0000-0000-000000000000",
+                                        &generated_uuid_str.as_str(),
+                                    )
+                                    .await
+                                    .unwrap_or(());
+                                }
                             }
-                        }}
+                        }
                     }
 
                     let appstate = AppState(Arc::from((
