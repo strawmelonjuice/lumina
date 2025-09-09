@@ -551,7 +551,10 @@ pub fn timeline(model: Model) -> Element(Msg) {
                 html.div(
                   [
                     attribute.class(
-                      "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
+                      "flex flex-col gap-2 p-4 m-8 bg-base-300 text-base-300-content rounded-md w-full bg-opacity-25",
+                      // Other candidates were:
+                      // // "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
+                      // // "flex flex-col gap-2 p-4 m-8 bg-info text-info-content rounded-md w-full bg-opacity-25",
                     ),
                   ],
                   [
