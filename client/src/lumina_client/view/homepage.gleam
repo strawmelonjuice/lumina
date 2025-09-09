@@ -14,6 +14,7 @@ import lumina_client/view/common_view_parts.{common_view_parts}
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/element/svg
 import lustre/event
 
 fn closemodal_not_for_modal_box() {
@@ -255,7 +256,66 @@ pub fn view(model: model_type.Model) {
                       ),
                       event.on_click(message_type.TimeLineTo("global")),
                     ],
-                    [element.text("🌐 Global")],
+                    [
+                      // Replaced the globe emoji with svg for better accessibility and consistency
+                      // element.text("🌐 Global")
+                      html.svg(
+                        [
+                          attribute.class("inline h-5 w-5 mr-2"),
+                          attribute.attribute("fill", "none"),
+                          attribute.attribute("stroke", "currentColor"),
+                          attribute.attribute("viewBox", "0 0 24 24"),
+                          attribute.attribute(
+                            "xmlns",
+                            "http://www.w3.org/2000/svg",
+                          ),
+                        ],
+                        [
+                          svg.circle([
+                            attribute.attribute("cx", "12"),
+                            attribute.attribute("cy", "12"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("r", "9"),
+                            attribute.attribute("stroke-width", "2"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("d", "M3 12h18"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("d", "M12 3a9 9 0 0 1 0 18"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute(
+                              "d",
+                              "M6.6 6.6a9 9 0 0 1 0 10.8",
+                            ),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute(
+                              "d",
+                              "M17.4 6.6a9 9 0 0 0 0 10.8",
+                            ),
+                          ]),
+                        ],
+                      ),
+                      element.text("Global"),
+                    ],
                   ),
                 ]),
                 html.li([], [
@@ -268,7 +328,58 @@ pub fn view(model: model_type.Model) {
                       ),
                       event.on_click(message_type.TimeLineTo("following")),
                     ],
-                    [element.text("👋 Following")],
+                    [
+                      // SVG: Two user silhouettes for 'Following'
+                      html.svg(
+                        [
+                          attribute.class("inline h-5 w-5 mr-2"),
+                          attribute.attribute("fill", "none"),
+                          attribute.attribute("stroke", "currentColor"),
+                          attribute.attribute("viewBox", "0 0 24 24"),
+                          attribute.attribute(
+                            "xmlns",
+                            "http://www.w3.org/2000/svg",
+                          ),
+                        ],
+                        [
+                          svg.circle([
+                            attribute.attribute("cx", "8"),
+                            attribute.attribute("cy", "8"),
+                            attribute.attribute("r", "3"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-width", "2"),
+                          ]),
+                          svg.circle([
+                            attribute.attribute("cx", "16"),
+                            attribute.attribute("cy", "8"),
+                            attribute.attribute("r", "3"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-width", "2"),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute(
+                              "d",
+                              "M2 20v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1",
+                            ),
+                          ]),
+                          svg.path([
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("opacity", "0.6"),
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute(
+                              "d",
+                              "M14 20v-1a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v1",
+                            ),
+                          ]),
+                        ],
+                      ),
+                      element.text("Following"),
+                    ],
                   ),
                 ]),
                 html.li([], [
@@ -281,7 +392,46 @@ pub fn view(model: model_type.Model) {
                       ),
                       event.on_click(message_type.TimeLineTo("mutuals")),
                     ],
-                    [element.text("🤝 Mutuals")],
+                    [
+                      // SVG: Heart and star overlapping for 'Mutuals'
+                      html.svg(
+                        [
+                          attribute.class("inline h-5 w-5 mr-2"),
+                          attribute.attribute("fill", "none"),
+                          attribute.attribute("stroke", "currentColor"),
+                          attribute.attribute("viewBox", "0 0 24 24"),
+                          attribute.attribute(
+                            "xmlns",
+                            "http://www.w3.org/2000/svg",
+                          ),
+                        ],
+                        [
+                          // Heart shape, offset to the left, with classic 'v' top and reduced opacity
+                          svg.path([
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute(
+                              "d",
+                              "M9 19C5 15 2 12.5 2 9.5C2 7 4 5 6.5 5C8 5 9 6.5 9 6.5C9 6.5 10 5 11.5 5C14 5 16 7 16 9.5C16 12.5 13 15 9 19Z",
+                            ),
+                            attribute.attribute("opacity", "0.6"),
+                          ]),
+                          // Star shape, offset to the right and overlapping, with reduced opacity
+                          svg.path([
+                            attribute.attribute("stroke-width", "2"),
+                            attribute.attribute("stroke-linecap", "round"),
+                            attribute.attribute("stroke-linejoin", "round"),
+                            attribute.attribute(
+                              "d",
+                              "M15 4.5l2.09 4.24 4.68.68-3.39 3.3.8 4.63L15 15.77l-4.18 2.18.8-4.63-3.39-3.3 4.68-.68L15 4.5z",
+                            ),
+                            attribute.attribute("opacity", "0.6"),
+                          ]),
+                        ],
+                      ),
+                      element.text("Mutuals"),
+                    ],
                   ),
                 ]),
               ]),
@@ -360,7 +510,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
     Ok(cached_timeline) -> {
       let posts: List(String) = get_all_posts(cached_timeline)
       let show_load_more = cached_timeline.has_more
-      html.div([], {
+      html.div([attribute.class("flex w-4/6 flex-col gap-4 items-start")], {
         case posts {
           [] -> [
             html.div([attribute.class("justify-center p-4")], [
@@ -371,12 +521,25 @@ pub fn timeline(model: Model) -> Element(Msg) {
           _ -> {
             let post_elements =
               list.map(posts, fn(post_id) {
-                html.div([], [
-                  element.text("This should show post from id: " <> post_id),
-                  html.div([attribute.class("skeleton h-32 w-full")], []),
-                  html.div([attribute.class("skeleton h-4 w-28")], []),
-                  html.div([attribute.class("skeleton h-4 w-full")], []),
-                ])
+                html.div(
+                  [
+                    attribute.class(
+                      "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
+                    ),
+                  ],
+                  [
+                    html.p([], [
+                      element.text("Loading post "),
+                      html.span(
+                        [attribute.class("loading loading-spinner loading-md")],
+                        [],
+                      ),
+                    ]),
+                    html.small([attribute.class("opacity-50 text-xs")], [
+                      element.text("ID:" <> post_id),
+                    ]),
+                  ],
+                )
               })
 
             case show_load_more {
