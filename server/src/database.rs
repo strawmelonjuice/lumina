@@ -398,7 +398,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
-
+                    
                 // Populate bloom filters
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 let email_key = "bloom:email";
@@ -453,13 +453,33 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 
 // This will be an enum containing either a pgsql connection or a sqlite connection
 #[derive()]
-pub enum DbConn {
+pub(crate) enum DbConn {
     // The config is also shared, so that for example the logger can set up it's own connection, use this sparingly.
     PgsqlConnection(
         (postgres::Client, tokio_postgres::Config),
         Pool<redis::Client>,
     ),
     SqliteConnectionPool(Pool<SqliteConnectionManager>, Pool<redis::Client>),
+}
+
+impl DbConn {
+    /// Recreate the database connection.
+    /// This clones the pool on sqlite and for redis, and creates a new connection on postgres.
+    pub(crate) async fn recreate(&self) -> Result<Self, LuminaError> {
+        match self {
+            DbConn::PgsqlConnection((_, config), redis_pool) => {
+                let c = config.connect(tokio_postgres::tls::NoTls).await.map_err(LuminaError::Postgres)?.0;
+                let r = redis_pool.clone();
+
+                Ok(DbConn::PgsqlConnection((c, config.to_owned()), r))
+            }
+            DbConn::SqliteConnectionPool(pool, redis_pool) => {
+                let p = pool.clone();
+                let r = redis_pool.clone();
+                Ok(DbConn::SqliteConnectionPool(p, r))
+            }
+        }
+    }
 }
 
 // This function will be used to maintain the database, such as deleting old sessions
