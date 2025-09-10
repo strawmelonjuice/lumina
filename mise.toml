@@ -75,6 +75,12 @@ description = "Run the server in development mode with file watching"
 run = "mise x -- watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run pod-up-postgres-no-optimise"
 run_windows = "mise x -- watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run pod-up-postgres-no-optimise"
 
+[tasks.development-run-watch-podman-sqlite]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "mise x -- watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run pod-up-sqlite-no-optimise"
+run_windows = "mise x -- watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run pod-up-sqlite-no-optimise"
+
 
 [tasks.check-watch]
 tools.watchexec = "latest"
