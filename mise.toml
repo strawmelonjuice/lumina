@@ -100,10 +100,21 @@ dir = "./client/"
 
 [tasks.build-styles]
 description = "Build the styles for Lumina"
+depends = "bun-install"
 run = [
-  "bun i",
   "bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
 ]
+dir = "./client/"
+
+[tasks.bun-install]
+description = "Install Bun dependencies"
+run = "bun i"
+dir = "./client/"
+
+[tasks.prefetch-gleam-deps]
+description = "Prefetch Gleam dependencies to speed up future builds"
+hide = true
+run = "gleam deps download"
 dir = "./client/"
 
 [tasks.build-server]
