@@ -18,13 +18,18 @@ run = [
   # Clean up any existing pods/containers first
   "podman pod stop lumina-postgres-pod 2>/dev/null || true",
   "podman pod rm lumina-postgres-pod 2>/dev/null || true",
-  "podman container rm lumina-server-postgres luminadb 2>/dev/null || true",
+  "podman container rm lumina-server-postgres luminadb lumina-redis 2>/dev/null || true",
+  # Create the pod
+  "podman pod create --name lumina-postgres-pod -p 8085:8085 -p 5432:5432 -p 8081:8081 -p 8082:8080",
+  # Pre-run the redis commander and adminer containers so they are available immediately
+  "podman run -d --name lumina-redis-commander --pod lumina-postgres-pod -e REDIS_HOSTS=local:lumina-redis:6379 rediscommander/redis-commander:latest",
+  "podman run -d --name lumina-adminer --pod lumina-postgres-pod -e ADMINER_DEFAULT_SERVER=luminadb -e ADMINER_DEFAULT_DB_DRIVER=pgsql -e ADMINER_DEFAULT_DB_NAME=lumina_config -e ADMINER_DEFAULT_USER_NAME=lumina -e ADMINER_DEFAULT_PASSWORD=lumina_pw adminer:latest",
   # Build and run
   "podman build -f Dockerfile.build -t lumina-server:dev .",
-  "podman pod create --name lumina-postgres-pod -p 8085:8085 -p 5432:5432",
   "podman run -d --name luminadb --pod lumina-postgres-pod -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z postgres:17-alpine3.22",
-  "podman run -d --name lumina-redis --pod lumina-postgres-pod -p 6379:6379 -v ./data/redis:/data:Z redis",
-  "podman run -d --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:dev",
+  "podman run -d --replace --name lumina-redis --pod lumina-postgres-pod -v ./data/redis:/data:Z redis",
+  "echo Adminer on http://127.0.0.1:8082, Redis Commander on http://127.0.0.1:8081",
+  "podman run --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:dev",
 ]
 
 [pod-up-postgres]
@@ -35,13 +40,13 @@ run = [
   # Clean up any existing pods/containers first
   "podman pod stop lumina-postgres-pod 2>/dev/null || true",
   "podman pod rm lumina-postgres-pod 2>/dev/null || true",
-  "podman container rm lumina-server-postgres luminadb 2>/dev/null || true",
+  "podman container rm lumina-server-postgres luminadb lumina-redis 2>/dev/null || true",
   # Build and run
   "podman build --build-arg optimize_build=true -t lumina-server:latest .",
   "podman pod create --name lumina-postgres-pod -p 8085:8085 -p 5432:5432",
-  "podman run -d --name lumina-redis --pod lumina-postgres-pod -p 6379:6379 -v ./data/redis:/data redis",
+  "podman run -d --replace --name lumina-redis --pod lumina-postgres-pod -v ./data/redis:/data redis",
   "podman run -d --name luminadb --pod lumina-postgres-pod -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z postgres:17-alpine3.22",
-  "podman run -d --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:latest",
+  "podman run --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:latest",
 ]
 
 # ====================================================================================
@@ -58,13 +63,18 @@ run = [
   "mkdir -p ./data/",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-sqlite-pod 2>/dev/null || true",
+  "podman container rm lumina-server-sqlite lumina-redis 2>/dev/null || true",
   "podman pod rm lumina-sqlite-pod 2>/dev/null || true",
-  "podman container rm lumina-server-sqlite 2>/dev/null || true",
+  # Create the pod
+  "podman pod create --name lumina-sqlite-pod -p 8085:8085 -p 6379:6379 -p 8081:8081 -p 8083:8080",
+  # Pre-run the redis commander and sqlite-web containers so they are available immediately
+  "podman run -d --name lumina-redis-commander --pod lumina-sqlite-pod -e REDIS_HOSTS=local:lumina-redis:6379 rediscommander/redis-commander:latest",
+  "podman run -d --name lumina-sqlite-web --pod lumina-sqlite-pod -e SQLITE_DATABASE=/app/data/instance.sqlite -v ./data/:/app/data/ coleifer/sqlite-web:latest",
   # Build and run
   "podman build -f Dockerfile.build -t lumina-server:dev .",
-  "podman pod create --name lumina-sqlite-pod -p 8085:8085 -p 6379:6379",
-  "podman run -d --name lumina-redis -v ./data/redis:/data --pod lumina-sqlite-pod redis",
-  "podman run -d --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:dev",
+  "podman run -d --replace --name lumina-redis -v ./data/redis:/data --pod lumina-sqlite-pod redis",
+  "echo Redis Commander on http://127.0.0.1:8081, SQLite Web on http://127.0.0.1:8083",
+  "podman run --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:dev",
 ]
 
 [pod-up-sqlite]
@@ -74,11 +84,11 @@ run = [
   "mkdir -p ./data/",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-sqlite-pod 2>/dev/null || true",
+  "podman container rm lumina-server-sqlite lumina-redis 2>/dev/null || true",
   "podman pod rm lumina-sqlite-pod 2>/dev/null || true",
-  "podman container rm lumina-server-sqlite 2>/dev/null || true",
   # Build and run
   "podman build --build-arg optimize_build=true -t lumina-server:latest .",
   "podman pod create --name lumina-sqlite-pod -p 8085:8085",
-  "podman run -d --name lumina-redis -p 6379:6379 -v ./data/redis:/data --pod lumina-sqlite-pod redis",
-  "podman run -d --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:latest",
+  "podman run -d --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data --pod lumina-sqlite-pod redis",
+  "podman run --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:latest",
 ]

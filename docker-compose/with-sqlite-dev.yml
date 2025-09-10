@@ -24,3 +24,24 @@ services:
         restart: unless-stopped
         volumes:
             - "./data/redis:/data"
+    redis-commander:
+        image: rediscommander/redis-commander:latest
+        container_name: lumina-redis-commander
+        environment:
+            - REDIS_HOSTS=local:lumina-redis:6379
+        ports:
+            - "8081:8081"
+        depends_on:
+            - redis
+    sqlite-web:
+        image: coleifer/sqlite-web:latest
+        container_name: lumina-sqlite-web
+        environment:
+            - SQLITE_DATABASE=/app/data/instance.sqlite
+        ports:
+            - "8083:8080"
+        volumes:
+            - ../data/:/app/data/
+        depends_on:
+            - lumina
+`
