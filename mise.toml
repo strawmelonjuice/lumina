@@ -41,11 +41,7 @@ run = ["../target/debug/lumina-server"]
 run_windows = "..\\target\\debug\\lumina-server.exe"
 dir = "{{config_root}}/data/"
 
-[tasks.development-run-redis-docker]
-description = "Just runs the Docker image for a Redis server so that the development run can connect to it"
-run = "docker run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis/redis-stack:7.2.0-v18"
-
-[tasks.development-run-redis-podman]
+[tasks.development-run-redis]
 description = "Just runs the Podman image for a Redis server so that the development run can connect to it"
 run = "podman run --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis/redis-stack:7.2.0-v18"
 
@@ -151,6 +147,5 @@ run = [
 [task_config]
 includes = [
   "./mise/tasks/podman-tasks.toml",
-  "./mise/tasks/docker-compose-tasks.toml",
 ]
 dir = "{{ config_root }}"
