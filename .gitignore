@@ -39,3 +39,6 @@ instance.sqlite-shm
 instance.sqlite-wal
 .env
 /data
+/built
+# mise system-specific config file
+.mise.toml
