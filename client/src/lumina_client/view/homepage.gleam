@@ -54,7 +54,7 @@ pub fn view(model: model_type.Model) {
           html.div(
             [
               attribute.class(
-                "modal-box w-[80vw] max-w-[unset] h-[80vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
+                "modal-box w-[99vw] lg:w-[80vw] max-w-[unset] h-[80lvh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
               ),
             ],
             [
@@ -91,7 +91,7 @@ pub fn view(model: model_type.Model) {
           html.div(
             [
               attribute.class(
-                "modal-box w-[32rem] max-w-[90vw] h-[32rem] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
+                "modal-box w-[32rem] max-w-[99vw] not:h-[32rem] h-[80lvh] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
               ),
             ],
             [
