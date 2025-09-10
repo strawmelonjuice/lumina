@@ -39,3 +39,21 @@ services:
         restart: unless-stopped
         volumes:
             - "../data/redis:/data"
+    redis-commander:
+        image: rediscommander/redis-commander:latest
+        container_name: lumina-redis-commander
+        environment:
+            - REDIS_HOSTS=local:lumina-redis:6379
+        ports:
+            - "8081:8081"
+        depends_on:
+            - redis
+    adminer:
+        image: adminer:latest
+        container_name: lumina-adminer
+        environment:
+            - ADMINER_DEFAULT_SERVER=luminadb
+        ports:
+            - "8082:8080"
+        depends_on:
+            - db
