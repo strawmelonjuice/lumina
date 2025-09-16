@@ -12,7 +12,6 @@ ENV PATH="/usr/local/bin/bun/bin:/mise/shims:$PATH"
 
 RUN apk add --no-cache curl git unzip build-base bash
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install bun outside of mise because Alpine uses musl libc which the mise bun package does not support
 RUN curl -fsSL https://bun.sh/install | bash
 RUN curl https://mise.run | sh
