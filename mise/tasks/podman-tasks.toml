@@ -13,8 +13,8 @@ run = [
 # == with postgres ====================================================================
 [pod-up-postgres-no-optimise]
 description = "Run Lumina with PostgreSQL in a pod, development build (no optimisations)"
+depends = "create-data-dirs"
 run = [
-  "mkdir -p ./data/postgres",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-postgres-pod 2>/dev/null || true",
   "podman pod stop lumina-sqlite-pod 2>/dev/null || true",
@@ -36,8 +36,8 @@ run = [
 [pod-up-postgres]
 description = "Run Lumina with PostgreSQL in a pod [optimised build]"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
+depends = "create-data-dirs"
 run = [
-  "mkdir -p ./data/postgres",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-postgres-pod 2>/dev/null || true",
   "podman pod rm lumina-postgres-pod 2>/dev/null || true",
@@ -59,9 +59,9 @@ run = [
 ]
 # == with sqlite =====================================================================
 [pod-up-sqlite-no-optimise]
+depends = "create-data-dirs"
 description = "Run Lumina with SQLite in a pod, development build (no optimisations)"
 run = [
-  "mkdir -p ./data/",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-postgres-pod 2>/dev/null || true",
   "podman pod stop lumina-sqlite-pod 2>/dev/null || true",
@@ -81,10 +81,10 @@ run = [
 ]
 
 [pod-up-sqlite]
+depends = "create-data-dirs"
 description = "Run Lumina with SQLite in a pod [optimised build]"
 env = { LUMINA_DOCKER_OPTIMIZE_BUILD = "true" }
 run = [
-  "mkdir -p ./data/",
   # Clean up any existing pods/containers first
   "podman pod stop lumina-sqlite-pod 2>/dev/null || true",
   "podman container rm lumina-server-sqlite lumina-redis 2>/dev/null || true",
