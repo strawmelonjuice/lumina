@@ -2,7 +2,6 @@
 
 FROM alpine:3.19 AS builder
 
-ARG optimize_build
 ENV MISE_DATA_DIR="/mise"
 ENV MISE_CONFIG_DIR="/mise"
 ENV MISE_CACHE_DIR="/mise/cache"
