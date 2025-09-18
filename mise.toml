@@ -103,9 +103,7 @@ dir = "./client/"
 [tasks.build-styles]
 description = "Build the styles for Lumina"
 depends = "bun-install"
-run = [
-  "bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css",
-]
+run = ["bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css"]
 dir = "./client/"
 
 [tasks.bun-install]
@@ -128,14 +126,12 @@ run = ["cargo build"]
 
 [tasks.create-data-dirs]
 hide = true
-run = [
-"mkdir -p ./data",
-"mkdir -p ./data/postgres",
-"mkdir -p ./data/redis",
+run = ["mkdir -p ./data", "mkdir -p ./data/postgres", "mkdir -p ./data/redis"]
+run_windows = [
+  "if not exist .\\data mkdir .\\data",
+  "if not exist .\\data\\redis mkdir .\\data\\redis",
+  "if not exist .\\data\\postgres mkdir .\\data\\postgres",
 ]
-run_windows = ["if not exist .\\data mkdir .\\data",
-"if not exist .\\data\\redis mkdir .\\data\\redis",
-"if not exist .\\data\\postgres mkdir .\\data\\postgres",]
 
 [tasks.build-server-release]
 description = "Build the server-side of Lumina optimised for release"
@@ -156,7 +152,5 @@ run = [
 
 
 [task_config]
-includes = [
-  "./mise/tasks/podman-tasks.toml",
-]
+includes = ["./mise/tasks/podman-tasks.toml"]
 dir = "{{ config_root }}"
