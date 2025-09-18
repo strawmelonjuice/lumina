@@ -54,9 +54,7 @@ run = [
 # == Build environment image =========================================================
 [build-env-image-podman]
 description = "Build and tag the lumina-build-environment image from Dockerfile.env"
-run = [
-  "podman build -f Dockerfile.env -t lumina-build-environment ."
-]
+run = ["podman build -f Dockerfile.env -t lumina-build-environment ."]
 # == with sqlite =====================================================================
 [pod-up-sqlite-no-optimise]
 depends = "create-data-dirs"
@@ -71,7 +69,7 @@ run = [
   "podman pod create --name lumina-sqlite-pod -p 8085:8085 -p 6379:6379 -p 8081:8001 -p 8083:8080",
   # Pre-run the redis commander and sqlite-web containers so they are available immediately
   "podman run -d --replace --name lumina-redisinsight --pod lumina-sqlite-pod redislabs/redisinsight:latest",
-    "podman run -d --replace --name lumina-redisinsight --pod lumina-sqlite-pod -e RI_APP_PORT=8081 -e RI_APP_HOST=0.0.0.0 -e RI_REDIS_HOST=lumina-redis -e RI_REDIS_PORT=6379 redislabs/redisinsight:latest",
+  "podman run -d --replace --name lumina-redisinsight --pod lumina-sqlite-pod -e RI_APP_PORT=8081 -e RI_APP_HOST=0.0.0.0 -e RI_REDIS_HOST=lumina-redis -e RI_REDIS_PORT=6379 redislabs/redisinsight:latest",
   "podman run -d --replace --name lumina-sqlite-web --pod lumina-sqlite-pod -e SQLITE_DATABASE=/app/data/instance.sqlite -v ./data/:/app/data/ coleifer/sqlite-web:latest",
   # Build and run
   "podman run -d --replace --name lumina-redis -v ./data/redis:/data --pod lumina-sqlite-pod redis",
