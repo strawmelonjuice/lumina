@@ -1,0 +1,14 @@
+# Check/lint/test-related tasks for Lumina
+[check]
+description = "Run the check command on both server and client."
+depends = ["check-server", "check-client"]
+
+[check-server]
+hide = true
+run = "cargo check"
+dir = "./server"
+
+[check-client]
+hide = true
+run = "gleam check"
+dir = "./client/"

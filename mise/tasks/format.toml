@@ -1,0 +1,20 @@
+# Formatting-related tasks for Lumina
+[format]
+description = "Format the codebase"
+depends = ["format-server", "format-client", "format-metafiles"]
+run = []
+
+[format-server]
+hide = true
+run = "cargo fmt"
+dir = "./server"
+
+[format-client]
+hide = true
+run = "gleam format"
+dir = "./client"
+
+[format-metafiles]
+hide = true
+run = ["bun x prettier . '!./data' --write", "taplo format"]
+tools.taplo = "latest"
