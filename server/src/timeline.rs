@@ -65,7 +65,7 @@ async fn cache_timeline_page(
         post_ids: post_ids.to_vec(),
         total_count,
         page,
-        cached_at: chrono::Utc::now().timestamp(),
+        cached_at: time::OffsetDateTime::now_utc().unix_timestamp(),
     };
 
     let cache_key = get_cache_key(timeline_id, page);
