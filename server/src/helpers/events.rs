@@ -1,7 +1,7 @@
 use crate::database::DbConn;
 use crate::{LuminaError, database};
-use chrono::Utc;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
+use time::OffsetDateTime;
 
 /// Levels of logging supported by the Logger.
 #[derive(Debug)]
@@ -88,7 +88,7 @@ impl EventLogger {
     /// asynchronously inserts a log entry in the logs table.
     pub async fn log(&self, level: EventType, message: &str) {
         // Get the current timestamp.
-        let now = Utc::now();
+        let now = OffsetDateTime::now_utc();
 
         // Determine the appropriate prefix for stdout.
         // These prefixes are colored and styled matching helpers::prefixes().
@@ -168,7 +168,9 @@ impl EventLogger {
                     .chars()
                     .filter(|c| !c.is_control() || c.is_whitespace())
                     .collect();
-                let ts = now.to_rfc3339();
+                let ts = now
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap();
 
                 match db_conn {
                     crate::database::DbConn::PgsqlConnection((client, _), _) => {
