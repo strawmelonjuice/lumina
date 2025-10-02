@@ -610,9 +610,12 @@ async fn check_timeline_invalidations(
     } else {
         // First run, don't invalidate anything
         let _: () = redis_conn
-            .set("timeline_cache_last_check", time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap())
+            .set(
+                "timeline_cache_last_check",
+                time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap(),
+            )
             .map_err(LuminaError::Redis)?;
         return Ok(());
     };
@@ -626,21 +629,23 @@ async fn check_timeline_invalidations(
 
             // Update last check timestamp
             let _: () = redis_conn
-                .set("timeline_cache_last_check", time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap())
+                .set(
+                    "timeline_cache_last_check",
+                    time::OffsetDateTime::now_utc()
+                        .format(&time::format_description::well_known::Rfc3339)
+                        .unwrap(),
+                )
                 .map_err(LuminaError::Redis)?;
         }
         Err(_) => {
             // If query fails, just update timestamp to avoid repeated failures
             let _: () = redis_conn
-                .set("timeline_cache_last_check",
-time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-
-
-				)
+                .set(
+                    "timeline_cache_last_check",
+                    time::OffsetDateTime::now_utc()
+                        .format(&time::format_description::well_known::Rfc3339)
+                        .unwrap(),
+                )
                 .map_err(LuminaError::Redis)?;
         }
     }
@@ -674,13 +679,12 @@ async fn check_timeline_invalidations_sqlite(
     } else {
         // First run, don't invalidate anything
         let _: () = redis_conn
-            .set("timeline_cache_last_check",
-time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-
-
-			)
+            .set(
+                "timeline_cache_last_check",
+                time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap(),
+            )
             .map_err(LuminaError::Redis)?;
         return Ok(());
     };
@@ -693,23 +697,23 @@ time::OffsetDateTime::now_utc()
 
             // Update last check timestamp
             let _: () = redis_conn
-                .set("timeline_cache_last_check",
-time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-
-				)
+                .set(
+                    "timeline_cache_last_check",
+                    time::OffsetDateTime::now_utc()
+                        .format(&time::format_description::well_known::Rfc3339)
+                        .unwrap(),
+                )
                 .map_err(LuminaError::Redis)?;
         }
         Err(_) => {
             // If query fails, just update timestamp to avoid repeated failures
             let _: () = redis_conn
-                .set("timeline_cache_last_check",
-time::OffsetDateTime::now_utc()
-        .format(&time::format_description::well_known::Rfc3339)
-        .unwrap()
-
-				)
+                .set(
+                    "timeline_cache_last_check",
+                    time::OffsetDateTime::now_utc()
+                        .format(&time::format_description::well_known::Rfc3339)
+                        .unwrap(),
+                )
                 .map_err(LuminaError::Redis)?;
         }
     }
