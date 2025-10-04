@@ -42,3 +42,12 @@ instance.sqlite-wal
 /built
 # mise system-specific config file
 .mise.toml
+
+
+# Obsidian
+/notes/.obsidian/appearance.json
+/notes/.obsidian/plugins/obsidian-git/styles.css
+/notes/.obsidian/workspace.json
+/notes/.obsidian/app.json
+/notes/.obsidian/plugins/obsidian-git/main.js
+/notes/.obsidian/plugins/obsidian-git/manifest.json
