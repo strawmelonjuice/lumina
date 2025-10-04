@@ -1,5 +1,3 @@
-> This is a far-future todo.
-
 I notice on other social media platforms that when an edit or upload had unforseen consequences, this usually results in broken push notifications.
 Notifications that lead to a 404. 
 
