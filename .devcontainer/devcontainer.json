@@ -1,21 +1,20 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Ubuntu",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
-	"features": {
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
-		"ghcr.io/devcontainers-extra/features/mise:1": {}
+	"name": "Lumina devenv",
+	"build": {
+		"dockerfile": "../env.Dockerfile"
 	},
+	// "features": {
+	// 	ghcr.io/devcontainers/features/docker-in-docker:2": {},
+	// 	"ghcr.io/devcontainers-extra/features/mise:1": {}
+	// },
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [8085],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": [
-		"git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
-		"echo eval \"$(mise activate bash)\" >> ~/.bashrc",
 		"mise trust",
 		"mise use -g usage",
 		"mise install",
@@ -23,8 +22,7 @@
 		"mise completion bash --include-bash-completion-lib > ~/.local/share/bash-completion/completions/mise"
 	],
 	"postStartCommand": [
-		"git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/lumina.git",
-		"mise trust && mise install"
+		"git remote set-url origin ssh://git@git.strawmelonjuice.com/strawmelonjuice/Lumina.git"
 	]
 	// Configure tool-specific properties.
 	// "customizations": {},

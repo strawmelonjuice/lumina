@@ -29,7 +29,7 @@ run = [
   # Build and run
   "podman run -d --name luminadb --pod lumina-postgres-pod -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z postgres:17-alpine3.22",
   "podman run -d --replace --name lumina-redis --pod lumina-postgres-pod -v ./data/redis:/data:Z redis",
-  "podman build -f Dockerfile.build -t lumina-server:dev .",
+  "podman build -f build.Dockerfile -t lumina-server:dev .",
   "echo Adminer on http://127.0.0.1:8082, RedisInsight on http://127.0.0.1:8081",
   "podman run --name lumina-server-postgres --pod lumina-postgres-pod -e LUMINA_DB_TYPE=postgres -e LUMINA_POSTGRES_HOST=localhost -e LUMINA_POSTGRES_PORT=5432 -e LUMINA_POSTGRES_USERNAME=lumina -e LUMINA_POSTGRES_PASSWORD=lumina_pw -e LUMINA_POSTGRES_DATABASE=lumina_config -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 lumina-server:dev",
 ]
@@ -54,8 +54,8 @@ run = [
 # ====================================================================================
 # == Build environment image =========================================================
 [build-env-image-podman]
-description = "Build and tag the lumina-build-environment image from Dockerfile.env"
-run = ["podman build -f Dockerfile.env -t lumina-build-environment ."]
+description = "Build and tag the lumina-build-environment image from env.Dockerfile"
+run = ["podman build -f env.Dockerfile -t lumina-build-environment ."]
 # == with sqlite =====================================================================
 [pod-up-sqlite-no-optimise]
 depends = "create-data-dirs"
@@ -74,7 +74,7 @@ run = [
   "podman run -d --replace --name lumina-sqlite-web --pod lumina-sqlite-pod -e SQLITE_DATABASE=/app/data/instance.sqlite -v ./data/:/app/data/ coleifer/sqlite-web:latest",
   # Build and run
   "podman run -d --replace --name lumina-redis -v ./data/redis:/data --pod lumina-sqlite-pod redis",
-  "podman build -f Dockerfile.build -t lumina-server:dev .",
+  "podman build -f build.Dockerfile -t lumina-server:dev .",
   "echo RedisInsight on http://127.0.0.1:8081, SQLite Web on http://127.0.0.1:8083",
   "podman run --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:dev",
 ]
