@@ -12,3 +12,8 @@ dir = "./server"
 hide = true
 run = "gleam check"
 dir = "./client/"
+
+[check-watch]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "mise watch --restart -e rs,gleam,toml,css,ts,json --clear=clear check"

@@ -94,3 +94,19 @@ run = [
   "podman run -d --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data --pod lumina-sqlite-pod redis",
   "podman run --name lumina-server-sqlite --pod lumina-sqlite-pod -e LUMINA_DB_TYPE=sqlite -e LUMINA_SQLITE_FILE=data/instance.sqlite -e LUMINA_SERVER_PORT=8085 -e LUMINA_SERVER_ADDR=0.0.0.0 -v ./data/:/app/data/:Z lumina-server:latest",
 ]
+
+[development-run-redis]
+description = "Just runs the Podman image for a Redis server so that the development run can connect to it"
+run = "podman run --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d redis/redis-stack:7.2.0-v18"
+
+[development-run-watch-podman]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "mise x -- watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run pod-up-postgres-no-optimise"
+run_windows = "mise x -- watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run pod-up-postgres-no-optimise"
+
+[development-run-watch-podman-sqlite]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "mise x -- watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run pod-up-sqlite-no-optimise"
+run_windows = "mise x -- watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run pod-up-sqlite-no-optimise"
