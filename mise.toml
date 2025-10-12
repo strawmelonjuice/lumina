@@ -13,5 +13,6 @@ includes = [
   "./mise/tasks/format.toml",
   "./mise/tasks/build.toml",
   "./mise/tasks/check.toml",
+  "./mise/tasks/run.toml",
 ]
 dir = "{{ config_root }}"

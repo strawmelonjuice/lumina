@@ -1,0 +1,19 @@
+[optimised-development-run]
+description = "Run the server in release mode for development"
+depends = "build-server-release"
+run = "../target/release/lumina-server"
+run_windows = "..\\target\\release\\lumina-server.exe"
+dir = "{{ config_root }}/data/"
+
+[development-run]
+description = "Run the server in development mode"
+depends = "build-server"
+run = ["../target/debug/lumina-server"]
+run_windows = "..\\target\\debug\\lumina-server.exe"
+dir = "{{config_root}}/data/"
+
+[development-run-watch]
+tools.watchexec = "latest"
+description = "Run the server in development mode with file watching"
+run = "watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run development-run"
+run_windows = "watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run development-run"

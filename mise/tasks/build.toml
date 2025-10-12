@@ -49,3 +49,15 @@ run_windows = [
   "if not exist .\\data\\redis mkdir .\\data\\redis",
   "if not exist .\\data\\postgres mkdir .\\data\\postgres",
 ]
+
+[clean-all]
+description = "Clean all build artifacts"
+run = [
+  "cargo clean",
+  "rm -rf ./client/node_modules",
+  "rm -rf ./client/build",
+  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
+  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
+  "rm -rf ./client/priv/static/lumina_client.min.mjs",
+  "rm -rf ./client/priv/static/lumina_client.css",
+]
