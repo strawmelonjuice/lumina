@@ -62,21 +62,27 @@ This repository uses `mise` to manage tools and developer tasks:
 
 ## Local setup
 
-Environment is configured via environment variables. For development, the server prefers a `.env` file in your instance folder: `$LUMINAFOLDER/.env`.
+Local setup is pretty easy with mise, and to not do it with mise is actually kind of unthinkable for me at this point.
 
-Key variables (defaults exist for development):
-- `LUMINA_DB_TYPE` — `sqlite` or `postgres` (default: `sqlite`)
-- `LUMINA_REDIS_URL` — `redis://127.0.0.1/`
-- `LUMINA_SERVER_ADDR` — `127.0.0.1`
-- `LUMINA_SERVER_PORT` — `8085`
-- And others described in `README.MD`
-
-First-time setup:
+Typical preparation:
 ```sh
 # From repo root
 mise install
-mise run build-server
+mise run build-env-image-podman # Build the environment image for podman, allowing you to build quicker.
+# And then later:
+mise run development-run-podman
 ```
+
+Running bare-metal is usually prepared:
+
+```sh
+# From repo root
+mise install
+mise run development-run-redis # Because you'll need a Redis server running locally.
+# And then later:
+mise run development-run
+```
+The README should have some environment variables you could set.
 
 Development run options:
 ```sh
