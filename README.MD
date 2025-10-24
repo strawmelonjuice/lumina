@@ -1,8 +1,8 @@
 # Lumina(/peonies) server
 
 > Notice:
-> This repo is edited on [My personal forge](https://git.strawmelonjuice.com/strawmelonjuice/lumina) and mirrorred on [codeberg](https://codeberg.org/strawmelonjuice/lumina).
-> Any changes in the code on github will be overwritten by automated force-push from Codeberg.
+> This repo is edited on [My personal forge](https://git.strawmelonjuice.com/strawmelonjuice/lumina) and mirrorred on [codeberg](https://codeberg.org/strawmelonjuice/lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But you can still send in a PR!
+> See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## -> Rewrite '25'
 
