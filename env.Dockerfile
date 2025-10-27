@@ -18,6 +18,7 @@ RUN curl https://mise.run | sh
 WORKDIR /build
 # Copy and install the mise.toml file first to leverage Docker cache
 COPY mise.toml ./mise.toml
+COPY mise/ ./mise/
 RUN mise trust && mise unuse bun && mise install
 
 # ------- Prefetch Rust dependencies -------
