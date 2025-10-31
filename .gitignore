@@ -46,8 +46,14 @@ instance.sqlite-wal
 
 # Obsidian
 /notes/.obsidian/appearance.json
-/notes/.obsidian/plugins/obsidian-git/styles.css
 /notes/.obsidian/workspace.json
 /notes/.obsidian/app.json
+/notes/.obsidian/plugins/obsidian-kanban/main.js
+/notes/.obsidian/plugins/obsidian-kanban/styles.css
+/notes/.obsidian/plugins/obsidian-kanban/manifest.json
+/notes/.obsidian/plugins/obsidian-excalidraw-plugin/main.js
+/notes/.obsidian/plugins/obsidian-excalidraw-plugin/styles.css
+/notes/.obsidian/plugins/obsidian-excalidraw-plugin/manifest.json
+/notes/.obsidian/plugins/obsidian-git/styles.css
 /notes/.obsidian/plugins/obsidian-git/main.js
 /notes/.obsidian/plugins/obsidian-git/manifest.json
