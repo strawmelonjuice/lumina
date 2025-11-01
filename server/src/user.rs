@@ -25,10 +25,7 @@ impl User {
     ) -> Result<(SessionReference, User), LuminaError> {
         let user = match User::get_user_by_identifier(email_username, db).await {
             // Replace some errors
-            // //==> When no Sqlite rows are found matching the user, that means the user is not found.
-            Err(LuminaError::Sqlite(r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows)) => {
-                Err(LuminaError::AuthenticationUserNotFound)
-            }
+
             // Pass through other errors
             Ok(user) => Ok(user),
             Err(e) => Err(e),
@@ -42,19 +39,6 @@ impl User {
     }
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
-            DbConn::SqliteConnectionPool(pool, _) => {
-                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let user_id_str = self.id.to_string();
-                conn.query_row(
-                    "SELECT password FROM users WHERE id = ?1",
-                    &[&user_id_str],
-                    |row| {
-                        let s: Result<String, r2d2_sqlite::rusqlite::Error> = row.get(0);
-                        s
-                    },
-                )
-                .map_err(LuminaError::Sqlite)
-            }
             DbConn::PgsqlConnection((client, _), _) => {
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
@@ -107,41 +91,6 @@ impl User {
                     foreign_instance_id: "".to_string(), // Default value for new users
                 })
             }
-            DbConn::SqliteConnectionPool(pool, _) => {
-                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let username_exists = conn
-                    .prepare("SELECT * FROM users WHERE username = ?1")
-                    .map_err(LuminaError::Sqlite)?
-                    .exists(&[&username])
-                    .map_err(LuminaError::Sqlite)?;
-                if username_exists {
-                    return Err(LuminaError::RegisterUsernameInUse);
-                }
-                let email_exists = conn
-                    .prepare("SELECT * FROM users WHERE email = ?1")
-                    .map_err(LuminaError::Sqlite)?
-                    .exists(&[&email])
-                    .map_err(LuminaError::Sqlite)?;
-                if email_exists {
-                    return Err(LuminaError::RegisterEmailInUse);
-                }
-                let id_str = Uuid::new_v4().to_string();
-                let id = conn
-.prepare("INSERT INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4) RETURNING id")
-.map_err(LuminaError::Sqlite)?
-.query_row(&[&id_str, &email, &username, &password], |row| {
-    let a: String = row.get(0)?;
-    // Unwrap: Not entirely safe. If the database is corrupted, this will panic.
-    Ok(Uuid::from_str(a.as_str()).unwrap())
-}).map_err(LuminaError::Sqlite)
-?;
-                Ok(User {
-                    id,
-                    email,
-                    username,
-                    foreign_instance_id: "".to_string(), // Default value for new users
-                })
-            }
         }
     }
     pub async fn get_user_by_identifier(
@@ -169,22 +118,6 @@ impl User {
                     foreign_instance_id: user.get(3),
                 })
             }
-            DbConn::SqliteConnectionPool(pool, _) => pool
-                .get()
-                .map_err(LuminaError::R2D2Pool)?
-                .query_row(
-                    &format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = ?1", identifyer_type),
-                    &[&identifier],
-                    |row| {
-                        Ok(User {
-                            id: Uuid::from_str(row.get::<_, String>(0)?.as_str()).unwrap(),
-                            email: row.get(1)?,
-                            username: row.get(2)?,
-                            foreign_instance_id: row.get(3)?,
-                        })
-                    },
-                )
-                .map_err(LuminaError::Sqlite),
         }
     }
 
@@ -219,29 +152,6 @@ impl User {
                     user,
                 ))
             }
-            DbConn::SqliteConnectionPool(pool, _) => {
-                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let user_id_str = user_id.to_string();
-                let session_key = Uuid::new_v4().to_string();
-                let session_id = Uuid::new_v4();
-                let session_id_string = session_id.to_string();
-                conn.execute(
-                    "INSERT INTO sessions (id, user_id, session_key, created_at) VALUES (?1,?2, ?3, strftime('%s', 'now'))",
-                    &[&session_id_string,&user_id_str, &session_key],
-                )
-                .map_err(LuminaError::Sqlite)?;
-                println!(
-                    "{info} New session created by {}",
-                    user.clone().username.color_bright_cyan()
-                );
-                Ok((
-                    SessionReference {
-                        session_id,
-                        token: session_key,
-                    },
-                    user,
-                ))
-            }
         }
     }
     pub async fn revive_session_from_token(
@@ -260,20 +170,6 @@ impl User {
                     username: user.get(2),
                     foreign_instance_id: "".to_string(), // Default value for revived sessions
                 })
-            }
-            DbConn::SqliteConnectionPool(pool, _) => {
-                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let user = conn.query_row("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = ?1", &[&token], 
-|row| {
-let a: String = row.get(0).unwrap();
-Ok(User {
-    id: Uuid::from_str(a.as_str()).unwrap(),
-    email: row.get(1).unwrap(),
-    username: row.get(2).unwrap(),
-    foreign_instance_id: "".to_string(), // Default value for revived sessions
-})
-                }).map_err(LuminaError::Sqlite)?;
-                Ok(user)
             }
         }
     }
@@ -348,73 +244,6 @@ pub(crate) async fn register_validitycheck(
                         .query(&mut *redis_conn)
                         .unwrap_or(());
                     return Err(LuminaError::RegisterUsernameInUse);
-                }
-            }
-            DbConn::SqliteConnectionPool(pool, redis_pool) => {
-                let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
-                let email_key = format!("bloom:email");
-                let username_key = format!("bloom:username");
-                let username_exists: bool = redis::cmd("BF.EXISTS")
-                    .arg(&username_key)
-                    .arg(&username)
-                    .query(&mut *redis_conn)
-                    .unwrap_or(false);
-                if username_exists {
-                    // Fallback to DB check if in bloom filter
-                    let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                    let username_db = conn
-                        .prepare("SELECT * FROM users WHERE username = ?1")
-                        .map_err(LuminaError::Sqlite)?
-                        .exists(&[&username])
-                        .map_err(LuminaError::Sqlite)?;
-                    if username_db {
-                        return Err(LuminaError::RegisterUsernameInUse);
-                    }
-                }
-                let email_exists: bool = redis::cmd("BF.EXISTS")
-                    .arg(&email_key)
-                    .arg(&email)
-                    .query(&mut *redis_conn)
-                    .unwrap_or(false);
-                if email_exists {
-                    // Fallback to DB check if in bloom filter
-                    let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                    let email_db = conn
-                        .prepare("SELECT * FROM users WHERE email = ?1")
-                        .map_err(LuminaError::Sqlite)?
-                        .exists(&[&email])
-                        .map_err(LuminaError::Sqlite)?;
-                    if email_db {
-                        return Err(LuminaError::RegisterEmailInUse);
-                    }
-                }
-                // Fallback to DB check if not in bloom filter
-                let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-                let username_db = conn
-                    .prepare("SELECT * FROM users WHERE username = ?1")
-                    .map_err(LuminaError::Sqlite)?
-                    .exists(&[&username])
-                    .map_err(LuminaError::Sqlite)?;
-                if username_db {
-                    let _: () = redis::cmd("BF.ADD")
-                        .arg(&username_key)
-                        .arg(&username)
-                        .query(&mut *redis_conn)
-                        .unwrap_or(());
-                    return Err(LuminaError::RegisterUsernameInUse);
-                }
-                let email_db = conn
-                    .prepare("SELECT * FROM users WHERE email = ?1")
-                    .map_err(LuminaError::Sqlite)?
-                    .exists(&[&email])
-                    .map_err(LuminaError::Sqlite)?;
-                if email_db {
-                    let _: () = redis::cmd("BF.ADD")
-                        .arg(&email_key)
-                        .arg(&email)
-                        .query(&mut *redis_conn)
-                        .unwrap_or(());
-                    return Err(LuminaError::RegisterEmailInUse);
                 }
             }
         }

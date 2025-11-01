@@ -2,7 +2,6 @@
 pub(crate) enum LuminaError {
     ConfMissing(String),
     ConfInvalid(String),
-    Sqlite(r2d2_sqlite::rusqlite::Error),
     R2D2Pool(r2d2::Error),
     Postgres(crate::postgres::Error),
     Unknown,

@@ -100,10 +100,7 @@ async fn main() {
                                 );
                                 None
                             }
-                            Err(LuminaError::Sqlite(a)) => {
-                                error_elog!(ev_log, "While opening sqlite database: {}", a);
-                                None
-                            }
+
                             Err(LuminaError::Postgres(a)) => {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
@@ -190,28 +187,6 @@ async fn main() {
                                         &[&generated_uuid, &author_id, &hello_content],
                                     )
                                     .await;
-                                    let add_clone = ev_log.clone().await;
-                                    timeline::add_to_timeline(
-                                        add_clone,
-                                        &db,
-                                        "00000000-0000-0000-0000-000000000000",
-                                        &generated_uuid_str.as_str(),
-                                    )
-                                    .await
-                                    .unwrap_or(());
-                                }
-                                DbConn::SqliteConnectionPool(conn, _) => {
-                                    // Insert Hello World post and timeline entry if not exists
-                                    let c = conn.get().unwrap();
-
-                                    let _ = c.execute(
-                                        "INSERT OR IGNORE INTO users (id, email, username, password) VALUES (?1, ?2, ?3, ?4)",
-                                        &[author_id, "local@localhost", "localuser", "debugpassword"],
-                                    );
-                                    let _ = c.execute(
-                                        "INSERT OR IGNORE INTO post_text (id, author_id, content, created_at) VALUES (?1, ?2, ?3, strftime('%Y-%m-%d %H:%M:%f', 'now'))",
-                                        &[&generated_uuid_str.as_str(), &author_id, &hello_content],
-                                    );
                                     let add_clone = ev_log.clone().await;
                                     timeline::add_to_timeline(
                                         add_clone,

@@ -79,17 +79,7 @@ let mut client_session_data: SessionData = SessionData {
 	                            info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
                             }
 				                            }
-				                            LuminaError::Sqlite(sqlite_error) => {
-                            match sqlite_error {
-	                            r2d2_sqlite::rusqlite::Error::QueryReturnedNoRows => {
-		                            // No rows returned - session not found or expired
-		                            info_elog!(ev_log,"Session revival failed: token not found or expired.");
-	                            }
-	                            _ => {
-		                            info_elog!(ev_log,"Session revival failed: database error: {:?}", sqlite_error);
-	                            }
-                            }
-				                            }
+
 				                            _ => {
                             info_elog!(ev_log,"Session revival failed: {:?}", e);
 				                            }
@@ -154,9 +144,7 @@ let mut client_session_data: SessionData = SessionData {
                                                                                      error_elog!(ev_log,"While creating session token: {:?}", e),
                             	                            LuminaError::R2D2Pool(e) =>
                             		                            warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
-                            	                            LuminaError::Sqlite(e) =>
-warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
-	                            _ => {}
+                                                                                        _ => {}
                                                                                  }
                                                                                     // I would return a more specific error message
                                                                                     // to the client here, but if the server knows the
