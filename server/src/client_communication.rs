@@ -50,6 +50,7 @@ let mut client_session_data: SessionData = SessionData {
                             "web" => {
 	                            client_session_data.client_type = Some(ClientType::Web)
                             }
+												"mobile" => todo!(),
                             _ => {}
 				                            }
 				                            match try_revive {
@@ -73,7 +74,7 @@ let mut client_session_data: SessionData = SessionData {
 			                            match e {
 				                            LuminaError::Postgres(postgres_error) => {
                             // Check if it's a "no rows returned" type error
-                            if postgres_error.to_string().contains("no rows") {
+                            if postgres_error.to_string().contains("no rows")  || postgres_error.to_string().contains("RowCount") {
 	                            info_elog!( ev_log,"Session revival failed: token not found or expired.");
                             } else {
 	                            info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
