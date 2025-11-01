@@ -9,6 +9,6 @@ env.LUMINA_POSTGRES_PASSWORD = "lumina_pw"
 [local-devel-watch]
 tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
-run = "watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run development-run"
-run_windows = "watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run development-run"
+run = "watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run local-devel"
+run_windows = "watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run local-devel"
 env.LUMINA_POSTGRES_PASSWORD = "lumina_pw"
