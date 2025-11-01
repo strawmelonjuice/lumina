@@ -68,11 +68,6 @@ impl EventLogger {
                     }
                 }
             }
-            DbConn::SqliteConnectionPool(pool, redis) => {
-                let new_dbconn =
-                    database::DbConn::SqliteConnectionPool(pool.clone(), redis.clone());
-                Self::WithDatabase { db: new_dbconn }
-            }
         }
     }
 
@@ -180,14 +175,6 @@ impl EventLogger {
                                 &[&level_str, &message_db, &ts],
                             )
                             .await;
-                    }
-                    crate::database::DbConn::SqliteConnectionPool(pool, _) => {
-                        if let Ok(conn) = pool.get() {
-                            let _ = conn.execute(
-                                "INSERT INTO logs (type, message, timestamp) VALUES (?1, ?2, ?3)",
-                                r2d2_sqlite::rusqlite::params![level_str, message_db, ts],
-                            );
-                        }
                     }
                 }
             }

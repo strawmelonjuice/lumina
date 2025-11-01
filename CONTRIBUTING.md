@@ -52,11 +52,12 @@ If you experience or witness unacceptable behavior, contact the maintainer via t
 - Optional: Watchexec (installed automatically via tasks), Taplo, Prettier (run via tasks).
 
 This repository uses `mise` to manage tools and developer tasks:
+
 - Install mise: https://mise.jdx.dev/
 - Then install toolchain/tool deps used by the project and tasks:
-  ```sh
-  mise install
-  ```
+    ```sh
+    mise install
+    ```
 
 ---
 
@@ -65,38 +66,28 @@ This repository uses `mise` to manage tools and developer tasks:
 Local setup is pretty easy with mise, and to not do it with mise is actually kind of unthinkable for me at this point.
 
 Typical preparation:
+
 ```sh
 # From repo root
 mise install
 mise run build-env-image-podman # Build the environment image for podman, allowing you to build quicker.
 # And then later:
-mise run development-run-podman
+mise run devel # or devel-watch
 ```
 
-Running bare-metal is usually prepared:
+Running 'bare-metal' is usually prepared as well, since we need a database:
 
 ```sh
 # From repo root
 mise install
-mise run development-run-redis # Because you'll need a Redis server running locally.
+mise run local-devel-prep # Because you'll need a database running somewhere.
 # And then later:
-mise run development-run
+mise run local-devel # or local-devel-watch
 ```
+
 The README should have some environment variables you could set.
 
-Development run options:
-```sh
-# Fast development with auto-restart on changes
-mise run development-run-watch # add -podman to run in podman, since otherwise you'll need to run a Redis server and a PostgreSQL server locally.
-
-# Or run once (debug)
-mise run development-run # add -podman to run in podman, since otherwise you'll need to run a Redis server and a PostgreSQL server locally.
-
-# Or an optimized (release) development run
-mise run optimised-development-run # You need to have a Redis server and a PostgreSQL server running locally.
-```
-
-There are more variations. Run `mise run` and type 'development' in the task finder to list all of them.
+There are more variations. Run `mise run` to list all of them.
 
 The build pipeline (mise) takes care of client (Gleam) compilation and styles, and it will create necessary data directories.
 
@@ -105,6 +96,7 @@ The build pipeline (mise) takes care of client (Gleam) compilation and styles, a
 ## Formatting, checks, and quality
 
 Before pushing or opening a PR, run:
+
 ```sh
 # Format Rust, Gleam, and meta files
 mise run format
@@ -115,13 +107,14 @@ mise run check
 # Build to ensure it compiles
 mise run build-server
 
-# Optionally: There are some watching tasks and tasks to run Lumina niet development mode
+# Optionally: There are some watching tasks and tasks to run Lumina in development mode
 mise run check-watch
-mise run development-run-watch-podman
+mise run devel
 # ..etc.
 ```
 
 Conventions:
+
 - Rust code is formatted with `rustfmt`.
 - Gleam code is formatted with `gleam format`.
 - Meta files are formatted via Prettier and Taplo.
@@ -133,19 +126,20 @@ Conventions:
 ## Branching and commit messages
 
 - Create feature branches from the default branch (typically `main`).
-  - Suggested naming: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
+    - Suggested naming: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
 - Commit messages:
-  - Be concise and descriptive.
-  - Prefer Conventional Commits style when possible:
-    - `feat: add user session cleanup job`
-    - `fix(server): handle empty redis url`
-    - `docs: improve contributing guide`
+    - Be concise and descriptive.
+    - Prefer Conventional Commits style when possible:
+        - `feat: add user session cleanup job`
+        - `fix(server): handle empty redis url`
+        - `docs: improve contributing guide`
 
 ---
 
 ## Pull requests
 
 PR checklist:
+
 - Code is formatted and builds locally.
 - `mise run check` passes.
 - Include tests when adding logic or fixing bugs (Rust: `cargo test`; Gleam: `gleam test`).
@@ -153,6 +147,7 @@ PR checklist:
 - Keep PRs focused. Large refactors should be split or well-justified.
 
 Review expectations:
+
 - Be prepared to discuss design decisions and trade-offs.
 - Address review comments via additional commits (avoid force-push unless asked).
 - Squash commits at merge time if appropriate.
@@ -162,6 +157,7 @@ Review expectations:
 ## Reporting bugs
 
 When filing a bug report:
+
 - Describe what you expected to happen and what actually happened.
 - Include steps to reproduce.
 - Provide version info (commit hash) and environment (OS, DB type, Redis/Postgres versions).
@@ -172,6 +168,7 @@ When filing a bug report:
 ## Feature requests
 
 When proposing a feature:
+
 - Explain the problem it solves and the target use-cases.
 - Consider alternatives and why this approach is preferred.
 - If possible, include a small design sketch (API, data flow, or UI).
@@ -182,6 +179,7 @@ When proposing a feature:
 ## Security
 
 If you discover a security issue:
+
 - Do not open a public issue with sensitive details.
 - Contact me privately via the email on my main forge.
 - Provide clear reproduction steps and affected versions.

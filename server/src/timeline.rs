@@ -159,18 +159,6 @@ async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<us
             let count: i64 = row.get(0);
             Ok(count as usize)
         }
-        DbConn::SqliteConnectionPool(pool, _redis_pool) => {
-            let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-            let mut stmt = conn
-                .prepare("SELECT COUNT(*) FROM timelines WHERE tlid = ?")
-                .map_err(LuminaError::Sqlite)?;
-
-            let count: i64 = stmt
-                .query_row([timeline_id], |row| row.get(0))
-                .map_err(LuminaError::Sqlite)?;
-
-            Ok(count as usize)
-        }
     }
 }
 
@@ -198,22 +186,6 @@ async fn fetch_timeline_from_db(
                 .collect();
             Ok(post_ids)
         }
-        DbConn::SqliteConnectionPool(pool, _redis_pool) => {
-            let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-            let mut stmt = conn
-                .prepare("SELECT item_id FROM timelines WHERE tlid = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?")
-                .map_err(LuminaError::Sqlite)?;
-
-            let mut rows = stmt
-                .query([timeline_id, &limit.to_string(), &offset.to_string()])
-                .map_err(LuminaError::Sqlite)?;
-
-            let mut post_ids = Vec::new();
-            while let Some(row) = rows.next().map_err(LuminaError::Sqlite)? {
-                post_ids.push(row.get(0).map_err(LuminaError::Sqlite)?);
-            }
-            Ok(post_ids)
-        }
     }
 }
 
@@ -231,9 +203,6 @@ pub async fn fetch_timeline_post_ids(
     // Get Redis connection
     let mut redis_conn = match db {
         DbConn::PgsqlConnection(_, redis_pool) => {
-            redis_pool.get().map_err(LuminaError::R2D2Pool)?
-        }
-        DbConn::SqliteConnectionPool(_, redis_pool) => {
             redis_pool.get().map_err(LuminaError::R2D2Pool)?
         }
     };
@@ -346,25 +315,6 @@ pub async fn add_to_timeline(
                 );
             }
         }
-        DbConn::SqliteConnectionPool(pool, redis_pool) => {
-            let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-            conn.execute(
-                "INSERT INTO timelines (tlid, item_id, timestamp) VALUES (?, ?, datetime('now'))",
-                [timeline_id, item_id],
-            )
-            .map_err(LuminaError::Sqlite)?;
-
-            // Invalidate cache
-            let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
-            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
-                error_elog!(
-                    event_logger,
-                    "Failed to invalidate cache for timeline {}: {:?}",
-                    timeline_id,
-                    e
-                );
-            }
-        }
     }
 
     Ok(())
@@ -389,25 +339,6 @@ pub async fn remove_from_timeline(
                 )
                 .await
                 .map_err(LuminaError::Postgres)?;
-
-            // Invalidate cache
-            let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
-            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
-                error_elog!(
-                    event_logger,
-                    "Failed to invalidate cache for timeline {}: {:?}",
-                    timeline_id,
-                    e
-                );
-            }
-        }
-        DbConn::SqliteConnectionPool(pool, redis_pool) => {
-            let conn = pool.get().map_err(LuminaError::R2D2Pool)?;
-            conn.execute(
-                "DELETE FROM timelines WHERE tlid = ? AND item_id = ?",
-                [timeline_id, item_id],
-            )
-            .map_err(LuminaError::Sqlite)?;
 
             // Invalidate cache
             let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
