@@ -14,7 +14,6 @@ kanban-plugin: board
 
 ## Todo
 
-- [ ] [[1 - Deprecate SQLite, continue with only Postgres, further solidifying Podman as a development tool for Lumina]]
 
 
 ## Started
@@ -23,6 +22,7 @@ kanban-plugin: board
 
 ## Completed
 
+- [ ] [[1 - Deprecate SQLite, continue with only Postgres, further solidifying Podman as a development tool for Lumina]]
 
 
 
