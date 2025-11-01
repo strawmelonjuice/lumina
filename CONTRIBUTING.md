@@ -2,9 +2,7 @@
 
 > IMPORTANT
 >
-> This project is not hosted on GitHub or Codeberg. However, you can contribute by sending pull requests to the project's repository or any of it's official mirrors. I'll be happy to review and merge your contributions to the main repository.
->
-> If you turn into a frequent contributor, you may contact me to gain a <https://git.strawmelonjuice.com/> account to contribute on the main repository.
+> This project is primarily hosted on [Codeberg](https://codeberg.org/strawmelonjuice/lumina).
 
 Thank you for your interest in contributing! This document outlines how to set up your environment, follow the style, and submit changes.
 
@@ -12,13 +10,11 @@ Thank you for your interest in contributing! This document outlines how to set u
 
 ## Where to contribute
 
-- Main repository (primary): <https://git.strawmelonjuice.com/strawmelonjuice/lumina>
-- Official mirrors: <https://codeberg.org/strawmelonjuice/lumina>, <https://github.com/strawmelonjuice/lumina>
-- Note about GitHub: Any changes made on GitHub will be overwritten by automated force-pushes from strawmelonjuiceforge and may not be reviewed.
+- Main repository (primary): <https://codeberg.org/strawmelonjuice/Lumina>
+- Official mirror 1:<https://git.strawmelonjuice.com/strawmelonjuice/Lumina>
+- Official mirror 2: <https://github.com/strawmelonjuice/lumina>
 
 Please open issues and submit pull requests (PRs) on the main repository or an official mirror.
-
-Frequent contributors may request an account on the main forge to collaborate more directly: <https://git.strawmelonjuice.com/>.
 
 ---
 
