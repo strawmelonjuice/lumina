@@ -22,7 +22,6 @@ bcrypt = "0.17.0"
 r2d2 = "0.8.10"
 tabled = "0.20.0"
 regex = "1.10.5"
-fastbloom = "0.14.0"
 redis = { version = "0.32.4", features = ["r2d2"] }
 time = "0.3.20"
 base64 = "0.22"
