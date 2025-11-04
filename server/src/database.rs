@@ -35,11 +35,10 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             );
             let mut pg_config = postgres::Config::new();
             pg_config.user(&{
-                std::env::var("LUMINA_POSTGRES_USERNAME")
-					.unwrap_or("lumina".to_string())
+                std::env::var("LUMINA_POSTGRES_USERNAME").unwrap_or("lumina".to_string())
             });
-            let dbname = std::env::var("LUMINA_POSTGRES_DATABASE")
-				.unwrap_or("lumina_config".to_string());
+            let dbname =
+                std::env::var("LUMINA_POSTGRES_DATABASE").unwrap_or("lumina_config".to_string());
             uuu.0 = dbname.clone();
             pg_config.dbname(&dbname);
             let port = match std::env::var("LUMINA_POSTGRES_PORT") {

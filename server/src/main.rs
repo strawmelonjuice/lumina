@@ -8,7 +8,6 @@ pub mod helpers;
 mod staticroutes;
 mod tests;
 mod timeline;
-
 use helpers::events::EventLogger;
 use helpers::message_prefixes;
 use rocket::config::LogLevel;
@@ -19,12 +18,9 @@ use uuid::Uuid;
 mod user;
 use tokio_postgres as postgres;
 struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
-
 mod rate_limiter;
-use rate_limiter::{AuthRateLimiter, GeneralRateLimiter};
-
 use database::DbConn;
-
+use rate_limiter::{AuthRateLimiter, GeneralRateLimiter};
 #[derive(Debug, Clone)]
 struct ServerConfig {
     port: u16,
