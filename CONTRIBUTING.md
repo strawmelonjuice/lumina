@@ -4,7 +4,8 @@
 >
 > This project is primarily hosted on [Codeberg](https://codeberg.org/strawmelonjuice/lumina).
 
-Thank you for your interest in contributing! This document outlines how to set up your environment, follow the style, and submit changes.
+Thank you for your interest in contributing! This document outlines how to set up your environment, follow the style,
+and submit changes.
 
 ---
 
@@ -71,7 +72,8 @@ mise run build-env-image-podman # Build the environment image for podman, allowi
 mise run devel # or devel-watch
 ```
 
-Running in the typical dev pod allows you to also access PGWeb on http://127.0.0.1:8081 and Redis Commander on http://127.0.0.1:8082.
+Running in the typical dev pod allows you to also access PGWeb on http://127.0.0.1:8081 and Redis Commander
+on http://127.0.0.1:8082.
 
 Running 'bare-metal' is usually prepared as well, since we need a database:
 
@@ -85,13 +87,15 @@ mise run local-devel # or local-devel-watch
 mise run local-devel-dataexplorer # For PGWeb and Redis Commander on host machine.
 ```
 
-This means everything is still running in podman, except for lumina itself, which runs on your host machine. This sometimes speeds up build speeds.
+This means everything is still running in podman, except for lumina itself, which runs on your host machine. This
+sometimes speeds up build speeds.
 
 The README should have some environment variables you could set.
 
 There are more variations. Run `mise run` to list all of them.
 
-The build pipeline (mise) takes care of client (Gleam) compilation and styles, and it will create necessary data directories.
+The build pipeline (mise) takes care of client (Gleam) compilation and styles, and it will create necessary data
+directories.
 
 ---
 
@@ -200,7 +204,8 @@ If you discover a security issue:
 
 ## License and contributor terms
 
-By contributing, you agree that your contributions are licensed under the BSD 3-Clause License of this repository, unless explicitly stated otherwise in writing.
+By contributing, you agree that your contributions are licensed under the BSD 3-Clause License of this repository,
+unless explicitly stated otherwise in writing.
 
 See `LICENSE` at the repository root.
 
@@ -208,4 +213,5 @@ See `LICENSE` at the repository root.
 
 ## Thank you
 
-Your time and effort are appreciated. Whether you’re reporting a bug, improving docs, or adding features—every contribution helps make Lumina better.
+Your time and effort are appreciated. Whether you’re reporting a bug, improving docs, or adding features—every
+contribution helps make Lumina better.

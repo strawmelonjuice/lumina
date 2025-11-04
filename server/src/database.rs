@@ -109,7 +109,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
         {
             let _ = conn
                 .0
-				.batch_execute(include_str!("../../SQL/create_pg.sql"))
+                .batch_execute(include_str!("../../SQL/create_pg.sql"))
                 .await
                 .map_err(LuminaError::Postgres)?;
 

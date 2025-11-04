@@ -172,17 +172,17 @@ async fn main() {
                                     // Insert Hello World post and timeline entry if not exists
 
                                     let _ = client
-                                    .execute(
-                                        "INSERT INTO users (id, email, username, password) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
-                                        &[&author_id, &"local@localhost", &"localuser", &"debugpassword"],
-                                    )
-                                    .await;
+										.execute(
+											"INSERT INTO users (id, email, username, password) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
+											&[&author_id, &"local@localhost", &"localuser", &"debugpassword"],
+										)
+										.await;
                                     let _ = client
-                                    .execute(
-                                        "INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
-                                        &[&generated_uuid, &author_id, &hello_content],
-                                    )
-                                    .await;
+										.execute(
+											"INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
+											&[&generated_uuid, &author_id, &hello_content],
+										)
+										.await;
                                     let add_clone = ev_log.clone().await;
                                     timeline::add_to_timeline(
                                         add_clone,

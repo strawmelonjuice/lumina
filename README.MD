@@ -1,7 +1,9 @@
 # Lumina(/peonies) server
 
 > Notice:
-> This repo is edited on [My personal forge](https://git.strawmelonjuice.com/strawmelonjuice/lumina) and mirrorred on [codeberg](https://codeberg.org/strawmelonjuice/lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But you can still send in a PR!
+> This repo is edited on [My personal forge](https://git.strawmelonjuice.com/strawmelonjuice/lumina) and mirrorred
+> on [codeberg](https://codeberg.org/strawmelonjuice/lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
+> you can still send in a PR!
 > See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## -> Rewrite '25'
@@ -13,7 +15,8 @@
 ### Environment variables
 
 Part of the configuration is loaded from the database, part of it in environment variables.
-Environment variables can be set in the _environment_ before run, but Lumina prefers them to be loaded from `$LUMINAFOLDER/.env`.
+Environment variables can be set in the _environment_ before run, but Lumina prefers them to be loaded from
+`$LUMINAFOLDER/.env`.
 
 | NAME                       | DEFAULT              | FOR                                                                                                                        |
 | -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |

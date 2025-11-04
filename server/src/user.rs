@@ -81,9 +81,9 @@ impl User {
                 }
 
                 let id = client
-                    .query_one("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &[&email, &username, &password])
-                    .await
-                    .map_err(LuminaError::Postgres)?;
+					.query_one("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &[&email, &username, &password])
+					.await
+					.map_err(LuminaError::Postgres)?;
                 Ok(User {
                     id: id.get(0),
                     email,
@@ -105,12 +105,12 @@ impl User {
         match db {
             DbConn::PgsqlConnection((client, _), _) => {
                 let user = client
-                    .query_one(
-                        &format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
-                        &[&identifier],
-                    )
-                    .await
-                    .map_err(LuminaError::Postgres)?;
+					.query_one(
+						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
+						&[&identifier],
+					)
+					.await
+					.map_err(LuminaError::Postgres)?;
                 Ok(User {
                     id: user.get(0),
                     email: user.get(1),
@@ -161,9 +161,9 @@ impl User {
         match db {
             DbConn::PgsqlConnection((client, _), _) => {
                 let user = client
-.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
-.await
-.map_err(LuminaError::Postgres)?;
+					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
+					.await
+					.map_err(LuminaError::Postgres)?;
                 Ok(User {
                     id: user.get(0),
                     email: user.get(1),
