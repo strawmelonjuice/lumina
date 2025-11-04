@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run docker-compose-up-sqlite-no-optimise" type="MiseTomlTaskRunConfigurationType" factoryName="MiseTomlTask">
-    <mise configEnvironment="" taskName="docker-compose-up-sqlite-no-optimise" workingDirectory="$PROJECT_DIR$">
-      <envs />
-    </mise>
-    <method v="2" />
-  </configuration>
-</component>

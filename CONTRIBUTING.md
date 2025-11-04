@@ -70,6 +70,7 @@ mise run build-env-image-podman # Build the environment image for podman, allowi
 # And then later:
 mise run devel # or devel-watch
 ```
+
 Running in the typical dev pod allows you to also access PGWeb on http://127.0.0.1:8081 and Redis Commander on http://127.0.0.1:8082.
 
 Running 'bare-metal' is usually prepared as well, since we need a database:
@@ -83,6 +84,7 @@ mise run local-devel # or local-devel-watch
 # To have the tools from the pod development environment available on your host machine, run:
 mise run local-devel-dataexplorer # For PGWeb and Redis Commander on host machine.
 ```
+
 This means everything is still running in podman, except for lumina itself, which runs on your host machine. This sometimes speeds up build speeds.
 
 The README should have some environment variables you could set.

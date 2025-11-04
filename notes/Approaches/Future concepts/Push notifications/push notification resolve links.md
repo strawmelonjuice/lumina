@@ -1,5 +1,5 @@
 I notice on other social media platforms that when an edit or upload had unforseen consequences, this usually results in broken push notifications.
-Notifications that lead to a 404. 
+Notifications that lead to a 404.
 
 Obviously, when creating a push notification for something we know nothing about this is what it is. But in Lumina these notifications lead to a postview using a json string after the # in the url (url hash).
 
