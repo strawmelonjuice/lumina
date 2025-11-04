@@ -3,3 +3,5 @@
 *.svg linguist-detectable
 *_ffi.ts linguist-language=Gleam
 *_ffi.mjs linguist-language=Gleam
+/notes/**/* linguist-documentation=true
+/notes/.obsidian/**/* linguist-generated=true
