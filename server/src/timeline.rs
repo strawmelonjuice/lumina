@@ -173,12 +173,12 @@ async fn fetch_timeline_from_db(
         DbConn::PgsqlConnection((client, _pg_config), _redis_pool) => {
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
             let rows = client
-                .query(
-                    "SELECT item_id FROM timelines WHERE tlid = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
-                    &[&timeline_uuid, &(limit as i64), &(offset as i64)],
-                )
-                .await
-                .map_err(LuminaError::Postgres)?;
+				.query(
+					"SELECT item_id FROM timelines WHERE tlid = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
+					&[&timeline_uuid, &(limit as i64), &(offset as i64)],
+				)
+				.await
+				.map_err(LuminaError::Postgres)?;
 
             let post_ids = rows
                 .into_iter()

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @source "./src/**/*.gleam";
 
 @font-face {
@@ -96,6 +97,7 @@
 	html {
 		overflow: clip;
 	}
+
 	/*Pride month banner*/
 	body:has(.monthclass-6) main::before {
 		margin: 0;

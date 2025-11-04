@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg width="120" height="120" version="1.1" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
- <rect x=".13191" y=".11064" width="100%" height="100%" fill="#eee"/>
- <path transform="matrix(1.2205 0 0 1.0901 24.568 11.706)" d="m44.528 92.528-30.629 0.89732-10.318-28.852 24.252-18.729 25.307 17.277z" fill="#ddd"/>
- <circle cx="59.723" cy="44.519" r="26" fill="#cfcfcf"/>
- <g fill="#ddd">
-  <rect x="59.366" y="5.217" width="1.634" height="7.7617"/>
-  <rect x="73.255" y="15.838" width="5.3106" height="3.4723"/>
-  <rect x="42.413" y="14.817" width="3.0638" height="2.0426"/>
-  <rect x="71.008" y="8.6894" width="7.1489" height="2.8596"/>
-  <rect x="65.902" y="5.8298" width="3.4723" height="5.9234"/>
-  <rect x="48.54" y="4.1957" width="1.2255" height="10.621"/>
-  <rect x="80.404" y="21.149" width="3.2681" height="3.6766"/>
-  <rect x="87.962" y="30.953" width="3.2681" height="4.0851"/>
-  <rect x="34.243" y="18.902" width="1.634" height="5.9234"/>
- </g>
+	<rect x=".13191" y=".11064" width="100%" height="100%" fill="#eee"/>
+	<path transform="matrix(1.2205 0 0 1.0901 24.568 11.706)"
+		  d="m44.528 92.528-30.629 0.89732-10.318-28.852 24.252-18.729 25.307 17.277z" fill="#ddd"/>
+	<circle cx="59.723" cy="44.519" r="26" fill="#cfcfcf"/>
+	<g fill="#ddd">
+		<rect x="59.366" y="5.217" width="1.634" height="7.7617"/>
+		<rect x="73.255" y="15.838" width="5.3106" height="3.4723"/>
+		<rect x="42.413" y="14.817" width="3.0638" height="2.0426"/>
+		<rect x="71.008" y="8.6894" width="7.1489" height="2.8596"/>
+		<rect x="65.902" y="5.8298" width="3.4723" height="5.9234"/>
+		<rect x="48.54" y="4.1957" width="1.2255" height="10.621"/>
+		<rect x="80.404" y="21.149" width="3.2681" height="3.6766"/>
+		<rect x="87.962" y="30.953" width="3.2681" height="4.0851"/>
+		<rect x="34.243" y="18.902" width="1.634" height="5.9234"/>
+	</g>
 </svg>

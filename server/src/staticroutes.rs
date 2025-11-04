@@ -1,3 +1,4 @@
+extern crate rocket;
 use rocket::http::ContentType;
 
 use rocket::response::content::RawCss;
@@ -7,7 +8,6 @@ use rocket::response::content::RawJavaScript;
 use rocket::response::content::RawHtml;
 
 use crate::{AppState, http_code_elog};
-extern crate rocket;
 use rocket::State;
 
 #[get("/")]
