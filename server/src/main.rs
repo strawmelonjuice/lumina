@@ -30,6 +30,7 @@ struct ServerConfig {
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
+use rocket::futures::TryFutureExt;
 
 fn config_get() -> Result<ServerConfig, LuminaError> {
     let addr = {
@@ -160,38 +161,88 @@ async fn main() {
                         .unwrap_or_default();
                         if global.1 == 0 {
                             println!(
-                                "Debug mode: Inserting Hello World post by local user with zero UUID if not exists."
+                                "Debug mode: Inserting Hello World post and two test users if not exists."
                             );
 
                             let generated_uuid = Uuid::new_v4();
-                            let generated_uuid_str = generated_uuid.to_string();
                             let hello_content = "Hello world";
-                            let author_id = "00000000-0000-0000-0000-000000000000";
+
                             match db.recreate().await.unwrap() {
                                 DbConn::PgsqlConnection((client, _), _) => {
                                     // Insert Hello World post and timeline entry if not exists
+                                    let user_1_: Result<user::User, LuminaError> =
+                                        match user::User::create_user(
+                                            String::from("test@lumina123.co"),
+                                            String::from("testuser1"),
+                                            String::from("MyTestPassw9292!"),
+                                            &db,
+                                        )
+                                        .await
+                                        {
+                                            Ok(a) => Ok(a),
+                                            // But if a user exists, we just pass the user.
+                                            Err(LuminaError::RegisterUsernameInUse)
+                                            | Err(LuminaError::RegisterEmailInUse) => {
+                                                user::User::get_user_by_identifier(
+                                                    String::from("testuser1"),
+                                                    &db,
+                                                )
+                                                .await
+                                            }
+                                            Err(e) => Err(e),
+                                        };
 
-                                    let _ = client
-										.execute(
-											"INSERT INTO users (id, email, username, password) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING",
-											&[&author_id, &"local@localhost", &"localuser", &"debugpassword"],
-										)
-										.await;
-                                    let _ = client
-										.execute(
-											"INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
-											&[&generated_uuid, &author_id, &hello_content],
-										)
-										.await;
-                                    let add_clone = ev_log.clone().await;
-                                    timeline::add_to_timeline(
-                                        add_clone,
+                                    let user_2_ = match user::User::create_user(
+                                        String::from("test@lumina234.co"),
+                                        String::from("testuser2"),
+                                        String::from("MyTestPassw9292!"),
                                         &db,
-                                        "00000000-0000-0000-0000-000000000000",
-                                        &generated_uuid_str.as_str(),
                                     )
                                     .await
-                                    .unwrap_or(());
+                                    {
+                                        Ok(a) => Ok(a),
+                                        // But if a user exists, we just pass the user.
+                                        Err(LuminaError::RegisterUsernameInUse)
+                                        | Err(LuminaError::RegisterEmailInUse) => {
+                                            user::User::get_user_by_identifier(
+                                                String::from("testuser2"),
+                                                &db,
+                                            )
+                                            .await
+                                        }
+                                        Err(e) => Err(e),
+                                    };
+
+                                    match (user_1_, user_2_) {
+                                        (Ok(user_1), Ok(user_2)) => {
+                                            println!(
+                                                "Created two users with password 'MyTestPassw9292!' and usernames 'testuser1' and 'testuser2'."
+                                            );
+                                            let _ = client
+												.execute(
+													"INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
+													&[&generated_uuid, &user_1.id, &hello_content],
+												)
+												.await;
+                                            let add_clone = ev_log.clone().await;
+                                            timeline::add_to_timeline(
+                                                add_clone,
+                                                &db,
+                                                "00000000-0000-0000-0000-000000000000",
+                                                &generated_uuid.to_string().as_str(),
+                                            )
+                                            .await
+                                            .unwrap_or(());
+                                            ()
+                                        }
+                                        z => {
+                                            println!(
+                                                "Ran into some issues: user 1: {:?}, user 2: {:?} ",
+                                                z.0, z.1
+                                            );
+                                            ()
+                                        }
+                                    }
                                 }
                             }
                         }
