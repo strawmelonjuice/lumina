@@ -33,7 +33,7 @@ dir = "./client/"
 
 [build-server]
 description = "Build the server-side of Lumina"
-depends = ["build-client", "create-data-dirs"]
+depends = ["build-client"]
 run = ["cargo build"]
 
 [build-server-release]
