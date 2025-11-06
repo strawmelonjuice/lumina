@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Prep for local development run" type="MiseTomlTaskRunConfigurationType" factoryName="MiseTomlTask">
+    <mise configEnvironment="" taskName="local-devel-prep" workingDirectory="$PROJECT_DIR$" taskParams="">
+      <envs />
+    </mise>
+    <method v="2" />
+  </configuration>
+</component>
