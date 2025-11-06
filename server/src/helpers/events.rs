@@ -92,7 +92,7 @@ impl EventLogger {
             EventType::Warn => ("[WARN]".color_yellow().style_bold(), false),
             EventType::Error => ("[ERROR]".color_error_red().style_bold(), true),
             EventType::SoftError => ("[ERROR]".color_error_red().style_bold(), false),
-            EventType::Success => ("[✅ SUCCES]".color_ok_green().style_bold(), false),
+            EventType::Success => ("[✅ SUCCESS]".color_ok_green().style_bold(), false),
             EventType::Failure => ("[✖️ FAILURE]".color_error_red().style_bold(), false),
             EventType::Log => ("[LOG]".color_blue().style_bold(), false),
             EventType::Incoming => ("[INCOMING]".color_lilac().style_bold(), false),
