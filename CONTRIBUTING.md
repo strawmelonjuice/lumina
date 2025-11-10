@@ -97,6 +97,14 @@ There are more variations. Run `mise run` to list all of them.
 The build pipeline (mise) takes care of client (Gleam) compilation and styles, and it will create necessary data
 directories.
 
+When running Lumina server in devel mode, it automatically creates two accounts for you and one of those has an attached
+post on the global timeline.
+
+| Username  | Email             | Password         |
+| --------- | ----------------- | ---------------- |
+| testuser1 | test@lumina123.co | MyTestPassw9292! |
+| testuser2 | test@lumina234.co | MyTestPassw9292! |
+
 ---
 
 ## Formatting, checks, and quality
