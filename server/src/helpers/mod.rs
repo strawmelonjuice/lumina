@@ -5,14 +5,14 @@ use cynthia_con::{CynthiaColors, CynthiaStyles};
 /// Message prefixes for different types of messages.
 /// Usage: `let (info, warn, error, success, failure, log, incoming, registrationerror) = message_prefixes();`
 pub fn message_prefixes() -> (
-    std::string::String,
-    std::string::String,
-    std::string::String,
-    std::string::String,
-    std::string::String,
-    std::string::String,
-    std::string::String,
-    std::string::String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
 ) {
     let info = "[INFO]".color_green().style_bold();
     let warn = "[WARN]".color_yellow().style_bold();

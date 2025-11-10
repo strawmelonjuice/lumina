@@ -11,7 +11,7 @@ experience for individuals and communities.
 - **Real-Time Communication:** WebSocket-based messaging for instant updates and interactions.
 - **Content Sharing:** Support for articles, media, and text posts
 - **Semi-decentralised:** Instances (servers) can communicate over websockets with allowlisted other instances to blend
-  certain aspects of their respective timelines, the identification relies on the already in place DNS system and SSH
+  certain aspects of their respective timelines, the identification relies on the existing DNS system and on SSH
   keys.
 - **Bubbles vs timelines:** While Lumina has a global timeline and one for following and mutuals, it also has 'bubbles',
   semi-isolated timelines you can be a member of, that sort of operate as communities for specific subjects.

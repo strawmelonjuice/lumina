@@ -35,7 +35,7 @@ If you experience or witness unacceptable behavior, contact the maintainer via t
 - `client/` — Gleam application targeting JavaScript (bundled to browser).
 - `mise/` — Task definitions for development flows.
 - `data/` — Local runtime data directory (created by tasks).
-- Root files — Workspace-level configuration, license, docs, and Docker-related files.
+- Root files — Workspace-level configuration, licence, docs, and Docker-related files.
 
 ---
 
@@ -202,9 +202,9 @@ If you discover a security issue:
 
 ---
 
-## License and contributor terms
+## Licence and contributor terms
 
-By contributing, you agree that your contributions are licensed under the BSD 3-Clause License of this repository,
+By contributing, you agree that your contributions are licensed under the BSD 3-Clause Licence of this repository,
 unless explicitly stated otherwise in writing.
 
 See `LICENSE` at the repository root.
