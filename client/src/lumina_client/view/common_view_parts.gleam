@@ -7,7 +7,7 @@ pub fn common_view_parts(
   main_body: List(Element(Msg)),
   with_menu menuitems: List(Element(Msg)),
 ) {
-  html.div([], [
+  html.div([attribute.class("font-display")], [
     html.div(
       [attribute.class("navbar bg-base-100 dark:bg-neutral-800 shadow-sm")],
       [
@@ -21,12 +21,12 @@ pub fn common_view_parts(
           ]),
         ]),
         html.div([attribute.class("flex-1")], [
-          html.a([attribute.class("btn btn-ghost text-xl")], [
+          html.a([attribute.class("btn btn-ghost text-xl font-logo")], [
             element.text("Lumina"),
           ]),
         ]),
         html.div([attribute.class("flex-none")], [
-          html.ul([attribute.class("menu menu-horizontal px-1")], menuitems),
+          html.ul([attribute.class("menu menu-horizontal px-1 font-menuitems")], menuitems),
         ]),
       ],
     ),

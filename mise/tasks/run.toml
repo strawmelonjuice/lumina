@@ -1,9 +1,9 @@
 [local-devel]
 description = "Run the server in development mode"
 depends = "build-server"
-run = ["../target/debug/lumina-server"]
-run_windows = "..\\target\\debug\\lumina-server.exe"
-dir = "{{config_root}}/data/"
+run = ["./target/debug/lumina-server"]
+run_windows = ".\\target\\debug\\lumina-server.exe"
+dir = "{{config_root}}/"
 env.LUMINA_POSTGRES_PASSWORD = "lumina_pw"
 
 [local-devel-watch]

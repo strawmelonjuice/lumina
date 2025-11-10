@@ -18,5 +18,6 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=builder /build/target/output/lumina-server /app/lumina-server
+COPY assets /app/assets
 EXPOSE 8085
 CMD ["/app/lumina-server"]

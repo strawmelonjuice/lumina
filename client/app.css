@@ -3,12 +3,42 @@
 @source "./src/**/*.gleam";
 
 @font-face {
+	/* The Josefin Sans is used for:
+	*  Menu items
+	*/
 	font-family: "Josefin Sans";
-	src: url(/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf);
+	src: url(/assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf);
+}
+@font-face {
+	/* The Syne Font is used for:
+	*  Main theme
+	*/
+	font-family: "Syne";
+	src: url(/assets/fonts/Syne/Syne-VariableFont_wght.ttf);
+}
+
+@font-face {
+	/* The Gantari font is used for:
+	*  'Lumina' name typography
+	*/
+	font-family: "Gantari";
+	src: url(/assets/fonts/Gantari/Gantari-VariableFont_wght.ttf);
+}
+
+@font-face {
+	/* The Elms sans is used for:
+	*  (User-generated) Content on pages.
+	*/
+	font-family: "Elms Sans";
+	src: url(/assets/fonts/Elms_Sans/ElmsSans-VariableFont_wght.ttf);
 }
 
 @theme {
-	--font-display: "Josefin Sans";
+	--font-display: "Syne";
+	--font-logo: "Gantari";
+	--font-content: "Elms Sans";
+	--font-menuitems: "Josefin Sans";
+	--font-script: "";
 }
 
 @plugin "daisyui" {
