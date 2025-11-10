@@ -16,5 +16,5 @@ dir = "./client"
 
 [format-metafiles]
 hide = true
-run = ["bun x prettier . '!./data' --write", "taplo format"]
+run = ["bun x prettier . '!./data' '!./notes' --write", "taplo format"]
 tools.taplo = "latest"
