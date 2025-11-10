@@ -26,7 +26,10 @@ pub fn common_view_parts(
           ]),
         ]),
         html.div([attribute.class("flex-none")], [
-          html.ul([attribute.class("menu menu-horizontal px-1 font-menuitems")], menuitems),
+          html.ul(
+            [attribute.class("menu menu-horizontal px-1 font-menuitems")],
+            menuitems,
+          ),
         ]),
       ],
     ),

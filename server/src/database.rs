@@ -16,9 +16,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
     let redis_pool: Pool<redis::Client> = {
         info_elog!(ev_log, "Setting up Redis connection to {}...", redis_url);
         let client = redis::Client::open(redis_url.clone()).map_err(LuminaError::Redis)?;
-        Pool::builder()
-            .build(client)
-            .map_err(LuminaError::R2D2Pool)
+        Pool::builder().build(client).map_err(LuminaError::R2D2Pool)
     }?;
     success_elog!(
         ev_log,
@@ -161,10 +159,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 pub(crate) enum DbConn {
     // The config is also shared, so that for example the logger can set up its own connection, use this sparingly.
     /// The main database is a Postgres database in this variant.
-    PgsqlConnection(
-		(Client, postgres::Config),
-		Pool<redis::Client>,
-    ),
+    PgsqlConnection((Client, postgres::Config), Pool<redis::Client>),
 }
 
 impl DbConn {
@@ -268,8 +263,8 @@ async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(
 
 // Check for timeline changes and invalidate caches accordingly (PostgreSQL)
 async fn check_timeline_invalidations(
-	redis_conn: &mut redis::Connection,
-	client: &Client,
+    redis_conn: &mut redis::Connection,
+    client: &Client,
 ) -> Result<(), LuminaError> {
     // Get the last check timestamp
     let last_check: Option<String> = redis_conn.get("timeline_cache_last_check").unwrap_or(None);

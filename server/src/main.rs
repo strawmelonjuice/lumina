@@ -286,7 +286,7 @@ async fn main() {
                                 staticroutes::favicon,
                             ],
                         )
-						.mount("/assets", rocket::fs::FileServer::from("./assets"))
+                        .mount("/assets", rocket::fs::FileServer::from("./assets"))
                         .manage(appstate)
                         .manage(rate_limiter)
                         .manage(auth_rate_limiter)
