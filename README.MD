@@ -19,7 +19,7 @@ Environment variables can be set in the _environment_ before run, but Lumina pre
 `$LUMINAFOLDER/.env`.
 
 | NAME                       | DEFAULT              | FOR                                                                                                                        |
-|----------------------------|----------------------|----------------------------------------------------------------------------------------------------------------------------|
+| -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `LUMINA_POSTGRES_PORT`     | `5432`               | The port to contact the database on.                                                                                       |
 | `LUMINA_POSTGRES_HOST`     | `localhost`          | The address to contact the database on.                                                                                    |
 | `LUMINA_POSTGRES_USERNAME` | `lumina`             | The username to log in to the database with.                                                                               |
