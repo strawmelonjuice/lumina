@@ -260,7 +260,7 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
     timeline_name: &str,
     user: user::User,
     page: Option<usize>,
-) -> Result<(uuid::Uuid, Vec<String>, usize, bool), LuminaError> {
+) -> Result<(Uuid, Vec<String>, usize, bool), LuminaError> {
     info_elog!(
         event_logger,
         "Fetching timeline '{}' for user '{}'",

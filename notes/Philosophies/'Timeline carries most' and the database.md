@@ -19,7 +19,7 @@ Lumina supports two SQL database backends:
 - **PostgreSQL**: The recommended database for production environments.
 - **SQLite**: Supported for testing and development purposes.
 
-The choice of database is configured via the `LUMINA_DB_TYPE` environment variable.
+The choice of a database is configured via the `LUMINA_DB_TYPE` environment variable.
 
 ## Item and Content Storage
 

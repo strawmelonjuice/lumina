@@ -187,8 +187,8 @@ pub(crate) async fn register_validitycheck(
             DbConn::PgsqlConnection((client, _), redis_pool) => {
                 let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
-                let email_key = format!("bloom:email");
-                let username_key = format!("bloom:username");
+                let email_key = String::from("bloom:email");
+                let username_key = String::from("bloom:username");
                 let email_exists: bool = redis::cmd("BF.EXISTS")
                     .arg(&email_key)
                     .arg(&email)
