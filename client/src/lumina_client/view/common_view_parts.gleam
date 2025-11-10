@@ -7,7 +7,7 @@ pub fn common_view_parts(
   main_body: List(Element(Msg)),
   with_menu menuitems: List(Element(Msg)),
 ) {
-  html.div([attribute.class("font-display")], [
+  html.div([attribute.class("font-sans")], [
     html.div(
       [attribute.class("navbar bg-base-100 dark:bg-neutral-800 shadow-sm")],
       [

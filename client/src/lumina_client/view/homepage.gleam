@@ -227,7 +227,7 @@ pub fn view(model: model_type.Model) {
           ],
           [timeline(model)],
         ),
-        html.div([attribute.class("drawer-side")], [
+        html.div([attribute.class("drawer-side font-menuitems")], [
           html.label(
             [
               attribute.class("drawer-overlay"),
@@ -243,7 +243,7 @@ pub fn view(model: model_type.Model) {
               ),
             ],
             [
-              html.li([attribute.class("menu-title")], [
+              html.li([attribute.class("menu-title font-sans")], [
                 element.text("Timeline"),
               ]),
               html.ul([], [
@@ -558,7 +558,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
                 html.div(
                   [
                     attribute.class(
-                      "flex flex-col gap-2 p-4 m-8 bg-base-300 text-base-300-content rounded-md w-full bg-opacity-25",
+                      "flex flex-col gap-2 p-4 m-8 bg-base-300 text-base-300-content rounded-md w-full bg-opacity-25 font-content",
                       // Other candidates were:
                     // // "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
                     // // "flex flex-col gap-2 p-4 m-8 bg-info text-info-content rounded-md w-full bg-opacity-25",
@@ -589,7 +589,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
                   html.div([attribute.class("flex justify-center p-4")], [
                     html.button(
                       [
-                        attribute.class("btn btn-primary"),
+                        attribute.class("btn btn-primary font-menuitems"),
                         event.on_click(message_type.LoadMorePosts(timeline_name)),
                       ],
                       [element.text("Load More Posts")],
@@ -865,7 +865,7 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
             html.li([attribute.class("md:hidden")], [
               html.a(
                 [
-                  attribute.class("btn btn-info"),
+                  attribute.class("btn btn-info font-menuitems"),
                   event.on_click(SetModal("selfsettings")),
                 ],
                 [
@@ -874,7 +874,7 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
               ),
             ]),
             html.li([], [
-              html.a([attribute.class("btn btn-warn"), event.on_click(Logout)], [
+              html.a([attribute.class("btn btn-warn font-menuitems"), event.on_click(Logout)], [
                 element.text("Log out"),
               ]),
             ]),

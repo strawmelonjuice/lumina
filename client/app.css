@@ -27,14 +27,14 @@
 
 @font-face {
 	/* The Elms sans is used for:
-	*  (User-generated) Content on pages.
+	*  (User-generated) Content on pages, form input fields.
 	*/
 	font-family: "Elms Sans";
 	src: url(/assets/fonts/Elms_Sans/ElmsSans-VariableFont_wght.ttf);
 }
 
 @theme {
-	--font-display: "Syne";
+	--font-sans: "Syne";
 	--font-logo: "Gantari";
 	--font-content: "Elms Sans";
 	--font-menuitems: "Josefin Sans";
