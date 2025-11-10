@@ -12,7 +12,7 @@ use helpers::events::EventLogger;
 use helpers::message_prefixes;
 use rocket::config::LogLevel;
 use std::io::ErrorKind;
-use std::{net::IpAddr, process, sync::Arc};
+use std::{net::IpAddr, path, process, sync::Arc};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 mod user;
@@ -286,6 +286,7 @@ async fn main() {
                                 staticroutes::favicon,
                             ],
                         )
+						.mount("/assets", rocket::fs::FileServer::from("./assets"))
                         .manage(appstate)
                         .manage(rate_limiter)
                         .manage(auth_rate_limiter)
