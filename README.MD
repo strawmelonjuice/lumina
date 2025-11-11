@@ -40,7 +40,13 @@ During development, I use the following:
 ```sh
 mise install # Installs mise deps
 mise run local-devel-prep # Because you'll need a database running somewhere.
-mise run local-devel-watch
+mise run local-devel-watch # Also doable without -watch, if you'd prefer.
 ```
 
-I might just specify it a bit further sometime in the future.
+When running Lumina server in devel mode, it automatically creates two accounts for you and one of those has an attached
+post on the global timeline.
+
+| Username  | Email             | Password         |
+| --------- | ----------------- | ---------------- |
+| testuser1 | test@lumina123.co | MyTestPassw9292! |
+| testuser2 | test@lumina234.co | MyTestPassw9292! |
