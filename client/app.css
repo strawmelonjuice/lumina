@@ -32,14 +32,22 @@
 	font-family: "Elms Sans";
 	src: url(/assets/fonts/Elms_Sans/ElmsSans-VariableFont_wght.ttf);
 }
+@font-face {
+	/* The DM Mono font is used for:
+	*  Code blocks and monospaced text
+	*/
+	font-family: "DM Mono";
+	src: url(/assets/fonts/DM_Mono/DMMono-Regular.ttf);
+}
 
 @theme {
 	--font-sans: "Syne";
 	--font-logo: "Gantari";
 	--font-content: "Elms Sans";
 	--font-menuitems: "Josefin Sans";
-	--font-script: "";
+	--font-script: "DM Mono";
 }
+
 
 @plugin "daisyui" {
 }
