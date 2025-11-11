@@ -125,7 +125,10 @@ fn view_landing() -> Element(Msg) {
               ),
             ]),
             html.button(
-              [attribute.class("btn btn-primary font-menuitems"), event.on_click(ToLoginPage)],
+              [
+                attribute.class("btn btn-primary font-menuitems"),
+                event.on_click(ToLoginPage),
+              ],
               [element.text("Login")],
             ),
             html.button(
@@ -190,7 +193,9 @@ fn view_login(model: Model) -> Element(Msg) {
                       ]),
                       html.input([
                         attribute.placeholder("me@mymail.com"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("text"),
                         attribute.value(fieldvalues.emailfield),
                         event.on_input(UpdateEmailField),
@@ -205,7 +210,9 @@ fn view_login(model: Model) -> Element(Msg) {
                         attribute.value(fieldvalues.passwordfield),
                         event.on_input(UpdatePasswordField),
                         attribute.placeholder("Password"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("password"),
                       ]),
                       html.div([], [
@@ -232,7 +239,9 @@ fn view_login(model: Model) -> Element(Msg) {
                       html.button(
                         case values_ok {
                           True -> [
-                            attribute.class("btn btn-base-400 mt-4 font-menuitems"),
+                            attribute.class(
+                              "btn btn-base-400 mt-4 font-menuitems",
+                            ),
                             attribute.type_("submit"),
                           ]
                           False -> [
@@ -299,7 +308,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                       ]),
                       html.input([
                         attribute.placeholder("Email"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("email"),
                         attribute.value(fieldvalues.emailfield),
                         event.on_input(UpdateEmailField),
@@ -309,7 +320,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                       ]),
                       html.input([
                         attribute.placeholder("Username"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("string"),
                         attribute.value(fieldvalues.usernamefield),
                         event.on_input(UpdateUsernameField),
@@ -321,7 +334,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                         attribute.value(fieldvalues.passwordfield),
                         event.on_input(UpdatePasswordField),
                         attribute.placeholder("Password"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("password"),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
@@ -331,7 +346,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                         attribute.value(fieldvalues.passwordconfirmfield),
                         event.on_input(UpdatePasswordConfirmField),
                         attribute.placeholder("Re-type password"),
-                        attribute.class("input input-primary bg-primary font-content"),
+                        attribute.class(
+                          "input input-primary bg-primary font-content",
+                        ),
                         attribute.type_("password"),
                       ]),
                       html.br([]),
@@ -452,11 +469,15 @@ fn view_register(model_: Model) -> Element(Msg) {
                           == fieldvalues.passwordconfirmfield
                         {
                           True -> [
-                            attribute.class("btn btn-base-400 mt-4 font-menuitems"),
+                            attribute.class(
+                              "btn btn-base-400 mt-4 font-menuitems",
+                            ),
                             attribute.type_("submit"),
                           ]
                           False -> [
-                            attribute.class("btn btn-sucess mt-4 btn-disabled font-menuitems"),
+                            attribute.class(
+                              "btn btn-sucess mt-4 btn-disabled font-menuitems",
+                            ),
                             // attribute.title(values_ok.1),
                             attribute.disabled(True),
                           ]
