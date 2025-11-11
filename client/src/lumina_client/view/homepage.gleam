@@ -12,6 +12,7 @@ import lumina_client/dom
 import lumina_client/message_type.{type Msg, CloseModal, Logout, SetModal}
 import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
 import lumina_client/view/common_view_parts.{common_view_parts}
+import lumina_client/view/homepage/posts
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
@@ -542,10 +543,10 @@ pub fn timeline(model: Model) -> Element(Msg) {
   let timeline_posts = dict.get(cache.cached_timelines, timeline_name)
   case timeline_posts {
     Ok(cached_timeline) -> {
-      let posts: List(String) = get_all_posts(cached_timeline)
+      let post_ids: List(String) = get_all_posts(cached_timeline)
       let show_load_more = cached_timeline.has_more
       html.div([attribute.class("flex w-4/6 flex-col gap-4 items-start")], {
-        case posts {
+        case post_ids {
           [] -> [
             html.div([attribute.class("justify-center p-4")], [
               element.text("This timeline is empty! Make sure to fill it!"),
@@ -554,34 +555,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
 
           _ -> {
             let post_elements =
-              list.map(posts, fn(post_id) {
-                html.div(
-                  [
-                    attribute.class(
-                      "flex flex-col gap-2 p-4 m-8 bg-base-300 text-base-300-content rounded-md w-full bg-opacity-25 font-content",
-                      // Other candidates were:
-                    // // "flex flex-col gap-2 p-4 m-8 bg-secondary text-secondary-content rounded-md w-full",
-                    // // "flex flex-col gap-2 p-4 m-8 bg-info text-info-content rounded-md w-full bg-opacity-25",
-                    ),
-                  ],
-                  [
-                    html.p([], [
-                      element.text("Loading post..."),
-                      html.span(
-                        [
-                          attribute.class(
-                            "loading loading-spinner loading-md float-right",
-                          ),
-                        ],
-                        [],
-                      ),
-                    ]),
-                    html.small([attribute.class("opacity-50 text-xs")], [
-                      element.text("ID:" <> post_id),
-                    ]),
-                  ],
-                )
-              })
+              list.map(post_ids, posts.element_from_id(model, _))
 
             case show_load_more {
               True ->
@@ -874,9 +848,15 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
               ),
             ]),
             html.li([], [
-              html.a([attribute.class("btn btn-warn font-menuitems"), event.on_click(Logout)], [
-                element.text("Log out"),
-              ]),
+              html.a(
+                [
+                  attribute.class("btn btn-warn font-menuitems"),
+                  event.on_click(Logout),
+                ],
+                [
+                  element.text("Log out"),
+                ],
+              ),
             ]),
           ],
         ),
