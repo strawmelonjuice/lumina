@@ -1,16 +1,11 @@
 # Lumina(/peonies) server
 
 > Notice:
-> This repo is edited on [My personal forge](https://git.strawmelonjuice.com/strawmelonjuice/lumina) and mirrorred
-> on [codeberg](https://codeberg.org/strawmelonjuice/lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
+> This repo is edited on [Codeberg](https://codeberg.org/strawmelonjuice/Lumina) and mirrorred
+> on [My forge](https://git.strawmelonjuice.com/strawmelonjuice/Lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
 > you can still send in a PR!
 > See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
-## -> Rewrite '25'
-
-> Completely rewriting this project. I am relatively new
-> to Lustre and to websockets and to Rocket, but want to try
-> all of them out and make them succeed in this rewrite.
 
 ### Environment variables
 
