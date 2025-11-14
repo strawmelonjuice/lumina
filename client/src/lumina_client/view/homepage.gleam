@@ -96,7 +96,7 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-    CentralSmall(mod) ->
+    CentralSmall(mod, pos_x, pos_y, closable) -> {
       html.div(
         [
           attribute.class(
@@ -127,6 +127,8 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
+      todo
+    }
     SideOrCentral(Right, mod) ->
       html.div(
         [
@@ -810,8 +812,18 @@ type ModalSide {
 type ModalWithShape {
   /// Central takes up most of the screen space, and is used for things like a settings screen.
   CentralBig(Element(Msg))
-  /// Central takes up less of the screen space, and is used for things like a 'write a post' editor.
-  CentralSmall(Element(Msg))
+  /// Takes up less of the screen space, and is used for things like a 'write a post' editor. On wide screens it can be moved around (following Lumina-peonies pre-25 design concepts.)
+  /// On wide screens it also shows an empty title bar (draggable) containing a close button. This button will always be shown but can be disabled.
+  CentralSmall(
+    /// Content of the modal, this one makes sense.
+    containing: Element(Msg),
+    /// Starting from the corner, how far right to be placed. Default is somewhere in the middle, you'll need a helper function to read this.
+    position_x: Float,
+    /// Starting from the corner, how far down to be placed. Default is somewhere in the middle, you'll need a helper function to read this.
+    position_y: Float,
+    /// Let the title bar [x] close this modal.
+    closeable: Bool,
+  )
   /// Side or central takes up a little less screen space, looks roughly the same as Central(Big) on mobile screens but tries to out-center itself if possible.
   /// Used for for example the user menu.
   SideOrCentral(ModalSide, Element(Msg))
