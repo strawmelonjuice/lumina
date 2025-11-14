@@ -1,7 +1,10 @@
+Rationale: [[Backend > Timeline carries most]]
 # Lumina Data Storage Architecture
 
 This document outlines the data storage architecture of the Lumina social platform, based on the existing implementation
 and design principles.
+
+
 
 ## Core Philosophy: "Timeline-carries-most"
 
@@ -11,6 +14,7 @@ possible.
 
 - It acts as an index, containing only a timeline ID (`tlid`), an item ID (`item_id`), and a `timestamp`.
 - It does not store any content itself, only the relationship between a timeline and an item.
+
 
 ## Database System
 
