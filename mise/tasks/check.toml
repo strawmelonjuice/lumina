@@ -1,9 +1,10 @@
 # Check/lint/test-related tasks for Lumina
 [check]
 description = "Run the check command on both server and client."
-depends = ["check-server", "check-client"]
+run = { tasks = ["check-server", "check-client"] }
 
 [check-server]
+depends = ["build-client"]
 hide = true
 run = "cargo check"
 dir = "./server"
