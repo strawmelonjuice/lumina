@@ -1,0 +1,33 @@
+// The Ubuntu-based devenv is lighter tested than the fedora based one.
+// But in combination with microsoft's stuff, including github codespaces, it's the best performant option. Probably.
+//
+// That said, you'll have the problem with docker vs. podman. That's yours to deal with. :P (just replace podman in the local devel prep task and most cases should be fine)
+
+{
+	"name": "Lumina Ubuntu-based devenv",
+	"image": "ghcr.io/prulloac/base:ubuntu-24.04",
+
+	// 👇 Features to add to the Dev Container. More info: https://containers.dev/implementors/features.
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers-extra/features/mise:1": {},
+		"ghcr.io/devcontainers/features/rust": {
+			"version": "latest",
+			"profile": "default"
+		}
+	},
+
+	// 👇 Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	"postCreateCommand": [
+		"mise trust",
+		"mise use -g usage",
+		"mise install",
+		"mkdir -p ~/.local/share/bash-completion/completions",
+		"mise completion bash --include-bash-completion-lib > ~/.local/share/bash-completion/completions/mise"
+	],
+	"postStartCommand": ["git remote set-url origin ssh://git@codeberg.org/strawmelonjuice/Lumina.git"]
+	// 👇 Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
