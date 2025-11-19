@@ -1,5 +1,5 @@
-// The Ubuntu-based devenv is lighter tested than the fedora based one.
-// But in combination with microsoft's stuff, including github codespaces, it's the best performant option. Probably.
+// The Ubuntu-based devenv is lighter tested than the Fedora based one.
+// But in combination with microsoft's stuff, including GitHub codespaces, it's the best performant option. Probably.
 //
 // That said, you'll have the problem with docker vs. podman. That's yours to deal with. :P (just replace podman in the local devel prep task and most cases should be fine)
 
