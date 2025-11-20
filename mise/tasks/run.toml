@@ -7,7 +7,7 @@ dir = "{{config_root}}/"
 env.LUMINA_POSTGRES_PASSWORD = "lumina_pw"
 
 [local-devel-watch]
-tools.watchexec = "latest"
+tools."cargo:watchexec-cli" = "latest"
 description = "Run the server in development mode with file watching"
 run = "watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json mise run local-devel"
 run_windows = "watchexec --restart --stop-timeout=0 --shell=cmd -e rs,gleam,toml,css,ts,json mise run local-devel"
