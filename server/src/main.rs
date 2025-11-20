@@ -1,3 +1,23 @@
+/*
+ *     Lumina/Peonies
+ *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Affero General Public License as published
+ *     by the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Affero General Public License for more details.
+ *
+ *     You should have received a copy of the GNU Affero General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+
+
 extern crate dotenv;
 #[macro_use]
 extern crate rocket;
@@ -30,7 +50,9 @@ struct ServerConfig {
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
-use rocket::futures::TryFutureExt;
+use rocket::futures::FutureExt;
+use serde_json::to_string;
+use tokio::spawn;
 
 fn config_get() -> Result<ServerConfig, LuminaError> {
     let addr = {
@@ -58,12 +80,13 @@ async fn main() {
         (true, _) | (false, "start") | (false, "") => {
             dotenv().ok();
             info_elog!(ev_log, "Starting {}.", me.clone().color_lightblue());
-            println!(
-                "{} {} and contributors, licenced under {}.",
-                message_prefixes().0,
+            let greet = format!(
+                "{} and contributors, licenced under the {}.",
+
                 "MLC Bloeiman".color_pink(),
-                "BSD-3".color_blue()
+                "GNU Affero General Public License v3.0".color_blue()
             );
+			info_elog!(ev_log,"{greet}");
             println!("{}", cynthia_con::horizline());
             warn_elog!(
                 ev_log,
@@ -268,11 +291,10 @@ async fn main() {
                         // TODO: Use Lumina's logging instead, no logging is bad practise.
                         // Technically, we currently do this by just shipping it into each http
                         // route. HOWEVER, we don't have a 404 route!
-                        log_level: LogLevel::Critical,
+                        log_level: LogLevel::Off,
                         ..rocket::Config::default()
                     };
-
-                    let result = rocket::build()
+					let server = rocket::build()
                         .configure(def)
                         .mount(
                             "/",
@@ -280,6 +302,8 @@ async fn main() {
                                 staticroutes::index,
                                 staticroutes::lumina_js,
                                 staticroutes::lumina_css,
+								staticroutes::licence,
+								staticroutes::license_redirect,
                                 client_communication::wsconnection,
                                 staticroutes::logo_svg,
                                 staticroutes::logo_png,
@@ -290,11 +314,58 @@ async fn main() {
                         .manage(appstate)
                         .manage(rate_limiter)
                         .manage(auth_rate_limiter)
-                        .launch()
-                        .await
-                        .map_err(LuminaError::RocketFaillure);
+                        .launch();
+					let s = spawn(server);
+					// Wait for server to start, then check if it's running.
+					tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+					// Check if server is still running
+					if !s.is_finished() {
+						// If it is, we can assume it started successfully.
+						println!("{}", cynthia_con::horizline());
+						info_elog!(ev_log,"{}\n{greet}",me.clone().color_lightblue());
+
+						success_elog!(ev_log, "Lumina started successfully on {}.", format!(
+							"{}://{}:{}/",
+							if std::env::var("LUMINA_SERVER_HTTPS")
+								.unwrap_or(String::from("false"))
+								.to_lowercase()
+								== "true"
+							{
+								"https"
+							} else {
+								"http"
+							},
+							config.host,
+							config.port
+						).color_lightblue());
+						info_elog!(ev_log, "\nRemember: You can also visit the licence on {}!",
+						format!(
+							"{}://{}:{}/licence",
+							if std::env::var("LUMINA_SERVER_HTTPS")
+								.unwrap_or(String::from("false"))
+								.to_lowercase()
+								== "true"
+							{
+								"https"
+							} else {
+								"http"
+							},
+							config.host,
+							config.port
+						).color_lightblue()
+					);
+					}
+					let result = {
+						let g= s
+							.await;
+						match g {
+							Ok(x) => x.map_err(LuminaError::RocketFaillure),
+							Err(..) => Err(LuminaError::JoinFaillure)
+						}
+					};
                     match result {
-                        Ok(_) => {}
+                        Ok(_) => {
+						}
                         Err(LuminaError::RocketFaillure(e)) => {
                             // This handling should slowly expand as I run into newer ones, the 'defh' (default handling) is good enough, but for the most-bumped into errors, I'd like to give more human responses.
                             let defh =
@@ -360,7 +431,7 @@ async fn main() {
             );
             println!("MLC Bloeiman and contributors.");
             println!("{}", cynthia_con::horizline());
-            println!("{}", include_str!("../../LICENSE"));
+            println!("{}", include_str!("../../COPYING"));
         }
         (false, "help") | (false, "man") => {
             fn table_to_centered_string(a: &mut tabled::Table) -> String {
@@ -400,7 +471,6 @@ async fn main() {
                 println!();
                 let mut builder = tabled::builder::Builder::new();
                 builder.push_record(["Name", "Default value", "Description"]);
-                builder.push_record(["LUMINA_DB_TYPE", r#"sqlite"#, r#"The kind of database to use. Options are 'postgres' (recommended) or 'sqlite'."#]);
                 builder.push_record([
                     "LUMINA_REDIS_URL",
                     r#"redis://127.0.0.1/"#,
@@ -428,25 +498,6 @@ async fn main() {
                     r#"30"#,
                     "Specifies the interval between syncs. Minimum is 30.",
                 ]);
-                println!(
-                    "{}",
-                    table_to_centered_string(
-                        builder.build().with(tabled::settings::Style::modern())
-                    )
-                    .style_dim()
-                );
-                println!();
-                println!(
-                    "{}",
-                    format!(
-                        r#"When having "LUMINA_DB_TYPE" set to '{}': (recommended)"#,
-                        "postgres".color_lilac().style_bold()
-                    )
-                    .style_centered()
-                    .style_italic()
-                );
-                let mut builder = tabled::builder::Builder::new();
-                builder.push_record(["Name", "Default value", "Description"]);
                 builder.push_record([
                     "LUMINA_POSTGRES_PORT",
                     r#"5432"#,
@@ -476,33 +527,6 @@ async fn main() {
                     .color_lilac()
                     .style_dim()
                 );
-
-                println!();
-                println!(
-                    "{}",
-                    format!(
-                        r#"When having "LUMINA_DB_TYPE" set to '{}':"#,
-                        "sqlite".color_bright_orange().style_bold()
-                    )
-                    .style_centered()
-                    .style_italic()
-                );
-                let mut builder = tabled::builder::Builder::new();
-                builder.push_record(["Name", "Default value", "Description"]);
-
-                builder.push_record([
-                    "LUMINA_SQLITE_FILE",
-                    r#"instance.sqlite"#,
-                    "SQLite file to connect to. Always a relative path from the instance folder.",
-                ]);
-                println!(
-                    "{}",
-                    table_to_centered_string(
-                        builder.build().with(tabled::settings::Style::modern())
-                    )
-                    .color_bright_orange()
-                    .style_dim()
-                )
             }
         }
         (false, unknown) => {

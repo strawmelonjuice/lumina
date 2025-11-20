@@ -212,10 +212,10 @@ If you discover a security issue:
 
 ## Licence and contributor terms
 
-By contributing, you agree that your contributions are licensed under the BSD 3-Clause Licence of this repository,
+By contributing, you agree that your contributions are licensed under the AGPLv3 Licence of this repository,
 unless explicitly stated otherwise in writing.
 
-See `LICENSE` at the repository root.
+See `COPYING` at the repository root.
 
 ---
 
