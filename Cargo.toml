@@ -2,3 +2,4 @@
 resolver = "3"
 members = ["./server"]
 default-members = ["./server"]
+license = "AGPL-3"

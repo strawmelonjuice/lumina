@@ -1,7 +1,25 @@
+/*
+ *     Lumina/Peonies
+ *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Affero General Public License as published
+ *     by the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Affero General Public License for more details.
+ *
+ *     You should have received a copy of the GNU Affero General Public License
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 extern crate rocket;
 use rocket::http::ContentType;
 
-use rocket::response::content::RawCss;
+use rocket::response::content::{RawCss, RawText};
 
 use rocket::response::content::RawJavaScript;
 
@@ -61,6 +79,21 @@ pub(crate) async fn lumina_css<'k>(state: &'k State<AppState>) -> RawCss<String>
     http_code_elog!(ev_log, 200, "/static/lumina.css");
 
     RawCss(include_str!("../../client/priv/static/lumina_client.css").to_string())
+}
+
+#[get("/licence")]
+pub(crate) async fn licence<'k>(state: &'k State<AppState>) -> RawText<String> {
+	let ev_log = {
+		let appstate = state.0.clone();
+		appstate.2.clone().await
+	};
+	http_code_elog!(ev_log, 200, "/licence");
+
+	RawText(include_str!("../../COPYING").to_string())
+}
+#[get("/license")]
+pub(crate) async fn license_redirect() -> rocket::response::Redirect {
+	rocket::response::Redirect::to(uri!(licence))
 }
 
 #[get("/static/logo.svg")]
