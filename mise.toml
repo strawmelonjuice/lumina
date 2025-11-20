@@ -3,7 +3,10 @@ bun = "1.2.20"
 gleam = "1.12.0"
 "rust" = { version = "latest", components = "rust-analyzer" }
 
+
 [settings]
+[settings.cargo]
+binstall = false # This fails in some cases, watchexec can be compiled from source quickly enough
 [settings.npm]
 bun = true
 
