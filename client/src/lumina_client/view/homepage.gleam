@@ -78,7 +78,7 @@ pub fn view(model: model_type.Model) {
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                    "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
                   ),
 
                   event.on_click(CloseModal),
@@ -96,7 +96,7 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-    CentralSmall(mod, pos_x, pos_y, closable) -> {
+    CentralSmall(id, title, mod, pos_x, pos_y, closable) -> {
       html.div(
         [
           attribute.class(
@@ -107,15 +107,27 @@ pub fn view(model: model_type.Model) {
         [
           html.div(
             [
+              attribute.id(id),
+
               attribute.class(
                 "modal-box w-[32rem] max-w-[99vw] not:h-[32rem] h-[80lvh] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
               ),
             ],
             [
+              // Title bar
+              html.section(
+                [
+                  attribute.class(
+                    "w-full h-10 absolute top-0 left-0 bg-transparent cursor-move bg-info text-info-content rounded-t-xl flex items-center justify-center",
+                  ),
+                ],
+                [element.text(title)],
+              ),
+              // Close button on the title bar
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                    "btn btn-circle btn-error absolute top-0 right-4 text-2xl",
                   ),
                   event.on_click(CloseModal),
                 ],
@@ -127,7 +139,6 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-      todo
     }
     SideOrCentral(Right, mod) ->
       html.div(
@@ -148,7 +159,7 @@ pub fn view(model: model_type.Model) {
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                    "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
                   ),
                   event.on_click(CloseModal),
                 ],
@@ -179,7 +190,7 @@ pub fn view(model: model_type.Model) {
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-primary absolute top-4 right-4 text-2xl",
+                    "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
                   ),
                   event.on_click(CloseModal),
                 ],
@@ -191,7 +202,21 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-    NoModal -> element.none()
+    NoModal -> {
+      // Floating items and such to be rendered when no modal is open
+      html.div([attribute.class("items")], [
+        html.div([attribute.class("absolute bottom-4 right-4 p-4 z-50")], [
+          html.button(
+            [
+              attribute.class("btn btn-circle btn-success btn-lg text-3xl"),
+              attribute.id("btn-new-post"),
+              event.on_click(SetModal("mdl-postedit")),
+            ],
+            [element.text("+")],
+          ),
+        ]),
+      ])
+    }
     // SideOrCentral(Bottom, _) -> todo
     // SideOrCentral(Top, _) -> todo
   }
@@ -815,6 +840,10 @@ type ModalWithShape {
   /// Takes up less of the screen space, and is used for things like a 'write a post' editor. On wide screens it can be moved around (following Lumina-peonies pre-25 design concepts.)
   /// On wide screens it also shows an empty title bar (draggable) containing a close button. This button will always be shown but can be disabled.
   CentralSmall(
+    /// Just the #id.
+    id: String,
+    /// Title on the modal.
+    title: String,
     /// Content of the modal, this one makes sense.
     containing: Element(Msg),
     /// Starting from the corner, how far right to be placed. Default is somewhere in the middle, you'll need a helper function to read this.
@@ -895,6 +924,18 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
           element.text("User settings will be here eventually."),
         ]),
       )
+    "mdl-postedit" -> {
+      CentralSmall(
+        "mdl-postedit",
+        "New Post",
+        html.div([], [
+          element.text("Post editor modal will be here eventually."),
+        ]),
+        0.5,
+        0.5,
+        True,
+      )
+    }
     _ -> NoModal
   }
 }
