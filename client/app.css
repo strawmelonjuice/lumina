@@ -27,6 +27,7 @@
 	font-family: "Josefin Sans";
 	src: url(/assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf);
 }
+
 @font-face {
 	/* The Syne Font is used for:
 	*  Main theme
@@ -50,6 +51,7 @@
 	font-family: "Elms Sans";
 	src: url(/assets/fonts/Elms_Sans/ElmsSans-VariableFont_wght.ttf);
 }
+
 @font-face {
 	/* The DM Mono font is used for:
 	*  Code blocks and monospaced text
@@ -148,9 +150,15 @@
 }
 
 @layer base {
-	/* HTML overflow hidden */
 	html {
+		/* HTML overflow hidden */
 		overflow: clip;
+	}
+
+	* {
+		/* By default, none is selectable, selectable stuff gets 'text-select' class so tailwind re-enables it there. */
+		-webkit-user-select: none;
+		user-select: none;
 	}
 
 	/*Pride month banner*/

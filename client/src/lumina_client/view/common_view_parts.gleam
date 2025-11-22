@@ -1,3 +1,6 @@
+//// Lumina > Client > View > Application/Homepage > Common View Parts
+//// This module contains common view parts used across Lumina client views.
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //
