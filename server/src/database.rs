@@ -19,7 +19,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::LuminaError::{self, ConfMissing};
+use crate::errors::LuminaError::{self};
 use crate::helpers::events::EventLogger;
 use crate::timeline;
 use crate::{info_elog, success_elog, warn_elog};
@@ -156,9 +156,9 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .query(&mut *redis_conn)
                     .map_err(LuminaError::Redis)?;
             }
-            println!(
-                "{} Bloom filters populated from PostgreSQL.",
-                crate::helpers::message_prefixes().0
+            info_elog!(
+                ev_log,
+                "Bloom filters populated from PostgreSQL.",
             );
         };
         let conn_clone = conn_two.0;

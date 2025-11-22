@@ -53,8 +53,6 @@ struct ServerConfig {
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
-use rocket::futures::FutureExt;
-use serde_json::to_string;
 use tokio::spawn;
 
 fn config_get() -> Result<ServerConfig, LuminaError> {

@@ -21,7 +21,7 @@
 use crate::{
     LuminaError,
     database::DbConn,
-    helpers::{self, events::EventLogger},
+    helpers::{self, events::EventLogger}, info_elog,
 };
 use cynthia_con::CynthiaColors;
 use std::str::FromStr;
@@ -151,8 +151,7 @@ impl User {
         db: &DbConn,
         ev_log: EventLogger,
     ) -> Result<(SessionReference, User), LuminaError> {
-        let (info, _warn, _error, _success, _failure, _log, _incoming, _registrationerror) =
-            helpers::message_prefixes();
+        
         let user = self;
         let user_id = user.id;
         match db {
@@ -165,8 +164,9 @@ impl User {
                     )
                     .await
                     .map_err(LuminaError::Postgres)?;
-                println!(
-                    "{info} New session created by {}",
+                info_elog!(
+                    ev_log,
+                    "New session created by {}",
                     user.clone().username.color_bright_cyan()
                 );
                 let session_id = id.get(0);
