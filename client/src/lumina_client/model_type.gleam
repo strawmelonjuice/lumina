@@ -1,3 +1,6 @@
+//// Lumina > Client > Model
+//// Lumina's model is the central source of truth for the client application state.
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //
@@ -13,9 +16,6 @@
 //
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-//// Branched out the Model into a module.
-//// The Model is about to be huge, I'm just preselecting for that.
 
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
@@ -191,7 +191,10 @@ pub type Page {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields, success: Option(Bool))
-  HomeTimeline(timeline_name: Option(String), modal: Option(String))
+  HomeTimeline(
+    timeline_name: Option(String),
+    modal: Option(#(String, Dict(String, String))),
+  )
 }
 
 fn encode_page(page: Page) -> json.Json {
@@ -239,7 +242,7 @@ fn encode_page(page: Page) -> json.Json {
         })
         |> list.append(case modal {
           None -> []
-          Some(i) -> [#("modal", json.string(i))]
+          Some(i) -> [#("modal", json.string(i.0))]
         }),
       )
   }
@@ -282,11 +285,12 @@ fn page_decoder() -> decode.Decoder(Page) {
         None,
         decode.optional(decode.string),
       )
-      use modal <- decode.optional_field(
+      use modal_n <- decode.optional_field(
         "modal",
         None,
         decode.optional(decode.string),
       )
+      let modal = modal_n |> option.map(fn(m) { #(m, dict.new()) })
       decode.success(HomeTimeline(timeline_name:, modal:))
     }
     _ -> decode.failure(Landing, "Page")

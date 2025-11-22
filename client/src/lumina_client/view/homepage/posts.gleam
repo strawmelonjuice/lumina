@@ -1,3 +1,6 @@
+//// Lumina > Client > View > Application/Homepage > Posts
+//// This module contains the homepage timeline posts view as well as handling the rendering of posts on their own.
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //

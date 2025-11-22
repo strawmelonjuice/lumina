@@ -43,4 +43,11 @@ pub type Msg {
   CloseModal
   /// Browse modal to different page
   SetModal(String)
+  /// Start dragging the modal box
+  /// Parameters: the event, current mouse x and y positions
+  /// Starts a sideffect that tracks mouse movements and sends MoveModalBoxTo messages
+  StartDraggingModalBox(Float, Float)
+  /// Move the modal box to a new position
+  /// Parameters: new x and y positions
+  MoveModalBoxTo(Float, Float)
 }
