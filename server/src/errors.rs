@@ -1,3 +1,6 @@
+//// Lumina > Server > Errors
+//// This module defines custom error types used throughout the server.
+
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.

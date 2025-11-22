@@ -1,3 +1,13 @@
+//// Lumina > Server > Client Communication
+//// This module handles communication between the Lumina server and its clients
+//// over WebSockets. It defines the message formats, handles incoming messages,
+//// and sends appropriate responses back to the clients.
+////
+//// For future clients that might not be web-based, this module is designed to be
+//// extensible and adaptable to different client types.
+//// It might for example be expanded to also feature a REST API for clients that
+//// cannot use WebSockets.
+
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -142,7 +152,7 @@ pub(crate) async fn wsconnection<'k>(
                                                                                 "User created: {}",
                                                                                 user.clone().username.color_bright_cyan()
                                                                             );
-													match User::create_session(user, db).await {
+													match User::create_session(user, db, ev_log.clone().await).await {
 														Ok((session_reference, user)) => {
 															client_session_data.user =
 																Some(user.clone());
@@ -275,7 +285,7 @@ pub(crate) async fn wsconnection<'k>(
 										} else {
 											let appstate = state.0.clone();
 											let db = &appstate.1.lock().await;
-											let msgback = match User::authenticate(email_username.clone(), password, db).await {
+											let msgback = match User::authenticate(email_username.clone(), password, db, ev_log.clone().await).await {
 												Ok((session_reference, user)) => {
 													incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
 													client_session_data.user = Some(user.clone());

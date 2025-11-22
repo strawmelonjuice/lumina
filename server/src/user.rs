@@ -1,3 +1,5 @@
+//// Lumina > Server > Users
+//// User management module, including user struct and database interactions.
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -16,7 +18,11 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{LuminaError, database::DbConn, helpers};
+use crate::{
+    LuminaError,
+    database::DbConn,
+    helpers::{self, events::EventLogger},
+};
 use cynthia_con::CynthiaColors;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -40,6 +46,7 @@ impl User {
         email_username: String,
         password: String,
         db: &DbConn,
+        ev_log: EventLogger,
     ) -> Result<(SessionReference, User), LuminaError> {
         let user = match User::get_user_by_identifier(email_username, db).await {
             // Replace some errors
@@ -50,7 +57,7 @@ impl User {
         }?;
         let hashed_password = user.clone().get_hashed_password(db).await?;
         if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
-            user.create_session(db).await
+            user.create_session(db, ev_log).await
         } else {
             Err(LuminaError::AuthenticationWrongPassword)
         }
@@ -142,6 +149,7 @@ impl User {
     pub async fn create_session(
         self,
         db: &DbConn,
+        ev_log: EventLogger,
     ) -> Result<(SessionReference, User), LuminaError> {
         let (info, _warn, _error, _success, _failure, _log, _incoming, _registrationerror) =
             helpers::message_prefixes();
