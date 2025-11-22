@@ -1,3 +1,6 @@
+//// Lumina > Server > Helpers
+//// Shared helper functions and utilities for the server.
+
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -22,7 +25,7 @@ use cynthia_con::{CynthiaColors, CynthiaStyles};
 
 /// Message prefixes for different types of messages.
 /// Usage: `let (info, warn, error, success, failure, log, incoming, registrationerror) = message_prefixes();`
-pub fn message_prefixes() -> (
+pub(crate) fn message_prefixes() -> (
     String,
     String,
     String,

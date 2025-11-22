@@ -1,3 +1,9 @@
+//// Lumina > Server
+////
+//// The main entrypoint for the Lumina server-side, reaching out to other modules to compose
+//// the full server functionality including database connections, webserver, websockets, CLI
+//// commands, and more.
+
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -16,8 +22,6 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-
 extern crate dotenv;
 #[macro_use]
 extern crate rocket;
@@ -29,7 +33,6 @@ mod staticroutes;
 mod tests;
 mod timeline;
 use helpers::events::EventLogger;
-use helpers::message_prefixes;
 use rocket::config::LogLevel;
 use std::io::ErrorKind;
 use std::{net::IpAddr, path, process, sync::Arc};
@@ -82,11 +85,10 @@ async fn main() {
             info_elog!(ev_log, "Starting {}.", me.clone().color_lightblue());
             let greet = format!(
                 "{} and contributors, licenced under the {}.",
-
                 "MLC Bloeiman".color_pink(),
                 "GNU Affero General Public License v3.0".color_blue()
             );
-			info_elog!(ev_log,"{greet}");
+            info_elog!(ev_log, "{greet}");
             println!("{}", cynthia_con::horizline());
             warn_elog!(
                 ev_log,
@@ -294,7 +296,7 @@ async fn main() {
                         log_level: LogLevel::Off,
                         ..rocket::Config::default()
                     };
-					let server = rocket::build()
+                    let server = rocket::build()
                         .configure(def)
                         .mount(
                             "/",
@@ -302,8 +304,8 @@ async fn main() {
                                 staticroutes::index,
                                 staticroutes::lumina_js,
                                 staticroutes::lumina_css,
-								staticroutes::licence,
-								staticroutes::license_redirect,
+                                staticroutes::licence,
+                                staticroutes::license_redirect,
                                 client_communication::wsconnection,
                                 staticroutes::logo_svg,
                                 staticroutes::logo_png,
@@ -315,57 +317,63 @@ async fn main() {
                         .manage(rate_limiter)
                         .manage(auth_rate_limiter)
                         .launch();
-					let s = spawn(server);
-					// Wait for server to start, then check if it's running.
-					tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-					// Check if server is still running
-					if !s.is_finished() {
-						// If it is, we can assume it started successfully.
-						println!("{}", cynthia_con::horizline());
-						info_elog!(ev_log,"{}\n{greet}",me.clone().color_lightblue());
+                    let s = spawn(server);
+                    // Wait for server to start, then check if it's running.
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    // Check if server is still running
+                    if !s.is_finished() {
+                        // If it is, we can assume it started successfully.
+                        println!("{}", cynthia_con::horizline());
+                        info_elog!(ev_log, "{}\n{greet}", me.clone().color_lightblue());
 
-						success_elog!(ev_log, "Lumina started successfully on {}.", format!(
-							"{}://{}:{}/",
-							if std::env::var("LUMINA_SERVER_HTTPS")
-								.unwrap_or(String::from("false"))
-								.to_lowercase()
-								== "true"
-							{
-								"https"
-							} else {
-								"http"
-							},
-							config.host,
-							config.port
-						).color_lightblue());
-						info_elog!(ev_log, "\nRemember: You can also visit the licence on {}!",
-						format!(
-							"{}://{}:{}/licence",
-							if std::env::var("LUMINA_SERVER_HTTPS")
-								.unwrap_or(String::from("false"))
-								.to_lowercase()
-								== "true"
-							{
-								"https"
-							} else {
-								"http"
-							},
-							config.host,
-							config.port
-						).color_lightblue()
-					);
-					}
-					let result = {
-						let g= s
-							.await;
-						match g {
-							Ok(x) => x.map_err(LuminaError::RocketFaillure),
-							Err(..) => Err(LuminaError::JoinFaillure)
-						}
-					};
+                        success_elog!(
+                            ev_log,
+                            "Lumina started successfully on {}.",
+                            format!(
+                                "{}://{}:{}/",
+                                if std::env::var("LUMINA_SERVER_HTTPS")
+                                    .unwrap_or(String::from("false"))
+                                    .to_lowercase()
+                                    == "true"
+                                {
+                                    "https"
+                                } else {
+                                    "http"
+                                },
+                                config.host,
+                                config.port
+                            )
+                            .color_lightblue()
+                        );
+                        info_elog!(
+                            ev_log,
+                            "\nRemember: You can also visit the licence on {}!",
+                            format!(
+                                "{}://{}:{}/licence",
+                                if std::env::var("LUMINA_SERVER_HTTPS")
+                                    .unwrap_or(String::from("false"))
+                                    .to_lowercase()
+                                    == "true"
+                                {
+                                    "https"
+                                } else {
+                                    "http"
+                                },
+                                config.host,
+                                config.port
+                            )
+                            .color_lightblue()
+                        );
+                    }
+                    let result = {
+                        let g = s.await;
+                        match g {
+                            Ok(x) => x.map_err(LuminaError::RocketFaillure),
+                            Err(..) => Err(LuminaError::JoinFaillure),
+                        }
+                    };
                     match result {
-                        Ok(_) => {
-						}
+                        Ok(_) => {}
                         Err(LuminaError::RocketFaillure(e)) => {
                             // This handling should slowly expand as I run into newer ones, the 'defh' (default handling) is good enough, but for the most-bumped into errors, I'd like to give more human responses.
                             let defh =

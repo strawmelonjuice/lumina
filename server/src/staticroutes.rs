@@ -1,3 +1,6 @@
+//// Lumina > Server > Static Routes
+//// This module defines static routes for serving static files like CSS, JS, and images.
+
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -83,17 +86,17 @@ pub(crate) async fn lumina_css<'k>(state: &'k State<AppState>) -> RawCss<String>
 
 #[get("/licence")]
 pub(crate) async fn licence<'k>(state: &'k State<AppState>) -> RawText<String> {
-	let ev_log = {
-		let appstate = state.0.clone();
-		appstate.2.clone().await
-	};
-	http_code_elog!(ev_log, 200, "/licence");
+    let ev_log = {
+        let appstate = state.0.clone();
+        appstate.2.clone().await
+    };
+    http_code_elog!(ev_log, 200, "/licence");
 
-	RawText(include_str!("../../COPYING").to_string())
+    RawText(include_str!("../../COPYING").to_string())
 }
 #[get("/license")]
 pub(crate) async fn license_redirect() -> rocket::response::Redirect {
-	rocket::response::Redirect::to(uri!(licence))
+    rocket::response::Redirect::to(uri!(licence))
 }
 
 #[get("/static/logo.svg")]
