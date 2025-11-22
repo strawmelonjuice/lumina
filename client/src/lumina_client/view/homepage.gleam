@@ -1,3 +1,7 @@
+//// Lumina > Client > View > Application/Homepage
+//// This module focuses on the main application, mostly layout and modals.
+//// It's children shape the content inside the main application layout.
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //
@@ -22,12 +26,17 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
+import gleam/result
 import gleam/time/calendar
 import gleam/time/timestamp
 import lumina_client/dom
-import lumina_client/message_type.{type Msg, CloseModal, Logout, SetModal}
+import lumina_client/helpers
+import lumina_client/message_type.{
+  type Msg, CloseModal, Logout, SetModal, StartDraggingModalBox,
+}
 import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
 import lumina_client/view/common_view_parts.{common_view_parts}
+import lumina_client/view/homepage/post_editor
 import lumina_client/view/homepage/posts
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
@@ -96,7 +105,19 @@ pub fn view(model: model_type.Model) {
           ),
         ],
       )
-    CentralSmall(id, title, mod, pos_x, pos_y, closable) -> {
+    CentralSmall(id, title, mod, closable, params) -> {
+      let def_x = helpers.get_center_positioned_style_px().0
+      let def_y = helpers.get_center_positioned_style_px().1
+      let x = dict.get(params, "pos_x")
+      let y = dict.get(params, "pos_y")
+      let pos_x = case x {
+        Ok(v) -> float.parse(v) |> result.unwrap(def_x)
+        Error(_) -> def_x
+      }
+      let pos_y = case y {
+        Ok(v) -> float.parse(v) |> result.unwrap(def_y)
+        Error(_) -> def_y
+      }
       html.div(
         [
           attribute.class(
@@ -110,8 +131,14 @@ pub fn view(model: model_type.Model) {
               attribute.id(id),
 
               attribute.class(
-                "modal-box w-[32rem] max-w-[99vw] not:h-[32rem] h-[80lvh] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl relative",
+                "modal-box w-[32rem] max-w-[99vw] not:h-[32rem] h-[80lvh] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl absolute",
               ),
+              // Positioning styles from left to right
+              attribute.style("left", pos_x |> float.to_string() <> "px"),
+              // Positioning styles from top to bottom
+              attribute.style("top", pos_y |> float.to_string() <> "px"),
+              // Centering transform
+              attribute.style("transform", "translate(-50%, -50%)"),
             ],
             [
               // Title bar
@@ -120,21 +147,28 @@ pub fn view(model: model_type.Model) {
                   attribute.class(
                     "w-full h-10 absolute top-0 left-0 bg-transparent cursor-move bg-info text-info-content rounded-t-xl flex items-center justify-center",
                   ),
+                  event.on_mouse_down(StartDraggingModalBox(pos_x, pos_y)),
                 ],
                 [element.text(title)],
               ),
-              // Close button on the title bar
-              html.button(
-                [
-                  attribute.class(
-                    "btn btn-circle btn-error absolute top-0 right-4 text-2xl",
-                  ),
-                  event.on_click(CloseModal),
-                ],
-                [element.text("×")],
-              ),
-              mod,
-              html.div([attribute.class("modal-action")], []),
+              // Close button on the title bar, if closable
+              case closable {
+                True ->
+                  html.button(
+                    [
+                      attribute.class(
+                        "btn btn-circle btn-error absolute top-0 right-4 text-2xl",
+                      ),
+                      event.on_click(CloseModal),
+                    ],
+                    [element.text("×")],
+                  )
+                False -> element.none()
+              },
+
+              html.div([attribute.class("w-full h-full mt-10")], [
+                mod,
+              ]),
             ],
           ),
         ],
@@ -846,12 +880,10 @@ type ModalWithShape {
     title: String,
     /// Content of the modal, this one makes sense.
     containing: Element(Msg),
-    /// Starting from the corner, how far right to be placed. Default is somewhere in the middle, you'll need a helper function to read this.
-    position_x: Float,
-    /// Starting from the corner, how far down to be placed. Default is somewhere in the middle, you'll need a helper function to read this.
-    position_y: Float,
     /// Let the title bar [x] close this modal.
     closeable: Bool,
+    /// Additional parameters, for example position.
+    params: dict.Dict(String, String),
   )
   /// Side or central takes up a little less screen space, looks roughly the same as Central(Big) on mobile screens but tries to out-center itself if possible.
   /// Used for for example the user menu.
@@ -860,7 +892,11 @@ type ModalWithShape {
 }
 
 // TODO: Think about different VARIANTS of modals, like for the user menu a right-side one for example.
-fn modal_by_id(id: String, model: Model) -> ModalWithShape {
+fn modal_by_id(
+  f: #(String, dict.Dict(String, String)),
+  model: Model,
+) -> ModalWithShape {
+  let #(id, params) = f
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name: _, modal: _),
     user: Some(user),
@@ -928,12 +964,9 @@ fn modal_by_id(id: String, model: Model) -> ModalWithShape {
       CentralSmall(
         "mdl-postedit",
         "New Post",
-        html.div([], [
-          element.text("Post editor modal will be here eventually."),
-        ]),
-        0.5,
-        0.5,
+        post_editor.main(params, model),
         True,
+        params:,
       )
     }
     _ -> NoModal

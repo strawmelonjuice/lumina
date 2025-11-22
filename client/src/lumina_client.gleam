@@ -1,3 +1,6 @@
+//// Lumina > Client
+//// Main entry point for Lumina client. This module contains all side-effects, the update function. Lustre initialisation and more.
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //
@@ -27,6 +30,7 @@ import gleam/string
 import gleam/time/timestamp
 import gleamy_lights/console
 import gleamy_lights/premixed
+import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
   type Msg, FocusLostEmailField, Logout, SubmitLogin, SubmitSignup, TickUp,
@@ -165,6 +169,11 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
       up_next_tick(),
     ]),
   )
+}
+
+pub fn start_tracking_mouse_movements(x: Float, y: Float) {
+  use dispatcher <- effect.from
+  dom.start_dragging_modal_box(x, y, message_type.MoveModalBoxTo, dispatcher)
 }
 
 pub fn up_next_tick() {
@@ -528,7 +537,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     message_type.SetModal(to) -> {
       case model.page {
         HomeTimeline(timeline_name:, modal: _) -> #(
-          Model(..model, page: HomeTimeline(timeline_name:, modal: Some(to))),
+          Model(
+            ..model,
+            page: HomeTimeline(timeline_name:, modal: Some(#(to, dict.new()))),
+          ),
           effect.none(),
         )
         _ -> #(model, effect.none())
@@ -540,6 +552,31 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           Model(..model, page: HomeTimeline(timeline_name:, modal: None)),
           effect.none(),
         )
+        _ -> #(model, effect.none())
+      }
+    }
+    message_type.StartDraggingModalBox(x, y) -> {
+      // Start a sideffect that tracks mouse movements and sends MoveModalBoxTo messages
+      #(model, start_tracking_mouse_movements(x, y))
+    }
+    message_type.MoveModalBoxTo(x, y) -> {
+      case model.page {
+        HomeTimeline(timeline_name:, modal: Some(#("mdl-postedit", params))) -> {
+          let new_params =
+            params
+            |> dict.insert("pos_x", float.to_string(x))
+            |> dict.insert("pos_y", float.to_string(y))
+          #(
+            Model(
+              ..model,
+              page: HomeTimeline(
+                timeline_name:,
+                modal: Some(#("mdl-postedit", new_params)),
+              ),
+            ),
+            effect.none(),
+          )
+        }
         _ -> #(model, effect.none())
       }
     }

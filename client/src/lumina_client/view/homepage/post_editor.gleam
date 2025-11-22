@@ -1,5 +1,5 @@
-//// Lumina > Client > Errors
-//// Error collection module
+//// Lumina > Client > View > Application/Homepage > Post Editor
+//// This module contains the post editor.
 
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -17,7 +17,19 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-/// An error somewhere in the app.
-pub type Error {
-  DecodeError
+import gleam/dict
+import lumina_client/message_type.{type Msg}
+import lumina_client/model_type
+import lustre/element.{type Element}
+
+/// Post editor's exposed view function.
+/// Parameters:
+///  params - dict of String to String, these are params specific to the post editor modal, and also exist in the wider model, beit behind a wrapped option.
+///  model - the full application model, in case the post editor needs to read from it
+pub fn main(
+  params: dict.Dict(String, String),
+  _model: model_type.Model,
+) -> Element(Msg) {
+  // Placeholder implementation
+  element.text("Post editor will be here eventually.")
 }

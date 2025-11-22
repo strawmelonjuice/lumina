@@ -1,3 +1,6 @@
+//// Lumina > Client > View
+//// Module containing the view function and it's splits
+
 //	Lumina/Peonies
 //	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
 //
@@ -13,8 +16,6 @@
 //
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-//// Module containing the view function and it's splits
 
 import gleam/dynamic/decode
 import gleam/option.{None, Some}
