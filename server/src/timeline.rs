@@ -1,5 +1,6 @@
-//// Lumina > Server > Posts > Timeline
-//// Timeline management module for posts.
+//! Lumina > Server > Posts > Timeline
+//!
+//! Timeline management module for posts.
 
 /*
  *     Lumina/Peonies

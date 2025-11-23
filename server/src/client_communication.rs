@@ -1,12 +1,13 @@
-//// Lumina > Server > Client Communication
-//// This module handles communication between the Lumina server and its clients
-//// over WebSockets. It defines the message formats, handles incoming messages,
-//// and sends appropriate responses back to the clients.
-////
-//// For future clients that might not be web-based, this module is designed to be
-//// extensible and adaptable to different client types.
-//// It might for example be expanded to also feature a REST API for clients that
-//// cannot use WebSockets.
+//! Lumina > Server > Client Communication
+//!
+//! This module handles communication between the Lumina server and its clients
+//! over WebSockets. It defines the message formats, handles incoming messages,
+//! and sends appropriate responses back to the clients.
+//!
+//! For future clients that might not be web-based, this module is designed to be
+//! extensible and adaptable to different client types.
+//! It might for example be expanded to also feature a REST API for clients that
+//! cannot use WebSockets.
 
 /*
  *     Lumina/Peonies

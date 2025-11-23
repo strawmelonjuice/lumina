@@ -1,5 +1,6 @@
-//// Lumina > Server > Errors
-//// This module defines custom error types used throughout the server.
+//! Lumina > Server > Errors
+//!
+//! This module defines custom error types used throughout the server.
 
 /*
  *     Lumina/Peonies

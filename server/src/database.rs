@@ -1,5 +1,6 @@
-//// Lumina > Server > Database
-//// Database management and connection pooling module.
+//! Lumina > Server > Database
+//!
+//! Database management and connection pooling module.
 
 /*
  *     Lumina/Peonies
@@ -156,10 +157,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                     .query(&mut *redis_conn)
                     .map_err(LuminaError::Redis)?;
             }
-            info_elog!(
-                ev_log,
-                "Bloom filters populated from PostgreSQL.",
-            );
+            info_elog!(ev_log, "Bloom filters populated from PostgreSQL.",);
         };
         let conn_clone = conn_two.0;
         let pg_config_clone = pg_config.clone();
