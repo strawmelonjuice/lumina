@@ -2,8 +2,7 @@
 {
 	"containerUser": "vscode",
 	"remoteUser": "vscode",
-	"mounts": [
-	],
+	"mounts": [],
 	"customizations": {
 		"vscode": {
 			"extensions": [
