@@ -6,7 +6,6 @@
 > you can still send in a PR!
 > See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
-
 ### Environment variables
 
 Part of the configuration is loaded from the database, part of it in environment variables.
