@@ -1,5 +1,6 @@
-//// Lumina > Server > Users
-//// User management module, including user struct and database interactions.
+//! Lumina > Server > Users
+//!
+//! User management module, including user struct and database interactions.
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
@@ -21,7 +22,8 @@
 use crate::{
     LuminaError,
     database::DbConn,
-    helpers::{self, events::EventLogger}, info_elog,
+    helpers::{self, events::EventLogger},
+    info_elog,
 };
 use cynthia_con::CynthiaColors;
 use std::str::FromStr;
@@ -151,7 +153,6 @@ impl User {
         db: &DbConn,
         ev_log: EventLogger,
     ) -> Result<(SessionReference, User), LuminaError> {
-        
         let user = self;
         let user_id = user.id;
         match db {

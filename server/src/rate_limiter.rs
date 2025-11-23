@@ -1,5 +1,6 @@
-//// Lumina > Server > Rate Limiter
-//// This module implements a simple rate limiter using a token bucket algorithm.
+//! Lumina > Server > Rate Limiter
+//!
+//! This module implements a simple rate limiter using a token bucket algorithm.
 
 /*
  *     Lumina/Peonies

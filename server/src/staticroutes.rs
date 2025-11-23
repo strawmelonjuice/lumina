@@ -1,5 +1,6 @@
-//// Lumina > Server > Static Routes
-//// This module defines static routes for serving static files like CSS, JS, and images.
+//! Lumina > Server > Static Routes
+//!
+//! This module defines static routes for serving static files like CSS, JS, and images.
 
 /*
  *     Lumina/Peonies

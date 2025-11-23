@@ -1,5 +1,6 @@
-//// Lumina > Server > Helpers
-//// Shared helper functions and utilities for the server.
+//! Lumina > Server > Helpers
+//!
+//! Shared helper functions and utilities for the server.
 
 /*
  *     Lumina/Peonies

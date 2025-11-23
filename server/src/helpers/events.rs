@@ -1,9 +1,10 @@
-//// Lumina > Server > Helpers > Events
-//// This module provides an event logging utility that logs messages to stdout
-//// with colored prefixes and optionally logs them to a database.
-////
-//// This helps increase consistency in logging throughout the server codebase, centralises it, and
-//// improves readability and distinctability with its colored output.
+//! Lumina > Server > Helpers > Events
+//!
+//! This module provides an event logging utility that logs messages to stdout
+//! with colored prefixes and optionally logs them to a database.
+//!
+//! This helps increase consistency in logging throughout the server codebase, centralises it, and
+//! improves readability and distinctability with its colored output.
 /*
  *     Lumina/Peonies
  *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.

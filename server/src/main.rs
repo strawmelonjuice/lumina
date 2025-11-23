@@ -1,8 +1,8 @@
-//// Lumina > Server
-////
-//// The main entrypoint for the Lumina server-side, reaching out to other modules to compose
-//// the full server functionality including database connections, webserver, websockets, CLI
-//// commands, and more.
+//! Lumina > Server
+//!
+//! The main entrypoint for the Lumina server-side, reaching out to other modules to compose
+//! the full server functionality including database connections, webserver, websockets, CLI
+//! commands, and more.
 
 /*
  *     Lumina/Peonies
@@ -35,7 +35,7 @@ mod timeline;
 use helpers::events::EventLogger;
 use rocket::config::LogLevel;
 use std::io::ErrorKind;
-use std::{net::IpAddr, path, process, sync::Arc};
+use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 mod user;
@@ -49,7 +49,6 @@ struct ServerConfig {
     port: u16,
     host: IpAddr,
 }
-
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
