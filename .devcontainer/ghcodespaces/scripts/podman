@@ -1,11 +1,32 @@
 #!/usr/bin/env bash
 # This script sets up Docker as if it were Podman for compatibility in the devcontainer.
 set -euo pipefail
-# --replace is not supported in docker, so we remove it from the arguments
+
+# Parse arguments to find --name and handle --replace
 args=()
+container_name=""
+has_replace=false
+next_is_name=false
+
 for arg in "$@"; do
-  if [ "$arg" != "--replace" ]; then
+  if [ "$arg" = "--replace" ]; then
+    has_replace=true
+    # Don't add --replace to args (not supported in docker)
+  elif [ "$arg" = "--name" ]; then
+    next_is_name=true
+    args+=("$arg")
+  elif [ "$next_is_name" = true ]; then
+    container_name="$arg"
+    next_is_name=false
+    args+=("$arg")
+  else
     args+=("$arg")
   fi
 done
+
+# If --replace flag was present and we have a container name, remove existing container
+if [ "$has_replace" = true ] && [ -n "$container_name" ]; then
+  docker rm -f "$container_name" >/dev/null 2>&1 || true
+fi
+
 docker "${args[@]}"
