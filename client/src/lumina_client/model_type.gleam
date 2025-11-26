@@ -42,8 +42,14 @@ pub type Model {
     /// Displaying some loading screen in between.
     /// Once it is there, this is where it's stored:
     cache: Cached,
-    /// Ticks are upped by one every 50ms since initialisation.
-    ticks: Int,
+    // /// Ticks are upped by one every 50ms since initialisation.
+    // ticks: Int,
+    /// Replaces ticks: Tracks if the client has been running for over 150ms
+    has_been_running_for_150ms: Bool,
+    /// Last time send_refresh_request was called, in unix timestamp seconds.
+    /// If send_refresh_request(), it will update this value. If the last refresh request was over 30 seconds ago,
+    /// the client will send a new refresh request to the server.
+    last_refresh_request_time: Int,
   )
 }
 
@@ -352,7 +358,7 @@ fn serializable_model_decoder() -> decode.Decoder(SerializableModel) {
 }
 
 pub fn serialize(normal_model: Model) {
-  let Model(page, _, _, token, _, _, _): Model = normal_model
+  let Model(page, _, _, token, _, _, _, _): Model = normal_model
   SerializableModel(page:, token:)
   |> serialize_serializable_model
   |> json.to_string

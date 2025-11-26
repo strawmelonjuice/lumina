@@ -18,7 +18,8 @@ import lustre_websocket
 
 pub type Msg {
   WSTryReconnect
-  TickUp
+  Past150ms
+  UpdateLastRefreshRequestTime(Int)
   WsDisconnectDefinitive
   WsWrapper(lustre_websocket.WebSocketEvent)
   ToLoginPage

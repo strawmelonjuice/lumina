@@ -57,11 +57,7 @@ pub fn view(model: model_type.Model) {
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name:, modal:),
     user:,
-    ws: _,
-    token: _,
-    status: _,
-    cache: _,
-    ticks: _,
+    ..,
   ) = model
 
   let timeline_name = option.unwrap(timeline_name, "global")
@@ -607,12 +603,8 @@ pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name:, modal: _),
-    user: _,
-    ws: _,
-    token: _,
-    status: _,
     cache:,
-    ticks: _,
+    ..,
   ) = model
   let timeline_name = option.unwrap(timeline_name, "global")
   // case timeline_name {
@@ -900,11 +892,7 @@ fn modal_by_id(
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name: _, modal: _),
     user: Some(user),
-    ws: _,
-    token: _,
-    status: _,
-    cache: _,
-    ticks: _,
+    ..,
   ): Model = model
   case id {
     "test" ->
