@@ -127,14 +127,14 @@ pub fn view(model: model_type.Model) {
               attribute.id(id),
 
               attribute.class(
-                "modal-box w-[32rem] max-w-[99vw] not:h-[32rem] h-[80lvh] max-h-[90vh] flex flex-col justify-center items-center bg-base-100 shadow-2xl absolute",
+                "modal-box lg:freeroam flex flex-col justify-center items-center bg-base-100 shadow-2xl w-[99vw] lg:w-[32rem] max-w-[unset] lg:max-w-[99vw] h-[80lvh] lg:h-[80lvh] lg:max-h-[90vh] relative lg:absolute",
               ),
               // Positioning styles from left to right
-              attribute.style("left", pos_x |> float.to_string() <> "px"),
+              attribute.style("--left", pos_x |> float.to_string() <> "px"),
               // Positioning styles from top to bottom
-              attribute.style("top", pos_y |> float.to_string() <> "px"),
+              attribute.style("--top", pos_y |> float.to_string() <> "px"),
               // Centering transform
-              attribute.style("transform", "translate(-50%, -50%)"),
+              attribute.style("--transform", "translate(-50%, -50%)"),
             ],
             [
               // Title bar
