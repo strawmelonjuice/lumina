@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# This script sets up Docker as if it were Podman for compatibility in the devcontainer.
+set -euo pipefail
+# --replace is not supported in docker, so we remove it from the arguments
+args=()
+for arg in "$@"; do
+  if [ "$arg" != "--replace" ]; then
+    args+=("$arg")
+  fi
+done
+docker "${args[@]}"
