@@ -19,6 +19,7 @@ if command -v mise >/dev/null 2>&1; then
   mise install || true
   mkdir -p ~/.local/share/bash-completion/completions
   mise completion bash --include-bash-completion-lib > ~/.local/share/bash-completion/completions/mise || true
+  echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 fi
 
 # Configure git remotes (best-effort, won't fail the script)
