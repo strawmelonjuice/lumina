@@ -119,9 +119,6 @@ pub fn view(model: Model) -> Element(Msg) {
         Login(..) -> view_login(model)
         HomeTimeline(..) -> view_homepage(model)
       },
-      // html.div([attribute.class("absolute left-0 bottom-0 text-xs")], [
-    //   element.text(int.to_string(model.ticks)),
-    // ]),
     ],
   )
 }
@@ -187,20 +184,15 @@ fn view_login(model: Model) -> Element(Msg) {
             html.div(
               [
                 attribute.class(
-                  "card delay-150 duration-300 ease-in-out w-full max-w-sm shrink-0 shadow-2xl transition-colors ",
+                  "card w-full max-w-sm shrink-0 shadow-2xl transition-colors bg-neutral",
                 ),
-                attribute.class(case successful {
-                  None -> "bg-base-100"
-                  Some(False) -> "bg-error/50"
-                  // If this is actually the case, we'll be on another page!
-                  // This shouldn't generally ever be actually constructed in the Login view.
-                  Some(True) -> "bg-success"
-                }),
               ],
               [
                 html.form(
                   [
-                    attribute.class("card-body m-4"),
+                    attribute.class(
+                      "card-body m-4 transition-[height] duration-300 ease-in-out transition",
+                    ),
                     event.on_submit(SubmitLogin),
                   ],
                   [
@@ -257,13 +249,13 @@ fn view_login(model: Model) -> Element(Msg) {
                         case values_ok {
                           True -> [
                             attribute.class(
-                              "btn btn-base-400 mt-4 font-menuitems",
+                              "btn btn-accent w-full mt-4 font-menuitems",
                             ),
                             attribute.type_("submit"),
                           ]
                           False -> [
                             attribute.class(
-                              "btn btn-base-400 mt-4 btn-disabled font-menuitems",
+                              "btn btn-accent w-full mt-4 btn-disabled font-menuitems bg-accent hidden",
                             ),
                             attribute.disabled(True),
                           ]
@@ -301,7 +293,9 @@ fn view_register(model_: Model) -> Element(Msg) {
   // Check if the password and password confirmation fields match and if the email and username fields are not empty
   [
     html.div(
-      [attribute.class("hero h-screen max-h-[calc(100vh-4rem)] overflow-auto")],
+      [
+        attribute.class("hero h-screen max-h-[calc(100vh-4rem)] overflow-auto"),
+      ],
       [
         html.div(
           [attribute.class("hero-content flex-col lg:flex-row-reverse")],
@@ -309,13 +303,15 @@ fn view_register(model_: Model) -> Element(Msg) {
             html.div(
               [
                 attribute.class(
-                  "card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl",
+                  "card bg-neutral w-full max-w-sm shrink-0 shadow-2xl",
                 ),
               ],
               [
                 html.form(
                   [
-                    attribute.class("card-body  m-4"),
+                    attribute.class(
+                      "card-body m-4 delay-150 duration-300 ease-in-out transition-[height]",
+                    ),
                     event.on_submit(SubmitSignup),
                   ],
                   [
@@ -368,151 +364,84 @@ fn view_register(model_: Model) -> Element(Msg) {
                         ),
                         attribute.type_("password"),
                       ]),
-                      html.br([]),
-                      html.div(
-                        [
-                          attribute.class(case ready |> option.is_some() {
-                            True -> "bg-base-200 card shadow-md p-4 w-full"
-                            False -> "hidden"
-                          }),
-                        ],
-                        [
-                          case
-                            ready |> option.unwrap(Ok(Nil)),
-                            fieldvalues.passwordfield
-                            == fieldvalues.passwordconfirmfield
-                          {
-                            Error(why), _ ->
-                              html.div([attribute.class("w-full")], [
-                                html.div(
-                                  [
-                                    attribute.class(
-                                      "inline-grid *:[grid-area:1/1]",
-                                    ),
-                                  ],
-                                  [
-                                    html.div(
-                                      [
-                                        attribute.class(
-                                          "status status-error animate-ping",
-                                        ),
-                                      ],
+
+                      case
+                        ready |> option.is_some()
+                        && ready |> option.unwrap(Error("")) |> result.is_ok()
+                        && fieldvalues.passwordfield
+                        == fieldvalues.passwordconfirmfield
+                      {
+                        True ->
+                          html.button(
+                            [
+                              attribute.class(
+                                "btn btn-accent font-menuitems w-full m-0 p-0 mt-2",
+                              ),
+                              attribute.type_("submit"),
+                            ],
+                            [
+                              html.text(
+                                case
+                                  ready |> option.is_some()
+                                  && ready
+                                  |> option.unwrap(Error(""))
+                                  |> result.is_ok()
+                                {
+                                  True ->
+                                    "Sign up as " <> fieldvalues.usernamefield
+                                  False -> "Sign up"
+                                },
+                              ),
+                            ],
+                          )
+                        False ->
+                          html.div(
+                            [
+                              attribute.class(case ready |> option.is_some() {
+                                True ->
+                                  "btn bg-base-200 hover:bg-base-200 text-warning-content font-menuitems w-full m-0 p-0 rounded-lg mt-2 opacity-80 hover:opacity-80 cursor-default no-animation disabled"
+                                False -> "hidden"
+                              }),
+                            ],
+                            [
+                              case
+                                ready |> option.unwrap(Ok(Nil)),
+                                fieldvalues.passwordfield
+                                == fieldvalues.passwordconfirmfield
+                              {
+                                Error(why), _ ->
+                                  html.div([attribute.class("")], [
+                                    html.span(
                                       [],
+                                      case string.contains(why, "in use") {
+                                        True -> [
+                                          element.text(
+                                            " " <> why <> ", do you want to ",
+                                          ),
+                                          html.a(
+                                            [
+                                              event.on_click(ToLoginPage),
+                                              attribute.class(
+                                                "link link-primary",
+                                              ),
+                                            ],
+                                            [element.text("log in instead")],
+                                          ),
+                                          element.text("?"),
+                                        ]
+                                        False -> [element.text(" " <> why)]
+                                      },
                                     ),
-                                    html.div(
-                                      [attribute.class("status status-error")],
-                                      [],
-                                    ),
-                                  ],
-                                ),
-                                html.span(
-                                  [],
-                                  case string.contains(why, "in use") {
-                                    True -> [
-                                      element.text(
-                                        " " <> why <> ", do you want to ",
-                                      ),
-                                      html.a(
-                                        [
-                                          event.on_click(ToLoginPage),
-                                          attribute.class("link link-primary"),
-                                        ],
-                                        [element.text("log in instead")],
-                                      ),
-                                      element.text("?"),
-                                    ]
-                                    False -> [element.text(" " <> why)]
-                                  },
-                                ),
-                              ])
-                            Ok(_), True ->
-                              html.div([attribute.class("w-full")], [
-                                html.div(
-                                  [
-                                    attribute.class(
-                                      "inline-grid *:[grid-area:1/1]",
-                                    ),
-                                  ],
-                                  [
-                                    html.div(
-                                      [
-                                        attribute.class(
-                                          "status status-success animate-ping",
-                                        ),
-                                      ],
-                                      [],
-                                    ),
-                                    html.div(
-                                      [attribute.class("status status-success")],
-                                      [],
-                                    ),
-                                  ],
-                                ),
-                                element.text(" Ready to go!"),
-                              ])
-                            Ok(_), False ->
-                              html.div([attribute.class("w-full")], [
-                                html.div(
-                                  [
-                                    attribute.class(
-                                      "inline-grid *:[grid-area:1/1]",
-                                    ),
-                                  ],
-                                  [
-                                    html.div(
-                                      [
-                                        attribute.class(
-                                          "status status-error animate-ping",
-                                        ),
-                                      ],
-                                      [],
-                                    ),
-                                    html.div(
-                                      [attribute.class("status status-error")],
-                                      [],
-                                    ),
-                                  ],
-                                ),
-                                element.text(" Passwords don't match!"),
-                              ])
-                          },
-                        ],
-                      ),
-                      html.button(
-                        case
-                          ready |> option.is_some()
-                          && ready |> option.unwrap(Error("")) |> result.is_ok()
-                          && fieldvalues.passwordfield
-                          == fieldvalues.passwordconfirmfield
-                        {
-                          True -> [
-                            attribute.class(
-                              "btn btn-base-400 mt-4 font-menuitems",
-                            ),
-                            attribute.type_("submit"),
-                          ]
-                          False -> [
-                            attribute.class(
-                              "btn btn-sucess mt-4 btn-disabled font-menuitems",
-                            ),
-                            // attribute.title(values_ok.1),
-                            attribute.disabled(True),
-                          ]
-                        },
-                        [
-                          html.text(
-                            case
-                              ready |> option.is_some()
-                              && ready
-                              |> option.unwrap(Error(""))
-                              |> result.is_ok()
-                            {
-                              True -> "Sign up as " <> fieldvalues.usernamefield
-                              False -> "Sign up"
-                            },
-                          ),
-                        ],
-                      ),
+                                  ])
+                                Ok(_), True -> element.none()
+                                Ok(_), False ->
+                                  html.div([attribute.class("")], [
+                                    element.text("Passwords don't match!"),
+                                  ])
+                              },
+                            ],
+                          )
+                      },
                     ]),
                   ],
                 ),
