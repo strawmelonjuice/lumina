@@ -5,12 +5,11 @@ log() { printf '%s\n' "$1"; }
 
 log "Running devcontainer post-create script"
 
-# Use apt if available (Debian/Ubuntu base images). Install podman non-interactively.
-if command -v apt >/dev/null 2>&1; then
-  log "Detected apt - updating packages"
-  sudo apt update || true
-  sudo DEBIAN_FRONTEND=noninteractive apt install -y podman || true
-fi
+# Set up Podman compatibility script
+log "Setting up Podman compatibility script"
+sudo cp .devcontainer/ghcodespaces/scripts/podman /usr/local/bin/podman
+sudo chmod +x /usr/local/bin/podman
+
 
 # Configure mise if available
 if command -v mise >/dev/null 2>&1; then
