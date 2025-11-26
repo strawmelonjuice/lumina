@@ -33,10 +33,10 @@ import gleamy_lights/premixed
 import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, Logout, SubmitLogin, SubmitSignup, TickUp,
+  type Msg, FocusLostEmailField, Logout, Past150ms, SubmitLogin, SubmitSignup,
   ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
-  UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
-  WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
+  UpdateLastRefreshRequestTime, UpdatePasswordConfirmField, UpdatePasswordField,
+  UpdateUsernameField, WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
 }
 import lumina_client/model_type.{
   type Model, HomeTimeline, Landing, Login, LoginFields, Model, Register,
@@ -107,12 +107,12 @@ pub fn request_next_timeline_page(
 
 pub fn main() {
   let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", 0)
+  let assert Ok(_) = lustre.start(app, "#app", False)
 }
 
 // INIT ------------------------------------------------------------------------
 
-fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
+fn init(rerun: Bool) -> #(Model, Effect(Msg)) {
   let assert Ok(localstorage) = storage.local()
     as "localstorage should be available on ALL major browsers."
   let empty_model =
@@ -127,7 +127,10 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
         cached_timelines: dict.new(),
         cached_users: dict.new(),
       ),
-      ticks: initial_ticks,
+      has_been_running_for_150ms: rerun,
+      last_refresh_request_time: float.truncate(
+        timestamp.to_unix_seconds(timestamp.system_time()),
+      ),
     )
   #(
     case storage.get_item(localstorage, model_local_storage_key) {
@@ -138,7 +141,7 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
               page: loadable_model.page,
               user: None,
               ws: {
-                case initial_ticks != 0 {
+                case rerun {
                   True -> model_type.WsConnectionRetrying
                   False -> model_type.WsConnectionInitial
                 }
@@ -150,7 +153,10 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
                 cached_timelines: dict.new(),
                 cached_users: dict.new(),
               ),
-              ticks: initial_ticks,
+              has_been_running_for_150ms: rerun,
+              last_refresh_request_time: float.truncate(
+                timestamp.to_unix_seconds(timestamp.system_time()),
+              ),
             )
           }
           Error(_) -> {
@@ -166,7 +172,7 @@ fn init(initial_ticks: Int) -> #(Model, Effect(Msg)) {
     },
     effect.batch([
       lustre_websocket.init("/connection", WsWrapper),
-      up_next_tick(),
+      count_to_150(),
     ]),
   )
 }
@@ -176,15 +182,15 @@ pub fn start_tracking_mouse_movements(x: Float, y: Float) {
   dom.start_dragging_modal_box(x, y, message_type.MoveModalBoxTo, dispatcher)
 }
 
-pub fn up_next_tick() {
+pub fn count_to_150() {
   use dispatch <- effect.from
-  use <- helpers.set_timeout_nilled(50)
-  dispatch(TickUp)
+  use <- helpers.set_timeout_nilled(150)
+  dispatch(Past150ms)
 }
 
 fn let_definitely_disconnect(model: Model) {
   use dispatch <- effect.from
-  case model.ws, model.ticks > 3 {
+  case model.ws, model.has_been_running_for_150ms {
     model_type.WsConnectionDisconnecting, False
     | model_type.WsConnectionDisconnected, _
     | model_type.WsConnectionInitial, _
@@ -200,20 +206,16 @@ fn let_definitely_disconnect(model: Model) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    TickUp -> {
-      let ticks = model.ticks + 1
-      let s = case ticks |> int.to_string() |> string.ends_with("00") {
-        True -> send_refresh_request(model)
-        False -> effect.none()
-      }
-      #(
-        Model(..model, ticks:),
-        effect.batch([up_next_tick(), let_definitely_disconnect(model), s]),
-      )
+    Past150ms -> {
+      #(Model(..model, has_been_running_for_150ms: True), effect.none())
+    }
+    UpdateLastRefreshRequestTime(new_time) -> {
+      #(Model(..model, last_refresh_request_time: new_time), effect.none())
     }
     WSTryReconnect -> {
       case model.ws {
-        model_type.WsConnectionDisconnected -> init(model.ticks)
+        model_type.WsConnectionDisconnected ->
+          init(model.has_been_running_for_150ms)
         _ -> #(model, effect.none())
       }
     }
@@ -805,16 +807,6 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           effect.none(),
         )
         _ -> {
-          echo "Falling into disconnection mode at tick #"
-            <> int.to_string(model.ticks)
-            <> ". Current status: "
-            <> case model.ws {
-              model_type.WsConnectionConnected(_) -> "connected"
-              model_type.WsConnectionDisconnected -> "disconnected"
-              model_type.WsConnectionInitial -> "initial"
-              model_type.WsConnectionRetrying -> "retrying"
-              model_type.WsConnectionDisconnecting -> "disconnecting"
-            }
           let new_model =
             Model(..model, ws: model_type.WsConnectionDisconnecting)
           #(new_model, let_definitely_disconnect(new_model))
@@ -927,14 +919,27 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
 }
 
 fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
-  let inventory = model |> model_type.create_cache_inventory()
-  // Todo: send this to server to get updates on cached items.
-  console.log(
-    "Would send cache inventory to server: \n"
-    <> string.inspect(inventory)
-    <> "\n\nNot yet implemented.",
-  )
-  effect.none()
+  let current_time =
+    timestamp.system_time()
+    |> timestamp.to_unix_seconds
+    |> float.truncate
+  use dispatcher <- effect.from
+  dispatcher(message_type.UpdateLastRefreshRequestTime(current_time))
+  case model.last_refresh_request_time - current_time < 30 {
+    True -> {
+      Nil
+    }
+    False -> {
+      let inventory = model |> model_type.create_cache_inventory()
+
+      // Todo: send this to server to get updates on cached items.
+      console.log(
+        "Would send cache inventory to server: \n"
+        <> string.inspect(inventory)
+        <> "\n\nNot yet implemented.",
+      )
+    }
+  }
 }
 
 fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
@@ -1032,5 +1037,5 @@ fn session_destroy() -> #(Model, Effect(Msg)) {
   let assert Ok(s) = storage.local()
   storage.clear(s)
   console.info("Recreating model.")
-  init(0)
+  init(False)
 }
