@@ -245,6 +245,20 @@ pub fn view(model: model_type.Model) {
             [element.text("+")],
           ),
         ]),
+        html.div(
+          [attribute.class("fixed bottom-20 right-4 p-4 z-50 lg:hidden")],
+          [
+            html.label(
+              [
+                attribute.class(
+                  "drawer-button btn btn-circle btn-success btn-lg text-3xl",
+                ),
+                attribute.for("timelineswitcher"),
+              ],
+              [element.text("☰")],
+            ),
+          ],
+        ),
       ])
     }
     // SideOrCentral(Bottom, _) -> todo
@@ -258,7 +272,7 @@ pub fn view(model: model_type.Model) {
         html.input([
           attribute.class("drawer-toggle"),
           attribute.type_("checkbox"),
-          attribute.id("my-drawer-2"),
+          attribute.id("timelineswitcher"),
         ]),
         html.main(
           [
@@ -306,7 +320,7 @@ pub fn view(model: model_type.Model) {
             [
               attribute.class("drawer-overlay"),
               attribute("aria-label", "close sidebar"),
-              attribute.for("my-drawer-2"),
+              attribute.for("timelineswitcher"),
             ],
             [],
           ),
@@ -565,7 +579,7 @@ pub fn view(model: model_type.Model) {
       html.label(
         [
           attribute.class("drawer-button btn md:btn-neutral btn-ghost"),
-          attribute.for("my-drawer-2"),
+          attribute.for("timelineswitcher"),
         ],
         [element.text("Switch timeline")],
       ),
