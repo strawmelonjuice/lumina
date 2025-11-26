@@ -1,22 +1,28 @@
-Syne Variable Font
-==================
+Vend Sans Variable Font
+=======================
 
-This download contains Syne as both a variable font and static fonts.
+This download contains Vend Sans as both variable fonts and static fonts.
 
-Syne is a variable font with this axis:
+Vend Sans is a variable font with this axis:
   wght
 
-This means all the styles are contained in a single file:
-  Syne/Syne-VariableFont_wght.ttf
+This means all the styles are contained in these files:
+  VendSans-VariableFont_wght.ttf
+  VendSans-Italic-VariableFont_wght.ttf
 
 If your app fully supports variable fonts, you can now pick intermediate styles
 that aren’t available as static fonts. Not all apps support variable fonts, and
-in those cases you can use the static font files for Syne:
-  Syne/static/Syne-Regular.ttf
-  Syne/static/Syne-Medium.ttf
-  Syne/static/Syne-SemiBold.ttf
-  Syne/static/Syne-Bold.ttf
-  Syne/static/Syne-ExtraBold.ttf
+in those cases you can use the static font files for Vend Sans:
+  static/VendSans-Light.ttf
+  static/VendSans-Regular.ttf
+  static/VendSans-Medium.ttf
+  static/VendSans-SemiBold.ttf
+  static/VendSans-Bold.ttf
+  static/VendSans-LightItalic.ttf
+  static/VendSans-Italic.ttf
+  static/VendSans-MediumItalic.ttf
+  static/VendSans-SemiBoldItalic.ttf
+  static/VendSans-BoldItalic.ttf
 
 Get started
 -----------

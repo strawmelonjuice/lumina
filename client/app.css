@@ -32,8 +32,8 @@
 	/* The Syne Font is used for:
 	*  Main theme
 	*/
-	font-family: "Syne";
-	src: url(/assets/fonts/Syne/Syne-VariableFont_wght.ttf);
+	font-family: "Vend Sans";
+	src: url(/assets/fonts/Vend_Sans/VendSans-VariableFont_wght.ttf);
 }
 
 @font-face {
@@ -61,12 +61,13 @@
 }
 
 @theme {
-	--font-sans: "Syne";
+	--font-sans: "Vend Sans";
 	--font-logo: "Gantari";
 	--font-content: "Elms Sans";
 	--font-menuitems: "Josefin Sans";
 	--font-script: "DM Mono";
 }
+
 
 @plugin "daisyui" {
 }
@@ -104,6 +105,7 @@
 	--border: 1px;
 	--depth: 1;
 	--noise: 0;
+	--spacing: 0.5rem;
 }
 
 @plugin "daisyui/theme" {
@@ -147,6 +149,7 @@
 	--border: 1px;
 	--depth: 1;
 	--noise: 0;
+	--spacing: 0.5rem;
 }
 
 @layer base {
