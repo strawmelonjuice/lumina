@@ -300,6 +300,7 @@ async fn main() {
                             routes![
                                 staticroutes::index,
                                 staticroutes::lumina_js,
+								staticroutes::lumina_d_js,
                                 staticroutes::lumina_css,
                                 staticroutes::licence,
                                 staticroutes::license_redirect,
