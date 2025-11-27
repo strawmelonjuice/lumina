@@ -38,7 +38,7 @@ pub fn element_from_id(model: Model, post_id: String) -> Element(Msg) {
       ),
     ],
     case post {
-      Ok(_) -> todo
+      Ok(_) -> todo as "Post rendering not yet implemented"
       _ -> [
         html.p([], [
           element.text("Loading post..."),
