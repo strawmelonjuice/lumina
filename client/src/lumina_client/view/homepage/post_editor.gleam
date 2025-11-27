@@ -34,24 +34,24 @@ pub fn main(
   model: model_type.Model,
 ) -> Element(Msg) {
   // Placeholder implementation
-  html.div([attribute.class("tabs tabs-lift")], [
+  html.div([attribute.class("tabs tabs-lift h-full")], [
     html.label([attribute.class("tab")], [
       html.input([attribute.name("editortypeswitch"), attribute.type_("radio")]),
+      svgs.camera("class size-4 me-2"),
+
+      html.text(" Snap "),
+    ]),
+    html.label([attribute.class("tab")], [
+      html.input([
+        attribute.name("editortypeswitch"),
+        attribute.type_("radio"),
+        attribute.checked(True),
+      ]),
       svgs.pen("class size-4 me-2"),
       html.text(" Jot "),
     ]),
     html.div([attribute.class("tab-content bg-base-100 border-base-300 p-6")], [
       text_post_editor(params, model),
-    ]),
-    html.label([attribute.class("tab")], [
-      html.input([
-        attribute.checked(True),
-        attribute.name("editortypeswitch"),
-        attribute.type_("radio"),
-      ]),
-      svgs.camera("class size-4 me-2"),
-
-      html.text(" Snap "),
     ]),
     html.div([attribute.class("tab-content bg-base-100 border-base-300 p-6")], [
       media_post_editor(params, model),
