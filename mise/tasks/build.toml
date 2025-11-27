@@ -2,14 +2,16 @@
 [build-client]
 description = "Build the client-side of Lumina and it's styles"
 run = [
-  "gleam build --target javascript",
-  "echo 'import { main } from \"./lumina_client.mjs\";document.addEventListener(\"DOMContentLoaded\", main())' > \"./build/dev/javascript/lumina_client/lumina_client.ts\"",
-  "bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"gleam build --target javascript",
+	"echo 'import { main } from \"./lumina_client.mjs\";document.addEventListener(\"DOMContentLoaded\", main())' > \"./build/dev/javascript/lumina_client/lumina_client.ts\"",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ./priv/static/lumina_client.mjs --target=browser",
 ]
 run_windows = [
-  "gleam build --target javascript",
-  "echo import { main } from `./lumina_client.mjs`;document.addEventListener(`DOMContentLoaded`, main()) > ./build/dev/javascript/lumina_client/lumina_client.ts",
-  "bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"gleam build --target javascript",
+	"echo import { main } from `./lumina_client.mjs`;document.addEventListener(`DOMContentLoaded`, main()) > ./build/dev/javascript/lumina_client/lumina_client.ts",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser",
+	"bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ./priv/static/lumina_client.mjs --target=browser",
 ]
 depends = "build-styles"
 dir = "./client/"
@@ -45,19 +47,19 @@ run = ["cargo build --release"]
 hide = true
 run = ["mkdir -p ./data", "mkdir -p ./data/postgres", "mkdir -p ./data/redis"]
 run_windows = [
-  "if not exist .\\data mkdir .\\data",
-  "if not exist .\\data\\redis mkdir .\\data\\redis",
-  "if not exist .\\data\\postgres mkdir .\\data\\postgres",
+	"if not exist .\\data mkdir .\\data",
+	"if not exist .\\data\\redis mkdir .\\data\\redis",
+	"if not exist .\\data\\postgres mkdir .\\data\\postgres",
 ]
 
 [clean-all]
 description = "Clean all build artifacts"
 run = [
-  "cargo clean",
-  "rm -rf ./client/node_modules",
-  "rm -rf ./client/build",
-  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
-  "rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
-  "rm -rf ./client/priv/static/lumina_client.min.mjs",
-  "rm -rf ./client/priv/static/lumina_client.css",
+	"cargo clean",
+	"rm -rf ./client/node_modules",
+	"rm -rf ./client/build",
+	"rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs",
+	"rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts",
+	"rm -rf ./client/priv/static/lumina_client.min.mjs",
+	"rm -rf ./client/priv/static/lumina_client.css",
 ]
