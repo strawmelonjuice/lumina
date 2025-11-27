@@ -12,7 +12,7 @@
 			"version": "latest"
 		}
 	},
-	
+
 	"postCreateCommand": "bash .devcontainer/ghcodespaces/scripts/postCreate.sh",
 	"postAttachCommand": "bash .devcontainer/ghcodespaces/scripts/postAttach.sh"
 

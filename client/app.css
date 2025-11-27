@@ -68,7 +68,6 @@
 	--font-script: "DM Mono";
 }
 
-
 @plugin "daisyui" {
 }
 
@@ -330,11 +329,11 @@
 		}
 	}
 	.lg\:freeroam {
-	@media (width >= 64rem) {
-		left: var(--left);
-		top: var(--top);
-		transform: var(--transform);
-		position: absolute;
+		@media (width >= 64rem) {
+			left: var(--left);
+			top: var(--top);
+			transform: var(--transform);
+			position: absolute;
+		}
 	}
-}
 }
