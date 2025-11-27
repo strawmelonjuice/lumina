@@ -1,3 +1,4 @@
+import lustre/element
 import lustre/attribute.{attribute, class}
 import lustre/element/svg
 
@@ -120,4 +121,71 @@ pub fn mutuals(classes: String) {
       ]),
     ],
   )
+}
+
+/// Pen, for editing text posts, also called 'jot mode'.
+///
+/// Also from svgrepo: https://www.svgrepo.com/svg/524793/pen-2
+pub fn pen(classes: String) {
+	svg.svg(
+	[
+	attribute("xmlns", "http://www.w3.org/2000/svg"),
+	attribute("fill", "none"),
+	attribute("viewBox", "0 0 24 24"),
+	class(classes),
+	],
+	[
+	svg.path([
+	attribute("stroke-linecap", "round"),
+	attribute("stroke-width", "1.5"),
+	attribute("stroke", "currentColor"),
+	attribute("d", "M4 22H20"),
+	]),
+	svg.path([
+	attribute("stroke-width", "1.5"),
+	attribute("stroke", "currentColor"),
+	attribute(
+	"d",
+	"M13.8881 3.66293L14.6296 2.92142C15.8581 1.69286 17.85 1.69286 19.0786 2.92142C20.3071 4.14999 20.3071 6.14188 19.0786 7.37044L18.3371 8.11195M13.8881 3.66293C13.8881 3.66293 13.9807 5.23862 15.3711 6.62894C16.7614 8.01926 18.3371 8.11195 18.3371 8.11195M13.8881 3.66293L7.07106 10.4799C6.60933 10.9416 6.37846 11.1725 6.17992 11.4271C5.94571 11.7273 5.74491 12.0522 5.58107 12.396C5.44219 12.6874 5.33894 12.9972 5.13245 13.6167L4.25745 16.2417M18.3371 8.11195L11.5201 14.9289C11.0584 15.3907 10.8275 15.6215 10.5729 15.8201C10.2727 16.0543 9.94775 16.2551 9.60398 16.4189C9.31256 16.5578 9.00282 16.6611 8.38334 16.8675L5.75834 17.7426M5.75834 17.7426L5.11667 17.9564C4.81182 18.0581 4.47573 17.9787 4.2485 17.7515C4.02128 17.5243 3.94194 17.1882 4.04356 16.8833L4.25745 16.2417M5.75834 17.7426L4.25745 16.2417",
+	),
+	]),
+	],
+	)
+}
+
+/// Camera icon for 'media' posts.
+///
+/// https://www.svgrepo.com/svg/524361/camera
+pub fn camera(classes: String) {
+	svg.svg(
+	[
+	attribute("xmlns", "http://www.w3.org/2000/svg"),
+	attribute("fill", "none"),
+	attribute("viewBox", "0 0 24 24"),
+	class(classes),
+	],
+	[
+	svg.circle([
+	attribute("stroke-width", "1.5"),
+	attribute("stroke", "currentColor"),
+	attribute("r", "3"),
+	attribute("cy", "13"),
+	attribute("cx", "12"),
+	]),
+	svg.path([
+	attribute("stroke-width", "1.5"),
+	attribute("stroke", "currentColor"),
+	attribute(
+	"d",
+	"M9.77778 21H14.2222C17.3433 21 18.9038 21 20.0248 20.2646C20.51 19.9462 20.9267 19.5371 21.251 19.0607C22 17.9601 22 16.4279 22 13.3636C22 10.2994 22 8.76721 21.251 7.6666C20.9267 7.19014 20.51 6.78104 20.0248 6.46268C19.3044 5.99013 18.4027 5.82123 17.022 5.76086C16.3631 5.76086 15.7959 5.27068 15.6667 4.63636C15.4728 3.68489 14.6219 3 13.6337 3H10.3663C9.37805 3 8.52715 3.68489 8.33333 4.63636C8.20412 5.27068 7.63685 5.76086 6.978 5.76086C5.59733 5.82123 4.69555 5.99013 3.97524 6.46268C3.48995 6.78104 3.07328 7.19014 2.74902 7.6666C2 8.76721 2 10.2994 2 13.3636C2 16.4279 2 17.9601 2.74902 19.0607C3.07328 19.5371 3.48995 19.9462 3.97524 20.2646C5.09624 21 6.65675 21 9.77778 21Z",
+	),
+	]),
+	svg.path([
+	attribute("stroke-linecap", "round"),
+	attribute("stroke-width", "1.5"),
+	attribute("stroke", "currentColor"),
+	attribute("d", "M19 10H18"),
+	]),
+	],
+	)
 }
