@@ -17,10 +17,13 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import lumina_client/view/common_view_parts/svgs
 import gleam/dict
 import lumina_client/message_type.{type Msg}
 import lumina_client/model_type
+import lustre/attribute
 import lustre/element.{type Element}
+import lustre/element/html
 
 /// Post editor's exposed view function.
 /// Parameters:
@@ -28,8 +31,66 @@ import lustre/element.{type Element}
 ///  model - the full application model, in case the post editor needs to read from it
 pub fn main(
   params: dict.Dict(String, String),
+model: model_type.Model,
+) -> Element(Msg) {
+	// Placeholder implementation
+	html.div([attribute.class("tabs tabs-lift")], [
+	html.label([attribute.class("tab")], [
+	html.input([attribute.name("editortypeswitch"), attribute.type_("radio")]),
+	svgs.pen("class size-4 me-2"),
+	html.text(" Jot "),
+	]),
+	html.div([attribute.class("tab-content bg-base-100 border-base-300 p-6")], [
+	text_post_editor(params, model)
+	]),
+	html.label([attribute.class("tab")], [
+	html.input([
+	attribute.checked(True),
+	attribute.name("editortypeswitch"),
+	attribute.type_("radio"),
+	]),
+	svgs.camera("class size-4 me-2"),
+
+	html.text(" Snap ")
+	]),
+	html.div([attribute.class("tab-content bg-base-100 border-base-300 p-6")], [
+	media_post_editor(params, model)
+	]),
+	html.label([attribute.class("tab")], [
+	html.input([attribute.name("editortypeswitch"), attribute.type_("radio")]),
+	svgs.pen_paper("class size-4 me-2"),
+
+	html.text(" Compose "),
+	]),
+	html.div([attribute.class("tab-content bg-base-100 border-base-300 p-6")], [
+	article_post_editor(params, model)
+	]),
+	])
+}
+
+fn text_post_editor(
+params: dict.Dict(String, String),
   _model: model_type.Model,
 ) -> Element(Msg) {
-  // Placeholder implementation
-  element.text("Post editor will be here eventually.")
+	html.div([], [
+	html.text("This is the text post editor!"),
+	])
+}
+
+fn media_post_editor(
+params: dict.Dict(String, String),
+_model: model_type.Model,
+) -> Element(Msg) {
+	html.div([], [
+	html.text("This is the media post editor!"),
+	])
+}
+
+fn article_post_editor(
+params: dict.Dict(String, String),
+_model: model_type.Model,
+) -> Element(Msg) {
+	html.div([], [
+	html.text("This is the article post editor!"),
+	])
 }
