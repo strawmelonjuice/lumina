@@ -18,6 +18,7 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import lumina_client/view/common_view_parts/svgs
 import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
@@ -346,96 +347,7 @@ pub fn view(model: model_type.Model) {
                       event.on_click(message_type.TimeLineTo("global")),
                     ],
                     [
-                      // Replaced the globe emoji with svg for better accessibility and consistency
-                      // element.text("🌐 Global")
-                      html.svg(
-                        [
-                          attribute.class("inline h-5 w-5 mr-2"),
-                          attribute.attribute("fill", "none"),
-                          attribute.attribute("stroke", "currentColor"),
-                          attribute.attribute("viewBox", "0 0 24 24"),
-                          attribute.attribute(
-                            "xmlns",
-                            "http://www.w3.org/2000/svg",
-                          ),
-                        ],
-                        [
-                          svg.circle([
-                            attribute.attribute("cx", "12"),
-                            attribute.attribute("cy", "12"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("r", "9"),
-                            attribute.attribute("stroke-width", "2"),
-                          ]),
-                          // Equator
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("d", "M3 12h18"),
-                          ]),
-                          // Prime meridian
-                          svg.path([
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("d", "M12 3a9 9 0 0 1 0 18"),
-                          ]),
-                          // Longitude lines
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute(
-                              "d",
-                              "M6.6 6.6a9 9 0 0 1 0 10.8",
-                            ),
-                          ]),
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute(
-                              "d",
-                              "M17.4 6.6a9 9 0 0 0 0 10.8",
-                            ),
-                          ]),
-                          // Additional latitude lines
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.4"),
-                            attribute.attribute("stroke-width", "1.5"),
-                            attribute.attribute("d", "M4.5 8.5a9 9 0 0 1 15 0"),
-                          ]),
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.4"),
-                            attribute.attribute("stroke-width", "1.5"),
-                            attribute.attribute("d", "M4.5 15.5a9 9 0 0 0 15 0"),
-                          ]),
-                          // Additional longitude lines
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.4"),
-                            attribute.attribute("stroke-width", "1.5"),
-                            attribute.attribute("d", "M8.5 4.5a9 9 0 0 1 0 15"),
-                          ]),
-                          svg.path([
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute("opacity", "0.4"),
-                            attribute.attribute("stroke-width", "1.5"),
-                            attribute.attribute("d", "M15.5 4.5a9 9 0 0 0 0 15"),
-                          ]),
-                        ],
-                      ),
+					  svgs.globe("inline h-5 w-5 mr-2"),
                       element.text("Global"),
                     ],
                   ),
@@ -451,55 +363,7 @@ pub fn view(model: model_type.Model) {
                       event.on_click(message_type.TimeLineTo("following")),
                     ],
                     [
-                      // SVG: Two user silhouettes for 'Following'
-                      html.svg(
-                        [
-                          attribute.class("inline h-5 w-5 mr-2"),
-                          attribute.attribute("fill", "none"),
-                          attribute.attribute("stroke", "currentColor"),
-                          attribute.attribute("viewBox", "0 0 24 24"),
-                          attribute.attribute(
-                            "xmlns",
-                            "http://www.w3.org/2000/svg",
-                          ),
-                        ],
-                        [
-                          svg.circle([
-                            attribute.attribute("cx", "8"),
-                            attribute.attribute("cy", "8"),
-                            attribute.attribute("r", "3"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-width", "2"),
-                          ]),
-                          svg.circle([
-                            attribute.attribute("cx", "16"),
-                            attribute.attribute("cy", "8"),
-                            attribute.attribute("r", "3"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-width", "2"),
-                          ]),
-                          svg.path([
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute(
-                              "d",
-                              "M2 20v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1",
-                            ),
-                          ]),
-                          svg.path([
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("opacity", "0.6"),
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute(
-                              "d",
-                              "M14 20v-1a4 4 0 0 1 4-4h0a4 4 0 0 1 4 4v1",
-                            ),
-                          ]),
-                        ],
-                      ),
+                      svgs.follows("inline h-5 w-5 mr-2"),
                       element.text("Following"),
                     ],
                   ),
@@ -516,42 +380,7 @@ pub fn view(model: model_type.Model) {
                     ],
                     [
                       // SVG: Heart and star overlapping for 'Mutuals'
-                      html.svg(
-                        [
-                          attribute.class("inline h-5 w-5 mr-2"),
-                          attribute.attribute("fill", "none"),
-                          attribute.attribute("stroke", "currentColor"),
-                          attribute.attribute("viewBox", "0 0 24 24"),
-                          attribute.attribute(
-                            "xmlns",
-                            "http://www.w3.org/2000/svg",
-                          ),
-                        ],
-                        [
-                          // Heart shape, offset to the left, with classic 'v' top and reduced opacity
-                          svg.path([
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute(
-                              "d",
-                              "M9 19C5 15 2 12.5 2 9.5C2 7 4 5 6.5 5C8 5 9 6.5 9 6.5C9 6.5 10 5 11.5 5C14 5 16 7 16 9.5C16 12.5 13 15 9 19Z",
-                            ),
-                            attribute.attribute("opacity", "0.6"),
-                          ]),
-                          // Star shape, offset to the right and overlapping, with reduced opacity
-                          svg.path([
-                            attribute.attribute("stroke-width", "2"),
-                            attribute.attribute("stroke-linecap", "round"),
-                            attribute.attribute("stroke-linejoin", "round"),
-                            attribute.attribute(
-                              "d",
-                              "M15 4.5l2.09 4.24 4.68.68-3.39 3.3.8 4.63L15 15.77l-4.18 2.18.8-4.63-3.39-3.3 4.68-.68L15 4.5z",
-                            ),
-                            attribute.attribute("opacity", "0.6"),
-                          ]),
-                        ],
-                      ),
+                      svgs.mutuals("inline h-5 w-5 mr-2"),
                       element.text("Mutuals"),
                     ],
                   ),
