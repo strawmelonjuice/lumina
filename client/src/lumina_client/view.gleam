@@ -172,10 +172,10 @@ fn view_landing() -> Element(Msg) {
         ]),
         html.div([attribute.class("modal-action")], [
           html.label(
-		  [
-		  attribute.class("btn btn-error font-menuitems"),
-		  attribute.for("landing-attributions-show"),
-		  ],
+            [
+              attribute.class("btn btn-error font-menuitems"),
+              attribute.for("landing-attributions-show"),
+            ],
             [
               html.text("Close"),
             ],
@@ -229,251 +229,255 @@ fn view_landing() -> Element(Msg) {
 }
 
 fn attributions() -> Element(Msg) {
-	html.div(
-	[
-	attribute.class("overflow-y-auto max-h-[45vh]"),
-	],
-	[
-	html.ul([], [
-	html.li(
-	[
-	attribute.class("card block bg-neutral p-4 mb-4 rounded-lg"),
-	],
-	[
-	html.h4([attribute.class("text-lg font-bold mb-2")], [
-	html.text("Icons from SVGrepo.com"),
-	]),
-	html.h5([attribute.class("text-[1.100rem] font-bold mb-2")], [
-	html.text("Solar Linear icon set"),
-	]),
-	html.div([attribute.class("flex flex-row items-center w-full")], [
+  html.div(
+    [
+      attribute.class("overflow-y-auto max-h-[45vh]"),
+    ],
+    [
+      html.ul([], [
+        html.li(
+          [
+            attribute.class("card block bg-neutral p-4 mb-4 rounded-lg"),
+          ],
+          [
+            html.h4([attribute.class("text-lg font-bold mb-2")], [
+              html.text("Icons from SVGrepo.com"),
+            ]),
+            html.h5([attribute.class("text-[1.100rem] font-bold mb-2")], [
+              html.text("Solar Linear icon set"),
+            ]),
+            html.div([attribute.class("flex flex-row items-center w-full")], [
               html.a(
-			  [attribute.href("https://www.svgrepo.com/svg/524520/earth")],
-			  [svgs.globe("w-6 h-6 me-2")],
-			  ),
+                [attribute.href("https://www.svgrepo.com/svg/524520/earth")],
+                [svgs.globe("w-6 h-6 me-2")],
+              ),
               html.a(
-			  [attribute.href("https://www.svgrepo.com/svg/524793/pen-2")],
-			  [svgs.pen("w-6 h-6 me-2")],
-			  ),
+                [attribute.href("https://www.svgrepo.com/svg/524793/pen-2")],
+                [svgs.pen("w-6 h-6 me-2")],
+              ),
               html.a(
-			  [attribute.href("https://www.svgrepo.com/svg/524361/camera")],
-			  [svgs.camera("w-6 h-6 me-2")],
-			  ),
-	html.a(
-	[attribute.href("https://www.svgrepo.com/svg/524800/pen-new-square")],
-	[svgs.pen_paper("w-6 h-6 me-2")],
-	),
-	]),
-	html.text("Vectors and icons by "),
-	html.a(
-	[
-	attribute.target("_blank"),
-	attribute.class("link"),
-	attribute.href(
-	"https://www.figma.com/community/file/1166831539721848736?ref=svgrepo.com",
-	),
-	],
-	[html.text("Solar Icons")],
-	),
-	html.text(" in CC Attribution License via "),
-	html.a(
-	[
-	attribute.class("link"),
-	attribute.target("_blank"),
-	attribute.href("https://www.svgrepo.com/"),
-	],
-	[html.text("SVG Repo")],
-	),
-	],
-	),
-	html.li([attribute.class("card block bg-neutral p-4 mb-4 rounded-lg")], [
-	html.h4([attribute.class("text-lg font-bold mb-2")], [
-	html.img([
-	attribute.src("https://gleam.run/images/lucy/lucy.svg"),
-	attribute.class("inline-block w-5 h-auto ms-2 align-middle"),
-	]),
-	html.text("Gleam"),
-	]),
-	element.text("Much thanks to the "),
-	html.a(
-	[
-	attribute.href("https://gleam.run/"),
-	attribute.class("link "),
-	],
-	[
-	html.text("Gleam programming language"),
-	],
-	),
-	element.text(" and its community!"),
-	]),
-	html.li([attribute.class("card block bg-neutral p-4 mb-4 rounded-lg")], [
-	html.h4([attribute.class("text-lg font-bold mb-2")], [
-	html.text("Fonts used"),
-	]),
-	html.ul([attribute.class("list-disc list-inside")], [
-	{
-		html.li([], [
-		html.span([], [
-		html.a(
-		[
-		attribute.href(
-		"https://fonts.google.com/specimen/Vend+Sans",
-		),
-		attribute.class("link font-sans"),
-		],
-		[
-		html.text("Vend Sans"),
-		],
-		),
-		element.text("  "),
-		html.span(
-		[
-		attribute.class(
-		"badge badge-xs badge-soft badge-secondary text-xs",
-		),
-		],
-		[element.text("font-sans")],
-		),
-		]),
-		html.p([attribute.class("text-xs")], [
-		element.text(
-		"Designed by Bloom Type Foundry and Baptiste Guesnon under SIL Open Font License.",
-		),
-		]),
-		])
-	},
-	{
-		html.li([], [
-		html.span([], [
-		html.a(
-		[
-		attribute.href(
-		"https://fonts.google.com/specimen/Gantari",
-		),
-		attribute.class("link  font-logo"),
-		],
-		[
-		html.text("Gantari"),
-		],
-		),
-		element.text("  "),
+                [attribute.href("https://www.svgrepo.com/svg/524361/camera")],
+                [svgs.camera("w-6 h-6 me-2")],
+              ),
+              html.a(
+                [
+                  attribute.href(
+                    "https://www.svgrepo.com/svg/524800/pen-new-square",
+                  ),
+                ],
+                [svgs.pen_paper("w-6 h-6 me-2")],
+              ),
+            ]),
+            html.text("Vectors and icons by "),
+            html.a(
+              [
+                attribute.target("_blank"),
+                attribute.class("link"),
+                attribute.href(
+                  "https://www.figma.com/community/file/1166831539721848736?ref=svgrepo.com",
+                ),
+              ],
+              [html.text("Solar Icons")],
+            ),
+            html.text(" in CC Attribution License via "),
+            html.a(
+              [
+                attribute.class("link"),
+                attribute.target("_blank"),
+                attribute.href("https://www.svgrepo.com/"),
+              ],
+              [html.text("SVG Repo")],
+            ),
+          ],
+        ),
+        html.li([attribute.class("card block bg-neutral p-4 mb-4 rounded-lg")], [
+          html.h4([attribute.class("text-lg font-bold mb-2")], [
+            html.img([
+              attribute.src("https://gleam.run/images/lucy/lucy.svg"),
+              attribute.class("inline-block w-5 h-auto ms-2 align-middle"),
+            ]),
+            html.text("Gleam"),
+          ]),
+          element.text("Much thanks to the "),
+          html.a(
+            [
+              attribute.href("https://gleam.run/"),
+              attribute.class("link "),
+            ],
+            [
+              html.text("Gleam programming language"),
+            ],
+          ),
+          element.text(" and its community!"),
+        ]),
+        html.li([attribute.class("card block bg-neutral p-4 mb-4 rounded-lg")], [
+          html.h4([attribute.class("text-lg font-bold mb-2")], [
+            html.text("Fonts used"),
+          ]),
+          html.ul([attribute.class("list-disc list-inside")], [
+            {
+              html.li([], [
+                html.span([], [
+                  html.a(
+                    [
+                      attribute.href(
+                        "https://fonts.google.com/specimen/Vend+Sans",
+                      ),
+                      attribute.class("link font-sans"),
+                    ],
+                    [
+                      html.text("Vend Sans"),
+                    ],
+                  ),
+                  element.text("  "),
+                  html.span(
+                    [
+                      attribute.class(
+                        "badge badge-xs badge-soft badge-secondary text-xs",
+                      ),
+                    ],
+                    [element.text("font-sans")],
+                  ),
+                ]),
+                html.p([attribute.class("text-xs")], [
+                  element.text(
+                    "Designed by Bloom Type Foundry and Baptiste Guesnon under SIL Open Font License.",
+                  ),
+                ]),
+              ])
+            },
+            {
+              html.li([], [
+                html.span([], [
+                  html.a(
+                    [
+                      attribute.href(
+                        "https://fonts.google.com/specimen/Gantari",
+                      ),
+                      attribute.class("link  font-logo"),
+                    ],
+                    [
+                      html.text("Gantari"),
+                    ],
+                  ),
+                  element.text("  "),
 
-		html.span(
-		[
-		attribute.class(
-		"badge badge-xs badge-soft badge-secondary text-xs",
-		),
-		],
-		[element.text("font-logo")],
-		),
-		]),
-		html.p([attribute.class("text-xs")], [
-		element.text("Designed by Lafontype"),
-		]),
-		])
-	},
-	{
-		html.li([], [
-		html.span([], [
-		html.a(
-		[
-		attribute.href(
-		"https://fonts.google.com/specimen/Elms+Sans",
-		),
-		attribute.class("link  font-content"),
-		],
-		[
-		html.text("Elms Sans"),
-		],
-		),
-		element.text("  "),
+                  html.span(
+                    [
+                      attribute.class(
+                        "badge badge-xs badge-soft badge-secondary text-xs",
+                      ),
+                    ],
+                    [element.text("font-logo")],
+                  ),
+                ]),
+                html.p([attribute.class("text-xs")], [
+                  element.text("Designed by Lafontype"),
+                ]),
+              ])
+            },
+            {
+              html.li([], [
+                html.span([], [
+                  html.a(
+                    [
+                      attribute.href(
+                        "https://fonts.google.com/specimen/Elms+Sans",
+                      ),
+                      attribute.class("link  font-content"),
+                    ],
+                    [
+                      html.text("Elms Sans"),
+                    ],
+                  ),
+                  element.text("  "),
 
-		html.span(
-		[
-		attribute.class(
-		"badge badge-xs badge-soft badge-secondary text-xs",
-		),
-		],
-		[element.text("font-content")],
-		),
-		]),
-		html.p([attribute.class("text-xs")], [
-		element.text(
-		"Designed by Amarachi Nwauwa under SIL Open Font License",
-		),
-		]),
-		])
-	},
+                  html.span(
+                    [
+                      attribute.class(
+                        "badge badge-xs badge-soft badge-secondary text-xs",
+                      ),
+                    ],
+                    [element.text("font-content")],
+                  ),
+                ]),
+                html.p([attribute.class("text-xs")], [
+                  element.text(
+                    "Designed by Amarachi Nwauwa under SIL Open Font License",
+                  ),
+                ]),
+              ])
+            },
 
-	{
-		html.li([], [
-		html.span([], [
-		html.a(
-		[
-		attribute.href(
-		"https://fonts.google.com/specimen/Josefin+Sans",
-		),
-		attribute.class("link  font-menuitems"),
-		],
-		[
-		html.text("Josefin Sans"),
-		],
-		),
-		element.text("  "),
+            {
+              html.li([], [
+                html.span([], [
+                  html.a(
+                    [
+                      attribute.href(
+                        "https://fonts.google.com/specimen/Josefin+Sans",
+                      ),
+                      attribute.class("link  font-menuitems"),
+                    ],
+                    [
+                      html.text("Josefin Sans"),
+                    ],
+                  ),
+                  element.text("  "),
 
-		html.span(
-		[
-		attribute.class(
-		"badge badge-xs badge-soft badge-secondary text-xs",
-		),
-		],
-		[element.text("font-menuitems")],
-		),
-		]),
-		html.p([attribute.class("text-xs")], [
-		element.text(
-		"Designed by Santiago Orozco under SIL Open Font License",
-		),
-		]),
-		])
-	},
-	{
-		html.li([], [
-		html.span([], [
-		html.a(
-		[
-		attribute.href(
-		"https://fonts.google.com/specimen/DM+Mono",
-		),
-		attribute.class("link  font-script"),
-		],
-		[
-		html.text("DM Mono"),
-		],
-		),
-		element.text("  "),
+                  html.span(
+                    [
+                      attribute.class(
+                        "badge badge-xs badge-soft badge-secondary text-xs",
+                      ),
+                    ],
+                    [element.text("font-menuitems")],
+                  ),
+                ]),
+                html.p([attribute.class("text-xs")], [
+                  element.text(
+                    "Designed by Santiago Orozco under SIL Open Font License",
+                  ),
+                ]),
+              ])
+            },
+            {
+              html.li([], [
+                html.span([], [
+                  html.a(
+                    [
+                      attribute.href(
+                        "https://fonts.google.com/specimen/DM+Mono",
+                      ),
+                      attribute.class("link  font-script"),
+                    ],
+                    [
+                      html.text("DM Mono"),
+                    ],
+                  ),
+                  element.text("  "),
 
-		html.span(
-		[
-		attribute.class(
-		"badge badge-xs badge-soft badge-secondary text-xs",
-		),
-		],
-		[element.text("font-script")],
-		),
-		]),
-		html.p([attribute.class("text-xs")], [
-		element.text(
-		"Designed by Colophon Foundry under SIL Open Font License",
-		),
-		]),
-		])
-	},
-	]),
-	]),
-	]),
-	],
-	)
+                  html.span(
+                    [
+                      attribute.class(
+                        "badge badge-xs badge-soft badge-secondary text-xs",
+                      ),
+                    ],
+                    [element.text("font-script")],
+                  ),
+                ]),
+                html.p([attribute.class("text-xs")], [
+                  element.text(
+                    "Designed by Colophon Foundry under SIL Open Font License",
+                  ),
+                ]),
+              ])
+            },
+          ]),
+        ]),
+      ]),
+    ],
+  )
 }
 
 fn view_login(model: Model) -> Element(Msg) {

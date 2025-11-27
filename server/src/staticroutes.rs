@@ -39,9 +39,13 @@ pub(crate) async fn index<'k>(state: &'k State<AppState>) -> RawHtml<String> {
         appstate.2.clone().await
     };
     http_code_elog!(ev_log, 200, "/");
-let js = if cfg!(debug_assertions) { "/static/lumina.mjs" } else { "/static/lumina.min.mjs" };
-    RawHtml(
-       format!( r#"<!doctype html>
+    let js = if cfg!(debug_assertions) {
+        "/static/lumina.mjs"
+    } else {
+        "/static/lumina.min.mjs"
+    };
+    RawHtml(format!(
+        r#"<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
@@ -59,10 +63,8 @@ let js = if cfg!(debug_assertions) { "/static/lumina.mjs" } else { "/static/lumi
 <body id="app">
 </body>
 </html>"#,
-		   
-		   js
-	)
-    )
+        js
+    ))
 }
 
 #[get("/static/lumina.min.mjs")]
@@ -78,13 +80,13 @@ pub(crate) async fn lumina_js<'k>(state: &'k State<AppState>) -> RawJavaScript<S
 
 #[get("/static/lumina.mjs")]
 pub(crate) async fn lumina_d_js<'k>(state: &'k State<AppState>) -> RawJavaScript<String> {
-	let ev_log = {
-		let appstate = state.0.clone();
-		appstate.2.clone().await
-	};
-	http_code_elog!(ev_log, 200, "/static/lumina.mjs");
+    let ev_log = {
+        let appstate = state.0.clone();
+        appstate.2.clone().await
+    };
+    http_code_elog!(ev_log, 200, "/static/lumina.mjs");
 
-	RawJavaScript(include_str!("../../client/priv/static/lumina_client.mjs").to_string())
+    RawJavaScript(include_str!("../../client/priv/static/lumina_client.mjs").to_string())
 }
 
 #[get("/static/lumina.css")]

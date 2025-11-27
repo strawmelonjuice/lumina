@@ -18,7 +18,6 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import lumina_client/view/common_view_parts/svgs
 import gleam/bool
 import gleam/dict
 import gleam/dynamic/decode
@@ -37,6 +36,7 @@ import lumina_client/message_type.{
 }
 import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
 import lumina_client/view/common_view_parts.{common_view_parts}
+import lumina_client/view/common_view_parts/svgs
 import lumina_client/view/homepage/post_editor
 import lumina_client/view/homepage/posts
 import lustre/attribute.{attribute}
@@ -347,7 +347,7 @@ pub fn view(model: model_type.Model) {
                       event.on_click(message_type.TimeLineTo("global")),
                     ],
                     [
-					  svgs.globe("inline h-5 w-5 mr-2"),
+                      svgs.globe("inline h-5 w-5 mr-2"),
                       element.text("Global"),
                     ],
                   ),
