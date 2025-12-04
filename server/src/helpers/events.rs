@@ -24,7 +24,7 @@
  */
 
 use crate::LuminaError;
-use crate::database::{DatabaseConnections, DbConn, PgConn};
+use crate::database::{DatabaseConnections, PgConn};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use time::OffsetDateTime;
 
@@ -48,7 +48,7 @@ pub enum EventType {
 /// and, when available, also logs entries into the database.
 ///
 /// The database log entry is simple, with the log type, the message, and a timestamp.
-pub enum EventLogger {
+pub(crate) enum EventLogger {
     /// Variant created when logger has a database, and the database nor environment have any settings blocking database logging.
     WithDatabase(Box<PgConn>),
     /// Only log to stdout
@@ -63,30 +63,6 @@ impl EventLogger {
         match db {
             Some(d) => Self::from_db(d).await,
             None => Self::OnlyStdout,
-        }
-    }
-    pub async fn new_l(db: &Option<DbConn>) -> Self {
-        // For quick implementation we'll just check if not none and that's all.
-        match db {
-            Some(d) => Self::from_db_l(d).await,
-            None => Self::OnlyStdout,
-        }
-    }
-
-    pub async fn from_db_l(db_: &DbConn) -> Self {
-        match db_.recreate().await {
-            Ok(db) => {
-                let new_db = DbConn::to_pgconn(db);
-                Self::WithDatabase(Box::new(new_db))
-            }
-            Err(error) => {
-                let n = Self::OnlyStdout;
-                n.error(
-                    format!("Could not connect the logger to the database! {:?}", error).as_str(),
-                )
-                .await;
-                n
-            }
         }
     }
 
@@ -243,11 +219,13 @@ impl EventLogger {
     }
 
     /// Convenience method to log a failure message.
+    #[allow(unused)]
     pub async fn failure(&self, message: &str) {
         self.log(EventType::Failure, message).await
     }
 
     /// Convenience method to log a plain message without a specific log level.
+    #[allow(unused)]
     pub async fn log_plain(&self, message: &str) {
         self.log(EventType::Log, message).await
     }
