@@ -288,7 +288,7 @@ pub(crate) async fn wsconnection<'k>(
 											let db = &appstate.1.lock().await;
 											let msgback = match User::authenticate(email_username.clone(), password, db, ev_log.clone().await).await {
 												Ok((session_reference, user)) => {
-													incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id.to_string()).style_dim());
+													incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id).style_dim());
 													client_session_data.user = Some(user.clone());
 													Message::AuthSuccess { token: session_reference.token, username: user.username }
 												}
@@ -372,7 +372,7 @@ pub(crate) async fn wsconnection<'k>(
 									Ok(Message::Greeting { .. }) | Ok(Message::SerialisationError { .. })
 									| Ok(Message::RegisterPrecheckResponse { .. })
 									| Ok(Message::AuthSuccess { .. })
-									| Ok(Message::AuthFailure { .. })
+									| Ok(Message::AuthFailure)
 									| Ok(Message::MediaPostDataSent { .. })
 									| Ok(Message::TextPostDataSent { .. })
 									| Ok(Message::ArticlePostDataSent { .. })
