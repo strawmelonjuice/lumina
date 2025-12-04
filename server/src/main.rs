@@ -42,6 +42,7 @@ mod user;
 use tokio_postgres as postgres;
 struct AppState(Arc<InnerAppState>);
 struct InnerAppState {
+    #[allow(dead_code)]
     config: ServerConfig,
     db: Mutex<DbConn>,
     event_logger: EventLogger,
