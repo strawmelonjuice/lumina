@@ -22,7 +22,7 @@
 
 use crate::errors::LuminaError;
 use crate::helpers::events::EventLogger;
-use crate::{DbConn, error_elog, info_elog, success_elog, user, warn_elog};
+use crate::{DbConn, error_elog, info_elog, user};
 use redis::Commands;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -169,7 +169,7 @@ pub async fn invalidate_timeline_cache(
 async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<usize, LuminaError> {
     match db {
         DbConn::PgsqlConnection((client, _pg_config), _redis_pool) => {
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let row = client
                 .query_one(
                     "SELECT COUNT(*) FROM timelines WHERE tlid = $1",
@@ -193,7 +193,7 @@ async fn fetch_timeline_from_db(
 ) -> Result<Vec<String>, LuminaError> {
     match db {
         DbConn::PgsqlConnection((client, _pg_config), _redis_pool) => {
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let rows = client
 				.query(
 					"SELECT item_id FROM timelines WHERE tlid = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
@@ -238,13 +238,12 @@ pub async fn fetch_timeline_post_ids(
     let should_cache = is_high_traffic_timeline(&mut redis_conn, timeline_id).await?;
 
     // Try to get from cache if it's a high-traffic timeline
-    if should_cache {
-        if let Some(cached_page) =
+    if should_cache
+        && let Some(cached_page) =
             get_cached_timeline_page(&mut redis_conn, timeline_id, page).await?
-        {
-            let has_more = (page + 1) * TIMELINE_PAGE_SIZE < cached_page.total_count;
-            return Ok((cached_page.post_ids, cached_page.total_count, has_more));
-        }
+    {
+        let has_more = (page + 1) * TIMELINE_PAGE_SIZE < cached_page.total_count;
+        return Ok((cached_page.post_ids, cached_page.total_count, has_more));
     }
 
     // Cache miss or low-traffic timeline - fetch from database
@@ -257,12 +256,40 @@ pub async fn fetch_timeline_post_ids(
 
         // Cache the result if it's high-traffic
         if should_cache {
-            if let Err(e) =
-                cache_timeline_page(&mut redis_conn, timeline_id, page, &post_ids, total_count)
-                    .await
+            match cache_timeline_page(&mut redis_conn, timeline_id, page, &post_ids, total_count)
+                .await
             {
-                error_elog!(event_logger, "Failed to cache timeline page: {:?}", e);
-            }
+                Ok(_) => info_elog!(
+                    event_logger,
+                    "Cached timeline {} page {} with {} posts",
+                    timeline_id,
+                    page,
+                    post_ids.len()
+                ),
+                Err(e) => match e {
+                    LuminaError::SerializationError(s) => error_elog!(
+                        event_logger,
+                        "Failed to serialize timeline {} page {} for caching: {}",
+                        timeline_id,
+                        page,
+                        s
+                    ),
+                    LuminaError::Redis(redis_err) => error_elog!(
+                        event_logger,
+                        "Failed to cache timeline {} page {}: {:?}",
+                        timeline_id,
+                        page,
+                        redis_err
+                    ),
+                    _ => error_elog!(
+                        event_logger,
+                        "Unexpected error while caching timeline {} page {}: {:?}",
+                        timeline_id,
+                        page,
+                        e
+                    ),
+                },
+            };
         }
 
         let has_more = (page + 1) * TIMELINE_PAGE_SIZE < total_count;
@@ -291,7 +318,7 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
     );
     // For now, only global timeline is supported.
     if timeline_name == "global" {
-        let timeline_uuid = Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(LuminaError::UUidError)?;
+        let timeline_uuid = Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(|_| LuminaError::UUidError)?;
         let (post_ids, total_count, has_more) =
             fetch_timeline_post_ids(event_logger, db, GLOBAL_TIMELINE_ID, page).await?;
         Ok((timeline_uuid, post_ids, total_count, has_more))
@@ -316,8 +343,8 @@ pub async fn add_to_timeline(
     // Add to database
     match db {
         DbConn::PgsqlConnection((client, _pg_config), redis_pool) => {
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
-            let item_uuid = Uuid::parse_str(item_id).map_err(LuminaError::UUidError)?;
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
+            let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
                 .execute(
                     "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
@@ -342,6 +369,7 @@ pub async fn add_to_timeline(
     Ok(())
 }
 
+#[expect(dead_code, reason = "Not used yet")]
 /// Remove a post from a timeline and invalidate cache if necessary
 pub async fn remove_from_timeline(
     event_logger: EventLogger,
@@ -352,8 +380,8 @@ pub async fn remove_from_timeline(
     // Remove from database
     match db {
         DbConn::PgsqlConnection((client, _pg_config), redis_pool) => {
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(LuminaError::UUidError)?;
-            let item_uuid = Uuid::parse_str(item_id).map_err(LuminaError::UUidError)?;
+            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
+            let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
                 .execute(
                     "DELETE FROM timelines WHERE tlid = $1 AND item_id = $2",

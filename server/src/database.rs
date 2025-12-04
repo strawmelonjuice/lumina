@@ -119,15 +119,15 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             .connect(postgres::tls::NoTls)
             .await
             .map_err(LuminaError::Postgres)?;
-        let _ = tokio::spawn(conn.1);
+        tokio::spawn(conn.1);
         // Create a second connection to the database for spawning the maintain function
         let conn_two: (Client, Connection<Socket, NoTlsStream>) = pg_config
             .connect(postgres::tls::NoTls)
             .await
             .map_err(LuminaError::Postgres)?;
-        let _ = tokio::spawn(conn_two.1);
+        tokio::spawn(conn_two.1);
         {
-            let _ = conn
+            conn
                 .0
                 .batch_execute(include_str!("../../SQL/create_pg.sql"))
                 .await
@@ -162,7 +162,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
         let conn_clone = conn_two.0;
         let pg_config_clone = pg_config.clone();
         let redis_pool_clone = redis_pool.clone();
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             maintain(DbConn::PgsqlConnection(
                 (conn_clone, pg_config_clone),
                 redis_pool_clone,
@@ -175,26 +175,29 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
 
 /// This enum contains the postgres and redis connection and pool respectively. It used to have more variants before, and maybe it will once again.
 #[derive()]
-pub(crate) enum DbConn {
+pub enum DbConn {
     // The config is also shared, so that for example the logger can set up its own connection, use this sparingly.
     /// The main database is a Postgres database in this variant.
     PgsqlConnection((Client, postgres::Config), Pool<redis::Client>),
 }
 
-impl DbConn {
+pub(crate) trait DatabaseConnections {
     /// Get a reference to the redis pool
     /// This is useful for functions that need to access redis but not the main database
     /// such as timeline cache management
-    /// This returns a clone of the pool, so it is cheap to call
-    pub(crate) fn get_redis_pool(&self) -> Pool<redis::Client> {
-        match self {
-            DbConn::PgsqlConnection((_, _), redis_pool) => redis_pool.clone(),
-        }
-    }
+    /// This returns a clone of the pool without recreating it entirely, so it is cheap to call
+    fn get_redis_pool(&self) -> Pool<redis::Client>;
 
     /// Recreate the database connection.
+    async fn recreate(&self) -> Result<Self, LuminaError>
+    where
+        Self: Sized;
+}
+
+impl DatabaseConnections for DbConn {
+    /// Recreate the database connection.
     /// This clones the pool on sqlite and for redis, and creates a new connection on postgres.
-    pub(crate) async fn recreate(&self) -> Result<Self, LuminaError> {
+    async fn recreate(&self) -> Result<Self, LuminaError> {
         match self {
             DbConn::PgsqlConnection((_, config), redis_pool) => {
                 let c = config
@@ -206,6 +209,54 @@ impl DbConn {
 
                 Ok(DbConn::PgsqlConnection((c, config.to_owned()), r))
             }
+        }
+    }
+
+    fn get_redis_pool(&self) -> Pool<redis::Client> {
+        match self {
+            DbConn::PgsqlConnection((_, _), redis_pool) => redis_pool.clone(),
+        }
+    }
+}
+
+impl DatabaseConnections for PgConn {
+    fn get_redis_pool(&self) -> Pool<redis::Client> {
+        self.redis_pool.clone()
+    }
+
+    async fn recreate(&self) -> Result<Self, LuminaError> {
+        let postgres = self
+            .postgres_config
+            .connect(tokio_postgres::tls::NoTls)
+            .await
+            .map_err(LuminaError::Postgres)?
+            .0;
+        let postgres_config = self.postgres_config.to_owned();
+        let redis_pool = self.redis_pool.clone();
+        Ok(PgConn {
+            postgres,
+            postgres_config,
+            redis_pool,
+        })
+    }
+}
+/// Simplified type only accounting for the Postgres struct, since the enum adds some future flexibility, but also a lot of overhead.
+/// If all goes well, this PgConn type will have replaced DbConn entirely after a few iterations of improvement over the years.
+pub struct PgConn {
+    pub(crate) postgres: Client,
+    postgres_config: postgres::Config,
+    pub(crate) redis_pool: Pool<redis::Client>,
+}
+
+impl DbConn {
+    /// Converts/unwraps the generic DbConn type to it's more concrete PgConn counterpart.
+    pub(crate) fn to_pgconn(db: Self) -> PgConn {
+        match db {
+            Self::PgsqlConnection((a, b), c) => PgConn {
+                postgres: a,
+                postgres_config: b,
+                redis_pool: c,
+            },
         }
     }
 }

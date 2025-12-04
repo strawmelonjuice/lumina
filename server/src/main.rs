@@ -49,6 +49,7 @@ struct ServerConfig {
     port: u16,
     host: IpAddr,
 }
+use crate::database::DatabaseConnections;
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
@@ -96,21 +97,21 @@ async fn main() {
                     let mut interval =
                         tokio::time::interval(std::time::Duration::from_millis(3000));
                     let mut db_mut: Option<DbConn> = None;
-                    let mut ev_log: EventLogger = EventLogger::new(&db_mut).await;
+                    let ev_log: EventLogger = EventLogger::new(&None).await;
 
                     let mut db_tries: usize = 0;
                     while db_mut.is_none() {
                         interval.tick().await;
                         db_mut = match database::setup().await {
                             Ok(db) => Some(db),
-                            Err(LuminaError::ConfMissing(a)) => {
-                                error_elog!(
-                                    ev_log,
-                                    "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-                                    a.color_bright_orange()
-                                );
-                                None
-                            }
+                            // Err(LuminaError::ConfMissing(a)) => {
+                            //     error_elog!(
+                            //         ev_log,
+                            //         "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                            //         a.color_bright_orange()
+                            //     );
+                            //     None
+                            // }
                             Err(LuminaError::ConfInvalid(a)) => {
                                 error_elog!(
                                     ev_log,
@@ -155,15 +156,15 @@ async fn main() {
                                 );
                                 process::exit(1);
                             }
-                        } else {
-                            // update ev_log, since clearly, it's no longer a question
-                            ev_log = EventLogger::new(&db_mut).await;
-
-                            success_elog!(ev_log, "Database connected.")
                         }
                     }
-                    let ev_log = EventLogger::new(&db_mut).await;
+                    // If we got here, we have a database connection.
+
+                    
                     let db = db_mut.unwrap();
+                    let pg = DbConn::to_pgconn(db.recreate().await.unwrap());
+                    let ev_log = EventLogger::from_db(&pg).await;
+                    success_elog!(ev_log, "Database connected.");
 
                     if cfg!(debug_assertions) {
                         let mut redis_conn = db.get_redis_pool().get().unwrap();
@@ -236,7 +237,7 @@ async fn main() {
                                     };
 
                                     match (user_1_, user_2_) {
-                                        (Ok(user_1), Ok(user_2)) => {
+                                        (Ok(user_1), Ok(_)) => {
                                             println!(
                                                 "Created two users with password 'MyTestPassw9292!' and usernames 'testuser1' and 'testuser2'."
                                             );
@@ -251,18 +252,18 @@ async fn main() {
                                                 add_clone,
                                                 &db,
                                                 "00000000-0000-0000-0000-000000000000",
-                                                &generated_uuid.to_string().as_str(),
+                                                generated_uuid.to_string().as_str(),
                                             )
                                             .await
                                             .unwrap_or(());
-                                            ()
+                                            
                                         }
                                         z => {
                                             println!(
                                                 "Ran into some issues: user 1: {:?}, user 2: {:?} ",
                                                 z.0, z.1
                                             );
-                                            ()
+                                        
                                         }
                                     }
                                 }
@@ -366,13 +367,15 @@ async fn main() {
                     let result = {
                         let g = s.await;
                         match g {
-                            Ok(x) => x.map_err(LuminaError::RocketFaillure),
-                            Err(..) => Err(LuminaError::JoinFaillure),
+                            Ok(x) => x.map_err(|e| {
+                                (LuminaError::RocketFaillure, Some(e))
+                            }),
+                            Err(..) => Err((LuminaError::JoinFaillure, None)),
                         }
                     };
                     match result {
                         Ok(_) => {}
-                        Err(LuminaError::RocketFaillure(e)) => {
+                        Err((LuminaError::RocketFaillure, Some(e))) => {
                             // This handling should slowly expand as I run into newer ones, the 'defh' (default handling) is good enough, but for the most-bumped into errors, I'd like to give more human responses.
                             let defh =
                                 async || error_elog!(ev_log, "Error starting server: {:?}", e);
@@ -404,14 +407,14 @@ async fn main() {
                         }
                     }
                 }
-                Err(LuminaError::ConfMissing(a)) => {
-                    error_elog!(
-                        ev_log,
-                        "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
-                        a.color_bright_orange()
-                    );
-                    process::exit(1);
-                }
+                // Err(LuminaError::ConfMissing(a)) => {
+                //     error_elog!(
+                //         ev_log,
+                //         "Missing environment variable {}, which is required to continue. Please make sure it is set, or change other variables to make it redundant, if possible.",
+                //         a.color_bright_orange()
+                //     );
+                //     process::exit(1);
+                // }
                 Err(LuminaError::ConfInvalid(a)) => {
                     error_elog!(
                         ev_log,
@@ -446,8 +449,7 @@ async fn main() {
                     .split("\n")
                     .map(|s| s.style_centered())
                     .collect();
-                let d = s.join("\n");
-                d
+                s.join("\n")
             }
             println!("{}", me);
             {

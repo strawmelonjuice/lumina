@@ -18,3 +18,7 @@ dir = "./client/"
 tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
 run = "mise watch --restart -e rs,gleam,toml,css,ts,json --clear=clear check"
+
+[clippy_watch]
+tools.watchexec = "latest"
+run = "watchexec -c clear -restart -e rs,toml 'clear ; cargo clippy'"

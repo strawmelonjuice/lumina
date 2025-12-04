@@ -22,22 +22,24 @@
 
 #[derive(Debug)]
 pub(crate) enum LuminaError {
-    ConfMissing(String),
     ConfInvalid(String),
     R2D2Pool(r2d2::Error),
     Postgres(crate::postgres::Error),
     Unknown,
-    RocketFaillure(rocket::Error),
-    BcryptError(bcrypt::BcryptError),
+    /// Rocket failure wrapper, due to size, we only store the error source here. Construct with: 
+    /// ```rust
+    /// (LuminaError::RocketFaillure, Some<rocket::Error>)
+    /// ```
+    RocketFaillure,
+    BcryptError,
     RegisterEmailInUse,
     RegisterUsernameInUse,
     RegisterEmailNotValid,
     RegisterUsernameInvalid(String),
     RegisterPasswordNotValid(String),
     AuthenticationWrongPassword,
-    AuthenticationUserNotFound,
-    UUidError(uuid::Error),
-    RegexError(regex::Error),
+    UUidError,
+    RegexError,
     Redis(redis::RedisError),
     SerializationError(String),
     JoinFaillure,

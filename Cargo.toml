@@ -2,4 +2,11 @@
 resolver = "3"
 members = ["./server"]
 default-members = ["./server"]
-license = "AGPL-3"
+
+[workspace.lints.clippy]
+expect_used = { level = "deny", priority = 0 }
+panic_in_result_fn = { level = "deny", priority = 0 }
+arithmetic_side_effects = "warn"
+missing_docs = "forbid"
+missing_panics_doc = "warn"
+pedantic = { level = "warn", priority = -1 }

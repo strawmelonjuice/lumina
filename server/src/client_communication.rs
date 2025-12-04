@@ -297,9 +297,9 @@ pub(crate) async fn wsconnection<'k>(
 														LuminaError::AuthenticationWrongPassword => {
 															authentication_error_elog!(ev_log,"User {} {} authenticated: Incorrect credentials", email_username.color_bright_cyan(), "not".color_red());
 														}
-														LuminaError::AuthenticationUserNotFound => {
-															authentication_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
-														}
+														// LuminaError::AuthenticationUserNotFound => {
+														// 	authentication_error_elog!(ev_log,"User {} {} authenticated: User not found", email_username.color_bright_cyan(), "not".color_red());
+														// }
 														_ => {
 															authentication_error_elog!(ev_log,"User {} {} authenticated: {:?}", email_username.color_bright_cyan(), "not".color_red(), s);
 														}
@@ -541,5 +541,6 @@ pub enum ClientType {
     Web,
     // NativeApp will one day mean a native application, like a mobile app.
     // For now, it is nothing.
+	#[expect(dead_code, reason="Will be used when other clients are added.")]
     NativeApp,
 }
