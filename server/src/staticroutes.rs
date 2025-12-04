@@ -33,7 +33,7 @@ use crate::{AppState, http_code_elog};
 use rocket::State;
 
 #[get("/")]
-pub(crate) async fn index<'k>(state: &'k State<AppState>) -> RawHtml<String> {
+pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -68,7 +68,7 @@ pub(crate) async fn index<'k>(state: &'k State<AppState>) -> RawHtml<String> {
 }
 
 #[get("/static/lumina.min.mjs")]
-pub(crate) async fn lumina_js<'k>(state: &'k State<AppState>) -> RawJavaScript<String> {
+pub(crate) async fn lumina_js(state: &State<AppState>) -> RawJavaScript<String> {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -79,7 +79,7 @@ pub(crate) async fn lumina_js<'k>(state: &'k State<AppState>) -> RawJavaScript<S
 }
 
 #[get("/static/lumina.mjs")]
-pub(crate) async fn lumina_d_js<'k>(state: &'k State<AppState>) -> RawJavaScript<String> {
+pub(crate) async fn lumina_d_js(state: &State<AppState>) -> RawJavaScript<String> {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -90,7 +90,7 @@ pub(crate) async fn lumina_d_js<'k>(state: &'k State<AppState>) -> RawJavaScript
 }
 
 #[get("/static/lumina.css")]
-pub(crate) async fn lumina_css<'k>(state: &'k State<AppState>) -> RawCss<String> {
+pub(crate) async fn lumina_css(state: &State<AppState>) -> RawCss<String> {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -101,7 +101,7 @@ pub(crate) async fn lumina_css<'k>(state: &'k State<AppState>) -> RawCss<String>
 }
 
 #[get("/licence")]
-pub(crate) async fn licence<'k>(state: &'k State<AppState>) -> RawText<String> {
+pub(crate) async fn licence(state: &State<AppState>) -> RawText<String> {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -116,7 +116,7 @@ pub(crate) async fn license_redirect() -> rocket::response::Redirect {
 }
 
 #[get("/static/logo.svg")]
-pub(crate) async fn logo_svg<'k>(state: &'k State<AppState>) -> (ContentType, &'static str) {
+pub(crate) async fn logo_svg(state: &State<AppState>) -> (ContentType, &'static str) {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -130,7 +130,7 @@ pub(crate) async fn logo_svg<'k>(state: &'k State<AppState>) -> (ContentType, &'
 }
 
 #[get("/favicon.ico")]
-pub(crate) async fn favicon<'k>(state: &'k State<AppState>) -> (ContentType, &'static [u8]) {
+pub(crate) async fn favicon(state: &State<AppState>) -> (ContentType, &'static [u8]) {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
@@ -140,7 +140,7 @@ pub(crate) async fn favicon<'k>(state: &'k State<AppState>) -> (ContentType, &'s
 }
 
 #[get("/static/logo.png")]
-pub(crate) async fn logo_png<'k>(state: &'k State<AppState>) -> (ContentType, &'static [u8]) {
+pub(crate) async fn logo_png(state: &State<AppState>) -> (ContentType, &'static [u8]) {
     let ev_log = {
         let appstate = state.0.clone();
         appstate.2.clone().await
