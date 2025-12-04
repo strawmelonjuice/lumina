@@ -22,11 +22,10 @@
 use crate::{
     LuminaError,
     database::DbConn,
-    helpers::{self, events::EventLogger},
+    helpers::{events::EventLogger},
     info_elog,
 };
 use cynthia_con::CynthiaColors;
-use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -34,6 +33,7 @@ pub struct User {
     pub id: Uuid,
     pub email: String,
     pub username: String,
+    #[expect(dead_code, reason = "Will be used for federated posts in the future")]
     pub foreign_instance_id: String, // Added to handle foreign_instance_id
 }
 
@@ -58,7 +58,7 @@ impl User {
             Err(e) => Err(e),
         }?;
         let hashed_password = user.clone().get_hashed_password(db).await?;
-        if bcrypt::verify(password, &hashed_password).map_err(LuminaError::BcryptError)? {
+        if bcrypt::verify(password, &hashed_password).map_err(|_| LuminaError::BcryptError)? {
             user.create_session(db, ev_log).await
         } else {
             Err(LuminaError::AuthenticationWrongPassword)
@@ -82,11 +82,10 @@ impl User {
         password: String,
         db: &DbConn,
     ) -> Result<User, LuminaError> {
-        let _ =
-            register_validitycheck(email.clone(), username.clone(), password.clone(), db).await?;
+        register_validitycheck(email.clone(), username.clone(), password.clone(), db).await?;
         // hash the password
         let password =
-            bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(LuminaError::BcryptError)?;
+            bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(|_| LuminaError::BcryptError)?;
         match db {
             DbConn::PgsqlConnection((client, _), _) => {
                 // Some username and email validation should be done here
@@ -284,7 +283,7 @@ pub(crate) async fn register_validitycheck(
         let email_regex = regex::Regex::new(
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{1,6})",
         )
-        .map_err(LuminaError::RegexError)?;
+        .map_err(|_| {LuminaError::RegexError})?;
         if !email_regex.is_match(&email) {
             return Err(LuminaError::RegisterEmailNotValid);
         };

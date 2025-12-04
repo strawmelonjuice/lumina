@@ -23,8 +23,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::database::DbConn;
-use crate::{LuminaError, database};
+use crate::LuminaError;
+use crate::database::{DatabaseConnections, DbConn, PgConn};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use time::OffsetDateTime;
 
@@ -50,7 +50,7 @@ pub enum EventType {
 /// The database log entry is simple, with the log type, the message, and a timestamp.
 pub enum EventLogger {
     /// Variant created when logger has a database, and the database nor environment have any settings blocking database logging.
-    WithDatabase { db: DbConn },
+    WithDatabase(Box<PgConn>),
     /// Only log to stdout
     OnlyStdout,
 }
@@ -58,47 +58,55 @@ pub enum EventLogger {
 impl EventLogger {
     /// Creates a new logger instance.
     /// The `db` parameter can be `None` if the database isn't connected.
-    pub async fn new(db: &Option<DbConn>) -> Self {
+    pub async fn new(db: &Option<PgConn>) -> Self {
         // For quick implementation we'll just check if not none and that's all.
         match db {
             Some(d) => Self::from_db(d).await,
             None => Self::OnlyStdout,
         }
     }
-
-    pub async fn from_db(db: &DbConn) -> Self {
+    pub async fn new_l(db: &Option<DbConn>) -> Self {
+        // For quick implementation we'll just check if not none and that's all.
         match db {
-            DbConn::PgsqlConnection((_, pg_config), redis_pool) => {
-                match pg_config
-                    .connect(tokio_postgres::tls::NoTls)
-                    .await
-                    .map_err(LuminaError::Postgres)
-                {
-                    Ok((client, _)) => {
-                        let new_dbconn = database::DbConn::PgsqlConnection(
-                            (client, pg_config.clone()),
-                            redis_pool.clone(),
-                        );
-                        Self::WithDatabase { db: new_dbconn }
-                    }
+            Some(d) => Self::from_db_l(d).await,
+            None => Self::OnlyStdout,
+        }
+    }
 
-                    Err(error) => {
-                        let n = Self::OnlyStdout;
-                        n.error(
-                            format!("Could not connect the logger to the database! {:?}", error)
-                                .as_str(),
-                        )
-                        .await;
-                        n
-                    }
-                }
+    pub async fn from_db_l(db_: &DbConn) -> Self {
+        match db_.recreate().await {
+            Ok(db) => {
+                let new_db = DbConn::to_pgconn(db);
+                Self::WithDatabase(Box::new(new_db))
+            }
+            Err(error) => {
+                let n = Self::OnlyStdout;
+                n.error(
+                    format!("Could not connect the logger to the database! {:?}", error).as_str(),
+                )
+                .await;
+                n
+            }
+        }
+    }
+
+    pub async fn from_db(db_: &PgConn) -> Self {
+        match db_.recreate().await {
+            Ok(new_db) => Self::WithDatabase(Box::new(new_db)),
+            Err(error) => {
+                let n = Self::OnlyStdout;
+                n.error(
+                    format!("Could not connect the logger to the database! {:?}", error).as_str(),
+                )
+                .await;
+                n
             }
         }
     }
 
     pub async fn clone(&self) -> Self {
         match self {
-            EventLogger::WithDatabase { db } => Self::from_db(db).await,
+            EventLogger::WithDatabase(db) => Self::from_db(db).await,
             EventLogger::OnlyStdout => Self::OnlyStdout,
         }
     }
@@ -158,7 +166,7 @@ impl EventLogger {
 
         // Log to the database if a connection is available.
         match self {
-            EventLogger::WithDatabase { db: db_conn } => {
+            EventLogger::WithDatabase(db_conn) => {
                 // Log to stdout with the prefix.
                 if use_eprintln {
                     eprintln!("{stdoutmsg}");
@@ -179,7 +187,7 @@ impl EventLogger {
                     EventType::HTTPCode(code) => format!("HTTP/{}", code),
                 };
                 let ansi_regex = regex::Regex::new(r"\x1B\[[0-?]*[ -/]*[@-~]")
-                    .map_err(LuminaError::RegexError)
+                    .map_err(|_| LuminaError::RegexError)
                     .unwrap();
 
                 let message_db: String = ansi_regex
@@ -192,18 +200,15 @@ impl EventLogger {
                     .format(&time::format_description::well_known::Rfc3339)
                     .unwrap();
 
-                match db_conn {
-                    crate::database::DbConn::PgsqlConnection((client, _), _) => {
-                        let _ = client
-                            .execute(
-                                "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
-                                &[&level_str, &message_db, &ts],
-                            )
-                            .await;
-                    }
-                }
-            }
-            EventLogger::OnlyStdout { .. } => {
+                let _ = db_conn
+                    .postgres
+                    .execute(
+                        "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
+                        &[&level_str, &message_db, &ts],
+                    )
+                    .await;
+            } 
+            EventLogger::OnlyStdout => {
                 // Log to stdout with the prefix.
                 if use_eprintln {
                     eprintln!("{stdoutmsg}");
