@@ -53,7 +53,7 @@ pub(crate) async fn wsconnection<'k>(
 ) -> ws::Channel<'k> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.2.clone().await
+        appstate.event_logger.clone().await
     };
     http_code_elog!(ev_log, 200, "/connection");
     use rocket::futures::{SinkExt, StreamExt};
@@ -85,7 +85,7 @@ pub(crate) async fn wsconnection<'k>(
 										match try_revive {
 											Some(token) => {
 												let appstate = state.0.clone();
-												let db = &appstate.1.lock().await;
+												let db = &appstate.db.lock().await;
 												match User::revive_session_from_token(token.clone(), db).await {
 													Ok(user) => {
 														incoming_elog!(ev_log, "Session revived for user: {}",
@@ -144,7 +144,7 @@ pub(crate) async fn wsconnection<'k>(
 										// register the user
 										{
 											let appstate = state.0.clone();
-											let db = &appstate.1.lock().await;
+											let db = &appstate.db.lock().await;
 											match User::create_user(email.clone(), username.clone(), password, db).await
 											{
 												Ok(user) => {
@@ -237,7 +237,7 @@ pub(crate) async fn wsconnection<'k>(
 									}
 									Ok(Message::RegisterPrecheck { email, username, password }) => {
 										let appstate = state.0.clone();
-										let db = &appstate.1.lock().await;
+										let db = &appstate.db.lock().await;
 										match crate::user::register_validitycheck(email, username, password, db).await {
 											Err(LuminaError::RegisterEmailInUse) => {
 												let _ = stream.send(ws::Message::from(msgtojson(Message::RegisterPrecheckResponse {
@@ -285,7 +285,7 @@ pub(crate) async fn wsconnection<'k>(
 											let _ = stream.send(ws::Message::from(msgtojson(Message::AuthFailure))).await;
 										} else {
 											let appstate = state.0.clone();
-											let db = &appstate.1.lock().await;
+											let db = &appstate.db.lock().await;
 											let msgback = match User::authenticate(email_username.clone(), password, db, ev_log.clone().await).await {
 												Ok((session_reference, user)) => {
 													incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id).style_dim());
@@ -339,7 +339,7 @@ pub(crate) async fn wsconnection<'k>(
 									}
 									Ok(Message::TimelineRequest { by_name: name, page }) => {
 										let appstate = state.0.clone();
-										let db = &appstate.1.lock().await;
+										let db = &appstate.db.lock().await;
 										// Fetch post IDs for the requested timeline
 										match fetch_timeline_post_ids_by_timeline_name(
 											ev_log.clone().await,

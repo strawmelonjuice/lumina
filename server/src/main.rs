@@ -40,7 +40,12 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 mod user;
 use tokio_postgres as postgres;
-struct AppState(Arc<(ServerConfig, Mutex<DbConn>, EventLogger)>);
+struct AppState(Arc<InnerAppState>);
+struct InnerAppState {
+    config: ServerConfig,
+    db: Mutex<DbConn>,
+    event_logger: EventLogger,
+}
 mod rate_limiter;
 use database::DbConn;
 use rate_limiter::{AuthRateLimiter, GeneralRateLimiter};
@@ -160,7 +165,6 @@ async fn main() {
                     }
                     // If we got here, we have a database connection.
 
-                    
                     let db = db_mut.unwrap();
                     let pg = DbConn::to_pgconn(db.recreate().await.unwrap());
                     let ev_log = EventLogger::from_db(&pg).await;
@@ -256,14 +260,12 @@ async fn main() {
                                             )
                                             .await
                                             .unwrap_or(());
-                                            
                                         }
                                         z => {
                                             println!(
                                                 "Ran into some issues: user 1: {:?}, user 2: {:?} ",
                                                 z.0, z.1
                                             );
-                                        
                                         }
                                     }
                                 }
@@ -271,11 +273,11 @@ async fn main() {
                         }
                     }
 
-                    let appstate = AppState(Arc::from((
-                        config.clone(),
-                        Mutex::from(db),
-                        ev_log.clone().await,
-                    )));
+                    let appstate = AppState(Arc::from(InnerAppState {
+                        config: config.clone(),
+                        db: Mutex::from(db),
+                        event_logger: ev_log.clone().await,
+                    }));
 
                     // Create a simple in-memory IP-based rate limiter.
                     // Default: allow 5 events per 10 seconds (0.5 tokens/sec) with capacity 10.
@@ -367,9 +369,7 @@ async fn main() {
                     let result = {
                         let g = s.await;
                         match g {
-                            Ok(x) => x.map_err(|e| {
-                                (LuminaError::RocketFaillure, Some(e))
-                            }),
+                            Ok(x) => x.map_err(|e| (LuminaError::RocketFaillure, Some(e))),
                             Err(..) => Err((LuminaError::JoinFaillure, None)),
                         }
                     };
