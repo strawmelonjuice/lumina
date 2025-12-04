@@ -127,8 +127,7 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             .map_err(LuminaError::Postgres)?;
         tokio::spawn(conn_two.1);
         {
-            conn
-                .0
+            conn.0
                 .batch_execute(include_str!("../../SQL/create_pg.sql"))
                 .await
                 .map_err(LuminaError::Postgres)?;

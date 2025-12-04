@@ -318,7 +318,8 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
     );
     // For now, only global timeline is supported.
     if timeline_name == "global" {
-        let timeline_uuid = Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(|_| LuminaError::UUidError)?;
+        let timeline_uuid =
+            Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(|_| LuminaError::UUidError)?;
         let (post_ids, total_count, has_more) =
             fetch_timeline_post_ids(event_logger, db, GLOBAL_TIMELINE_ID, page).await?;
         Ok((timeline_uuid, post_ids, total_count, has_more))

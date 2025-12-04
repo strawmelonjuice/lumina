@@ -541,6 +541,6 @@ pub enum ClientType {
     Web,
     // NativeApp will one day mean a native application, like a mobile app.
     // For now, it is nothing.
-	#[expect(dead_code, reason="Will be used when other clients are added.")]
+    #[expect(dead_code, reason = "Will be used when other clients are added.")]
     NativeApp,
 }

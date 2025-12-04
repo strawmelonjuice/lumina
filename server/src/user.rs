@@ -19,12 +19,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{
-    LuminaError,
-    database::DbConn,
-    helpers::{events::EventLogger},
-    info_elog,
-};
+use crate::{LuminaError, database::DbConn, helpers::events::EventLogger, info_elog};
 use cynthia_con::CynthiaColors;
 use uuid::Uuid;
 
@@ -283,7 +278,7 @@ pub(crate) async fn register_validitycheck(
         let email_regex = regex::Regex::new(
             r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{1,6})",
         )
-        .map_err(|_| {LuminaError::RegexError})?;
+        .map_err(|_| LuminaError::RegexError)?;
         if !email_regex.is_match(&email) {
             return Err(LuminaError::RegisterEmailNotValid);
         };

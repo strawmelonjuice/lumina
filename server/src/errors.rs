@@ -26,7 +26,7 @@ pub(crate) enum LuminaError {
     R2D2Pool(r2d2::Error),
     Postgres(crate::postgres::Error),
     Unknown,
-    /// Rocket failure wrapper, due to size, we only store the error source here. Construct with: 
+    /// Rocket failure wrapper, due to size, we only store the error source here. Construct with:
     /// ```rust
     /// (LuminaError::RocketFaillure, Some<rocket::Error>)
     /// ```
