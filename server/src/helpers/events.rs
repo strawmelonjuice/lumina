@@ -207,7 +207,7 @@ impl EventLogger {
                         &[&level_str, &message_db, &ts],
                     )
                     .await;
-            } 
+            }
             EventLogger::OnlyStdout => {
                 // Log to stdout with the prefix.
                 if use_eprintln {
