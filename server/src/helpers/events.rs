@@ -24,7 +24,7 @@
  */
 
 use crate::LuminaError;
-use crate::database::{DatabaseConnections, PgConn};
+use crate::database::{PgConn};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use time::OffsetDateTime;
 
@@ -55,35 +55,29 @@ pub(crate) enum EventLogger {
     OnlyStdout,
 }
 
+impl From<&PgConn> for EventLogger {
+    fn from(db: &PgConn) -> Self {
+        EventLogger::WithDatabase(Box::new(db.clone()))
+    }
+}
+
+impl Clone for EventLogger {
+    fn clone(&self) -> Self {
+        match self {
+            EventLogger::WithDatabase(db) => EventLogger::WithDatabase(Box::new((**db).clone())),
+            EventLogger::OnlyStdout => EventLogger::OnlyStdout,
+        }
+    }
+}
+
 impl EventLogger {
     /// Creates a new logger instance.
     /// The `db` parameter can be `None` if the database isn't connected.
-    pub async fn new(db: &Option<PgConn>) -> Self {
+    pub fn new(db: &Option<PgConn>) -> Self {
         // For quick implementation we'll just check if not none and that's all.
         match db {
-            Some(d) => Self::from_db(d).await,
+            Some(d) => Self::from(d),
             None => Self::OnlyStdout,
-        }
-    }
-
-    pub async fn from_db(db_: &PgConn) -> Self {
-        match db_.recreate().await {
-            Ok(new_db) => Self::WithDatabase(Box::new(new_db)),
-            Err(error) => {
-                let n = Self::OnlyStdout;
-                n.error(
-                    format!("Could not connect the logger to the database! {:?}", error).as_str(),
-                )
-                .await;
-                n
-            }
-        }
-    }
-
-    pub async fn clone(&self) -> Self {
-        match self {
-            EventLogger::WithDatabase(db) => Self::from_db(db).await,
-            EventLogger::OnlyStdout => Self::OnlyStdout,
         }
     }
 
@@ -176,13 +170,14 @@ impl EventLogger {
                     .format(&time::format_description::well_known::Rfc3339)
                     .unwrap();
 
-                let _ = db_conn
-                    .postgres
-                    .execute(
-                        "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
-                        &[&level_str, &message_db, &ts],
-                    )
-                    .await;
+                if let Ok(pg_conn) = db_conn.postgres_pool.get().await {
+                    let _ = pg_conn
+                        .execute(
+                            "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
+                            &[&level_str, &message_db, &ts],
+                        )
+                        .await;
+                }
             }
             EventLogger::OnlyStdout => {
                 // Log to stdout with the prefix.

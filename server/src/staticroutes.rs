@@ -36,7 +36,7 @@ use rocket::State;
 pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/");
     let js = if cfg!(debug_assertions) {
@@ -71,7 +71,7 @@ pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
 pub(crate) async fn lumina_js(state: &State<AppState>) -> RawJavaScript<String> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/static/lumina.min.mjs");
 
@@ -82,7 +82,7 @@ pub(crate) async fn lumina_js(state: &State<AppState>) -> RawJavaScript<String> 
 pub(crate) async fn lumina_d_js(state: &State<AppState>) -> RawJavaScript<String> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/static/lumina.mjs");
 
@@ -93,7 +93,7 @@ pub(crate) async fn lumina_d_js(state: &State<AppState>) -> RawJavaScript<String
 pub(crate) async fn lumina_css(state: &State<AppState>) -> RawCss<String> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/static/lumina.css");
 
@@ -104,7 +104,7 @@ pub(crate) async fn lumina_css(state: &State<AppState>) -> RawCss<String> {
 pub(crate) async fn licence(state: &State<AppState>) -> RawText<String> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/licence");
 
@@ -119,7 +119,7 @@ pub(crate) async fn license_redirect() -> rocket::response::Redirect {
 pub(crate) async fn logo_svg(state: &State<AppState>) -> (ContentType, &'static str) {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/static/logo.svg");
 
@@ -133,7 +133,7 @@ pub(crate) async fn logo_svg(state: &State<AppState>) -> (ContentType, &'static 
 pub(crate) async fn favicon(state: &State<AppState>) -> (ContentType, &'static [u8]) {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/favicon.ico");
     produce_logo_png()
@@ -143,7 +143,7 @@ pub(crate) async fn favicon(state: &State<AppState>) -> (ContentType, &'static [
 pub(crate) async fn logo_png(state: &State<AppState>) -> (ContentType, &'static [u8]) {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/static/logo.png");
     produce_logo_png()

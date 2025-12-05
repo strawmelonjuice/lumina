@@ -25,26 +25,34 @@ use crate::helpers::events::EventLogger;
 use crate::timeline;
 use crate::{info_elog, success_elog, warn_elog};
 use cynthia_con::{CynthiaColors, CynthiaStyles};
-use r2d2::Pool;
-use redis::Commands;
+use bb8::Pool;
+use bb8_postgres::PostgresConnectionManager;
+use bb8_redis::RedisConnectionManager;
 use tokio_postgres as postgres;
-use tokio_postgres::tls::NoTlsStream;
-use tokio_postgres::{Client, Connection, Socket};
+use tokio_postgres::NoTls;
+use std::time::Duration;    
 
-pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
-    let ev_log = EventLogger::new(&None).await;
+pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
+    let ev_log = EventLogger::new(&None);
     let redis_url =
         std::env::var("LUMINA_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".into());
-    let redis_pool: Pool<redis::Client> = {
+    let redis_pool = {
         info_elog!(ev_log, "Setting up Redis connection to {}...", redis_url);
-        let client = redis::Client::open(redis_url.clone()).map_err(LuminaError::Redis)?;
-        Pool::builder().build(client).map_err(LuminaError::R2D2Pool)
-    }?;
-    success_elog!(
-        ev_log,
-        "Redis connection to {} created successfully.",
-        redis_url
-    );
+        let manager = RedisConnectionManager::new(redis_url.clone()).map_err(LuminaError::Redis)?;
+        // Configure pool sizes
+        let redis_pool = Pool::builder()
+            .max_size(50)
+            .connection_timeout(Duration::from_secs(5))
+            .idle_timeout(Some(Duration::from_secs(300)))
+            .build(manager).await?;
+        success_elog!(
+            ev_log,
+            "Redis connection to {} created successfully.",
+            redis_url
+        );
+
+        redis_pool
+    };
 
     {
         let pg_config: tokio_postgres::Config = {
@@ -114,31 +122,25 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
             pg_config
         };
 
-        // Connect to the database
-        let conn: (Client, Connection<Socket, NoTlsStream>) = pg_config
-            .connect(postgres::tls::NoTls)
+        // Create Postgres connection pool
+        let pg_manager = PostgresConnectionManager::new(pg_config.clone(), NoTls);
+        let pg_pool = Pool::builder()
+            .build(pg_manager)
             .await
-            .map_err(LuminaError::Postgres)?;
-        tokio::spawn(conn.1);
-        // Create a second connection to the database for spawning the maintain function
-        let conn_two: (Client, Connection<Socket, NoTlsStream>) = pg_config
-            .connect(postgres::tls::NoTls)
-            .await
-            .map_err(LuminaError::Postgres)?;
-        tokio::spawn(conn_two.1);
+            .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
         {
-            conn.0
+            let pg_conn = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            pg_conn
                 .batch_execute(include_str!("../../SQL/create_pg.sql"))
                 .await
                 .map_err(LuminaError::Postgres)?;
 
             // Populate bloom filters
-            let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
+            let mut redis_conn = redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             let email_key = "bloom:email";
             let username_key = "bloom:username";
 
-            let rows = conn
-                .0
+            let rows = pg_conn
                 .query("SELECT email, username FROM users", &[])
                 .await
                 .map_err(LuminaError::Postgres)?;
@@ -148,36 +150,39 @@ pub(crate) async fn setup() -> Result<DbConn, LuminaError> {
                 let _: () = redis::cmd("BF.ADD")
                     .arg(email_key)
                     .arg(email)
-                    .query(&mut *redis_conn)
+                    .query_async(&mut *redis_conn)
+                    .await
                     .map_err(LuminaError::Redis)?;
                 let _: () = redis::cmd("BF.ADD")
                     .arg(username_key)
                     .arg(username)
-                    .query(&mut *redis_conn)
+                    .query_async(&mut *redis_conn)
+                    .await
                     .map_err(LuminaError::Redis)?;
             }
             info_elog!(ev_log, "Bloom filters populated from PostgreSQL.",);
         };
-        let conn_clone = conn_two.0;
-        let pg_config_clone = pg_config.clone();
+        let pg_pool_clone = pg_pool.clone();
         let redis_pool_clone = redis_pool.clone();
         tokio::spawn(async move {
-            maintain(DbConn::PgsqlConnection(
-                (conn_clone, pg_config_clone),
-                redis_pool_clone,
-            ))
+            maintain(PgConn {
+                postgres_pool: pg_pool_clone,
+                redis_pool: redis_pool_clone,
+            })
             .await
         });
-        Ok(DbConn::PgsqlConnection((conn.0, pg_config), redis_pool))
+        Ok(PgConn {
+            postgres_pool: pg_pool,
+            redis_pool,
+        })
     }
 }
 
 /// This enum contains the postgres and redis connection and pool respectively. It used to have more variants before, and maybe it will once again.
 #[derive()]
 pub enum DbConn {
-    // The config is also shared, so that for example the logger can set up its own connection, use this sparingly.
     /// The main database is a Postgres database in this variant.
-    PgsqlConnection((Client, postgres::Config), Pool<redis::Client>),
+    PgsqlConnection(Pool<PostgresConnectionManager<NoTls>>, Pool<RedisConnectionManager>),
 }
 
 pub(crate) trait DatabaseConnections {
@@ -185,86 +190,88 @@ pub(crate) trait DatabaseConnections {
     /// This is useful for functions that need to access redis but not the main database
     /// such as timeline cache management
     /// This returns a clone of the pool without recreating it entirely, so it is cheap to call
-    fn get_redis_pool(&self) -> Pool<redis::Client>;
+    fn get_redis_pool(&self) -> Pool<RedisConnectionManager>;
+
+    /// Get a reference to the Postgres pool
+    /// This returns a clone of the pool without recreating it entirely, so it is cheap to call
+    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>>;
 
     /// Recreate the database connection.
-    async fn recreate(&self) -> Result<Self, LuminaError>
+    async fn recreate(&self) -> PgConn
     where
         Self: Sized;
 }
 
 impl DatabaseConnections for DbConn {
     /// Recreate the database connection.
-    /// This clones the pool on sqlite and for redis, and creates a new connection on postgres.
-    async fn recreate(&self) -> Result<Self, LuminaError> {
-        match self {
-            DbConn::PgsqlConnection((_, config), redis_pool) => {
-                let c = config
-                    .connect(tokio_postgres::tls::NoTls)
-                    .await
-                    .map_err(LuminaError::Postgres)?
-                    .0;
-                let r = redis_pool.clone();
-
-                Ok(DbConn::PgsqlConnection((c, config.to_owned()), r))
-            }
+    /// This clones the pools - bb8 pools are cheap to clone as they share the underlying connections.
+      // This function converts a generic DbConn to the more concrete PgConn type. 
+      async fn recreate(&self) -> PgConn {
+        PgConn {
+            postgres_pool: self.get_postgres_pool(),
+            redis_pool: self.get_redis_pool(),
         }
     }
 
-    fn get_redis_pool(&self) -> Pool<redis::Client> {
+    fn get_redis_pool(&self) -> Pool<RedisConnectionManager> {
         match self {
-            DbConn::PgsqlConnection((_, _), redis_pool) => redis_pool.clone(),
+            DbConn::PgsqlConnection(_, redis_pool) => redis_pool.clone(),
+        }
+    }
+    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>> {
+        match self {
+            DbConn::PgsqlConnection(pg_pool, _) => pg_pool.clone(),
         }
     }
 }
 
+
 impl DatabaseConnections for PgConn {
-    fn get_redis_pool(&self) -> Pool<redis::Client> {
+    fn get_redis_pool(&self) -> Pool<RedisConnectionManager> {
         self.redis_pool.clone()
     }
 
-    async fn recreate(&self) -> Result<Self, LuminaError> {
-        let postgres = self
-            .postgres_config
-            .connect(tokio_postgres::tls::NoTls)
-            .await
-            .map_err(LuminaError::Postgres)?
-            .0;
-        let postgres_config = self.postgres_config.to_owned();
-        let redis_pool = self.redis_pool.clone();
-        Ok(PgConn {
-            postgres,
-            postgres_config,
-            redis_pool,
-        })
+  
+    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>> {
+        self.postgres_pool.clone()
+    }
+
+     async fn recreate(&self) -> PgConn
+        where
+            Self: Sized {
+        self.clone()
     }
 }
 /// Simplified type only accounting for the Postgres struct, since the enum adds some future flexibility, but also a lot of overhead.
 /// If all goes well, this PgConn type will have replaced DbConn entirely after a few iterations of improvement over the years.
 pub struct PgConn {
-    pub(crate) postgres: Client,
-    postgres_config: postgres::Config,
-    pub(crate) redis_pool: Pool<redis::Client>,
+    pub(crate) postgres_pool: Pool<PostgresConnectionManager<NoTls>>,
+    pub(crate) redis_pool: Pool<RedisConnectionManager>,
 }
 
-impl DbConn {
-    /// Converts/unwraps the generic DbConn type to it's more concrete PgConn counterpart.
-    pub(crate) fn to_pgconn(db: Self) -> PgConn {
-        match db {
-            Self::PgsqlConnection((a, b), c) => PgConn {
-                postgres: a,
-                postgres_config: b,
-                redis_pool: c,
-            },
+impl From<PgConn> for DbConn {
+    /// Converts/unwraps the more concrete PgConn type to the generic DbConn counterpart.
+    fn from(db: PgConn) -> Self {
+        Self::PgsqlConnection(db.postgres_pool, db.redis_pool)
+    }
+}
+
+impl Clone for PgConn {
+    fn clone(&self) -> Self {
+        PgConn {
+            postgres_pool: self.postgres_pool.clone(),
+            redis_pool: self.redis_pool.clone(),
         }
     }
 }
 
+
 // This function will be used to maintain the database, such as deleting old sessions
 // and managing timeline caches
-pub async fn maintain(db: DbConn) {
+pub async fn maintain(db: PgConn) {
+    let db = DbConn::from(db);
     match db {
-        DbConn::PgsqlConnection((client, _), redis_pool) => {
+        DbConn::PgsqlConnection(pg_pool, redis_pool) => {
             let mut session_interval = tokio::time::interval(std::time::Duration::from_secs(60));
             let mut cache_interval = tokio::time::interval(std::time::Duration::from_secs(300)); // 5 minutes
 
@@ -272,18 +279,22 @@ pub async fn maintain(db: DbConn) {
                 tokio::select! {
                     _ = session_interval.tick() => {
                         // Delete any sessions older than 20 days
-                        let _ = client
-                            .execute(
-                                "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
-                                &[],
-                            )
-                            .await;
+                        if let Ok(client) = pg_pool.get().await {
+                            let _ = client
+                                .execute(
+                                    "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
+                                    &[],
+                                )
+                                .await;
+                        }
                     }
                     _ = cache_interval.tick() => {
                         // Clean up expired timeline caches and manage cache invalidation
-                        if let Ok(mut redis_conn) = redis_pool.get() {
+                        if let Ok(mut redis_conn) = redis_pool.get().await {
                             let _ = cleanup_timeline_caches(&mut redis_conn).await;
-                            let _ = check_timeline_invalidations(&mut redis_conn, &client).await;
+                            if let Ok(pg_conn) = pg_pool.get().await {
+                                let _ = check_timeline_invalidations(&mut redis_conn, &pg_conn).await;
+                            }
                         }
                     }
                 }
@@ -293,7 +304,7 @@ pub async fn maintain(db: DbConn) {
 }
 
 // Clean up expired timeline cache entries
-async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(), LuminaError> {
+async fn cleanup_timeline_caches(redis_conn: &mut bb8::PooledConnection<'_, RedisConnectionManager>) -> Result<(), LuminaError> {
     let pattern = "timeline_cache:*";
     let mut cursor = 0;
 
@@ -302,7 +313,8 @@ async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(
             .cursor_arg(cursor)
             .arg("MATCH")
             .arg(pattern)
-            .query(redis_conn)
+            .query_async(&mut **redis_conn)
+            .await
             .map_err(LuminaError::Redis)?;
 
         cursor = result.0;
@@ -312,14 +324,22 @@ async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(
 
         for key in keys {
             // Check TTL, if -1 or 0, it should be cleaned up
-            let ttl: i64 = redis_conn.ttl(&key).map_err(LuminaError::Redis)?;
+            let ttl: i64 = redis::cmd("TTL")
+                .arg(&key)
+                .query_async(&mut **redis_conn)
+                .await
+                .map_err(LuminaError::Redis)?;
             if ttl == -1 || ttl == 0 {
                 expired_keys.push(key);
             }
         }
 
         if !expired_keys.is_empty() {
-            let _: () = redis_conn.del(&expired_keys).map_err(LuminaError::Redis)?;
+            let _: () = redis::cmd("DEL")
+                .arg(&expired_keys)
+                .query_async(&mut **redis_conn)
+                .await
+                .map_err(LuminaError::Redis)?;
         }
 
         if cursor == 0 {
@@ -332,11 +352,15 @@ async fn cleanup_timeline_caches(redis_conn: &mut redis::Connection) -> Result<(
 
 // Check for timeline changes and invalidate caches accordingly (PostgreSQL)
 async fn check_timeline_invalidations(
-    redis_conn: &mut redis::Connection,
-    client: &Client,
+    redis_conn: &mut bb8::PooledConnection<'_, RedisConnectionManager>,
+    client: &bb8::PooledConnection<'_, PostgresConnectionManager<NoTls>>,
 ) -> Result<(), LuminaError> {
     // Get the last check timestamp
-    let last_check: Option<String> = redis_conn.get("timeline_cache_last_check").unwrap_or(None);
+    let last_check: Option<String> = redis::cmd("GET")
+        .arg("timeline_cache_last_check")
+        .query_async(&mut **redis_conn)
+        .await
+        .unwrap_or(None);
 
     let query = if let Some(timestamp) = last_check {
         client
@@ -347,13 +371,13 @@ async fn check_timeline_invalidations(
             .await
     } else {
         // First run, don't invalidate anything
-        let _: () = redis_conn
-            .set(
-                "timeline_cache_last_check",
-                time::OffsetDateTime::now_utc()
-                    .format(&time::format_description::well_known::Rfc3339)
-                    .unwrap(),
-            )
+        let _: () = redis::cmd("SET")
+            .arg("timeline_cache_last_check")
+            .arg(time::OffsetDateTime::now_utc()
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap())
+            .query_async(&mut **redis_conn)
+            .await
             .map_err(LuminaError::Redis)?;
         return Ok(());
     };
@@ -366,24 +390,24 @@ async fn check_timeline_invalidations(
             }
 
             // Update last check timestamp
-            let _: () = redis_conn
-                .set(
-                    "timeline_cache_last_check",
-                    time::OffsetDateTime::now_utc()
-                        .format(&time::format_description::well_known::Rfc3339)
-                        .unwrap(),
-                )
+            let _: () = redis::cmd("SET")
+                .arg("timeline_cache_last_check")
+                .arg(time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap())
+                .query_async(&mut **redis_conn)
+                .await
                 .map_err(LuminaError::Redis)?;
         }
         Err(_) => {
             // If query fails, just update timestamp to avoid repeated failures
-            let _: () = redis_conn
-                .set(
-                    "timeline_cache_last_check",
-                    time::OffsetDateTime::now_utc()
-                        .format(&time::format_description::well_known::Rfc3339)
-                        .unwrap(),
-                )
+            let _: () = redis::cmd("SET")
+                .arg("timeline_cache_last_check")
+                .arg(time::OffsetDateTime::now_utc()
+                    .format(&time::format_description::well_known::Rfc3339)
+                    .unwrap())
+                .query_async(&mut **redis_conn)
+                .await
                 .map_err(LuminaError::Redis)?;
         }
     }

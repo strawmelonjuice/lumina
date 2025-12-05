@@ -53,7 +53,7 @@ pub(crate) async fn wsconnection<'k>(
 ) -> ws::Channel<'k> {
     let ev_log = {
         let appstate = state.0.clone();
-        appstate.event_logger.clone().await
+        appstate.event_logger.clone()
     };
     http_code_elog!(ev_log, 200, "/connection");
     use rocket::futures::{SinkExt, StreamExt};
@@ -153,7 +153,7 @@ pub(crate) async fn wsconnection<'k>(
                                                                                 "User created: {}",
                                                                                 user.clone().username.color_bright_cyan()
                                                                             );
-													match User::create_session(user, db, ev_log.clone().await).await {
+													match User::create_session(user, db, ev_log.clone()).await {
 														Ok((session_reference, user)) => {
 															client_session_data.user =
 																Some(user.clone());
@@ -173,8 +173,8 @@ pub(crate) async fn wsconnection<'k>(
 															match e {
 																LuminaError::Postgres(e) =>
 																	error_elog!(ev_log,"While creating session token: {:?}", e),
-																LuminaError::R2D2Pool(e) =>
-																	warn_elog!(ev_log,"There was an error creating session token: {:?}", e),
+																LuminaError::Bb8Pool(e) =>
+																	warn_elog!(ev_log,"There was an error creating session token: {}", e),
 																_ => {}
 															}
 															// I would return a more specific error message
@@ -286,7 +286,7 @@ pub(crate) async fn wsconnection<'k>(
 										} else {
 											let appstate = state.0.clone();
 											let db = &appstate.db.lock().await;
-											let msgback = match User::authenticate(email_username.clone(), password, db, ev_log.clone().await).await {
+											let msgback = match User::authenticate(email_username.clone(), password, db, ev_log.clone()).await {
 												Ok((session_reference, user)) => {
 													incoming_elog!(ev_log,"User {} authenticated to session with id {}.\n{}", user.username.clone().color_bright_cyan(), session_reference.session_id.to_string().color_pink(), format!("(User id: {})", user.id).style_dim());
 													client_session_data.user = Some(user.clone());
@@ -342,7 +342,7 @@ pub(crate) async fn wsconnection<'k>(
 										let db = &appstate.db.lock().await;
 										// Fetch post IDs for the requested timeline
 										match fetch_timeline_post_ids_by_timeline_name(
-											ev_log.clone().await,
+											ev_log.clone(),
 											db,
 											&name,
 											client_session_data.user.clone().unwrap(),
