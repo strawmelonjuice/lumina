@@ -62,7 +62,10 @@ impl User {
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
@@ -84,7 +87,10 @@ impl User {
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(|_| LuminaError::BcryptError)?;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
@@ -127,7 +133,10 @@ impl User {
         };
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let user = client
 					.query_one(
 						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
@@ -154,7 +163,10 @@ impl User {
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
@@ -185,7 +197,10 @@ impl User {
     ) -> Result<User, LuminaError> {
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let user = client
 					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 					.await
@@ -211,8 +226,14 @@ pub(crate) async fn register_validitycheck(
         // Check if the email or username is already in use using fastbloom algorithm with Redis, and fallback to DB check if not found. If not in either, we can go on.
         match db {
             DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
-                let mut redis_conn = redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let client = pg_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let mut redis_conn = redis_pool
+                    .get()
+                    .await
+                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = String::from("bloom:email");
                 let username_key = String::from("bloom:username");

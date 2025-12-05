@@ -24,7 +24,7 @@
  */
 
 use crate::LuminaError;
-use crate::database::{PgConn};
+use crate::database::PgConn;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use time::OffsetDateTime;
 
