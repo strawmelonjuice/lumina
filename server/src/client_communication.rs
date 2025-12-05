@@ -74,6 +74,12 @@ pub(crate) async fn wsconnection<'k>(
 							}
 							possibly_json => {
 								match serde_json::from_str::<Message>(possibly_json) {
+									Ok(Message::PostViewRequest { post_id }) =>
+									{
+										info_elog!(
+										ev_log, "Post was requested: {}", post_id);
+										todo!("PostViewRequest not yet implemented!")
+									}
 									Ok(Message::Introduction { client_kind, try_revive }) => {
 										match client_kind.as_str() {
 											"web" => {
@@ -512,7 +518,9 @@ pub(crate) enum Message {
         /// Whether there are more pages available
         has_more: bool,
     },
-
+    /// User would like to view a post and its details.
+    #[serde(rename = "post_view_request")]
+    PostViewRequest { post_id: Uuid },
     /// "Yeah I don't know what I'm sending either!"
     #[serde(rename = "unknown")]
     Unknown,
