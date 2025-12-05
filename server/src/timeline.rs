@@ -181,7 +181,10 @@ pub async fn invalidate_timeline_cache(
 async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<usize, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let client = pg_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let row = client
                 .query_one(
@@ -206,7 +209,10 @@ async fn fetch_timeline_from_db(
 ) -> Result<Vec<String>, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let client = pg_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let rows = client
 				.query(
@@ -238,9 +244,10 @@ pub async fn fetch_timeline_post_ids(
 
     // Get Redis connection
     let mut redis_conn = match db {
-        DbConn::PgsqlConnection(_, redis_pool) => {
-            redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?
-        }
+        DbConn::PgsqlConnection(_, redis_pool) => redis_pool
+            .get()
+            .await
+            .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?,
     };
 
     // Log the requested timeline id for tracking
@@ -360,7 +367,10 @@ pub async fn add_to_timeline(
     // Add to database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let client = pg_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
@@ -372,7 +382,10 @@ pub async fn add_to_timeline(
                 .map_err(LuminaError::Postgres)?;
 
             // Invalidate cache
-            let mut redis_conn = redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let mut redis_conn = redis_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
                 error_elog!(
                     event_logger,
@@ -398,7 +411,10 @@ pub async fn remove_from_timeline(
     // Remove from database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let client = pg_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
@@ -410,7 +426,10 @@ pub async fn remove_from_timeline(
                 .map_err(LuminaError::Postgres)?;
 
             // Invalidate cache
-            let mut redis_conn = redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            let mut redis_conn = redis_pool
+                .get()
+                .await
+                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
             if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
                 error_elog!(
                     event_logger,
