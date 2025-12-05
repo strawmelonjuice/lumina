@@ -23,14 +23,10 @@
 #[derive(Debug)]
 pub(crate) enum LuminaError {
     ConfInvalid(String),
-    R2D2Pool(r2d2::Error),
+    Bb8Pool(String),
     Postgres(crate::postgres::Error),
     Unknown,
-    /// Rocket failure wrapper, due to size, we only store the error source here. Construct with:
-    /// ```rust
-    /// (LuminaError::RocketFaillure, Some<rocket::Error>)
-    /// ```
-    RocketFaillure,
+    RocketFaillure(Box<rocket::Error>),
     BcryptError,
     RegisterEmailInUse,
     RegisterUsernameInUse,
@@ -43,4 +39,21 @@ pub(crate) enum LuminaError {
     Redis(redis::RedisError),
     SerializationError(String),
     JoinFaillure,
+}
+impl From<rocket::Error> for LuminaError {
+    fn from(err: rocket::Error) -> Self {
+        LuminaError::RocketFaillure(Box::new(err))
+    }
+}
+
+impl From<crate::postgres::Error> for LuminaError {
+    fn from(err: crate::postgres::Error) -> Self {
+        LuminaError::Postgres(err)
+    }
+}
+
+impl From<redis::RedisError> for LuminaError {
+    fn from(err: redis::RedisError) -> Self {
+        LuminaError::Redis(err)
+    }
 }

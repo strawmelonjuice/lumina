@@ -61,7 +61,8 @@ impl User {
     }
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
-            DbConn::PgsqlConnection((client, _), _) => {
+            DbConn::PgsqlConnection(pg_pool, _) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
@@ -82,7 +83,8 @@ impl User {
         let password =
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(|_| LuminaError::BcryptError)?;
         match db {
-            DbConn::PgsqlConnection((client, _), _) => {
+            DbConn::PgsqlConnection(pg_pool, _) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
@@ -124,7 +126,8 @@ impl User {
             "username"
         };
         match db {
-            DbConn::PgsqlConnection((client, _), _) => {
+            DbConn::PgsqlConnection(pg_pool, _) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let user = client
 					.query_one(
 						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
@@ -150,7 +153,8 @@ impl User {
         let user = self;
         let user_id = user.id;
         match db {
-            DbConn::PgsqlConnection((client, _), _) => {
+            DbConn::PgsqlConnection(pg_pool, _) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
@@ -180,7 +184,8 @@ impl User {
         db: &DbConn,
     ) -> Result<User, LuminaError> {
         match db {
-            DbConn::PgsqlConnection((client, _), _) => {
+            DbConn::PgsqlConnection(pg_pool, _) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 let user = client
 					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 					.await
@@ -205,15 +210,17 @@ pub(crate) async fn register_validitycheck(
     {
         // Check if the email or username is already in use using fastbloom algorithm with Redis, and fallback to DB check if not found. If not in either, we can go on.
         match db {
-            DbConn::PgsqlConnection((client, _), redis_pool) => {
-                let mut redis_conn = redis_pool.get().map_err(LuminaError::R2D2Pool)?;
+            DbConn::PgsqlConnection(pg_pool, redis_pool) => {
+                let client = pg_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                let mut redis_conn = redis_pool.get().await.map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = String::from("bloom:email");
                 let username_key = String::from("bloom:username");
                 let email_exists: bool = redis::cmd("BF.EXISTS")
                     .arg(&email_key)
                     .arg(&email)
-                    .query(&mut *redis_conn)
+                    .query_async(&mut *redis_conn)
+                    .await
                     .unwrap_or(false);
                 if email_exists {
                     // Fallback to DB check if in bloom filter
@@ -228,7 +235,8 @@ pub(crate) async fn register_validitycheck(
                 let username_exists: bool = redis::cmd("BF.EXISTS")
                     .arg(&username_key)
                     .arg(&username)
-                    .query(&mut *redis_conn)
+                    .query_async(&mut *redis_conn)
+                    .await
                     .unwrap_or(false);
                 if username_exists {
                     // Fallback to DB check if in bloom filter
@@ -250,7 +258,8 @@ pub(crate) async fn register_validitycheck(
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&email_key)
                         .arg(&email)
-                        .query(&mut *redis_conn)
+                        .query_async(&mut *redis_conn)
+                        .await
                         .unwrap_or(());
                     return Err(LuminaError::RegisterEmailInUse);
                 }
@@ -262,7 +271,8 @@ pub(crate) async fn register_validitycheck(
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&username_key)
                         .arg(&username)
-                        .query(&mut *redis_conn)
+                        .query_async(&mut *redis_conn)
+                        .await
                         .unwrap_or(());
                     return Err(LuminaError::RegisterUsernameInUse);
                 }

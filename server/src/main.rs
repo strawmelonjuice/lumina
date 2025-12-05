@@ -30,6 +30,7 @@ mod database;
 pub mod errors;
 pub mod helpers;
 mod staticroutes;
+#[cfg(test)]
 mod tests;
 mod timeline;
 use helpers::events::EventLogger;
@@ -55,7 +56,7 @@ struct ServerConfig {
     port: u16,
     host: IpAddr,
 }
-use crate::database::DatabaseConnections;
+use crate::database::{DatabaseConnections, PgConn};
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use dotenv::dotenv;
@@ -78,7 +79,7 @@ fn config_get() -> Result<ServerConfig, LuminaError> {
 #[rocket::main]
 async fn main() {
     let me = format!("Lumina Server, version {}", env!("CARGO_PKG_VERSION"));
-    let ev_log: EventLogger = EventLogger::new(&None).await;
+    let ev_log: EventLogger = EventLogger::new(&None);
     let args: Vec<String> = std::env::args().skip(1).collect();
     match (
         args.is_empty(),
@@ -102,8 +103,8 @@ async fn main() {
                 Ok(config) => {
                     let mut interval =
                         tokio::time::interval(std::time::Duration::from_millis(3000));
-                    let mut db_mut: Option<DbConn> = None;
-                    let ev_log: EventLogger = EventLogger::new(&None).await;
+                    let mut db_mut: Option<PgConn> = None;
+                    let ev_log: EventLogger = EventLogger::new(&None);
 
                     let mut db_tries: usize = 0;
                     while db_mut.is_none() {
@@ -131,7 +132,7 @@ async fn main() {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }
-                            Err(LuminaError::R2D2Pool(a)) => {
+                            Err(LuminaError::Bb8Pool(a)) => {
                                 error_elog!(ev_log, "While setting up database pool: {}", a);
                                 None
                             }
@@ -166,13 +167,14 @@ async fn main() {
                     }
                     // If we got here, we have a database connection.
 
-                    let db = db_mut.unwrap();
-                    let pg = DbConn::to_pgconn(db.recreate().await.unwrap());
-                    let ev_log = EventLogger::from_db(&pg).await;
+                    let pg = db_mut.unwrap();
+                    let db: DbConn = pg.clone().into();
+                    let ev_log: EventLogger = EventLogger::new(&Some(pg));
                     success_elog!(ev_log, "Database connected.");
 
                     if cfg!(debug_assertions) {
-                        let mut redis_conn = db.get_redis_pool().get().unwrap();
+                        let redis_pool = db.get_redis_pool();
+                        let mut redis_conn = redis_pool.get().await.unwrap();
                         timeline::invalidate_timeline_cache(
                             &mut redis_conn,
                             "00000000-0000-0000-0000-000000000000",
@@ -180,7 +182,7 @@ async fn main() {
                         .await
                         .unwrap();
                         let global = timeline::fetch_timeline_post_ids(
-                            ev_log.clone().await,
+                            ev_log.clone(),
                             &db,
                             "00000000-0000-0000-0000-000000000000",
                             None,
@@ -195,8 +197,9 @@ async fn main() {
                             let generated_uuid = Uuid::new_v4();
                             let hello_content = "Hello world";
 
-                            match db.recreate().await.unwrap() {
-                                DbConn::PgsqlConnection((client, _), _) => {
+                            match db.recreate().await.into() {
+                                DbConn::PgsqlConnection(pg_pool, _) => {
+                                    let client = pg_pool.get().await.unwrap();
                                     // Insert Hello World post and timeline entry if not exists
                                     let user_1_: Result<user::User, LuminaError> =
                                         match user::User::create_user(
@@ -252,7 +255,7 @@ async fn main() {
 													&[&generated_uuid, &user_1.id, &hello_content],
 												)
 												.await;
-                                            let add_clone = ev_log.clone().await;
+                                            let add_clone = ev_log.clone();
                                             timeline::add_to_timeline(
                                                 add_clone,
                                                 &db,
@@ -277,7 +280,7 @@ async fn main() {
                     let appstate = AppState(Arc::from(InnerAppState {
                         config: config.clone(),
                         db: Mutex::from(db),
-                        event_logger: ev_log.clone().await,
+                        event_logger: ev_log.clone(),
                     }));
 
                     // Create a simple in-memory IP-based rate limiter.
@@ -370,13 +373,13 @@ async fn main() {
                     let result = {
                         let g = s.await;
                         match g {
-                            Ok(x) => x.map_err(|e| (LuminaError::RocketFaillure, Some(e))),
-                            Err(..) => Err((LuminaError::JoinFaillure, None)),
+                            Ok(x) => x.map_err(|e| LuminaError::RocketFaillure(Box::new(e))),
+                            Err(..) => Err(LuminaError::JoinFaillure),
                         }
                     };
                     match result {
                         Ok(_) => {}
-                        Err((LuminaError::RocketFaillure, Some(e))) => {
+                        Err(LuminaError::RocketFaillure(e)) => {
                             // This handling should slowly expand as I run into newer ones, the 'defh' (default handling) is good enough, but for the most-bumped into errors, I'd like to give more human responses.
                             let defh =
                                 async || error_elog!(ev_log, "Error starting server: {:?}", e);
