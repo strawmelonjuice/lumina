@@ -28,12 +28,13 @@ import lustre/attribute
 import plinth/javascript/global
 
 pub fn get_color_scheme(_model_) -> attribute.Attribute(Msg) {
-  // Will get overwritten by model later
+  // Will get overruled by model later
   // For now, just return system default
-  case dom.get_color_scheme() {
-    "dark" -> attribute.attribute("data-theme", "lumina-dark")
-    _ -> attribute.attribute("data-theme", "lumina-light")
-  }
+  attribute.none()
+  // case dom.get_color_scheme() {
+  // "dark" -> attribute.attribute("data-theme", "lumina-dark")
+  // _ -> attribute.attribute("data-theme", "lumina-light")
+  // }
 }
 
 /// Under which key the model is stored in local storage.
