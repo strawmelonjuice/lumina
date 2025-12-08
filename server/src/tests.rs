@@ -16,8 +16,10 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::mem;
 use crate::database::{self, DatabaseConnections};
 use crate::timeline;
+use crate::errors::LuminaError;
 
 #[tokio::test]
 async fn test_database_setup() {
@@ -88,4 +90,17 @@ async fn test_timeline_invalidation() {
         .unwrap_or(None);
 
     assert!(result.is_none(), "Cache should be invalidated");
+}
+
+
+#[test]
+fn print_sizes() {
+    println!("Size of LuminaError: {} bytes", mem::size_of::<LuminaError>());
+    println!("Size of Rocket Error: {} bytes", mem::size_of::<rocket::Error>());
+    println!("Size of Postgres Error: {} bytes", mem::size_of::<crate::postgres::Error>());
+    println!("Size of Redis Error: {} bytes", mem::size_of::<redis::RedisError>());
+        println!("Size of DbError: {} bytes", mem::size_of::<crate::errors::LuminaDbError>());
+        println!("Size of bb8 RunError Postgres: {} bytes", mem::size_of::<bb8::RunError<crate::postgres::Error>>());
+        println!("Size of bb8 RunError Redis: {} bytes", mem::size_of::<bb8::RunError<redis::RedisError>>());
+    println!("Size of String: {} bytes", mem::size_of::<String>());
 }

@@ -29,7 +29,7 @@ use bb8_postgres::PostgresConnectionManager;
 use bb8_redis::RedisConnectionManager;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use std::time::Duration;
-use tokio_postgres as postgres;
+use crate::postgres;
 use tokio_postgres::NoTls;
 
 pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
@@ -38,7 +38,7 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
         std::env::var("LUMINA_REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".into());
     let redis_pool = {
         info_elog!(ev_log, "Setting up Redis connection to {}...", redis_url);
-        let manager = RedisConnectionManager::new(redis_url.clone()).map_err(LuminaError::Redis)?;
+        let manager = RedisConnectionManager::new(redis_url.clone())?;
         // Configure pool sizes
         let redis_pool = Pool::builder()
             .max_size(50)
@@ -127,30 +127,24 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
         let pg_manager = PostgresConnectionManager::new(pg_config.clone(), NoTls);
         let pg_pool = Pool::builder()
             .build(pg_manager)
-            .await
-            .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+            .await?;
         {
             let pg_conn = pg_pool
                 .get()
-                .await
-                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                .await?;
             pg_conn
                 .batch_execute(include_str!("../../SQL/create_pg.sql"))
-                .await
-                .map_err(LuminaError::Postgres)?;
-
+                .await?;
             // Populate bloom filters
             let mut redis_conn = redis_pool
                 .get()
-                .await
-                .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                .await?;
             let email_key = "bloom:email";
             let username_key = "bloom:username";
 
             let rows = pg_conn
                 .query("SELECT email, username FROM users", &[])
-                .await
-                .map_err(LuminaError::Postgres)?;
+                .await?;
             for row in rows {
                 let email: String = row.get(0);
                 let username: String = row.get(1);
@@ -159,13 +153,13 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
                     .arg(email)
                     .query_async(&mut *redis_conn)
                     .await
-                    .map_err(LuminaError::Redis)?;
+                    ?;
                 let _: () = redis::cmd("BF.ADD")
                     .arg(username_key)
                     .arg(username)
                     .query_async(&mut *redis_conn)
                     .await
-                    .map_err(LuminaError::Redis)?;
+                    ?;
             }
             info_elog!(ev_log, "Bloom filters populated from PostgreSQL.",);
         };
@@ -325,7 +319,7 @@ async fn cleanup_timeline_caches(
             .arg(pattern)
             .query_async(&mut **redis_conn)
             .await
-            .map_err(LuminaError::Redis)?;
+            ?;
 
         cursor = result.0;
         let keys = result.1;
@@ -338,7 +332,7 @@ async fn cleanup_timeline_caches(
                 .arg(&key)
                 .query_async(&mut **redis_conn)
                 .await
-                .map_err(LuminaError::Redis)?;
+                ?;
             if ttl == -1 || ttl == 0 {
                 expired_keys.push(key);
             }
@@ -349,7 +343,7 @@ async fn cleanup_timeline_caches(
                 .arg(&expired_keys)
                 .query_async(&mut **redis_conn)
                 .await
-                .map_err(LuminaError::Redis)?;
+                ?;
         }
 
         if cursor == 0 {
@@ -390,7 +384,7 @@ async fn check_timeline_invalidations(
             )
             .query_async(&mut **redis_conn)
             .await
-            .map_err(LuminaError::Redis)?;
+            ?;
         return Ok(());
     };
 
@@ -411,7 +405,7 @@ async fn check_timeline_invalidations(
                 )
                 .query_async(&mut **redis_conn)
                 .await
-                .map_err(LuminaError::Redis)?;
+                ?;
         }
         Err(_) => {
             // If query fails, just update timestamp to avoid repeated failures
@@ -424,7 +418,7 @@ async fn check_timeline_invalidations(
                 )
                 .query_async(&mut **redis_conn)
                 .await
-                .map_err(LuminaError::Redis)?;
+                ?;
         }
     }
 

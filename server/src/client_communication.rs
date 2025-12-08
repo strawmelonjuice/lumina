@@ -28,6 +28,7 @@
  */
 
 extern crate rocket;
+use crate::errors::LuminaDbError;
 use crate::rate_limiter::RateLimit;
 use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
@@ -107,15 +108,15 @@ pub(crate) async fn wsconnection<'k>(
 													}
 													Err(e) => {
 														match e {
-															LuminaError::Postgres(postgres_error) => {
-																// Check if it's a "no rows returned" type error
-																if postgres_error.to_string().contains("no rows") || postgres_error.to_string().contains("RowCount") {
-																	info_elog!( ev_log,"Session revival failed: token not found or expired.");
-																} else {
-																	info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
+															LuminaError::DbError(LuminaDbError::Postgres(postgres_error)) => {
+																	// Check if it's a "no rows returned" type error
+																	if postgres_error.to_string().contains("no rows") || postgres_error.to_string().contains("RowCount") {
+																		info_elog!( ev_log,"Session revival failed: token not found or expired.");
+																	} else {
+																		info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
+																	}
 																}
-															}
-
+															
 															_ => {
 																info_elog!(ev_log,"Session revival failed: {:?}", e);
 															}
@@ -177,9 +178,9 @@ pub(crate) async fn wsconnection<'k>(
 														}
 														Err(e) => {
 															match e {
-																LuminaError::Postgres(e) =>
+																LuminaError::DbError(crate::errors::LuminaDbError::Postgres(e)) =>
 																	error_elog!(ev_log,"While creating session token: {:?}", e),
-																LuminaError::Bb8Pool(e) =>
+																LuminaError::Bb8RunErrorPg(e) =>
 																	warn_elog!(ev_log,"There was an error creating session token: {}", e),
 																_ => {}
 															}
