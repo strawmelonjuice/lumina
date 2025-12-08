@@ -24,22 +24,24 @@ tools.watchexec = "latest"
 run = "watchexec -c clear -restart -e rs,toml 'clear ; cargo clippy'"
 
 
-[test]
+[local-devel-test]
+alias = "test"
 description = "Run the check command on both server and client."
 run = { tasks = ["check-server", "check-client"] }
 
-[test-server]
+[local-devel-test-server]
 depends = ["build-client"]
 hide = true
 run = "cargo test"
 dir = "./server"
-
-[test-client]
+env.LUMINA_POSTGRES_PASSWORD="lumina_pw"
+    
+[local-devel-test-client]
 hide = true
 run = "gleam test"
 dir = "./client/"
 
-[test-watch]
+[local-devel-test-watch]
 tools.watchexec = "latest"
 description = "Run the server in development mode with file watching"
 run = "mise watch --restart -e rs,gleam,toml,css,ts,json --clear=clear test"

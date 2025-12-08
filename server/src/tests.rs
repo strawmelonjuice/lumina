@@ -23,8 +23,9 @@ use crate::errors::LuminaError;
 
 #[tokio::test]
 async fn test_database_setup() {
-    let result = database::setup().await;
-    assert!(result.is_ok(), "Database setup should succeed");
+    let result = database::setup().await.expect("Database setup should succeed.");
+    assert!(result.get_postgres_pool().get().await.is_ok(), "Should get Postgres connection");
+    assert!(result.get_redis_pool().get().await.is_ok(), "Should get Redis connection");
 }
 
 #[tokio::test]
