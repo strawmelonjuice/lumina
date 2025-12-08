@@ -335,6 +335,9 @@ pub(crate) async fn wsconnection<'k>(
 														STANDARD.encode(include_bytes!("../../assets/svgs/dummy_user_120px.svg")),
 													)),
 													uuid: user.id.to_string(),
+													//TODO: Fetch actual unread notification count
+													//Based on how many notifications are younger than last time user checked notifications. (WsMessage is sent when user opens notifications)
+													unread_notifications: 11
 												};
 												let msg_json = msgtojson(response);
 												// println!("Sending own user information response: {}", msg_json);
@@ -503,6 +506,7 @@ pub(crate) enum Message {
         // Optional field populated with mime type and base64 of a profile picture.
         avatar: Option<(String, String)>,
         uuid: String,
+        unread_notifications: u64,
     },
     /// Requests a list of strings to represent a certain timeline or bubble timeline.
     #[serde(rename = "timeline_request")]

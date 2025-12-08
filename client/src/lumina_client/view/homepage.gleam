@@ -60,6 +60,8 @@ pub fn view(model: model_type.Model) {
     user:,
     ..,
   ) = model
+  let assert Some(user) = user
+    as "User must be logged in to see homepage, got None from model where a user-submodel was expected."
 
   let timeline_name = option.unwrap(timeline_name, "global")
   let modal_element = case
@@ -257,8 +259,19 @@ pub fn view(model: model_type.Model) {
               html.span([attribute.class("dock-label")], [html.text("Create")]),
             ],
           ),
+
           html.button([], [
-            html.section([], [html.text("Notifications svg here")]),
+            html.div([attribute.class("indicator")], [
+              case user.notifs.unread_count {
+                0 -> element.none()
+                n ->
+                  html.span(
+                    [attribute.class("indicator-item badge badge-secondary")],
+                    [html.text(int.to_string(n))],
+                  )
+              },
+              svgs.archive_box("size-[1.2em]"),
+            ]),
             html.span([attribute.class("dock-label")], [
               html.text("Notifications"),
             ]),
@@ -426,41 +439,27 @@ pub fn view(model: model_type.Model) {
         ]),
       ],
     ),
-    html.li([attribute.class("lg:hidden ")], [
-      html.label(
+    html.li([], [
+      html.button(
         [
-          attribute.class("drawer-button btn md:btn-neutral btn-ghost"),
-          attribute.for("timelineswitcher"),
+          attribute.class("btn md:btn-neutral btn-ghost"),
+          event.on_click(SetModal("selfmenu")),
         ],
-        [element.text("Switch timeline")],
+        [
+          html.span([attribute.class("hidden md:inline")], [
+            element.text("@" <> user.username),
+          ]),
+          html.div([attribute.class("avatar")], [
+            html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
+              html.img([
+                attribute.src(user.avatar),
+                attribute.alt(user.username),
+              ]),
+            ]),
+          ]),
+        ],
       ),
     ]),
-    case user {
-      Some(user) -> {
-        html.li([], [
-          html.button(
-            [
-              attribute.class("btn md:btn-neutral btn-ghost"),
-              event.on_click(SetModal("selfmenu")),
-            ],
-            [
-              html.span([attribute.class("hidden md:inline")], [
-                element.text("@" <> user.username),
-              ]),
-              html.div([attribute.class("avatar")], [
-                html.div([attribute.class("h-8 w-8 mask-squircle mask")], [
-                  html.img([
-                    attribute.src(user.avatar),
-                    attribute.alt(user.username),
-                  ]),
-                ]),
-              ]),
-            ],
-          ),
-        ])
-      }
-      None -> element.none()
-    },
   ])
 }
 
