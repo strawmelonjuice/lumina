@@ -65,11 +65,11 @@ impl User {
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 let password: String = row.get(0);
                 Ok(password)
             }
@@ -90,13 +90,13 @@ impl User {
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
                     .query("SELECT * FROM users WHERE email = $1", &[&email])
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 if !email_exists.is_empty() {
                     return Err(LuminaError::RegisterEmailInUse);
                 }
@@ -104,7 +104,7 @@ impl User {
                 let username_exists = client
                     .query("SELECT * FROM users WHERE username = $1", &[&username])
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 if !username_exists.is_empty() {
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
@@ -112,7 +112,7 @@ impl User {
                 let id = client
 					.query_one("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &[&email, &username, &password])
 					.await
-					.map_err(LuminaError::Postgres)?;
+					?;
                 Ok(User {
                     id: id.get(0),
                     email,
@@ -136,14 +136,14 @@ impl User {
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 let user = client
 					.query_one(
 						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
 						&[&identifier],
 					)
 					.await
-					.map_err(LuminaError::Postgres)?;
+					?;
                 Ok(User {
                     id: user.get(0),
                     email: user.get(1),
@@ -166,7 +166,7 @@ impl User {
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
@@ -174,7 +174,7 @@ impl User {
                         &[&user_id, &session_key],
                     )
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 info_elog!(
                     ev_log,
                     "New session created by {}",
@@ -200,11 +200,11 @@ impl User {
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 let user = client
 					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 					.await
-					.map_err(LuminaError::Postgres)?;
+					?;
                 Ok(User {
                     id: user.get(0),
                     email: user.get(1),
@@ -229,11 +229,11 @@ pub(crate) async fn register_validitycheck(
                 let client = pg_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 let mut redis_conn = redis_pool
                     .get()
                     .await
-                    .map_err(|e| LuminaError::Bb8Pool(e.to_string()))?;
+                    ?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = String::from("bloom:email");
                 let username_key = String::from("bloom:username");
@@ -248,7 +248,7 @@ pub(crate) async fn register_validitycheck(
                     let email_db = client
                         .query("SELECT * FROM users WHERE email = $1", &[&email])
                         .await
-                        .map_err(LuminaError::Postgres)?;
+                        ?;
                     if !email_db.is_empty() {
                         return Err(LuminaError::RegisterEmailInUse);
                     }
@@ -264,7 +264,7 @@ pub(crate) async fn register_validitycheck(
                     let username_db = client
                         .query("SELECT * FROM users WHERE username = $1", &[&username])
                         .await
-                        .map_err(LuminaError::Postgres)?;
+                        ?;
                     if !username_db.is_empty() {
                         return Err(LuminaError::RegisterUsernameInUse);
                     }
@@ -273,7 +273,7 @@ pub(crate) async fn register_validitycheck(
                 let email_db = client
                     .query("SELECT * FROM users WHERE email = $1", &[&email])
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 if !email_db.is_empty() {
                     // Update bloom filter after DB check
                     let _: () = redis::cmd("BF.ADD")
@@ -287,7 +287,7 @@ pub(crate) async fn register_validitycheck(
                 let username_db = client
                     .query("SELECT * FROM users WHERE username = $1", &[&username])
                     .await
-                    .map_err(LuminaError::Postgres)?;
+                    ?;
                 if !username_db.is_empty() {
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&username_key)

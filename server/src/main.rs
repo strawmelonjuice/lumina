@@ -128,15 +128,19 @@ async fn main() {
                                 None
                             }
 
-                            Err(LuminaError::Postgres(a)) => {
+                            Err(LuminaError::DbError(crate::errors::LuminaDbError::Postgres(a))) => {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }
-                            Err(LuminaError::Bb8Pool(a)) => {
+                            Err(LuminaError::Bb8RunErrorPg(a)) => {
                                 error_elog!(ev_log, "While setting up database pool: {}", a);
                                 None
                             }
-                            Err(LuminaError::Redis(a)) => {
+                            Err(LuminaError::DbError(crate::errors::LuminaDbError::Redis(a))) => {
+                                error_elog!(ev_log, "While connecting to Redis: {}", a);
+                                None
+                            }
+                            Err(LuminaError::Bb8RunErrorRedis(a)) => {
                                 error_elog!(ev_log, "While connecting to Redis: {}", a);
                                 None
                             }
