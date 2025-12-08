@@ -17,9 +17,10 @@ depends = "build-styles"
 dir = "./client/"
 
 [build-styles]
+tools."npm:@tailwindcss/cli" = "latest"
 description = "Build the styles for Lumina"
 depends = "bun-install"
-run = ["bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css"]
+run = ["tailwindcss -i ./app.css -o ./priv/static/lumina_client.css"]
 dir = "./client/"
 
 [bun-install]
