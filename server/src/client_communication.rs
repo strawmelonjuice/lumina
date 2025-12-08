@@ -42,6 +42,7 @@ use cynthia_con::{CynthiaColors, CynthiaStyles};
 use rocket::State;
 use std::net::IpAddr;
 use uuid::Uuid;
+use ws::frame::{CloseCode, CloseFrame};
 
 #[get("/connection")]
 pub(crate) async fn wsconnection<'k>(
@@ -116,7 +117,7 @@ pub(crate) async fn wsconnection<'k>(
 																		info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
 																	}
 																}
-															
+
 															_ => {
 																info_elog!(ev_log,"Session revival failed: {:?}", e);
 															}
@@ -396,7 +397,10 @@ pub(crate) async fn wsconnection<'k>(
 										error_elog!(ev_log, "Error deserialising message: {:?}\n\n{}" , e,
                                                             format!("The message: {}", possibly_json).style_dim()
                                                             );
-										let _ = stream.send(ws::Message::from("unknown")).await;
+										let _ = stream.close(Some(CloseFrame {
+											code: CloseCode::Invalid,
+											reason: std::borrow::Cow::Borrowed("Serialisation error"),
+										})).await;
 									}
 								}
 							}
