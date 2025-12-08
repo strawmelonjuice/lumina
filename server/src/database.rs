@@ -19,7 +19,7 @@
  *     You should have received a copy of the GNU Affero General Public License
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+use crate::EnvVar::*;
 use crate::errors::LuminaError::{self};
 use crate::helpers::events::EventLogger;
 use crate::timeline;
@@ -84,7 +84,7 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
             // Parse the port as u16, if it fails, return an error
             pg_config.port(port.parse::<u16>().map_err(|_| {
                 LuminaError::ConfInvalid(
-                    "LUMINA_POSTGRES_PORT is not a valid integer number".to_string(),
+                    LUMINA_POSTGRES_PORT,
                 )
             })?);
             match std::env::var("LUMINA_POSTGRES_HOST") {

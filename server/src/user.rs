@@ -352,19 +352,19 @@ pub(crate) async fn register_validitycheck(
             .all(char::is_alphanumeric)
         {
             return Err(LuminaError::RegisterUsernameInvalid(
-                "Invalid characters in username".to_string(),
+                OnRegisterUsernameInvalid::InvalidCharacters,
             ));
         }
         // Check if the username is too long
         if username.len() > 20 {
             return Err(LuminaError::RegisterUsernameInvalid(
-                "Username too long".to_string(),
+                OnRegisterUsernameInvalid::TooLong,
             ));
         }
         // Check if the username is too short
         if username.len() < 4 {
             return Err(LuminaError::RegisterUsernameInvalid(
-                "Username too short".to_string(),
+                OnRegisterUsernameInvalid::TooShort,
             ));
         }
     }
@@ -376,29 +376,72 @@ pub(crate) async fn register_validitycheck(
     {
         if password.len() < 8 {
             return Err(LuminaError::RegisterPasswordNotValid(
-                "Password too short".to_string(),
+                OnRegisterPasswordNotValid::TooShort,
             ));
         }
         if password.len() > 100 {
             return Err(LuminaError::RegisterPasswordNotValid(
-                "Password too long".to_string(),
+                OnRegisterPasswordNotValid::TooLong
             ));
         }
         if !password.chars().any(char::is_uppercase) {
-            return Err(LuminaError::RegisterPasswordNotValid(
-                "Password must contain at least one uppercase letter".to_string(),
+                return Err(LuminaError::RegisterPasswordNotValid(
+                    OnRegisterPasswordNotValid::MissingUppercase
             ));
         }
         if !password.chars().any(char::is_lowercase) {
             return Err(LuminaError::RegisterPasswordNotValid(
-                "Password must contain at least one lowercase letter".to_string(),
+                OnRegisterPasswordNotValid::MissingLowercase
             ));
         }
         if !password.chars().any(char::is_numeric) {
-            return Err(LuminaError::RegisterPasswordNotValid(
-                "Password must contain at least one number".to_string(),
+            return Err(LuminaError::RegisterPasswordNotValid(OnRegisterPasswordNotValid::MissingNumber
             ));
         }
     }
     Ok(())
+}
+
+
+#[derive(Debug)]
+pub(crate) enum OnRegisterUsernameInvalid {
+    TooLong,
+    TooShort,
+    InvalidCharacters
+}
+impl std::fmt::Display for OnRegisterUsernameInvalid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            OnRegisterUsernameInvalid::TooLong => "Username too long",
+            OnRegisterUsernameInvalid::TooShort => "Username too short",
+            OnRegisterUsernameInvalid::InvalidCharacters => {
+                "Username contains invalid characters"
+            }
+        })
+    }
+}
+#[derive(Debug)]
+pub(crate) enum OnRegisterPasswordNotValid {
+    TooShort,
+    TooLong,
+    MissingUppercase,
+    MissingLowercase,
+    MissingNumber,
+}
+impl std::fmt::Display for OnRegisterPasswordNotValid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            OnRegisterPasswordNotValid::TooShort => "Password too short",
+            OnRegisterPasswordNotValid::TooLong => "Password too long",
+            OnRegisterPasswordNotValid::MissingUppercase => {
+                "Password must contain at least one uppercase letter"
+            }
+            OnRegisterPasswordNotValid::MissingLowercase => {
+                "Password must contain at least one lowercase letter"
+            }
+            OnRegisterPasswordNotValid::MissingNumber => {
+                "Password must contain at least one number"
+            }
+        })
+    }
 }

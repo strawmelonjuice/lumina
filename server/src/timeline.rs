@@ -93,7 +93,7 @@ async fn cache_timeline_page(
 
     let cache_key = get_cache_key(timeline_id, page);
     let serialized = serde_json::to_string(&cached_page)
-        .map_err(|e| LuminaError::SerializationError(e.to_string()))?;
+        ?;
 
     let _: () = redis::cmd("SETEX")
         .arg(cache_key)
@@ -132,8 +132,7 @@ async fn get_cached_timeline_page(
 
     match cached_data {
         Some(data) => {
-            let cached_page: CachedTimelinePage = serde_json::from_str(&data)
-                .map_err(|e| LuminaError::SerializationError(e.to_string()))?;
+            let cached_page: CachedTimelinePage = serde_json::from_str(&data)?;
             Ok(Some(cached_page))
         }
         None => Ok(None),

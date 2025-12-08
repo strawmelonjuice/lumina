@@ -97,11 +97,22 @@ async fn test_timeline_invalidation() {
 #[test]
 fn print_sizes() {
     println!("Size of LuminaError: {} bytes", mem::size_of::<LuminaError>());
-    println!("Size of Rocket Error: {} bytes", mem::size_of::<rocket::Error>());
-    println!("Size of Postgres Error: {} bytes", mem::size_of::<crate::postgres::Error>());
-    println!("Size of Redis Error: {} bytes", mem::size_of::<redis::RedisError>());
-        println!("Size of DbError: {} bytes", mem::size_of::<crate::errors::LuminaDbError>());
-        println!("Size of bb8 RunError Postgres: {} bytes", mem::size_of::<bb8::RunError<crate::postgres::Error>>());
-        println!("Size of bb8 RunError Redis: {} bytes", mem::size_of::<bb8::RunError<redis::RedisError>>());
-    println!("Size of String: {} bytes", mem::size_of::<String>());
+    println!("Size of errors::LuminaDbError: {} bytes", mem::size_of::<crate::errors::LuminaDbError>());
+    println!("Size of EnvVar: {} bytes", mem::size_of::<crate::EnvVar>());
+    println!("Size of InnerAppState: {} bytes", mem::size_of::<crate::InnerAppState>());
+}
+
+#[test]
+fn test_error_sizes() {
+    // We want to keep our error types small to minimize overhead when passing them around.
+    assert!(mem::size_of::<LuminaError>() <= 16, "LuminaError should be 16 bytes or less");
+    assert!(mem::size_of::<crate::errors::LuminaDbError>() <= 16, "LuminaDbError should be 16 bytes or less");
+}
+
+#[test]
+fn test_appstate_size() {
+    // Appstate is moved around a lot, so we want to keep it small, which is pretty easy since it just holds a single Arc pointer to a InnerAppState.
+    assert!(mem::size_of::<crate::AppState>() <= 8, "AppState should be 8 bytes or less");
+    // This constraint should lower over time as we optimize InnerAppState
+    assert!(mem::size_of::<crate::InnerAppState>() <= 88, "InnerAppState should be 88 bytes or less");
 }

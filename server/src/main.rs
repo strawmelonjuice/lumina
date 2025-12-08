@@ -12,7 +12,7 @@
  *     it under the terms of the GNU Affero General Public License as published
  *     by the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ *w
  *     This program is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -56,6 +56,25 @@ struct ServerConfig {
     port: u16,
     host: IpAddr,
 }
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy)]
+enum EnvVar {
+    LUMINA_SERVER_ADDR,
+    LUMINA_SERVER_PORT,
+    LUMINA_POSTGRES_PORT,
+}
+impl std::fmt::Display for EnvVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+ write!(f, "{}",
+        match self {
+            EnvVar::LUMINA_SERVER_ADDR => "LUMINA_SERVER_ADDR",
+            EnvVar::LUMINA_SERVER_PORT => "LUMINA_SERVER_PORT",
+            EnvVar::LUMINA_POSTGRES_PORT => "LUMINA_POSTGRES_PORT",
+        }
+    )
+}}
+use crate::EnvVar::*;
 use crate::database::{DatabaseConnections, PgConn};
 use crate::errors::LuminaError;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
@@ -66,12 +85,12 @@ fn config_get() -> Result<ServerConfig, LuminaError> {
     let addr = {
         let s = std::env::var("LUMINA_SERVER_ADDR").unwrap_or(String::from("127.0.0.1"));
         s.parse::<IpAddr>()
-            .map_err(|_| LuminaError::ConfInvalid("LUMINA_SERVER_ADDR".to_string()))?
+            .map_err(|_| LuminaError::ConfInvalid(LUMINA_SERVER_ADDR))?
     };
     let port = {
         let s = std::env::var("LUMINA_SERVER_PORT").unwrap_or(String::from("8085"));
         s.parse::<u16>()
-            .map_err(|_| LuminaError::ConfInvalid("LUMINA_SERVER_PORT".to_string()))?
+            .map_err(|_| LuminaError::ConfInvalid(LUMINA_SERVER_PORT))?
     };
     Ok(ServerConfig { port, host: addr })
 }
@@ -123,7 +142,7 @@ async fn main() {
                                 error_elog!(
                                     ev_log,
                                     "Invalid environment variable: {}",
-                                    a.color_bright_orange()
+                                    a.to_string().color_bright_orange()
                                 );
                                 None
                             }
@@ -427,7 +446,7 @@ async fn main() {
                     error_elog!(
                         ev_log,
                         "Invalid environment variable: {}",
-                        a.color_bright_orange()
+                        a.to_string().color_bright_orange()
                     );
                     process::exit(1);
                 }
