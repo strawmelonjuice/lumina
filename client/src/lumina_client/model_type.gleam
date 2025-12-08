@@ -93,7 +93,7 @@ pub type WsConnectionStatus {
   WsConnectionDisconnected
   /// A non-connected socket, may also occur while connecting.
   /// This'll either turn into a `WsConnectionConnected` or an `WsConnectionDisconnected`.
-  WsConnectionDisconnecting
+  WsConnectionUnsure
   /// Retrying to connect.
   WsConnectionRetrying
 }

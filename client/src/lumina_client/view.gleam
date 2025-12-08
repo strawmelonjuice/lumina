@@ -111,8 +111,8 @@ pub fn view(model: Model) -> Element(Msg) {
             ],
           )
 
-        model_type.WsConnectionConnected(..)
-        | model_type.WsConnectionDisconnecting -> element.none()
+        model_type.WsConnectionConnected(..) | model_type.WsConnectionUnsure ->
+          element.none()
       },
       case model.page {
         Landing -> view_landing()
