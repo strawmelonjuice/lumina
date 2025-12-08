@@ -22,22 +22,22 @@
 
 #[derive(Debug)]
 pub(crate) enum LuminaError {
-    ConfInvalid(String),
+    ConfInvalid(crate::EnvVar),
     DbError(LuminaDbError),
     Bb8RunErrorPg(bb8::RunError<crate::postgres::Error>),
-    Bb8RunErrorRedis(bb8::RunError<redis::RedisError>),
+    Bb8RunErrorRedis(Box<bb8::RunError<redis::RedisError>>),
     Unknown,
     RocketFaillure(Box<rocket::Error>),
     BcryptError,
     RegisterEmailInUse,
     RegisterUsernameInUse,
     RegisterEmailNotValid,
-    RegisterUsernameInvalid(String),
-    RegisterPasswordNotValid(String),
+    RegisterUsernameInvalid(crate::user::OnRegisterUsernameInvalid),
+    RegisterPasswordNotValid(crate::user::OnRegisterPasswordNotValid),
     AuthenticationWrongPassword,
     UUidError,
     RegexError,
-    SerializationError(String),
+    SerializationError(serde_json::Error),
     JoinFaillure,
 }
 
@@ -49,13 +49,19 @@ impl From<LuminaDbError> for LuminaError {
 
 #[derive(Debug)]
 pub(crate) enum LuminaDbError {
-    Redis(redis::RedisError),
+    Redis(Box<redis::RedisError>),
     Postgres(crate::postgres::Error),
 }
 
 impl From<rocket::Error> for LuminaError {
     fn from(err: rocket::Error) -> Self {
         LuminaError::RocketFaillure(Box::new(err))
+    }
+}
+
+impl From<serde_json::Error> for LuminaError {
+    fn from(err: serde_json::Error) -> Self {
+        LuminaError::SerializationError(err)
     }
 }
 
@@ -67,7 +73,7 @@ impl From<crate::postgres::Error> for LuminaError {
 
 impl From<redis::RedisError> for LuminaError {
     fn from(err: redis::RedisError) -> Self {
-        LuminaError::DbError(LuminaDbError::Redis(err))
+        LuminaError::DbError(LuminaDbError::Redis(Box::new(err)))
     }
 }
 impl From<bb8::RunError<crate::postgres::Error>> for LuminaError {
@@ -77,13 +83,20 @@ impl From<bb8::RunError<crate::postgres::Error>> for LuminaError {
 }
 impl From<bb8::RunError<redis::RedisError>> for LuminaError {
     fn from(err: bb8::RunError<redis::RedisError>) -> Self {
-        LuminaError::Bb8RunErrorRedis(err)
+        LuminaError::Bb8RunErrorRedis(Box::new(err))
     }
 }
-impl ToString for LuminaError {
-    fn to_string(&self) -> String {
+
+impl std::fmt::Display for LuminaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}",
         match self {
-            LuminaError::ConfInvalid(s) => format!("Configuration invalid: {}", s),
+            LuminaError::ConfInvalid(s) => match s {
+                crate::EnvVar::LUMINA_SERVER_ADDR => "LUMINA_SERVER_ADDR is an invalid address".to_string(),
+                crate::EnvVar::LUMINA_SERVER_PORT => "LUMINA_SERVER_PORT is not a valid port number".to_string(),
+                crate::EnvVar::LUMINA_POSTGRES_PORT => "LUMINA_POSTGRES_PORT is not a valid port number".to_string(),
+            },
+
             LuminaError::DbError(e) => match e {
                 LuminaDbError::Redis(re) => format!("Redis error: {}", re),
                 LuminaDbError::Postgres(pe) => format!("Postgres error: {}", pe),
@@ -104,5 +117,6 @@ impl ToString for LuminaError {
             LuminaError::JoinFaillure => "Process join failure".to_string(),
             LuminaError::Unknown => "Unknown error".to_string(),
         }
+    )
     }
 }
