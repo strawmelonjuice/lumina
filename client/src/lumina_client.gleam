@@ -783,7 +783,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         "Given close reason: "
         <> premixed.text_cyan({
           case reason {
-            lustre_websocket.AbnormalClose -> "Abnormal close"
+            lustre_websocket.AbnormalClose ->
+              "Abnormal close (no close frame was received)"
             lustre_websocket.FailedExtensionNegotation ->
               "Failed extension negotation"
             lustre_websocket.FailedTLSHandshake -> "Failed TLS handshake"
