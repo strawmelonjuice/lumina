@@ -236,30 +236,52 @@ pub fn view(model: model_type.Model) {
     NoModal -> {
       // Floating items and such to be rendered when no modal is open
       html.div([attribute.class("items")], [
-        html.div([attribute.class("absolute bottom-4 right-4 p-4 z-50")], [
+        html.div([attribute.class("dock lg:hidden")], [
+          html.label(
+            [
+              attribute.class("drawer-button"),
+              attribute.for("timelineswitcher"),
+            ],
+            [
+              svgs.hashtag_square("size-[1.2em]"),
+              html.span([attribute.class("dock-label")], [html.text("Switch")]),
+            ],
+          ),
           html.button(
             [
-              attribute.class("btn btn-circle btn-success btn-lg text-3xl"),
-              attribute.id("btn-new-post"),
+              attribute.class(""),
               event.on_click(SetModal("mdl-postedit")),
             ],
-            [element.text("+")],
+            [
+              svgs.add_square("size-[1.2em]"),
+              html.span([attribute.class("dock-label")], [html.text("Create")]),
+            ],
           ),
+          html.button([], [
+            html.section([], [html.text("Notifications svg here")]),
+            html.span([attribute.class("dock-label")], [
+              html.text("Notifications"),
+            ]),
+          ]),
         ]),
         html.div(
-          [attribute.class("fixed bottom-20 right-4 p-4 z-50 lg:hidden")],
           [
-            html.label(
+            attribute.class(
+              "absolute bottom-4 right-4 p-4 z-50 hidden lg:block",
+            ),
+          ],
+          [
+            html.button(
               [
-                attribute.class(
-                  "drawer-button btn btn-circle btn-success btn-lg text-3xl",
-                ),
-                attribute.for("timelineswitcher"),
+                attribute.class("btn btn-circle btn-success btn-lg text-3xl"),
+                attribute.id("btn-new-post"),
+                event.on_click(SetModal("mdl-postedit")),
               ],
-              [element.text("☰")],
+              [element.text("+")],
             ),
           ],
         ),
+        html.div([attribute.class("fixed bottom-20 right-4 p-4 z-50 ")], []),
       ])
     }
     // SideOrCentral(Bottom, _) -> todo
