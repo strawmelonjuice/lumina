@@ -31,7 +31,7 @@ pub type Model {
     /// Page currently browsing.
     page: Page,
     /// User, if known
-    user: Option(User),
+    user: Option(UserSubmodel),
     /// WebSocket connection
     ws: WsConnectionStatus,
     /// Used to restore sessions
@@ -50,6 +50,15 @@ pub type Model {
     /// If send_refresh_request(), it will update this value. If the last refresh request was over 30 seconds ago,
     /// the client will send a new refresh request to the server.
     last_refresh_request_time: Int,
+  )
+}
+
+pub type NotificationsSubModel {
+  NotificationsSubModel(
+    /// Unread notifications count, calculated by the server based on the last time the user checked notifications
+    unread_count: Int,
+    /// Cached notifications
+    cached_notifications: List(Nil),
   )
 }
 
@@ -316,12 +325,23 @@ pub type LoginFields {
   LoginFields(emailfield: String, passwordfield: String)
 }
 
-/// # User
+/// # User submodel
 ///
 /// The User type is a struct that holds the user's data. It's an Option in the Model because the user might not be logged in.
 /// Authentication STATUS is not stored in the Model, but in the websocket connection (the token is). The user is only stored in the Model for the UI to easy displaying the user's data.
-pub type User {
-  User(username: String, email: String, avatar: String)
+pub type UserSubmodel {
+  UserSubmodel(
+    /// User ID (uuid)
+    uid: String,
+    /// Username
+    username: String,
+    /// Email
+    email: String,
+    /// Avatar as uri string, either a full URL or a base64-encoded 'data:'-string
+    avatar: String,
+    /// Notifications
+    notifs: NotificationsSubModel,
+  )
 }
 
 pub type SerializableModel {
@@ -358,7 +378,7 @@ fn serializable_model_decoder() -> decode.Decoder(SerializableModel) {
 }
 
 pub fn serialize(normal_model: Model) {
-  let Model(page, _, _, token, _, _, _, _): Model = normal_model
+  let Model(page:, token:, ..): Model = normal_model
   SerializableModel(page:, token:)
   |> serialize_serializable_model
   |> json.to_string

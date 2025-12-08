@@ -18,6 +18,7 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import gleam/dynamic/decode
+import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
@@ -246,44 +247,16 @@ fn attributions() -> Element(Msg) {
             html.h5([attribute.class("text-[1.100rem] font-bold mb-2")], [
               html.text("Solar Linear icon set"),
             ]),
-            html.div([attribute.class("flex flex-row items-center w-full")], [
-              html.a(
-                [attribute.href("https://www.svgrepo.com/svg/524520/earth")],
-                [svgs.globe("w-6 h-6 me-2")],
-              ),
-              html.a(
-                [attribute.href("https://www.svgrepo.com/svg/524793/pen-2")],
-                [svgs.pen("w-6 h-6 me-2")],
-              ),
-              html.a(
-                [attribute.href("https://www.svgrepo.com/svg/524361/camera")],
-                [svgs.camera("w-6 h-6 me-2")],
-              ),
-              html.a(
-                [
-                  attribute.href(
-                    "https://www.svgrepo.com/svg/524800/pen-new-square",
-                  ),
-                ],
-                [svgs.pen_paper("w-6 h-6 me-2")],
-              ),
-              html.a(
-                [
-                  attribute.href(
-                    "https://www.svgrepo.com/svg/524621/hashtag-square",
-                  ),
-                ],
-                [svgs.hashtag_square("w-6 h-6 me-2")],
-              ),
-              html.a(
-                [
-                  attribute.href(
-                    "https://www.svgrepo.com/svg/524223/add-square",
-                  ),
-                ],
-                [svgs.add_square("w-6 h-6 me-2")],
-              ),
-            ]),
+            html.div(
+              [attribute.class("flex flex-row items-center w-full")],
+              svgs.sources_solar_linear()
+                |> list.map(fn(am: #(fn(String) -> Element(Msg), String)) {
+                  let #(svg_fn, link) = am
+                  html.a([attribute.href(link)], [
+                    svg_fn("w-6 h-6 me-2 hover:scale-110"),
+                  ])
+                }),
+            ),
             html.text("Vectors and icons by "),
             html.a(
               [

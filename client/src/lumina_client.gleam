@@ -618,7 +618,13 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-        Ok(OwnUserInformationResponse(username:, email:, avatar:, uuid:)) -> {
+        Ok(OwnUserInformationResponse(
+          username:,
+          email:,
+          avatar:,
+          uuid:,
+          unread_notifications:,
+        )) -> {
           // avatar is Option(#(String, String)) == Option((mime, base64))
           let avatar_string = case avatar {
             Some(#(mime, b64)) -> "data:" <> mime <> ";base64," <> b64
@@ -641,7 +647,16 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Model(
               ..model,
               cache: model_type.Cached(..model.cache, cached_users: new_users),
-              user: Some(model_type.User(username, email, avatar_string)),
+              user: Some(model_type.UserSubmodel(
+                uid: uuid,
+                username:,
+                email:,
+                avatar: avatar_string,
+                notifs: model_type.NotificationsSubModel(
+                  unread_count: unread_notifications,
+                  cached_notifications: [],
+                ),
+              )),
             ),
             effect.none(),
           )
@@ -870,6 +885,8 @@ type WsMsg {
     // Optional field populated with mime type and base64 of a profile picture.
     avatar: option.Option(#(String, String)),
     uuid: String,
+    /// Number of unread notifications, a timeline request for "notifications" can be used to get the actual notifications and fill the cache.
+    unread_notifications: Int,
   )
   Undecodable
 }
@@ -998,6 +1015,10 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
     "own_user_information_response" -> {
       use username <- decode.field("username", decode.string)
       use email <- decode.field("email", decode.string)
+      use unread_notifications <- decode.field(
+        "unread_notifications",
+        decode.int,
+      )
       // avatar may be null or an array [mime, base64]
       use avatar_list_opt <- decode.field(
         "avatar",
@@ -1017,6 +1038,7 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
         email:,
         avatar:,
         uuid:,
+        unread_notifications:,
       ))
     }
     g -> {
