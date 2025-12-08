@@ -267,6 +267,22 @@ fn attributions() -> Element(Msg) {
                 ],
                 [svgs.pen_paper("w-6 h-6 me-2")],
               ),
+              html.a(
+                [
+                  attribute.href(
+                    "https://www.svgrepo.com/svg/524621/hashtag-square",
+                  ),
+                ],
+                [svgs.hashtag_square("w-6 h-6 me-2")],
+              ),
+              html.a(
+                [
+                  attribute.href(
+                    "https://www.svgrepo.com/svg/524223/add-square",
+                  ),
+                ],
+                [svgs.add_square("w-6 h-6 me-2")],
+              ),
             ]),
             html.text("Vectors and icons by "),
             html.a(
