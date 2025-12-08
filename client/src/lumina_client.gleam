@@ -191,14 +191,13 @@ pub fn count_to_150() {
 fn let_definitely_disconnect(model: Model) {
   use dispatch <- effect.from
   case model.ws, model.has_been_running_for_150ms {
-    model_type.WsConnectionDisconnecting, False
+    model_type.WsConnectionUnsure, False
     | model_type.WsConnectionDisconnected, _
     | model_type.WsConnectionInitial, _
     | model_type.WsConnectionRetrying, _
     | model_type.WsConnectionConnected(..), _
     -> Nil
-    model_type.WsConnectionDisconnecting, True ->
-      dispatch(WsDisconnectDefinitive)
+    model_type.WsConnectionUnsure, True -> dispatch(WsDisconnectDefinitive)
   }
 }
 
@@ -808,8 +807,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           effect.none(),
         )
         _ -> {
-          let new_model =
-            Model(..model, ws: model_type.WsConnectionDisconnecting)
+          let new_model = Model(..model, ws: model_type.WsConnectionUnsure)
           #(new_model, let_definitely_disconnect(new_model))
         }
       }
