@@ -52,20 +52,10 @@ pub fn set_timeout_nilled(delay: Int, cb: fn() -> a) -> Nil {
 
 /// Get centered position for modal box in px
 pub fn get_center_positioned_style_px() -> #(Float, Float) {
-  let #(window_w, window_h) = dom.get_window_dimensions_px()
-  let pos_x = window_h |> int.to_float()
-  let pos_y = window_w |> int.to_float()
-  let x = case pos_x |> float.divide(2.0) {
-    Ok(v) -> v
-    Error(Nil) -> {
-      pos_x -. 1.0 |> float.divide(2.0) |> result.unwrap(0.0)
-    }
-  }
-  let y = case pos_y |> float.divide(2.0) {
-    Ok(v) -> v
-    Error(Nil) -> {
-      pos_y -. 1.0 |> float.divide(2.0) |> result.unwrap(0.0)
-    }
-  }
+  let #(window_w, window_h) = dom.get_window_dimensions_px() |> echo
+  let x_int = window_h / 2
+  let y_int = window_w / 2
+  let x = int.to_float(x_int)
+  let y = int.to_float(y_int)
   #(x, y)
 }
