@@ -88,7 +88,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
+                    "btn rounded-none rounded-bl-sm btn-error absolute top-0 right-0 text-2xl",
                   ),
 
                   event.on_click(CloseModal),
@@ -193,7 +193,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
               html.button(
                 [
                   attribute.class(
-                    "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
+                    "btn rounded-none rounded-bl-sm btn-error absolute top-0 right-0 text-2xl",
                   ),
                   event.on_click(CloseModal),
                 ],
