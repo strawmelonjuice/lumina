@@ -110,11 +110,14 @@ pub(crate) async fn wsconnection<'k>(
 													Err(e) => {
 														match e {
 															LuminaError::DbError(LuminaDbError::Postgres(postgres_error)) => {
+																// This is not the kind of practice I'd want, but it does the job
+																let postgres_error_dbg = format!("{:?}", postgres_error);
 																	// Check if it's a "no rows returned" type error
-																	if postgres_error.to_string().contains("no rows") || postgres_error.to_string().contains("RowCount") {
+																	// I wish I could just open those fields...
+																	if postgres_error_dbg.contains("kind: RowCount, cause: None") {
 																		info_elog!( ev_log,"Session revival failed: token not found or expired.");
 																	} else {
-																		info_elog!(ev_log,"Session revival failed: database error: {:?}", postgres_error);
+																		info_elog!(ev_log,"Session revival failed: database error: {postgres_error_dbg}");
 																	}
 																}
 
