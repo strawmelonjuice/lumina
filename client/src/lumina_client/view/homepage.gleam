@@ -107,15 +107,15 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
         ],
       )
     CentralSmall(id, title, mod, closable, params) -> {
-      let def_x = helpers.get_center_positioned_style_px().0
-      let def_y = helpers.get_center_positioned_style_px().1
-      let x = dict.get(params, "pos_x")
-      let y = dict.get(params, "pos_y")
-      let pos_x = case x {
+      let def_x = helpers.get_center_positioned_style_px().1
+      let def_y = helpers.get_center_positioned_style_px().0
+      let set_x = dict.get(params, "pos_x")
+      let set_y = dict.get(params, "pos_y")
+      let pos_x = case set_x {
         Ok(v) -> float.parse(v) |> result.unwrap(def_x)
         Error(_) -> def_x
       }
-      let pos_y = case y {
+      let pos_y = case set_y {
         Ok(v) -> float.parse(v) |> result.unwrap(def_y)
         Error(_) -> def_y
       }
