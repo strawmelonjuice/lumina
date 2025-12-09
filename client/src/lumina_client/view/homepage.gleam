@@ -42,7 +42,6 @@ import lumina_client/view/homepage/posts
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/element/svg
 import lustre/event
 
 fn closemodal_not_for_modal_box() {
@@ -53,16 +52,19 @@ fn closemodal_not_for_modal_box() {
   }
 }
 
-pub fn view(model: model_type.Model) {
+pub fn view(model: model_type.Model) -> Element(Msg) {
   // Dissect the model
   let assert model_type.Model(
     page: model_type.HomeTimeline(timeline_name:, modal:),
     user:,
     ..,
   ) = model
+  use <-
+    bool.lazy_guard(option.is_some(user), _, fn() {
+      element.text("Loading user...")
+    })
   let assert Some(user) = user
-    as "User must be logged in to see homepage, got None from model where a user-submodel was expected."
-
+    as "User must be logged in to see homepage, got None from model where a user-submodel was expected. (Got past a guard?)"
   let timeline_name = option.unwrap(timeline_name, "global")
   let modal_element = case
     modal |> option.map(modal_by_id(_, model)) |> option.unwrap(NoModal)
@@ -128,7 +130,6 @@ pub fn view(model: model_type.Model) {
           html.div(
             [
               attribute.id(id),
-
               attribute.class(
                 "modal-box lg:freeroam flex flex-col justify-center items-center bg-base-100 shadow-2xl w-[99vw] lg:w-[32rem] max-w-[unset] lg:max-w-[99vw] h-[80lvh] lg:h-[80lvh] lg:max-h-[90vh] relative lg:absolute",
               ),
