@@ -62,14 +62,10 @@ impl User {
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
                 let row = client
                     .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
-                    .await
-                    ?;
+                    .await?;
                 let password: String = row.get(0);
                 Ok(password)
             }
@@ -87,24 +83,19 @@ impl User {
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(|_| LuminaError::BcryptError)?;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
                 // Some username and email validation should be done here
                 // Check if the email is already in use
                 let email_exists = client
                     .query("SELECT * FROM users WHERE email = $1", &[&email])
-                    .await
-                    ?;
+                    .await?;
                 if !email_exists.is_empty() {
                     return Err(LuminaError::RegisterEmailInUse);
                 }
                 // Check if the username is already in use
                 let username_exists = client
                     .query("SELECT * FROM users WHERE username = $1", &[&username])
-                    .await
-                    ?;
+                    .await?;
                 if !username_exists.is_empty() {
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
@@ -133,10 +124,7 @@ impl User {
         };
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
                 let user = client
 					.query_one(
 						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
@@ -163,18 +151,14 @@ impl User {
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
                 let session_key = Uuid::new_v4().to_string();
                 let id = client
                     .query_one(
                         "INSERT INTO sessions (user_id, session_key) VALUES ($1, $2) RETURNING id",
                         &[&user_id, &session_key],
                     )
-                    .await
-                    ?;
+                    .await?;
                 info_elog!(
                     ev_log,
                     "New session created by {}",
@@ -197,10 +181,7 @@ impl User {
     ) -> Result<User, LuminaError> {
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
                 let user = client
 					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
 					.await
@@ -226,14 +207,8 @@ pub(crate) async fn register_validitycheck(
         // Check if the email or username is already in use using fastbloom algorithm with Redis, and fallback to DB check if not found. If not in either, we can go on.
         match db {
             DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-                let client = pg_pool
-                    .get()
-                    .await
-                    ?;
-                let mut redis_conn = redis_pool
-                    .get()
-                    .await
-                    ?;
+                let client = pg_pool.get().await?;
+                let mut redis_conn = redis_pool.get().await?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = String::from("bloom:email");
                 let username_key = String::from("bloom:username");
@@ -247,8 +222,7 @@ pub(crate) async fn register_validitycheck(
                     // Fallback to DB check if in bloom filter
                     let email_db = client
                         .query("SELECT * FROM users WHERE email = $1", &[&email])
-                        .await
-                        ?;
+                        .await?;
                     if !email_db.is_empty() {
                         return Err(LuminaError::RegisterEmailInUse);
                     }
@@ -263,8 +237,7 @@ pub(crate) async fn register_validitycheck(
                     // Fallback to DB check if in bloom filter
                     let username_db = client
                         .query("SELECT * FROM users WHERE username = $1", &[&username])
-                        .await
-                        ?;
+                        .await?;
                     if !username_db.is_empty() {
                         return Err(LuminaError::RegisterUsernameInUse);
                     }
@@ -272,8 +245,7 @@ pub(crate) async fn register_validitycheck(
                 // Fallback to DB check if not in bloom filter
                 let email_db = client
                     .query("SELECT * FROM users WHERE email = $1", &[&email])
-                    .await
-                    ?;
+                    .await?;
                 if !email_db.is_empty() {
                     // Update bloom filter after DB check
                     let _: () = redis::cmd("BF.ADD")
@@ -286,8 +258,7 @@ pub(crate) async fn register_validitycheck(
                 }
                 let username_db = client
                     .query("SELECT * FROM users WHERE username = $1", &[&username])
-                    .await
-                    ?;
+                    .await?;
                 if !username_db.is_empty() {
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&username_key)
@@ -381,43 +352,47 @@ pub(crate) async fn register_validitycheck(
         }
         if password.len() > 100 {
             return Err(LuminaError::RegisterPasswordNotValid(
-                OnRegisterPasswordNotValid::TooLong
+                OnRegisterPasswordNotValid::TooLong,
             ));
         }
         if !password.chars().any(char::is_uppercase) {
-                return Err(LuminaError::RegisterPasswordNotValid(
-                    OnRegisterPasswordNotValid::MissingUppercase
+            return Err(LuminaError::RegisterPasswordNotValid(
+                OnRegisterPasswordNotValid::MissingUppercase,
             ));
         }
         if !password.chars().any(char::is_lowercase) {
             return Err(LuminaError::RegisterPasswordNotValid(
-                OnRegisterPasswordNotValid::MissingLowercase
+                OnRegisterPasswordNotValid::MissingLowercase,
             ));
         }
         if !password.chars().any(char::is_numeric) {
-            return Err(LuminaError::RegisterPasswordNotValid(OnRegisterPasswordNotValid::MissingNumber
+            return Err(LuminaError::RegisterPasswordNotValid(
+                OnRegisterPasswordNotValid::MissingNumber,
             ));
         }
     }
     Ok(())
 }
 
-
 #[derive(Debug)]
 pub(crate) enum OnRegisterUsernameInvalid {
     TooLong,
     TooShort,
-    InvalidCharacters
+    InvalidCharacters,
 }
 impl std::fmt::Display for OnRegisterUsernameInvalid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            OnRegisterUsernameInvalid::TooLong => "Username too long",
-            OnRegisterUsernameInvalid::TooShort => "Username too short",
-            OnRegisterUsernameInvalid::InvalidCharacters => {
-                "Username contains invalid characters"
+        write!(
+            f,
+            "{}",
+            match self {
+                OnRegisterUsernameInvalid::TooLong => "Username too long",
+                OnRegisterUsernameInvalid::TooShort => "Username too short",
+                OnRegisterUsernameInvalid::InvalidCharacters => {
+                    "Username contains invalid characters"
+                }
             }
-        })
+        )
     }
 }
 #[derive(Debug)]
@@ -430,18 +405,22 @@ pub(crate) enum OnRegisterPasswordNotValid {
 }
 impl std::fmt::Display for OnRegisterPasswordNotValid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            OnRegisterPasswordNotValid::TooShort => "Password too short",
-            OnRegisterPasswordNotValid::TooLong => "Password too long",
-            OnRegisterPasswordNotValid::MissingUppercase => {
-                "Password must contain at least one uppercase letter"
+        write!(
+            f,
+            "{}",
+            match self {
+                OnRegisterPasswordNotValid::TooShort => "Password too short",
+                OnRegisterPasswordNotValid::TooLong => "Password too long",
+                OnRegisterPasswordNotValid::MissingUppercase => {
+                    "Password must contain at least one uppercase letter"
+                }
+                OnRegisterPasswordNotValid::MissingLowercase => {
+                    "Password must contain at least one lowercase letter"
+                }
+                OnRegisterPasswordNotValid::MissingNumber => {
+                    "Password must contain at least one number"
+                }
             }
-            OnRegisterPasswordNotValid::MissingLowercase => {
-                "Password must contain at least one lowercase letter"
-            }
-            OnRegisterPasswordNotValid::MissingNumber => {
-                "Password must contain at least one number"
-            }
-        })
+        )
     }
 }

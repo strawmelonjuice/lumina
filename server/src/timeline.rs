@@ -92,16 +92,14 @@ async fn cache_timeline_page(
     };
 
     let cache_key = get_cache_key(timeline_id, page);
-    let serialized = serde_json::to_string(&cached_page)
-        ?;
+    let serialized = serde_json::to_string(&cached_page)?;
 
     let _: () = redis::cmd("SETEX")
         .arg(cache_key)
         .arg(CACHE_TTL)
         .arg(serialized)
         .query_async(&mut **redis_conn)
-        .await
-        ?;
+        .await?;
 
     // Also cache metadata
     let meta_key = get_cache_meta_key(timeline_id);
@@ -110,8 +108,7 @@ async fn cache_timeline_page(
         .arg(CACHE_TTL)
         .arg(total_count)
         .query_async(&mut **redis_conn)
-        .await
-        ?;
+        .await?;
 
     Ok(())
 }
@@ -127,8 +124,7 @@ async fn get_cached_timeline_page(
     let cached_data: Option<String> = redis::cmd("GET")
         .arg(cache_key)
         .query_async(&mut **redis_conn)
-        .await
-        ?;
+        .await?;
 
     match cached_data {
         Some(data) => {
@@ -154,8 +150,7 @@ pub async fn invalidate_timeline_cache(
             .arg("MATCH")
             .arg(&pattern)
             .query_async(&mut **redis_conn)
-            .await
-            ?;
+            .await?;
 
         cursor = result.0;
         let keys = result.1;
@@ -164,8 +159,7 @@ pub async fn invalidate_timeline_cache(
             let _: () = redis::cmd("DEL")
                 .arg(&keys)
                 .query_async(&mut **redis_conn)
-                .await
-                ?;
+                .await?;
         }
 
         if cursor == 0 {
@@ -180,18 +174,14 @@ pub async fn invalidate_timeline_cache(
 async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<usize, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool
-                .get()
-                .await
-                ?;
+            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let row = client
                 .query_one(
                     "SELECT COUNT(*) FROM timelines WHERE tlid = $1",
                     &[&timeline_uuid],
                 )
-                .await
-               ?;
+                .await?;
 
             let count: i64 = row.get(0);
             Ok(count as usize)
@@ -208,10 +198,7 @@ async fn fetch_timeline_from_db(
 ) -> Result<Vec<String>, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool
-                .get()
-                .await
-                ?;
+            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let rows = client
 				.query(
@@ -243,18 +230,14 @@ pub async fn fetch_timeline_post_ids(
 
     // Get Redis connection
     let mut redis_conn = match db {
-        DbConn::PgsqlConnection(_, redis_pool) => redis_pool
-            .get()
-            .await
-            ?,
+        DbConn::PgsqlConnection(_, redis_pool) => redis_pool.get().await?,
     };
 
     // Log the requested timeline id for tracking
     let _: () = redis::cmd("INCR")
         .arg(format!("timeline_lookup:{}", timeline_id))
         .query_async(&mut *redis_conn)
-        .await
-        ?;
+        .await?;
 
     // Check if this timeline should be cached
     let should_cache = is_high_traffic_timeline(&mut redis_conn, timeline_id).await?;
@@ -366,10 +349,7 @@ pub async fn add_to_timeline(
     // Add to database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool
-                .get()
-                .await
-                ?;
+            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
@@ -377,14 +357,10 @@ pub async fn add_to_timeline(
                     "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
                     &[&timeline_uuid, &item_uuid],
                 )
-                .await
-               ?;
+                .await?;
 
             // Invalidate cache
-            let mut redis_conn = redis_pool
-                .get()
-                .await
-                ?;
+            let mut redis_conn = redis_pool.get().await?;
             if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
                 error_elog!(
                     event_logger,
@@ -410,10 +386,7 @@ pub async fn remove_from_timeline(
     // Remove from database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool
-                .get()
-                .await
-                ?;
+            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
             let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
             client
@@ -421,14 +394,10 @@ pub async fn remove_from_timeline(
                     "DELETE FROM timelines WHERE tlid = $1 AND item_id = $2",
                     &[&timeline_uuid, &item_uuid],
                 )
-                .await
-               ?;
+                .await?;
 
             // Invalidate cache
-            let mut redis_conn = redis_pool
-                .get()
-                .await
-                ?;
+            let mut redis_conn = redis_pool.get().await?;
             if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
                 error_elog!(
                     event_logger,

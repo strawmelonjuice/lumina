@@ -16,16 +16,24 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::mem;
 use crate::database::{self, DatabaseConnections};
-use crate::timeline;
 use crate::errors::LuminaError;
+use crate::timeline;
+use std::mem;
 
 #[tokio::test]
 async fn test_database_setup() {
-    let result = database::setup().await.expect("Database setup should succeed.");
-    assert!(result.get_postgres_pool().get().await.is_ok(), "Should get Postgres connection");
-    assert!(result.get_redis_pool().get().await.is_ok(), "Should get Redis connection");
+    let result = database::setup()
+        .await
+        .expect("Database setup should succeed.");
+    assert!(
+        result.get_postgres_pool().get().await.is_ok(),
+        "Should get Postgres connection"
+    );
+    assert!(
+        result.get_redis_pool().get().await.is_ok(),
+        "Should get Redis connection"
+    );
 }
 
 #[tokio::test]
@@ -93,26 +101,46 @@ async fn test_timeline_invalidation() {
     assert!(result.is_none(), "Cache should be invalidated");
 }
 
-
 #[test]
 fn print_sizes() {
-    println!("Size of LuminaError: {} bytes", mem::size_of::<LuminaError>());
-    println!("Size of errors::LuminaDbError: {} bytes", mem::size_of::<crate::errors::LuminaDbError>());
+    println!(
+        "Size of LuminaError: {} bytes",
+        mem::size_of::<LuminaError>()
+    );
+    println!(
+        "Size of errors::LuminaDbError: {} bytes",
+        mem::size_of::<crate::errors::LuminaDbError>()
+    );
     println!("Size of EnvVar: {} bytes", mem::size_of::<crate::EnvVar>());
-    println!("Size of InnerAppState: {} bytes", mem::size_of::<crate::InnerAppState>());
+    println!(
+        "Size of InnerAppState: {} bytes",
+        mem::size_of::<crate::InnerAppState>()
+    );
 }
 
 #[test]
 fn test_error_sizes() {
     // We want to keep our error types small to minimize overhead when passing them around.
-    assert!(mem::size_of::<LuminaError>() <= 16, "LuminaError should be 16 bytes or less");
-    assert!(mem::size_of::<crate::errors::LuminaDbError>() <= 16, "LuminaDbError should be 16 bytes or less");
+    assert!(
+        mem::size_of::<LuminaError>() <= 16,
+        "LuminaError should be 16 bytes or less"
+    );
+    assert!(
+        mem::size_of::<crate::errors::LuminaDbError>() <= 16,
+        "LuminaDbError should be 16 bytes or less"
+    );
 }
 
 #[test]
 fn test_appstate_size() {
     // Appstate is moved around a lot, so we want to keep it small, which is pretty easy since it just holds a single Arc pointer to a InnerAppState.
-    assert!(mem::size_of::<crate::AppState>() <= 8, "AppState should be 8 bytes or less");
+    assert!(
+        mem::size_of::<crate::AppState>() <= 8,
+        "AppState should be 8 bytes or less"
+    );
     // This constraint should lower over time as we optimize InnerAppState
-    assert!(mem::size_of::<crate::InnerAppState>() <= 88, "InnerAppState should be 88 bytes or less");
+    assert!(
+        mem::size_of::<crate::InnerAppState>() <= 88,
+        "InnerAppState should be 88 bytes or less"
+    );
 }

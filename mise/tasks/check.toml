@@ -34,8 +34,8 @@ depends = ["build-client"]
 hide = true
 run = "cargo test"
 dir = "./server"
-env.LUMINA_POSTGRES_PASSWORD="lumina_pw"
-    
+env.LUMINA_POSTGRES_PASSWORD = "lumina_pw"
+
 [local-devel-test-client]
 hide = true
 run = "gleam test"

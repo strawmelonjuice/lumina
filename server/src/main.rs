@@ -66,14 +66,17 @@ enum EnvVar {
 }
 impl std::fmt::Display for EnvVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
- write!(f, "{}",
-        match self {
-            EnvVar::LUMINA_SERVER_ADDR => "LUMINA_SERVER_ADDR",
-            EnvVar::LUMINA_SERVER_PORT => "LUMINA_SERVER_PORT",
-            EnvVar::LUMINA_POSTGRES_PORT => "LUMINA_POSTGRES_PORT",
-        }
-    )
-}}
+        write!(
+            f,
+            "{}",
+            match self {
+                EnvVar::LUMINA_SERVER_ADDR => "LUMINA_SERVER_ADDR",
+                EnvVar::LUMINA_SERVER_PORT => "LUMINA_SERVER_PORT",
+                EnvVar::LUMINA_POSTGRES_PORT => "LUMINA_POSTGRES_PORT",
+            }
+        )
+    }
+}
 use crate::EnvVar::*;
 use crate::database::{DatabaseConnections, PgConn};
 use crate::errors::LuminaError;
@@ -147,7 +150,9 @@ async fn main() {
                                 None
                             }
 
-                            Err(LuminaError::DbError(crate::errors::LuminaDbError::Postgres(a))) => {
+                            Err(LuminaError::DbError(crate::errors::LuminaDbError::Postgres(
+                                a,
+                            ))) => {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }

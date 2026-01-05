@@ -89,34 +89,39 @@ impl From<bb8::RunError<redis::RedisError>> for LuminaError {
 
 impl std::fmt::Display for LuminaError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}",
-        match self {
-            LuminaError::ConfInvalid(s) => match s {
-                crate::EnvVar::LUMINA_SERVER_ADDR => "LUMINA_SERVER_ADDR is an invalid address".to_string(),
-                crate::EnvVar::LUMINA_SERVER_PORT => "LUMINA_SERVER_PORT is not a valid port number".to_string(),
-                crate::EnvVar::LUMINA_POSTGRES_PORT => "LUMINA_POSTGRES_PORT is not a valid port number".to_string(),
-            },
+        write!(
+            f,
+            "{}",
+            match self {
+                LuminaError::ConfInvalid(s) => match s {
+                    crate::EnvVar::LUMINA_SERVER_ADDR =>
+                        "LUMINA_SERVER_ADDR is an invalid address".to_string(),
+                    crate::EnvVar::LUMINA_SERVER_PORT =>
+                        "LUMINA_SERVER_PORT is not a valid port number".to_string(),
+                    crate::EnvVar::LUMINA_POSTGRES_PORT =>
+                        "LUMINA_POSTGRES_PORT is not a valid port number".to_string(),
+                },
 
-            LuminaError::DbError(e) => match e {
-                LuminaDbError::Redis(re) => format!("Redis error: {}", re),
-                LuminaDbError::Postgres(pe) => format!("Postgres error: {}", pe),
-            },
-            LuminaError::Bb8RunErrorPg(e) => format!("Postgres connection pool error: {}", e),
-            LuminaError::Bb8RunErrorRedis(e) => format!("Redis connection pool error: {}", e),
-            LuminaError::RocketFaillure(e) => format!("Rocket error: {}", e),
-            LuminaError::BcryptError => "Bcrypt error".to_string(),
-            LuminaError::RegisterEmailInUse => "Email already in use".to_string(),
-            LuminaError::RegisterUsernameInUse => "Username already in use".to_string(),
-            LuminaError::RegisterEmailNotValid => "Email not valid".to_string(),
-            LuminaError::RegisterUsernameInvalid(s) => format!("Username invalid: {}", s),
-            LuminaError::RegisterPasswordNotValid(s) => format!("Password not valid: {}", s),
-            LuminaError::AuthenticationWrongPassword => "Wrong password".to_string(),
-            LuminaError::UUidError => "UUID error".to_string(),
-            LuminaError::RegexError => "Regex error".to_string(),
-            LuminaError::SerializationError(s) => format!("Serialization error: {}", s),
-            LuminaError::JoinFaillure => "Process join failure".to_string(),
-            LuminaError::Unknown => "Unknown error".to_string(),
-        }
-    )
+                LuminaError::DbError(e) => match e {
+                    LuminaDbError::Redis(re) => format!("Redis error: {}", re),
+                    LuminaDbError::Postgres(pe) => format!("Postgres error: {}", pe),
+                },
+                LuminaError::Bb8RunErrorPg(e) => format!("Postgres connection pool error: {}", e),
+                LuminaError::Bb8RunErrorRedis(e) => format!("Redis connection pool error: {}", e),
+                LuminaError::RocketFaillure(e) => format!("Rocket error: {}", e),
+                LuminaError::BcryptError => "Bcrypt error".to_string(),
+                LuminaError::RegisterEmailInUse => "Email already in use".to_string(),
+                LuminaError::RegisterUsernameInUse => "Username already in use".to_string(),
+                LuminaError::RegisterEmailNotValid => "Email not valid".to_string(),
+                LuminaError::RegisterUsernameInvalid(s) => format!("Username invalid: {}", s),
+                LuminaError::RegisterPasswordNotValid(s) => format!("Password not valid: {}", s),
+                LuminaError::AuthenticationWrongPassword => "Wrong password".to_string(),
+                LuminaError::UUidError => "UUID error".to_string(),
+                LuminaError::RegexError => "Regex error".to_string(),
+                LuminaError::SerializationError(s) => format!("Serialization error: {}", s),
+                LuminaError::JoinFaillure => "Process join failure".to_string(),
+                LuminaError::Unknown => "Unknown error".to_string(),
+            }
+        )
     }
 }
