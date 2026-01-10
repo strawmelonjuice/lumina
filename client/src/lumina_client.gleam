@@ -730,6 +730,13 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           )
           let assert model_type.WsConnectionConnected(_socket) = model.ws
             as "Socket not connected"
+          let posts_fetches =
+            effect.batch(
+              list.map(items, fn(post_id) {
+                todo as "Request post with id " <> post_id <> " here"
+                effect.none()
+              }),
+            )
 
           // Create or update timeline cache using utilities
           let cached_timeline = case
@@ -771,7 +778,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               ..model,
               cache: model_type.Cached(..model.cache, cached_timelines:),
             ),
-            effect.none(),
+            posts_fetches,
           )
         }
         Error(err) -> {
