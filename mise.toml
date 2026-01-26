@@ -1,6 +1,7 @@
 [tools]
 bun = "1.2.20"
 gleam = "1.12.0"
+just = "latest"
 "rust" = { version = "latest", components = "rust-analyzer" }
 
 
