@@ -1,8 +1,8 @@
 # Lumina(/peonies) server
 
 > Notice:
-> This repo is edited on [Codeberg](https://codeberg.org/strawmelonjuice/Lumina) and mirrorred
-> on [My forge](https://git.strawmelonjuice.com/strawmelonjuice/Lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
+> This repo is edited on [My forge](https://forge.strawmelonjuice.com/strawmelonjuice/Lumina) and mirrorred
+> on [Codeberg](https://codeberg.org/strawmelonjuice/Lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
 > you can still send in a PR!
 > See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
