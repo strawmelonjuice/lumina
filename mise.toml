@@ -15,8 +15,8 @@ bun = true
 includes = [
   "./mise/tasks/podman.toml",
   "./mise/tasks/format.toml",
-  "./mise/tasks/build.toml",
   "./mise/tasks/check.toml",
   "./mise/tasks/run.toml",
+  "./mise/tasks/moved-to-just.toml",
 ]
 dir = "{{ config_root }}"
