@@ -55,13 +55,7 @@ run = [
 description = "Build and tag the lumina-build-environment image from env.Dockerfile"
 run = ["podman build -f env.Dockerfile -t lumina-build-environment ."]
 
-[local-devel-prep]
-description = "Just runs the Podman image for a Redis and Postgres server for local development run to connect to."
-depends = ["create-data-dirs"]
-run = [
-  "podman run --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d docker.io/redis/redis-stack:7.2.0-v18",
-  "podman run --replace -d -p 5432:5432 --name luminadb -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z docker.io/library/postgres:17-alpine3.22",
-]
+
 
 [local-devel-dataexplorer]
 description = "Run pgweb and redis-commander for local development"

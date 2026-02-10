@@ -50,3 +50,24 @@ clean-all:
     rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts
     rm -rf ./client/priv/static/lumina_client.min.mjs
     rm -rf ./client/priv/static/lumina_client.css
+
+[doc("Just runs the Podman image for a Redis and Postgres server for local development run to connect to.")]
+[group("local-devel")]
+local-devel-prep: create-data-dirs
+    podman run --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d docker.io/redis/redis-stack:7.2.0-v18
+    podman run --replace -d -p 5432:5432 --name luminadb -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z docker.io/library/postgres:17-alpine3.22
+
+[doc("Run the server in development mode")]
+[group("local-devel")]
+local-devel $LUMINA_POSTGRES_PASSWORD="lumina_pw": build-server
+    ./target/debug/lumina-server
+
+[doc("Run the server in development mode with file watching")]
+[group("local-devel")]
+local-devel-watch:
+    watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json -- just local-devel
+[doc("Runs the commands from local-devel automatically, watches")]
+[group("local-devel")]
+dev:
+    @just local-devel-prep
+    @just local-devel-watch
