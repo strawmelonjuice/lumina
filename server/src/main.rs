@@ -380,7 +380,7 @@ async fn main() {
                         );
                         info_elog!(
                             ev_log,
-                            "\nRemember: You can also visit the licence on {}!",
+                            "\nRemember: You can also visit the licence on '{}'!",
                             format!(
                                 "{}://{}:{}/licence",
                                 if std::env::var("LUMINA_SERVER_HTTPS")

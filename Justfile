@@ -66,6 +66,7 @@ local-devel $LUMINA_POSTGRES_PASSWORD="lumina_pw": build-server
 [group("local-devel")]
 local-devel-watch:
     watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json -- just local-devel
+
 [doc("Runs the commands from local-devel automatically, watches")]
 [group("local-devel")]
 dev:
