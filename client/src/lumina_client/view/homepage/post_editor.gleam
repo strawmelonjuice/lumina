@@ -18,8 +18,7 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import gleam/dict
-import lumina_client/message_type.{type Msg}
-import lumina_client/model_type
+import lumina_client/model_type.{type Msg}
 import lumina_client/view/common_view_parts/svgs
 import lustre/attribute
 import lustre/element.{type Element}

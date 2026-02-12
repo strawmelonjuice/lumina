@@ -17,13 +17,10 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import gleam/float
 import gleam/int
 import gleam/list
-import gleam/result
 import lumina_client/dom
-import lumina_client/message_type.{type Msg}
-import lumina_client/model_type.{type LoginFields}
+import lumina_client/model_type.{type LoginFields, type Msg}
 import lustre/attribute
 import plinth/javascript/global
 

@@ -25,13 +25,11 @@ import gleam/string
 import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
-import lumina_client/message_type.{
-  type Msg, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
+import lumina_client/model_type.{
+  type Model, type Msg, HomeTimeline, Landing, Licence, Login, NotFound,
+  Register, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
   ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
   UpdatePasswordField, UpdateUsernameField, WSTryReconnect,
-}
-import lumina_client/model_type.{
-  type Model, HomeTimeline, Landing, Login, Register,
 }
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/common_view_parts/svgs
@@ -51,6 +49,15 @@ pub fn view(model: Model) -> Element(Msg) {
       model_local_storage_key,
       model_type.serialize(model),
     )
+  let content = case model.page {
+    Landing -> view_landing()
+    Register(..) -> view_register(model)
+    Login(..) -> view_login(model)
+    HomeTimeline(..) -> view_homepage(model)
+    NotFound(uri:) -> todo as "No 404 page yet."
+    Licence ->
+      todo as "Licence should be shown by the client if it's not shown by the server."
+  }
   html.div(
     [get_color_scheme(model), attribute.class("w-screen h-screen content")],
     [
@@ -115,12 +122,7 @@ pub fn view(model: Model) -> Element(Msg) {
         model_type.WsConnectionConnected(..) | model_type.WsConnectionUnsure ->
           element.none()
       },
-      case model.page {
-        Landing -> view_landing()
-        Register(..) -> view_register(model)
-        Login(..) -> view_login(model)
-        HomeTimeline(..) -> view_homepage(model)
-      },
+      content,
     ],
   )
 }
@@ -518,7 +520,7 @@ fn view_login(model: Model) -> Element(Msg) {
                         attribute.value(fieldvalues.emailfield),
                         event.on_input(UpdateEmailField),
                         event.on("focusout", {
-                          decode.success(message_type.FocusLostEmailField)
+                          decode.success(model_type.FocusLostEmailField)
                         }),
                       ]),
                       html.label([attribute.class("fieldset-label")], [

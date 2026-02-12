@@ -32,16 +32,15 @@ import gleamy_lights/console
 import gleamy_lights/premixed
 import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
-import lumina_client/message_type.{
-  type Msg, FocusLostEmailField, Logout, Past150ms, SubmitLogin, SubmitSignup,
-  ToLandingPage, ToLoginPage, ToRegisterPage, UpdateEmailField,
-  UpdateLastRefreshRequestTime, UpdatePasswordConfirmField, UpdatePasswordField,
-  UpdateUsernameField, WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
-}
 import lumina_client/model_type.{
-  type Model, HomeTimeline, Landing, Login, LoginFields, Model, Register,
-  RegisterPageFields,
+  type Model, type Msg, FocusLostEmailField, HomeTimeline, Landing, Licence,
+  Login, LoginFields, Logout, Model, NotFound, Past150ms, Register,
+  RegisterPageFields, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
+  ToRegisterPage, UpdateEmailField, UpdateLastRefreshRequestTime,
+  UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
+  WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
 }
+
 import lumina_client/view.{view}
 import lumina_client/view/homepage
 import lustre
@@ -179,7 +178,7 @@ fn init(rerun: Bool) -> #(Model, Effect(Msg)) {
 
 pub fn start_tracking_mouse_movements(x: Float, y: Float) {
   use dispatcher <- effect.from
-  dom.start_dragging_modal_box(x, y, message_type.MoveModalBoxTo, dispatcher)
+  dom.start_dragging_modal_box(x, y, model_type.MoveModalBoxTo, dispatcher)
 }
 
 pub fn count_to_150() {
@@ -496,7 +495,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
-    message_type.TimeLineTo(tid) -> {
+    model_type.TimeLineTo(tid) -> {
       let assert model_type.WsConnectionConnected(socket) = model.ws
         as "Socket not connected"
       let model = case model.page {
@@ -531,11 +530,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       #(model, requ)
     }
-    message_type.LoadMorePosts(timeline_name) -> {
+    model_type.LoadMorePosts(timeline_name) -> {
       let effect = request_next_timeline_page(model, timeline_name)
       #(model, effect)
     }
-    message_type.SetModal(to) -> {
+    model_type.SetModal(to) -> {
       case model.page {
         HomeTimeline(timeline_name:, modal: _) -> #(
           Model(
@@ -547,7 +546,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    message_type.CloseModal -> {
+    model_type.CloseModal -> {
       case model.page {
         HomeTimeline(timeline_name:, modal: _) -> #(
           Model(..model, page: HomeTimeline(timeline_name:, modal: None)),
@@ -556,11 +555,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    message_type.StartDraggingModalBox(x, y) -> {
+    model_type.StartDraggingModalBox(x, y) -> {
       // Start a sideffect that tracks mouse movements and sends MoveModalBoxTo messages
       #(model, start_tracking_mouse_movements(x, y))
     }
-    message_type.MoveModalBoxTo(x, y) -> {
+    model_type.MoveModalBoxTo(x, y) -> {
       case model.page {
         HomeTimeline(timeline_name:, modal: Some(#("mdl-postedit", params))) -> {
           let new_params =
@@ -686,7 +685,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
         }
         Ok(AuthenticationFailure) -> {
           case model.page {
-            model_type.Landing | HomeTimeline(..) -> session_destroy()
+            model_type.Landing | HomeTimeline(..) | NotFound(..) | Licence ->
+              session_destroy()
             Login(fields:, success: _) -> #(
               Model(..model, page: Login(fields:, success: Some(False))),
               effect.none(),
@@ -947,7 +947,7 @@ fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
     |> timestamp.to_unix_seconds
     |> float.truncate
   use dispatcher <- effect.from
-  dispatcher(message_type.UpdateLastRefreshRequestTime(current_time))
+  dispatcher(model_type.UpdateLastRefreshRequestTime(current_time))
   case model.last_refresh_request_time - current_time < 30 {
     True -> {
       Nil

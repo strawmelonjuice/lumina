@@ -19,8 +19,9 @@
 
 import gleam/dict
 import gleam/list
-import lumina_client/message_type.{type Msg}
-import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
+import lumina_client/model_type.{
+  type CachedTimeline, type Model, type Msg, CachedTimeline,
+}
 import lustre/attribute.{attribute}
 import lustre/element.{type Element}
 import lustre/element/html

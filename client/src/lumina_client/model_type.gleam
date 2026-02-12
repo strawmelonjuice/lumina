@@ -22,13 +22,89 @@ import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/uri.{type Uri}
 import lustre_websocket
+
+pub type Msg {
+  WSTryReconnect
+  Past150ms
+  UpdateLastRefreshRequestTime(Int)
+  WsDisconnectDefinitive
+  WsWrapper(lustre_websocket.WebSocketEvent)
+  ToLoginPage
+  SubmitLogin(List(#(String, String)))
+  ToRegisterPage
+  SubmitSignup(List(#(String, String)))
+  ToLandingPage
+  // Can be re-used for both login and register pages
+  UpdateEmailField(String)
+  UpdatePasswordField(String)
+  // Register page
+  UpdateUsernameField(String)
+  UpdatePasswordConfirmField(String)
+  FocusLostEmailField
+  /// Travel to a different timeline.
+  TimeLineTo(String)
+  /// Load more posts for the current timeline
+  LoadMorePosts(String)
+  /// Log the user out (destroys session and recreates model)
+  Logout
+  /// Close current modal
+  CloseModal
+  /// Browse modal to different page
+  SetModal(String)
+  /// Start dragging the modal box
+  /// Parameters: the event, current mouse x and y positions
+  /// Starts a sideffect that tracks mouse movements and sends MoveModalBoxTo messages
+  StartDraggingModalBox(Float, Float)
+  /// Move the modal box to a new position
+  /// Parameters: new x and y positions
+  MoveModalBoxTo(Float, Float)
+}
+
+pub type Route =
+  Page
+
+pub fn parse_route(uri: Uri) -> Route {
+  case uri.path_segments(uri.path) {
+    [] | [""] -> Landing
+    ["login"] -> Login(fields: LoginFields("", ""), success: None)
+    ["signup"] ->
+      Register(fields: RegisterPageFields("", "", "", ""), ready: None)
+    ["publication", _post_id] -> {
+      todo as "We don't have a publication zoom Page variant yet."
+    }
+    ["home"] | ["timeline"] -> HomeTimeline(None, None)
+    ["timeline", tid] -> HomeTimeline(Some(tid), None)
+    ["licence"] | ["license"] -> Licence
+
+    _ -> NotFound(uri:)
+  }
+}
+
+/// # Page
+///
+/// Lumina has always been an SPA behind the login page, splitting the three "main" pages: Login, Signup, and Home from "subpages". Home contained subpages like Dashboard, Profile, and Settings, etc.
+/// In this model, Login and Dashboard would be equal. The model keeps track of the current page and the user's authentication status.
+/// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
+pub type Page {
+  Landing
+  Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
+  Login(fields: LoginFields, success: Option(Bool))
+  HomeTimeline(
+    timeline_name: Option(String),
+    modal: Option(#(String, Dict(String, String))),
+  )
+  Licence
+  NotFound(uri: Uri)
+}
 
 /// # Model
 ///
 pub type Model {
   Model(
     /// Page currently browsing.
+    /// This is synced to the url through modem, but can contain more context.
     page: Page,
     /// User, if known
     user: Option(UserSubmodel),
@@ -197,21 +273,6 @@ pub type CachedPostInterior {
   )
 }
 
-/// # Page
-///
-/// Lumina has always been an SPA behind the login page, splitting the three "main" pages: Login, Signup, and Home from "subpages". Home contained subpages like Dashboard, Profile, and Settings, etc.
-/// In this model, Login and Dashboard would be equal. The model keeps track of the current page and the user's authentication status.
-/// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
-pub type Page {
-  Landing
-  Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
-  Login(fields: LoginFields, success: Option(Bool))
-  HomeTimeline(
-    timeline_name: Option(String),
-    modal: Option(#(String, Dict(String, String))),
-  )
-}
-
 fn encode_page(page: Page) -> json.Json {
   case page {
     Landing -> json.object([#("type", json.string("landing"))])
@@ -260,6 +321,9 @@ fn encode_page(page: Page) -> json.Json {
           Some(i) -> [#("modal", json.string(i.0))]
         }),
       )
+    NotFound(_) -> json.object([#("type", json.string("landing"))])
+
+    Licence -> json.object([#("type", json.string("licence"))])
   }
 }
 
@@ -267,6 +331,7 @@ fn page_decoder() -> decode.Decoder(Page) {
   use variant <- decode.field("type", decode.string)
   case variant {
     "landing" -> decode.success(Landing)
+    "licence" -> decode.success(Licence)
     "register" -> {
       use fields <- decode.field("fields", {
         use usernamefield <- decode.field("usernamefield", decode.string)

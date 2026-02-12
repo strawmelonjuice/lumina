@@ -17,7 +17,8 @@
 //	You should have received a copy of the GNU Affero General Public License
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import lumina_client/message_type.{type Msg}
+import gleam/option.{Some}
+import lumina_client/model_type.{type Msg, type Page}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -57,4 +58,18 @@ pub fn common_view_parts(
       main_body,
     ),
   ])
+}
+
+pub fn href(route: Page) -> attribute.Attribute(Msg) {
+  case route {
+    model_type.Landing -> "/"
+    model_type.Register(_, _) -> "/signup/"
+    model_type.Login(_, _) -> "/login/"
+    model_type.HomeTimeline(timeline_name: Some(m), modal:) ->
+      "/timeline/" <> m <> "/"
+    model_type.HomeTimeline(timeline_name: option.None, modal:) -> "/home/"
+    model_type.Licence -> "/licence"
+    model_type.NotFound(_) -> "/404"
+  }
+  |> attribute.href()
 }

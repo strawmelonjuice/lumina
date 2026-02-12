@@ -31,10 +31,10 @@ import gleam/time/calendar
 import gleam/time/timestamp
 import lumina_client/dom
 import lumina_client/helpers
-import lumina_client/message_type.{
-  type Msg, CloseModal, Logout, SetModal, StartDraggingModalBox,
+import lumina_client/model_type.{
+  type CachedTimeline, type Model, type Msg, CachedTimeline, CloseModal, Logout,
+  SetModal, StartDraggingModalBox,
 }
-import lumina_client/model_type.{type CachedTimeline, type Model, CachedTimeline}
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/common_view_parts/svgs
 import lumina_client/view/homepage/post_editor
@@ -380,7 +380,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(message_type.TimeLineTo("global")),
+                      event.on_click(model_type.TimeLineTo("global")),
                     ],
                     [
                       svgs.globe("inline h-5 w-5 mr-2"),
@@ -396,7 +396,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(message_type.TimeLineTo("following")),
+                      event.on_click(model_type.TimeLineTo("following")),
                     ],
                     [
                       svgs.follows("inline h-5 w-5 mr-2"),
@@ -412,7 +412,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(message_type.TimeLineTo("mutuals")),
+                      event.on_click(model_type.TimeLineTo("mutuals")),
                     ],
                     [
                       // SVG: Heart and star overlapping for 'Mutuals'
@@ -498,7 +498,7 @@ pub fn timeline(model: Model) -> Element(Msg) {
                     html.button(
                       [
                         attribute.class("btn btn-primary font-menuitems"),
-                        event.on_click(message_type.LoadMorePosts(timeline_name)),
+                        event.on_click(model_type.LoadMorePosts(timeline_name)),
                       ],
                       [element.text("Load More Posts")],
                     ),

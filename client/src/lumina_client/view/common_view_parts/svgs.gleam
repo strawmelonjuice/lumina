@@ -18,7 +18,7 @@
 //	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import gleam/list
-import lumina_client/message_type
+import lumina_client/model_type
 import lustre/attribute.{attribute, class}
 import lustre/element
 import lustre/element/svg
@@ -35,7 +35,7 @@ const sourcelist_solar_linear = [
 
 /// Lists the SVG functions in a random order with their source URLs.
 pub fn sources_solar_linear() -> List(
-  #(fn(String) -> element.Element(message_type.Msg), String),
+  #(fn(String) -> element.Element(model_type.Msg), String),
 ) {
   sourcelist_solar_linear |> list.shuffle()
 }
