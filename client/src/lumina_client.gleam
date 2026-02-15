@@ -33,12 +33,14 @@ import gleamy_lights/premixed
 import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
 import lumina_client/model_type.{
-  type Model, type Msg, FocusLostEmailField, HomeTimeline, Landing, Licence,
-  Login, LoginFields, Logout, Model, NotFound, Past150ms, Register,
-  RegisterPageFields, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
-  ToRegisterPage, UpdateEmailField, UpdateLastRefreshRequestTime,
-  UpdatePasswordConfirmField, UpdatePasswordField, UpdateUsernameField,
-  WSTryReconnect, WsDisconnectDefinitive, WsWrapper,
+  type Model, type Msg, EffectPast150ms, EmailFieldLostFocus, HomeTimeline,
+  Landing, Licence, Login, LoginFields, Model, NotFound, Register,
+  RegisterPageFields, UpdateLastRefreshRequestTime, UserClickedLogout,
+  UserNavigatedToLandingPage, UserNavigatedToLoginPage,
+  UserNavigatedToRegisterPage, UserSubmittedLogin, UserSubmittedSignup,
+  UserUpdatedControlledEmailField, UserUpdatedControlledPasswordConfirmField,
+  UserUpdatedControlledPasswordField, UserUpdatedControlledUsernameField,
+  WSTryReconnect, WebSocketIncomingMessage, WsDisconnectDefinitive,
 }
 
 import lumina_client/view.{view}
@@ -170,7 +172,7 @@ fn init(rerun: Bool) -> #(Model, Effect(Msg)) {
       }
     },
     effect.batch([
-      lustre_websocket.init("/connection", WsWrapper),
+      lustre_websocket.init("/connection", WebSocketIncomingMessage),
       count_to_150(),
     ]),
   )
@@ -184,7 +186,7 @@ pub fn start_tracking_mouse_movements(x: Float, y: Float) {
 pub fn count_to_150() {
   use dispatch <- effect.from
   use <- helpers.set_timeout_nilled(150)
-  dispatch(Past150ms)
+  dispatch(EffectPast150ms)
 }
 
 fn let_definitely_disconnect(model: Model) {
@@ -204,7 +206,7 @@ fn let_definitely_disconnect(model: Model) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    Past150ms -> {
+    EffectPast150ms -> {
       #(Model(..model, has_been_running_for_150ms: True), effect.none())
     }
     UpdateLastRefreshRequestTime(new_time) -> {
@@ -235,20 +237,23 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
     // Catch other Ws Events in a different function, since that is generally very different stuff.
-    WsWrapper(event) -> update_ws(model, event)
-    ToLoginPage -> #(
+    WebSocketIncomingMessage(event) -> update_ws(model, event)
+    UserNavigatedToLoginPage -> #(
       Model(..model, page: Login(fields: LoginFields("", ""), success: None)),
       effect.none(),
     )
-    ToRegisterPage -> #(
+    UserNavigatedToRegisterPage -> #(
       Model(
         ..model,
         page: Register(fields: RegisterPageFields("", "", "", ""), ready: None),
       ),
       effect.none(),
     )
-    ToLandingPage -> #(Model(..model, page: Landing), effect.none())
-    UpdateEmailField(new_email) -> {
+    UserNavigatedToLandingPage -> #(
+      Model(..model, page: Landing),
+      effect.none(),
+    )
+    UserUpdatedControlledEmailField(new_email) -> {
       case model.page {
         Register(fields, ready) -> #(
           Model(
@@ -284,7 +289,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    UpdatePasswordField(new_password) -> {
+    UserUpdatedControlledPasswordField(new_password) -> {
       case model.page {
         Register(fields, ready) -> #(
           Model(
@@ -342,7 +347,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    UpdatePasswordConfirmField(new_password_confirmation) -> {
+    UserUpdatedControlledPasswordConfirmField(new_password_confirmation) -> {
       case model.page {
         Register(fields, ready) -> #(
           Model(
@@ -371,7 +376,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    UpdateUsernameField(new_username) -> {
+    UserUpdatedControlledUsernameField(new_username) -> {
       case model.page {
         Register(fields, ready) -> #(
           Model(
@@ -406,7 +411,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    FocusLostEmailField -> {
+    EmailFieldLostFocus -> {
       // This handles the login username/email field value once the user seems to be done typing.
       let assert Login(fields, _success) = model.page
       let value = case string.starts_with(fields.emailfield, "@") {
@@ -437,8 +442,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
-    Logout -> session_destroy()
-    SubmitLogin(_) -> {
+    UserClickedLogout -> session_destroy()
+    UserSubmittedLogin(_) -> {
       let assert Login(fields, _) = model.page
       let values_ok = login_view_checker(fields)
       case values_ok {
@@ -463,7 +468,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
-    SubmitSignup(_) -> {
+    UserSubmittedSignup(_) -> {
       let assert Register(fields, ready) = model.page
 
       case
@@ -495,7 +500,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         }
       }
     }
-    model_type.TimeLineTo(tid) -> {
+    model_type.UserSwitchedTimeLineTo(tid) -> {
       let assert model_type.WsConnectionConnected(socket) = model.ws
         as "Socket not connected"
       let model = case model.page {
@@ -546,7 +551,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, effect.none())
       }
     }
-    model_type.CloseModal -> {
+    model_type.UserClosedModal -> {
       case model.page {
         HomeTimeline(timeline_name:, modal: _) -> #(
           Model(..model, page: HomeTimeline(timeline_name:, modal: None)),

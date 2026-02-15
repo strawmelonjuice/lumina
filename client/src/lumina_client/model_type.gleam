@@ -27,30 +27,30 @@ import lustre_websocket
 
 pub type Msg {
   WSTryReconnect
-  Past150ms
+  EffectPast150ms
   UpdateLastRefreshRequestTime(Int)
   WsDisconnectDefinitive
-  WsWrapper(lustre_websocket.WebSocketEvent)
-  ToLoginPage
-  SubmitLogin(List(#(String, String)))
-  ToRegisterPage
-  SubmitSignup(List(#(String, String)))
-  ToLandingPage
+  WebSocketIncomingMessage(lustre_websocket.WebSocketEvent)
+  UserNavigatedToLoginPage
+  UserNavigatedToRegisterPage
+  UserNavigatedToLandingPage
+  UserSubmittedLogin(List(#(String, String)))
+  UserSubmittedSignup(List(#(String, String)))
   // Can be re-used for both login and register pages
-  UpdateEmailField(String)
-  UpdatePasswordField(String)
+  UserUpdatedControlledEmailField(String)
+  UserUpdatedControlledPasswordField(String)
   // Register page
-  UpdateUsernameField(String)
-  UpdatePasswordConfirmField(String)
-  FocusLostEmailField
+  UserUpdatedControlledUsernameField(String)
+  UserUpdatedControlledPasswordConfirmField(String)
+  EmailFieldLostFocus
   /// Travel to a different timeline.
-  TimeLineTo(String)
+  UserSwitchedTimeLineTo(String)
   /// Load more posts for the current timeline
   LoadMorePosts(String)
   /// Log the user out (destroys session and recreates model)
-  Logout
+  UserClickedLogout
   /// Close current modal
-  CloseModal
+  UserClosedModal
   /// Browse modal to different page
   SetModal(String)
   /// Start dragging the modal box

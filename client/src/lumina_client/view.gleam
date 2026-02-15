@@ -27,9 +27,11 @@ import lumina_client/helpers.{
 }
 import lumina_client/model_type.{
   type Model, type Msg, HomeTimeline, Landing, Licence, Login, NotFound,
-  Register, SubmitLogin, SubmitSignup, ToLandingPage, ToLoginPage,
-  ToRegisterPage, UpdateEmailField, UpdatePasswordConfirmField,
-  UpdatePasswordField, UpdateUsernameField, WSTryReconnect,
+  Register, UserNavigatedToLandingPage, UserNavigatedToLoginPage,
+  UserNavigatedToRegisterPage, UserSubmittedLogin, UserSubmittedSignup,
+  UserUpdatedControlledEmailField, UserUpdatedControlledPasswordConfirmField,
+  UserUpdatedControlledPasswordField, UserUpdatedControlledUsernameField,
+  WSTryReconnect,
 }
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/common_view_parts/svgs
@@ -145,14 +147,14 @@ fn view_landing() -> Element(Msg) {
             html.button(
               [
                 attribute.class("btn btn-primary font-menuitems"),
-                event.on_click(ToLoginPage),
+                event.on_click(UserNavigatedToLoginPage),
               ],
               [element.text("Login")],
             ),
             html.button(
               [
                 attribute.class("btn btn-secondary font-menuitems"),
-                event.on_click(ToRegisterPage),
+                event.on_click(UserNavigatedToRegisterPage),
               ],
               [element.text("Register")],
             ),
@@ -504,7 +506,7 @@ fn view_login(model: Model) -> Element(Msg) {
                     attribute.class(
                       "card-body m-4 transition-[height] duration-300 ease-in-out transition",
                     ),
-                    event.on_submit(SubmitLogin),
+                    event.on_submit(UserSubmittedLogin),
                   ],
                   [
                     html.fieldset([attribute.class("fieldset")], [
@@ -518,9 +520,9 @@ fn view_login(model: Model) -> Element(Msg) {
                         ),
                         attribute.type_("text"),
                         attribute.value(fieldvalues.emailfield),
-                        event.on_input(UpdateEmailField),
+                        event.on_input(UserUpdatedControlledEmailField),
                         event.on("focusout", {
-                          decode.success(model_type.FocusLostEmailField)
+                          decode.success(model_type.EmailFieldLostFocus)
                         }),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
@@ -528,7 +530,7 @@ fn view_login(model: Model) -> Element(Msg) {
                       ]),
                       html.input([
                         attribute.value(fieldvalues.passwordfield),
-                        event.on_input(UpdatePasswordField),
+                        event.on_input(UserUpdatedControlledPasswordField),
                         attribute.placeholder("Password"),
                         attribute.class(
                           "input input-primary bg-primary font-content",
@@ -584,13 +586,13 @@ fn view_login(model: Model) -> Element(Msg) {
     ),
   ]
   |> common_view_parts(with_menu: [
-    html.li([event.on_click(ToLandingPage)], [
+    html.li([event.on_click(UserNavigatedToLandingPage)], [
       html.a([], [element.text("Back")]),
     ]),
-    html.li([event.on_click(ToRegisterPage)], [
+    html.li([event.on_click(UserNavigatedToRegisterPage)], [
       html.a([], [element.text("Register")]),
     ]),
-    html.li([event.on_click(ToLoginPage)], [
+    html.li([event.on_click(UserNavigatedToLoginPage)], [
       html.a([attribute.class("bg-primary text-primary-content")], [
         element.text("Login"),
       ]),
@@ -623,7 +625,7 @@ fn view_register(model_: Model) -> Element(Msg) {
                     attribute.class(
                       "card-body m-4 delay-150 duration-300 ease-in-out transition-[height]",
                     ),
-                    event.on_submit(SubmitSignup),
+                    event.on_submit(UserSubmittedSignup),
                   ],
                   [
                     html.fieldset([attribute.class("fieldset")], [
@@ -637,7 +639,7 @@ fn view_register(model_: Model) -> Element(Msg) {
                         ),
                         attribute.type_("email"),
                         attribute.value(fieldvalues.emailfield),
-                        event.on_input(UpdateEmailField),
+                        event.on_input(UserUpdatedControlledEmailField),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
                         element.text("Username"),
@@ -649,14 +651,14 @@ fn view_register(model_: Model) -> Element(Msg) {
                         ),
                         attribute.type_("string"),
                         attribute.value(fieldvalues.usernamefield),
-                        event.on_input(UpdateUsernameField),
+                        event.on_input(UserUpdatedControlledUsernameField),
                       ]),
                       html.label([attribute.class("fieldset-label")], [
                         element.text("Password"),
                       ]),
                       html.input([
                         attribute.value(fieldvalues.passwordfield),
-                        event.on_input(UpdatePasswordField),
+                        event.on_input(UserUpdatedControlledPasswordField),
                         attribute.placeholder("Password"),
                         attribute.class(
                           "input input-primary bg-primary font-content",
@@ -668,7 +670,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                       ]),
                       html.input([
                         attribute.value(fieldvalues.passwordconfirmfield),
-                        event.on_input(UpdatePasswordConfirmField),
+                        event.on_input(
+                          UserUpdatedControlledPasswordConfirmField,
+                        ),
                         attribute.placeholder("Re-type password"),
                         attribute.class(
                           "input input-primary bg-primary font-content",
@@ -731,7 +735,9 @@ fn view_register(model_: Model) -> Element(Msg) {
                                           ),
                                           html.a(
                                             [
-                                              event.on_click(ToLoginPage),
+                                              event.on_click(
+                                                UserNavigatedToLoginPage,
+                                              ),
                                               attribute.class(
                                                 "link link-primary",
                                               ),
@@ -774,14 +780,16 @@ fn view_register(model_: Model) -> Element(Msg) {
     ),
   ]
   |> common_view_parts(with_menu: [
-    html.li([event.on_click(ToLandingPage)], [
+    html.li([event.on_click(UserNavigatedToLandingPage)], [
       html.a([], [element.text("Back")]),
     ]),
-    html.li([event.on_click(ToRegisterPage)], [
+    html.li([event.on_click(UserNavigatedToRegisterPage)], [
       html.a([attribute.class("bg-primary text-primary-content")], [
         element.text("Register"),
       ]),
     ]),
-    html.li([event.on_click(ToLoginPage)], [html.a([], [element.text("Login")])]),
+    html.li([event.on_click(UserNavigatedToLoginPage)], [
+      html.a([], [element.text("Login")]),
+    ]),
   ])
 }

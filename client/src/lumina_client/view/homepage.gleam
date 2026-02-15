@@ -32,8 +32,8 @@ import gleam/time/timestamp
 import lumina_client/dom
 import lumina_client/helpers
 import lumina_client/model_type.{
-  type CachedTimeline, type Model, type Msg, CachedTimeline, CloseModal, Logout,
-  SetModal, StartDraggingModalBox,
+  type CachedTimeline, type Model, type Msg, CachedTimeline, SetModal,
+  StartDraggingModalBox, UserClickedLogout, UserClosedModal,
 }
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/common_view_parts/svgs
@@ -47,8 +47,9 @@ import lustre/event
 fn closemodal_not_for_modal_box() {
   use target <- decode.field("target", decode.dynamic)
   case bool.negate(dom.classfoundintree(target, "modal-box")) {
-    True -> decode.success(CloseModal)
-    False -> decode.failure(CloseModal, "Clicked inside modal-box, ignoring")
+    True -> decode.success(UserClosedModal)
+    False ->
+      decode.failure(UserClosedModal, "Clicked inside modal-box, ignoring")
   }
 }
 
@@ -91,7 +92,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                     "btn rounded-none rounded-bl-sm btn-error absolute top-0 right-0 text-2xl",
                   ),
 
-                  event.on_click(CloseModal),
+                  event.on_click(UserClosedModal),
                 ],
                 [
                   element.text(
@@ -159,7 +160,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                       attribute.class(
                         "btn rounded-none rounded-bl-sm btn-error absolute top-0 right-0 text-2xl",
                       ),
-                      event.on_click(CloseModal),
+                      event.on_click(UserClosedModal),
                     ],
                     [element.text("×")],
                   )
@@ -195,7 +196,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                   attribute.class(
                     "btn rounded-none rounded-bl-sm btn-error absolute top-0 right-0 text-2xl",
                   ),
-                  event.on_click(CloseModal),
+                  event.on_click(UserClosedModal),
                 ],
                 [element.text("×")],
               ),
@@ -226,7 +227,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                   attribute.class(
                     "btn btn-circle btn-error absolute top-4 right-4 text-2xl",
                   ),
-                  event.on_click(CloseModal),
+                  event.on_click(UserClosedModal),
                 ],
                 [element.text("×")],
               ),
@@ -380,7 +381,7 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(model_type.TimeLineTo("global")),
+                      event.on_click(model_type.UserSwitchedTimeLineTo("global")),
                     ],
                     [
                       svgs.globe("inline h-5 w-5 mr-2"),
@@ -396,7 +397,9 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(model_type.TimeLineTo("following")),
+                      event.on_click(model_type.UserSwitchedTimeLineTo(
+                        "following",
+                      )),
                     ],
                     [
                       svgs.follows("inline h-5 w-5 mr-2"),
@@ -412,7 +415,9 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
                         return: fn() { attribute.class("menu-active") },
                         otherwise: fn() { attribute.none() },
                       ),
-                      event.on_click(model_type.TimeLineTo("mutuals")),
+                      event.on_click(model_type.UserSwitchedTimeLineTo(
+                        "mutuals",
+                      )),
                     ],
                     [
                       // SVG: Heart and star overlapping for 'Mutuals'
@@ -797,7 +802,7 @@ fn modal_by_id(
               html.a(
                 [
                   attribute.class("btn btn-warn font-menuitems"),
-                  event.on_click(Logout),
+                  event.on_click(UserClickedLogout),
                 ],
                 [
                   element.text("Log out"),
