@@ -48,3 +48,4 @@ instance.sqlite-wal
 /notes/.obsidian/appearance.json
 /notes/.obsidian/workspace.json
 /notes/.obsidian/app.json
+.direnv/
