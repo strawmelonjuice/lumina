@@ -818,7 +818,7 @@ fn modal_by_id(
           element.text("User settings will be here eventually."),
         ]),
       )
-    "mdl-postedit" -> {
+    "mdl-postedit" ->
       CentralSmall(
         "mdl-postedit",
         "New Post",
@@ -826,7 +826,7 @@ fn modal_by_id(
         True,
         params:,
       )
-    }
+
     _ -> NoModal
   }
 }

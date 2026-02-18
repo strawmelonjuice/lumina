@@ -42,7 +42,6 @@ import lumina_client/model_type.{
   UserUpdatedControlledPasswordField, UserUpdatedControlledUsernameField,
   WSTryReconnect, WebSocketIncomingMessage, WsDisconnectDefinitive,
 }
-
 import lumina_client/view.{view}
 import lumina_client/view/homepage
 import lustre
@@ -700,15 +699,6 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Register(..) -> #(model, effect.none())
           }
         }
-        // Ws messages we can't receive
-        Ok(RegisterPrecheck(..))
-        | Ok(Undecodable)
-        | Ok(LoginAuthenticationRequest(..))
-        | Ok(OwnUserInformationRequest)
-        | Ok(TimeLineRequest(..))
-        | Ok(RegisterRequest(..)) -> {
-          #(model, effect.none())
-        }
         Ok(TimeLineResponse(
           timeline_name:,
           timeline_id:,
@@ -795,6 +785,10 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           )
           #(model, effect.none())
         }
+        Ok(Undecodable) ->
+          panic as "Received message that was explicitly marked as undecodable, this should not happen
+	as the decoder should have returned an error instead of Undecodable. Check the decoder implementation and the logs
+	for the raw message."
       }
     lustre_websocket.OnBinaryMessage(msg) -> {
       console.warn(
@@ -864,21 +858,11 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
 
 // WS Message decoding ---------------------------------------------------------
 
-type WsMsg {
+type WsMsgFromServer {
   Greeting(greeting: String)
-  RegisterPrecheck(
-    email: String,
-    username: String,
-    // Password only once? Yes, the equal password check is done in the view/update themselves.
-    password: String,
-  )
   RegisterPrecheckResponse(ok: Bool, why: String)
-  RegisterRequest(email: String, username: String, password: String)
-  LoginAuthenticationRequest(email_username: String, password: String)
   AuthenticationSuccess(username: String, token: String)
   AuthenticationFailure
-  OwnUserInformationRequest
-  TimeLineRequest(timeline_name: String, page: Int)
   TimeLineResponse(
     timeline_name: String,
     timeline_id: String,
@@ -903,7 +887,20 @@ type WsMsg {
   Undecodable
 }
 
-fn encode_ws_msg(message: WsMsg) -> json.Json {
+type WsMsgFromClient {
+  OwnUserInformationRequest
+  LoginAuthenticationRequest(email_username: String, password: String)
+  RegisterRequest(email: String, username: String, password: String)
+  TimeLineRequest(timeline_name: String, page: Int)
+  RegisterPrecheck(
+    email: String,
+    username: String,
+    // Password only once? Yes, the equal password check is done in the view/update themselves.
+    password: String,
+  )
+}
+
+fn encode_ws_msg(message: WsMsgFromClient) -> json.Json {
   case message {
     OwnUserInformationRequest ->
       json.object([#("type", json.string("own_user_information_request"))])
@@ -934,15 +931,6 @@ fn encode_ws_msg(message: WsMsg) -> json.Json {
         #("by_name", json.string(timeline_name)),
         #("page", json.int(page)),
       ])
-    // And the client should never have to encode the next few:
-    Greeting(..)
-    | Undecodable
-    | RegisterPrecheckResponse(..)
-    | AuthenticationFailure
-    | AuthenticationSuccess(..)
-    | TimeLineResponse(..)
-    | OwnUserInformationResponse(..) ->
-      json.object([#("type", json.string("unknown"))])
   }
 }
 
@@ -970,7 +958,7 @@ fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
   }
 }
 
-fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
+fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsgFromServer) {
   case variant {
     "auth_success" -> {
       use username <- decode.field("username", decode.string)
@@ -981,23 +969,6 @@ fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsg) {
       decode.success(AuthenticationFailure)
     }
     "unknown" -> decode.success(Undecodable)
-    "login_authentication_request" -> {
-      use email_username <- decode.field("email_username", decode.string)
-      use password <- decode.field("password", decode.string)
-      decode.success(LoginAuthenticationRequest(email_username, password))
-    }
-    "register_request" -> {
-      use email <- decode.field("email", decode.string)
-      use username <- decode.field("username", decode.string)
-      use password <- decode.field("password", decode.string)
-      decode.success(RegisterRequest(email, username, password))
-    }
-    "register_precheck" -> {
-      use email <- decode.field("email", decode.string)
-      use username <- decode.field("username", decode.string)
-      use password <- decode.field("password", decode.string)
-      decode.success(RegisterPrecheck(email, username, password))
-    }
     "register_precheck_response" -> {
       use ok <- decode.field("ok", decode.bool)
       use why <- decode.field("why", decode.string)
