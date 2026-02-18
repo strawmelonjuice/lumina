@@ -20,56 +20,34 @@
 
 @source "./src/**/*.gleam";
 
-@font-face {
-	/* The Josefin Sans is used for:
-	*  Menu items
-	*/
-	font-family: "Josefin Sans";
-	src: url(/assets/fonts/Josefin_Sans/JosefinSans-VariableFont_wght.ttf);
-}
-
-@font-face {
-	/* The Syne Font is used for:
+@theme {
+	/* Vend Sans is used for:
 	*  Main theme
 	*/
-	font-family: "Vend Sans";
-	src: url(/assets/fonts/Vend_Sans/VendSans-VariableFont_wght.ttf);
-}
+	--font-sans: "Vend Sans";
 
-@font-face {
 	/* The Gantari font is used for:
 	*  'Lumina' name typography
 	*/
-	font-family: "Gantari";
-	src: url(/assets/fonts/Gantari/Gantari-VariableFont_wght.ttf);
-}
+	--font-logo: "Gantari";
 
-@font-face {
 	/* The Elms sans is used for:
 	*  (User-generated) Content on pages, form input fields.
 	*/
-	font-family: "Elms Sans";
-	src: url(/assets/fonts/Elms_Sans/ElmsSans-VariableFont_wght.ttf);
-}
+	--font-content: "Elms Sans";
 
-@font-face {
+	/* The Josefin Sans is used for:
+	*  Menu items
+	*/
+	--font-menuitems: "Josefin Sans";
+
 	/* The DM Mono font is used for:
 	*  Code blocks and monospaced text
 	*/
-	font-family: "DM Mono";
-	src: url(/assets/fonts/DM_Mono/DMMono-Regular.ttf);
-}
-
-@theme {
-	--font-sans: "Vend Sans";
-	--font-logo: "Gantari";
-	--font-content: "Elms Sans";
-	--font-menuitems: "Josefin Sans";
 	--font-script: "DM Mono";
 }
 
-@plugin "daisyui" {
-}
+@plugin "daisyui" {}
 
 @plugin "daisyui/theme" {
 	name: "lumina-light";
@@ -174,22 +152,20 @@
 		width: 100vw;
 		border-radius: 0;
 		display: inline-flex;
-		background-image: linear-gradient(
-			to right,
-			rgb(237, 34, 36),
-			rgb(243, 91, 34),
-			rgb(249, 150, 33),
-			rgb(245, 193, 30),
-			rgb(241, 235, 27) 27%,
-			rgb(241, 235, 27),
-			rgb(241, 235, 27) 33%,
-			rgb(99, 199, 32),
-			rgb(12, 155, 73),
-			rgb(33, 135, 141),
-			rgb(57, 84, 165),
-			rgb(97, 55, 155),
-			rgb(147, 40, 142)
-		);
+		background-image: linear-gradient(to right,
+				rgb(237, 34, 36),
+				rgb(243, 91, 34),
+				rgb(249, 150, 33),
+				rgb(245, 193, 30),
+				rgb(241, 235, 27) 27%,
+				rgb(241, 235, 27),
+				rgb(241, 235, 27) 33%,
+				rgb(99, 199, 32),
+				rgb(12, 155, 73),
+				rgb(33, 135, 141),
+				rgb(57, 84, 165),
+				rgb(97, 55, 155),
+				rgb(147, 40, 142));
 	}
 
 	body:has(.monthclass-6) {
@@ -201,8 +177,7 @@
 	}
 
 	@keyframes prideBannerAnimation {
-		0% {
-		}
+		0% {}
 
 		25% {
 			background-position: 0 0;
@@ -237,8 +212,7 @@
 			background-repeat: repeat;
 		}
 
-		100% {
-		}
+		100% {}
 	}
 
 	body:has(.monthclass-6):active main::before {
@@ -253,20 +227,18 @@
 	@keyframes transrights {
 		0% {
 			content: "Protect trans Rights!  ✊ 🩵🩷🤍🩷🩵";
-			background-image: linear-gradient(
-				to right,
-				rgb(85, 205, 252),
-				rgb(179, 157, 233),
-				rgb(247, 168, 184),
-				rgb(246, 216, 221),
-				rgb(255, 255, 255) 45%,
-				rgb(255, 255, 255),
-				rgb(255, 255, 255) 55%,
-				rgb(246, 216, 221),
-				rgb(247, 168, 184),
-				rgb(179, 157, 233),
-				rgb(85, 205, 252)
-			);
+			background-image: linear-gradient(to right,
+					rgb(85, 205, 252),
+					rgb(179, 157, 233),
+					rgb(247, 168, 184),
+					rgb(246, 216, 221),
+					rgb(255, 255, 255) 45%,
+					rgb(255, 255, 255),
+					rgb(255, 255, 255) 55%,
+					rgb(246, 216, 221),
+					rgb(247, 168, 184),
+					rgb(179, 157, 233),
+					rgb(85, 205, 252));
 		}
 	}
 
@@ -328,8 +300,9 @@
 			transform: skew(0deg);
 		}
 	}
+
 	.lg\:freeroam {
-		@media (width >= 64rem) {
+		@media (width >=64rem) {
 			left: var(--left);
 			top: var(--top);
 			transform: var(--transform);

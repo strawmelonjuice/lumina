@@ -51,6 +51,8 @@ pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<title>Lumina</title>
+	<link rel="preconnect" href="https://fontlay.com" corossorigin />
+	<link href="https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap" rel="stylesheet">
 
 	<link
 		rel="stylesheet"
