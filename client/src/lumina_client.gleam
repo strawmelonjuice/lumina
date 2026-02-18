@@ -728,8 +728,8 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           let posts_fetches =
             effect.batch(
               list.map(items, fn(post_id) {
-                todo as "Request post with id " <> post_id <> " here"
-                effect.none()
+                let do_to = "Request post with id " <> post_id <> " here"
+                todo as do_to
               }),
             )
 
