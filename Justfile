@@ -5,7 +5,7 @@ default:
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
-    cd ./client/ && bun x @tailwindcss/cli -i ./app.css -o ./priv/static/lumina_client.css
+    cd ./client/ && bun x @tailwindcss/cli@4.1.18 -i ./app.css -o ./priv/static/lumina_client.css
 
 [doc("Build the server-side of Lumina")]
 [group('building')]
