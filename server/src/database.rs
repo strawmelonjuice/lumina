@@ -22,15 +22,22 @@
 use crate::EnvVar::*;
 use crate::errors::LuminaError::{self};
 use crate::helpers::events::EventLogger;
-use crate::postgres;
 use crate::timeline;
 use crate::{info_elog, success_elog, warn_elog};
 use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
 use bb8_redis::RedisConnectionManager;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
+use sqlx::postgres::PgPool;
 use std::time::Duration;
-use tokio_postgres::NoTls;
+
+struct DatabaseConfig {
+    postgres_username: String,
+    postgres_password: Option<String>,
+    postgres_host: String,
+    postgres_port: u16,
+    postgres_dbname: String,
+    redis_url: String,
+}
 
 pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
     let ev_log = EventLogger::new(&None);
@@ -56,20 +63,32 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
     };
 
     {
-        let pg_config: tokio_postgres::Config = {
+        let pg_config: DatabaseConfig = {
             let mut uuu = (
                 "unspecified database".to_string(),
                 "unspecified host".to_string(),
                 "unknown port".to_string(),
             );
-            let mut pg_config = postgres::Config::new();
-            pg_config.user(&{
-                std::env::var("LUMINA_POSTGRES_USERNAME").unwrap_or("lumina".to_string())
-            });
+            let mut pg_config = DatabaseConfig {
+                postgres_username: std::env::var("LUMINA_POSTGRES_USERNAME")
+                    .unwrap_or("lumina".to_string()),
+                postgres_password: std::env::var("LUMINA_POSTGRES_PASSWORD").ok(),
+                postgres_host: std::env::var("LUMINA_POSTGRES_HOST")
+                    .unwrap_or("localhost".to_string()),
+                postgres_port: std::env::var("LUMINA_POSTGRES_PORT")
+                    .ok()
+                    .and_then(|p| p.parse::<u16>().ok())
+                    .unwrap_or(5432),
+                postgres_dbname: std::env::var("LUMINA_POSTGRES_DATABASE")
+                    .unwrap_or("lumina_config".to_string()),
+                redis_url,
+            };
+            pg_config.postgres_username =
+                std::env::var("LUMINA_POSTGRES_USERNAME").unwrap_or("lumina".to_string());
             let dbname =
                 std::env::var("LUMINA_POSTGRES_DATABASE").unwrap_or("lumina_config".to_string());
             uuu.0 = dbname.clone();
-            pg_config.dbname(&dbname);
+            pg_config.postgres_dbname = dbname;
             let port = match std::env::var("LUMINA_POSTGRES_PORT") {
                 Err(..) => {
                     warn_elog!(
@@ -82,14 +101,13 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
             };
             uuu.2 = port.clone();
             // Parse the port as u16, if it fails, return an error
-            pg_config.port(
-                port.parse::<u16>()
-                    .map_err(|_| LuminaError::ConfInvalid(LUMINA_POSTGRES_PORT))?,
-            );
+            pg_config.postgres_port = port
+                .parse::<u16>()
+                .map_err(|_| LuminaError::ConfInvalid(LUMINA_POSTGRES_PORT))?;
             match std::env::var("LUMINA_POSTGRES_HOST") {
                 Ok(val) => {
                     uuu.1 = val.clone();
-                    pg_config.host(&val);
+                    pg_config.postgres_host = val;
                 }
                 Err(_) => {
                     warn_elog!(
@@ -98,12 +116,12 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
                     );
                     // Default to localhost if not set
                     uuu.1 = "localhost".to_string();
-                    pg_config.host("localhost");
+                    pg_config.postgres_host = "localhost".to_string();
                 }
             };
             match std::env::var("LUMINA_POSTGRES_PASSWORD") {
                 Ok(val) => {
-                    pg_config.password(&val);
+                    pg_config.postgres_password = Some(val);
                 }
                 Err(_) => {
                     warn_elog!(
@@ -123,24 +141,33 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
         };
 
         // Create Postgres connection pool
-        let pg_manager = PostgresConnectionManager::new(pg_config.clone(), NoTls);
-        let pg_pool = Pool::builder().build(pg_manager).await?;
+        let uri = format!(
+            "postgres://{}{}@{}:{}/{}",
+            pg_config.postgres_username,
+            pg_config
+                .postgres_password
+                .as_deref()
+                .map(|a| format!(":{}", a))
+                .unwrap_or_default(),
+            pg_config.postgres_host,
+            pg_config.postgres_port,
+            pg_config.postgres_dbname
+        );
+        let pg_pool = PgPool::connect(uri.as_str()).await?;
         {
-            let pg_conn = pg_pool.get().await?;
-            pg_conn
-                .batch_execute(include_str!("../../SQL/create_pg.sql"))
-                .await?;
+            // This is where previously the database schema was created if it did not exist, but now
+            // we use sqlx and let it do that :)
+            // pg_conn
+            //     .batch_execute(include_str!("../../SQL/create_pg.sql"))
+            //     .await?;
             // Populate bloom filters
             let mut redis_conn = redis_pool.get().await?;
             let email_key = "bloom:email";
             let username_key = "bloom:username";
 
-            let rows = pg_conn
-                .query("SELECT email, username FROM users", &[])
-                .await?;
-            for row in rows {
-                let email: String = row.get(0);
-                let username: String = row.get(1);
+            // (email, username)
+            let users_and_emails = operations::list_users_and_emails(&pg_pool).await?;
+            for (email, username) in users_and_emails {
                 let _: () = redis::cmd("BF.ADD")
                     .arg(email_key)
                     .arg(email)
@@ -174,10 +201,7 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
 #[derive()]
 pub enum DbConn {
     /// The main database is a Postgres database in this variant.
-    PgsqlConnection(
-        Pool<PostgresConnectionManager<NoTls>>,
-        Pool<RedisConnectionManager>,
-    ),
+    PgsqlConnection(PgPool, Pool<RedisConnectionManager>),
 }
 
 pub(crate) trait DatabaseConnections {
@@ -189,7 +213,7 @@ pub(crate) trait DatabaseConnections {
 
     /// Get a reference to the Postgres pool
     /// This returns a clone of the pool without recreating it entirely, so it is cheap to call
-    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>>;
+    fn get_postgres_pool(&self) -> PgPool;
 
     /// Recreate the database connection.
     async fn recreate(&self) -> PgConn
@@ -213,9 +237,9 @@ impl DatabaseConnections for DbConn {
             DbConn::PgsqlConnection(_, redis_pool) => redis_pool.clone(),
         }
     }
-    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>> {
+    fn get_postgres_pool(&self) -> PgPool {
         match self {
-            DbConn::PgsqlConnection(pg_pool, _) => pg_pool.clone(),
+            DbConn::PgsqlConnection(pg_pool, _) => return pg_pool.clone(),
         }
     }
 }
@@ -225,7 +249,7 @@ impl DatabaseConnections for PgConn {
         self.redis_pool.clone()
     }
 
-    fn get_postgres_pool(&self) -> Pool<PostgresConnectionManager<NoTls>> {
+    fn get_postgres_pool(&self) -> PgPool {
         self.postgres_pool.clone()
     }
 
@@ -239,7 +263,7 @@ impl DatabaseConnections for PgConn {
 /// Simplified type only accounting for the Postgres struct, since the enum adds some future flexibility, but also a lot of overhead.
 /// If all goes well, this PgConn type will have replaced DbConn entirely after a few iterations of improvement over the years.
 pub struct PgConn {
-    pub(crate) postgres_pool: Pool<PostgresConnectionManager<NoTls>>,
+    pub(crate) postgres_pool: PgPool,
     pub(crate) redis_pool: Pool<RedisConnectionManager>,
 }
 
@@ -408,4 +432,31 @@ async fn check_timeline_invalidations(
     }
 
     Ok(())
+}
+
+mod operations {
+    use super::*;
+    use anyhow::Result;
+    /// List all users and their emails from the database, used for populating bloom filters on
+    ///startup
+    ///
+    /// Returns a vector of tuples containing the email and username of each user in the database:
+    /// ```rust
+    /// Vec<(String, String)> // (email, username)
+    /// ```
+    pub async fn list_users_and_emails(pool: &PgPool) -> Result<Vec<(String, String)>> {
+        let recs = sqlx::query!(
+            r#"
+SELECT email, username
+FROM users
+"#
+        )
+        .fetch_all(pool)
+        .await?;
+        let mut res = vec![];
+        for rec in recs {
+            res.push((rec.email, rec.username));
+        }
+        return Ok(res);
+    }
 }

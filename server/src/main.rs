@@ -40,7 +40,7 @@ use std::{net::IpAddr, process, sync::Arc};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 mod user;
-use tokio_postgres as postgres;
+
 struct AppState(Arc<InnerAppState>);
 struct InnerAppState {
     #[allow(dead_code)]

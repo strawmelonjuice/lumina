@@ -16,10 +16,6 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*
- This file is also auto-included by server/src/database.rs, which uses it to create the database on first launch.
- */
-
 -- Create logs table
 CREATE TABLE IF NOT EXISTS logs
 (

@@ -1,6 +1,5 @@
 {
   description = "Lumina Development Environment";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
@@ -21,7 +20,6 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-        # Define the Rust toolchain using Fenix
         rustToolchain = fenix.packages.${system}.stable.withComponents [
           "cargo"
           "rustc"
@@ -30,31 +28,47 @@
           "rust-analyzer"
           "rust-src"
         ];
+        # Define libraries in one place to avoid repetition
+        libraries = with pkgs; [
+          stdenv.cc.cc
+          glib
+          dbus
+          curl
+          openssl
+        ];
+
+        packages = with pkgs; [
+
+          # Language tool chains: Rust, Gleam
+          rustToolchain
+          gleam
+          bun
+          # For tidying and typing
+          # nodePackages.prettier
+          sqlx-cli
+
+          # Helpers on OS level
+          pkg-config
+
+          # Podman
+          podman
+
+          # Runners
+          watchexec
+          just
+        ];
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Language tool chains: Rust, Gleam
-            rustToolchain
-            gleam
-            bun
-            # For tidying and typing
-            # nodePackages.prettier
+          # Tools go here
+          nativeBuildInputs = [ pkgs.pkg-config ];
 
-            # Helpers on OS level
-            pkg-config
-            dbus
-
-            # Podman
-            podman
-
-            # Runners
-            watchexec
-            just
-          ];
+          # Libraries go here
+          buildInputs = packages ++ libraries;
 
           shellHook = ''
-                        export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH"
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH"
+
                         bun i --cwd=client/
                         echo "❄️ dev environment loaded"
                         just --list
@@ -65,4 +79,5 @@
         };
       }
     );
+
 }

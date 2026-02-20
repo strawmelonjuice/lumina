@@ -55,8 +55,23 @@ clean-all:
 [doc("Just runs the Podman image for a Redis and Postgres server for local development run to connect to.")]
 [group("local-devel")]
 local-devel-prep: create-data-dirs
-    podman run --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d docker.io/redis/redis-stack:7.2.0-v18
-    podman run --replace -d -p 5432:5432 --name luminadb -e POSTGRES_USER=lumina -e POSTGRES_PASSWORD=lumina_pw -e POSTGRES_DB=lumina_config -v ./data/postgres:/var/lib/postgresql/data:Z docker.io/library/postgres:17-alpine3.22
+   # The redis container can be replaced if it already exists, but the postgres container needs to be checked, due to
+   # sqlx needing to connect to it to create the database and run the migrations, so if it is restarted, it may not be
+   # ready by the time sqlx tries to connect.
+   podman run --replace --name lumina-redis -p 6379:6379 -v ./data/redis:/data -d docker.io/redis/redis-stack:7.2.0-v18
+   @podman inspect -f '{{{{.State.Running}}}}' luminadb 2>/dev/null | grep -q 'true' \
+        && echo "luminadb is already running." \
+        || podman run -d -p 5432:5432 \
+           --name luminadb \
+           -e POSTGRES_USER=lumina \
+           -e POSTGRES_PASSWORD=lumina_pw \
+           -e POSTGRES_DB=lumina_config \
+           -v ./data/postgres:/var/lib/postgresql/data:Z \
+           docker.io/library/postgres:17-alpine3.22
+   sqlx db create
+   sqlx migrate run
+   echo "Postgres database created and migrations ran"
+
 
 [doc("Run the server in development mode")]
 [group("local-devel")]
