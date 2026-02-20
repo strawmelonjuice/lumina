@@ -22,6 +22,7 @@
 use crate::{LuminaError, database::DbConn, helpers::events::EventLogger, info_elog};
 use cynthia_con::CynthiaColors;
 use uuid::Uuid;
+use crate::database::DatabaseConnections;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -62,11 +63,11 @@ impl User {
     async fn get_hashed_password(self, database: &DbConn) -> Result<String, LuminaError> {
         match database {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await?;
-                let row = client
-                    .query_one("SELECT password FROM users WHERE id = $1", &[&self.id])
+
+                let row = sqlx::query!("SELECT password FROM users WHERE id = $1", &self.id)
+                    .fetch_one(pg_pool)
                     .await?;
-                let password: String = row.get(0);
+                let password: String = row.password;
                 Ok(password)
             }
         }
@@ -83,29 +84,29 @@ impl User {
             bcrypt::hash(password, bcrypt::DEFAULT_COST).map_err(|_| LuminaError::BcryptError)?;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await?;
                 // Some username and email validation should be done here
                 // Check if the email is already in use
-                let email_exists = client
-                    .query("SELECT * FROM users WHERE email = $1", &[&email])
+                let email_exists = sqlx::query!("SELECT * FROM users WHERE email = $1", &email)
+                    .fetch_optional(pg_pool)
                     .await?;
-                if !email_exists.is_empty() {
+                if !email_exists.is_none() {
                     return Err(LuminaError::RegisterEmailInUse);
                 }
                 // Check if the username is already in use
-                let username_exists = client
-                    .query("SELECT * FROM users WHERE username = $1", &[&username])
+                let username_exists =
+                    sqlx::query!("SELECT * FROM users WHERE username = $1", &username)
+                        .fetch_optional(pg_pool)
                     .await?;
-                if !username_exists.is_empty() {
+                if !username_exists.is_none() {
                     return Err(LuminaError::RegisterUsernameInUse);
                 }
 
-                let id = client
-					.query_one("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &[&email, &username, &password])
+                let id = sqlx::query!("INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id", &email, &username, &password)
+                    .fetch_one(pg_pool)
 					.await
 					?;
                 Ok(User {
-                    id: id.get(0),
+                    id: id.id,
                     email,
                     username,
                     foreign_instance_id: "".to_string(), // Default value for new users
@@ -124,19 +125,16 @@ impl User {
         };
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await?;
-                let user = client
-					.query_one(
-						&format!("SELECT id, email, username, COALESCE(foreign_instance_id, '') FROM users WHERE {} = $1", identifyer_type),
-						&[&identifier],
-					)
+                let user = sqlx::query!("SELECT id, email, username, coalesce(foreign_instance_id, '') as foreign_instance_id FROM users WHERE $1 = $2", identifyer_type, &identifier)
+
+                    .fetch_one(pg_pool)
 					.await
 					?;
                 Ok(User {
-                    id: user.get(0),
-                    email: user.get(1),
-                    username: user.get(2),
-                    foreign_instance_id: user.get(3),
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    foreign_instance_id: user.foreign_instance_id.unwrap_or("".to_string()),
                 })
             }
         }
@@ -151,20 +149,18 @@ impl User {
         let user_id = user.id;
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await?;
                 let session_key = Uuid::new_v4().to_string();
-                let id = client
-                    .query_one(
+                let id = sqlx::query!(
                         "INSERT INTO sessions (user_id, session_key) VALUES ($1, $2) RETURNING id",
-                        &[&user_id, &session_key],
-                    )
+                        &user_id, &session_key,
+                    ).fetch_one(pg_pool)
                     .await?;
                 info_elog!(
                     ev_log,
                     "New session created by {}",
                     user.clone().username.color_bright_cyan()
                 );
-                let session_id = id.get(0);
+                let session_id = id.id;
                 Ok((
                     SessionReference {
                         session_id,
@@ -181,15 +177,14 @@ impl User {
     ) -> Result<User, LuminaError> {
         match db {
             DbConn::PgsqlConnection(pg_pool, _) => {
-                let client = pg_pool.get().await?;
-                let user = client
-					.query_one("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &[&token])
+                let user = sqlx::query!("SELECT users.id, users.email, users.username FROM users JOIN sessions ON users.id = sessions.user_id WHERE sessions.session_key = $1", &token)
+                    .fetch_one(pg_pool)
 					.await
 					?;
                 Ok(User {
-                    id: user.get(0),
-                    email: user.get(1),
-                    username: user.get(2),
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
                     foreign_instance_id: "".to_string(), // Default value for revived sessions
                 })
             }
@@ -207,7 +202,6 @@ pub(crate) async fn register_validitycheck(
         // Check if the email or username is already in use using fastbloom algorithm with Redis, and fallback to DB check if not found. If not in either, we can go on.
         match db {
             DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-                let client = pg_pool.get().await?;
                 let mut redis_conn = redis_pool.get().await?;
                 // fastbloom_rs expects bytes, so we use the string as bytes
                 let email_key = String::from("bloom:email");
@@ -220,10 +214,10 @@ pub(crate) async fn register_validitycheck(
                     .unwrap_or(false);
                 if email_exists {
                     // Fallback to DB check if in bloom filter
-                    let email_db = client
-                        .query("SELECT * FROM users WHERE email = $1", &[&email])
+                    let email_db = sqlx::query!("SELECT * FROM users WHERE email = $1", &email)
+                        .fetch_optional(pg_pool)
                         .await?;
-                    if !email_db.is_empty() {
+                    if !email_db.is_none() {
                         return Err(LuminaError::RegisterEmailInUse);
                     }
                 }
@@ -235,18 +229,19 @@ pub(crate) async fn register_validitycheck(
                     .unwrap_or(false);
                 if username_exists {
                     // Fallback to DB check if in bloom filter
-                    let username_db = client
-                        .query("SELECT * FROM users WHERE username = $1", &[&username])
+                    let username_db = sqlx::query!("SELECT * FROM users WHERE username = $1", &username)
+                        .fetch_optional(pg_pool)
                         .await?;
-                    if !username_db.is_empty() {
+                    if !username_db.is_none() {
                         return Err(LuminaError::RegisterUsernameInUse);
                     }
                 }
                 // Fallback to DB check if not in bloom filter
-                let email_db = client
-                    .query("SELECT * FROM users WHERE email = $1", &[&email])
+                let email_db =
+                    sqlx::query!("SELECT * FROM users WHERE email = $1", &email)
+                        .fetch_optional(pg_pool)
                     .await?;
-                if !email_db.is_empty() {
+                if !email_db.is_none() {
                     // Update bloom filter after DB check
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&email_key)
@@ -256,10 +251,10 @@ pub(crate) async fn register_validitycheck(
                         .unwrap_or(());
                     return Err(LuminaError::RegisterEmailInUse);
                 }
-                let username_db = client
-                    .query("SELECT * FROM users WHERE username = $1", &[&username])
+                let username_db = sqlx::query!("SELECT * FROM users WHERE username = $1", &username)
+                    .fetch_optional(pg_pool)
                     .await?;
-                if !username_db.is_empty() {
+                if !username_db.is_none() {
                     let _: () = redis::cmd("BF.ADD")
                         .arg(&username_key)
                         .arg(&username)

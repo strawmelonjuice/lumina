@@ -184,8 +184,6 @@ pub(crate) async fn wsconnection<'k>(
 															match e {
 																LuminaError::DbError(crate::errors::LuminaDbError::Postgres(e)) =>
 																	error_elog!(ev_log,"While creating session token: {:?}", e),
-																LuminaError::Bb8RunErrorPg(e) =>
-																	warn_elog!(ev_log,"There was an error creating session token: {}", e),
 																_ => {}
 															}
 															// I would return a more specific error message
