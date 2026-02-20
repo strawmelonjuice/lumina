@@ -88,3 +88,9 @@ local-devel-watch:
 dev:
     @just local-devel-prep
     @just local-devel-watch
+
+[group("local-devel")]
+[doc("Run pgweb (8081) and redis-commander (8082) for local development")]
+local-devel-dataexplorer: local-devel-prep
+   podman run -d --replace --name lumina-redis-commander -p 8082:8081 -e REDIS_HOSTS=host.containers.internal:6379 ghcr.io/joeferner/redis-commander:latest
+   podman run -d --replace --name lumina-pgweb -p 8081:8081 -e'PGWEB_DATABASE_URL=postgres://lumina:lumina_pw@host.containers.internal:5432/lumina_config?sslmode=disable' sosedoff/pgweb:latest

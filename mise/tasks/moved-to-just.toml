@@ -53,3 +53,8 @@ run = "just local-devel"
 hide = true
 description = "$just local-devel-watch"
 run = "just local-devel-watch"
+
+[local-devel-dataexplorer]
+hide = true
+description = "$just local-devel-dataexplorer"
+run = "just local-devel-dataexplorer"
