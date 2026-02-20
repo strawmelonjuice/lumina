@@ -20,6 +20,7 @@ sqlx = { version = "0.8.6", features = [
 	"postgres",
 	"runtime-tokio",
 	"tls-native-tls",
+	"time",
 	"uuid",
 ] }
 anyhow = "1.0.101"

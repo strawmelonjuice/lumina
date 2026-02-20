@@ -29,6 +29,7 @@ use bb8_redis::RedisConnectionManager;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
 use sqlx::postgres::PgPool;
 use std::time::Duration;
+use sqlx::{Postgres};
 
 struct DatabaseConfig {
     postgres_username: String,
@@ -153,7 +154,7 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
             pg_config.postgres_port,
             pg_config.postgres_dbname
         );
-        let pg_pool = PgPool::connect(uri.as_str()).await?;
+        let pg_pool: sqlx::Pool<Postgres> = PgPool::connect(uri.as_str()).await?;
         {
             // This is where previously the database schema was created if it did not exist, but now
             // we use sqlx and let it do that :)
@@ -222,6 +223,17 @@ pub(crate) trait DatabaseConnections {
 }
 
 impl DatabaseConnections for DbConn {
+    fn get_redis_pool(&self) -> Pool<RedisConnectionManager> {
+        match self {
+            DbConn::PgsqlConnection(_, redis_pool) => redis_pool.clone(),
+        }
+    }
+
+    fn get_postgres_pool(&self) -> PgPool {
+        match self {
+            DbConn::PgsqlConnection(pg_pool, _) => pg_pool.clone(),
+        }
+    }
     /// Recreate the database connection.
     /// This clones the pools - bb8 pools are cheap to clone as they share the underlying connections.
     // This function converts a generic DbConn to the more concrete PgConn type.
@@ -229,17 +241,6 @@ impl DatabaseConnections for DbConn {
         PgConn {
             postgres_pool: self.get_postgres_pool(),
             redis_pool: self.get_redis_pool(),
-        }
-    }
-
-    fn get_redis_pool(&self) -> Pool<RedisConnectionManager> {
-        match self {
-            DbConn::PgsqlConnection(_, redis_pool) => redis_pool.clone(),
-        }
-    }
-    fn get_postgres_pool(&self) -> PgPool {
-        match self {
-            DbConn::PgsqlConnection(pg_pool, _) => return pg_pool.clone(),
         }
     }
 }
@@ -289,29 +290,27 @@ pub async fn maintain(db: PgConn) {
     let db = DbConn::from(db);
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let mut session_interval = tokio::time::interval(std::time::Duration::from_secs(60));
-            let mut cache_interval = tokio::time::interval(std::time::Duration::from_secs(300)); // 5 minutes
+            let mut session_interval = tokio::time::interval(Duration::from_secs(60));
+            let mut cache_interval = tokio::time::interval(Duration::from_secs(300)); // 5 minutes
 
             loop {
                 tokio::select! {
                     _ = session_interval.tick() => {
                         // Delete any sessions older than 20 days
-                        if let Ok(client) = pg_pool.get().await {
-                            let _ = client
-                                .execute(
-                                    "DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'",
-                                    &[],
-                                )
-                                .await;
-                        }
+                        match sqlx::query!("DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '20 days'").execute(&pg_pool).await {
+                            Ok(_) => (),
+                            Err(err) => {
+                                error!("Failed to delete session: {}", err);
+                            }
+                        };
+
                     }
                     _ = cache_interval.tick() => {
                         // Clean up expired timeline caches and manage cache invalidation
                         if let Ok(mut redis_conn) = redis_pool.get().await {
                             let _ = cleanup_timeline_caches(&mut redis_conn).await;
-                            if let Ok(pg_conn) = pg_pool.get().await {
-                                let _ = check_timeline_invalidations(&mut redis_conn, &pg_conn).await;
-                            }
+
+                                let _ = check_timeline_invalidations(&mut redis_conn, &pg_pool).await;
                         }
                     }
                 }
@@ -369,22 +368,24 @@ async fn cleanup_timeline_caches(
 // Check for timeline changes and invalidate caches accordingly (PostgreSQL)
 async fn check_timeline_invalidations(
     redis_conn: &mut bb8::PooledConnection<'_, RedisConnectionManager>,
-    client: &bb8::PooledConnection<'_, PostgresConnectionManager<NoTls>>,
+    pg_pool: &PgPool,
 ) -> Result<(), LuminaError> {
     // Get the last check timestamp
-    let last_check: Option<String> = redis::cmd("GET")
+    let last_check = redis::cmd("GET")
         .arg("timeline_cache_last_check")
         .query_async(&mut **redis_conn)
         .await
-        .unwrap_or(None);
+        .unwrap_or(None)
+        .map(|a: String| time::OffsetDateTime::parse(a.as_str(), &time::format_description::well_known::Rfc3339));
 
-    let query = if let Some(timestamp) = last_check {
-        client
-            .query(
-                "SELECT DISTINCT tlid FROM timelines WHERE timestamp > $1",
-                &[&timestamp],
+    let query = if let Some(Ok(timestamp)) = last_check {
+        sqlx::query!("SELECT DISTINCT tlid FROM timelines WHERE timestamp > $1", timestamp)
+            .fetch_all(
+                pg_pool,
             )
             .await
+    } else if let Some(Err(_)) = last_check {
+        panic!("timeline_cache_last_check returned an error, this means there's probably been tampering with the Redis DB.");
     } else {
         // First run, don't invalidate anything
         let _: () = redis::cmd("SET")
@@ -400,10 +401,10 @@ async fn check_timeline_invalidations(
     };
 
     match query {
-        Ok(rows) => {
-            for row in rows {
-                let timeline_id: String = row.get(0);
-                let _ = timeline::invalidate_timeline_cache(redis_conn, &timeline_id).await;
+        Ok(timelines) => {
+            for timeline in timelines {
+
+                let _ = timeline::invalidate_timeline_cache(redis_conn, timeline.tlid).await;
             }
 
             // Update last check timestamp
@@ -436,7 +437,6 @@ async fn check_timeline_invalidations(
 
 mod operations {
     use super::*;
-    use anyhow::Result;
     /// List all users and their emails from the database, used for populating bloom filters on
     ///startup
     ///
@@ -444,7 +444,7 @@ mod operations {
     /// ```rust
     /// Vec<(String, String)> // (email, username)
     /// ```
-    pub async fn list_users_and_emails(pool: &PgPool) -> Result<Vec<(String, String)>> {
+    pub async fn list_users_and_emails(pool: &PgPool) -> Result<Vec<(String, String)>, sqlx::Error> {
         let recs = sqlx::query!(
             r#"
 SELECT email, username
@@ -457,6 +457,6 @@ FROM users
         for rec in recs {
             res.push((rec.email, rec.username));
         }
-        return Ok(res);
+         Ok(res)
     }
 }

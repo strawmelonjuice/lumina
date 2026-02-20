@@ -47,8 +47,8 @@
           # nodePackages.prettier
           sqlx-cli
 
-          # Helpers on OS level
-          pkg-config
+          # Pkg config
+          pkg-config-unwrapped
 
           # Podman
           podman

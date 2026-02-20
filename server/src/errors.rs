@@ -24,7 +24,6 @@
 pub(crate) enum LuminaError {
     ConfInvalid(crate::EnvVar),
     DbError(LuminaDbError),
-    Bb8RunErrorPg(bb8::RunError<crate::postgres::Error>),
     Bb8RunErrorRedis(Box<bb8::RunError<redis::RedisError>>),
     Unknown,
     RocketFaillure(Box<rocket::Error>),
@@ -50,7 +49,7 @@ impl From<LuminaDbError> for LuminaError {
 #[derive(Debug)]
 pub(crate) enum LuminaDbError {
     Redis(Box<redis::RedisError>),
-    Postgres(crate::postgres::Error),
+    Postgres(sqlx::Error),
 }
 
 impl From<rocket::Error> for LuminaError {
@@ -65,8 +64,8 @@ impl From<serde_json::Error> for LuminaError {
     }
 }
 
-impl From<crate::postgres::Error> for LuminaError {
-    fn from(err: crate::postgres::Error) -> Self {
+impl From<sqlx::Error> for LuminaError {
+    fn from(err: sqlx::Error) -> Self {
         LuminaError::DbError(LuminaDbError::Postgres(err))
     }
 }
@@ -76,11 +75,7 @@ impl From<redis::RedisError> for LuminaError {
         LuminaError::DbError(LuminaDbError::Redis(Box::new(err)))
     }
 }
-impl From<bb8::RunError<crate::postgres::Error>> for LuminaError {
-    fn from(err: bb8::RunError<crate::postgres::Error>) -> Self {
-        LuminaError::Bb8RunErrorPg(err)
-    }
-}
+
 impl From<bb8::RunError<redis::RedisError>> for LuminaError {
     fn from(err: bb8::RunError<redis::RedisError>) -> Self {
         LuminaError::Bb8RunErrorRedis(Box::new(err))
@@ -106,7 +101,6 @@ impl std::fmt::Display for LuminaError {
                     LuminaDbError::Redis(re) => format!("Redis error: {}", re),
                     LuminaDbError::Postgres(pe) => format!("Postgres error: {}", pe),
                 },
-                LuminaError::Bb8RunErrorPg(e) => format!("Postgres connection pool error: {}", e),
                 LuminaError::Bb8RunErrorRedis(e) => format!("Redis connection pool error: {}", e),
                 LuminaError::RocketFaillure(e) => format!("Rocket error: {}", e),
                 LuminaError::BcryptError => "Bcrypt error".to_string(),

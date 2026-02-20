@@ -138,10 +138,11 @@ async fn get_cached_timeline_page(
 /// Invalidate all cache entries for a timeline
 pub async fn invalidate_timeline_cache(
     redis_conn: &mut bb8::PooledConnection<'_, bb8_redis::RedisConnectionManager>,
-    timeline_id: &str,
+    timeline_id: Uuid,
 ) -> Result<(), LuminaError> {
+    let timeline_id_string = Uuid::to_string(&timeline_id);
     // Use SCAN to find all cache keys for this timeline
-    let pattern = format!("timeline_cache:{}:*", timeline_id);
+    let pattern = format!("timeline_cache:{}:*", timeline_id_string);
 
     let mut cursor = 0;
     loop {
