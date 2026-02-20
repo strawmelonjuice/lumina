@@ -16,6 +16,8 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use uuid::Uuid;
+
 use crate::database::{self, DatabaseConnections};
 use crate::errors::LuminaError;
 use crate::timeline;
@@ -26,10 +28,6 @@ async fn test_database_setup() {
     let result = database::setup()
         .await
         .expect("Database setup should succeed.");
-    assert!(
-        result.get_postgres_pool().get().await.is_ok(),
-        "Should get Postgres connection"
-    );
     assert!(
         result.get_redis_pool().get().await.is_ok(),
         "Should get Redis connection"
@@ -75,7 +73,8 @@ async fn test_timeline_invalidation() {
     let db = database::setup().await.expect("DB setup");
     let redis_pool = db.get_redis_pool();
     let mut conn = redis_pool.get().await.expect("Redis conn");
-    let timeline_id = "test-timeline-invalidation";
+    // Global timeline
+    let timeline_id = Uuid::nil();
 
     // Set a test cache key
     let cache_key = format!("timeline_cache:{}:page:0", timeline_id);

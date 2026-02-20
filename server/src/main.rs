@@ -156,10 +156,6 @@ async fn main() {
                                 error_elog!(ev_log, "While connecting to postgres database: {}", a);
                                 None
                             }
-                            Err(LuminaError::Bb8RunErrorPg(a)) => {
-                                error_elog!(ev_log, "While setting up database pool: {}", a);
-                                None
-                            }
                             Err(LuminaError::DbError(crate::errors::LuminaDbError::Redis(a))) => {
                                 error_elog!(ev_log, "While connecting to Redis: {}", a);
                                 None
@@ -203,16 +199,13 @@ async fn main() {
                     if cfg!(debug_assertions) {
                         let redis_pool = db.get_redis_pool();
                         let mut redis_conn = redis_pool.get().await.unwrap();
-                        timeline::invalidate_timeline_cache(
-                            &mut redis_conn,
-                            "00000000-0000-0000-0000-000000000000",
-                        )
-                        .await
-                        .unwrap();
+                        timeline::invalidate_timeline_cache(&mut redis_conn, Uuid::nil())
+                            .await
+                            .unwrap();
                         let global = timeline::fetch_timeline_post_ids(
                             ev_log.clone(),
                             &db,
-                            "00000000-0000-0000-0000-000000000000",
+                            &Uuid::nil(),
                             None,
                         )
                         .await
@@ -227,7 +220,6 @@ async fn main() {
 
                             match db.recreate().await.into() {
                                 DbConn::PgsqlConnection(pg_pool, _) => {
-                                    let client = pg_pool.get().await.unwrap();
                                     // Insert Hello World post and timeline entry if not exists
                                     let user_1_: Result<user::User, LuminaError> =
                                         match user::User::create_user(
@@ -277,18 +269,17 @@ async fn main() {
                                             println!(
                                                 "Created two users with password 'MyTestPassw9292!' and usernames 'testuser1' and 'testuser2'."
                                             );
-                                            let _ = client
-												.execute(
-													"INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
-													&[&generated_uuid, &user_1.id, &hello_content],
+                                            sqlx::query!("INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
+													&generated_uuid, &user_1.id, &hello_content
 												)
-												.await;
+												.execute(&pg_pool)
+												.await.unwrap_or_default();
                                             let add_clone = ev_log.clone();
                                             timeline::add_to_timeline(
                                                 add_clone,
                                                 &db,
-                                                "00000000-0000-0000-0000-000000000000",
-                                                generated_uuid.to_string().as_str(),
+                                                &Uuid::nil(),
+                                                &generated_uuid,
                                             )
                                             .await
                                             .unwrap_or(());

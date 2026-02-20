@@ -27,9 +27,9 @@ use crate::{info_elog, success_elog, warn_elog};
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
+use sqlx::Postgres;
 use sqlx::postgres::PgPool;
 use std::time::Duration;
-use sqlx::{Postgres};
 
 struct DatabaseConfig {
     postgres_username: String,
@@ -37,7 +37,6 @@ struct DatabaseConfig {
     postgres_host: String,
     postgres_port: u16,
     postgres_dbname: String,
-    redis_url: String,
 }
 
 pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
@@ -64,96 +63,103 @@ pub(crate) async fn setup() -> Result<PgConn, LuminaError> {
     };
 
     {
-        let pg_config: DatabaseConfig = {
-            let mut uuu = (
-                "unspecified database".to_string(),
-                "unspecified host".to_string(),
-                "unknown port".to_string(),
-            );
-            let mut pg_config = DatabaseConfig {
-                postgres_username: std::env::var("LUMINA_POSTGRES_USERNAME")
-                    .unwrap_or("lumina".to_string()),
-                postgres_password: std::env::var("LUMINA_POSTGRES_PASSWORD").ok(),
-                postgres_host: std::env::var("LUMINA_POSTGRES_HOST")
-                    .unwrap_or("localhost".to_string()),
-                postgres_port: std::env::var("LUMINA_POSTGRES_PORT")
-                    .ok()
-                    .and_then(|p| p.parse::<u16>().ok())
-                    .unwrap_or(5432),
-                postgres_dbname: std::env::var("LUMINA_POSTGRES_DATABASE")
-                    .unwrap_or("lumina_config".to_string()),
-                redis_url,
-            };
-            pg_config.postgres_username =
-                std::env::var("LUMINA_POSTGRES_USERNAME").unwrap_or("lumina".to_string());
-            let dbname =
-                std::env::var("LUMINA_POSTGRES_DATABASE").unwrap_or("lumina_config".to_string());
-            uuu.0 = dbname.clone();
-            pg_config.postgres_dbname = dbname;
-            let port = match std::env::var("LUMINA_POSTGRES_PORT") {
-                Err(..) => {
-                    warn_elog!(
-                        ev_log,
-                        "No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'."
-                    );
-                    "5432".to_string()
-                }
-                Ok(c) => c,
-            };
-            uuu.2 = port.clone();
-            // Parse the port as u16, if it fails, return an error
-            pg_config.postgres_port = port
-                .parse::<u16>()
-                .map_err(|_| LuminaError::ConfInvalid(LUMINA_POSTGRES_PORT))?;
-            match std::env::var("LUMINA_POSTGRES_HOST") {
-                Ok(val) => {
-                    uuu.1 = val.clone();
-                    pg_config.postgres_host = val;
-                }
-                Err(_) => {
-                    warn_elog!(
-                        ev_log,
-                        "No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
-                    );
-                    // Default to localhost if not set
-                    uuu.1 = "localhost".to_string();
-                    pg_config.postgres_host = "localhost".to_string();
-                }
-            };
-            match std::env::var("LUMINA_POSTGRES_PASSWORD") {
-                Ok(val) => {
-                    pg_config.postgres_password = Some(val);
-                }
-                Err(_) => {
-                    warn_elog!(
-                        ev_log,
-                        "No Postgres database password provided under environment variable 'LUMINA_POSTGRES_PASSWORD'. Trying passwordless authentication."
-                    );
-                }
-            };
+        let uri = if let Ok(uri) = std::env::var("DATABASE_URL") {
             info_elog!(
                 ev_log,
-                "Using Postgres database at: {} on host: {} at port: {}",
-                uuu.0.color_bright_cyan().style_bold(),
-                uuu.1.color_bright_cyan().style_bold(),
-                uuu.2.color_bright_cyan().style_bold(),
+                "DATABASE_URL set, using that to connect to Postgres",
             );
-            pg_config
-        };
+            uri
+        } else {
+            let pg_config: DatabaseConfig = {
+                let mut uuu = (
+                    "unspecified database".to_string(),
+                    "unspecified host".to_string(),
+                    "unknown port".to_string(),
+                );
+                let mut pg_config = DatabaseConfig {
+                    postgres_username: std::env::var("LUMINA_POSTGRES_USERNAME")
+                        .unwrap_or("lumina".to_string()),
+                    postgres_password: std::env::var("LUMINA_POSTGRES_PASSWORD").ok(),
+                    postgres_host: std::env::var("LUMINA_POSTGRES_HOST")
+                        .unwrap_or("localhost".to_string()),
+                    postgres_port: std::env::var("LUMINA_POSTGRES_PORT")
+                        .ok()
+                        .and_then(|p| p.parse::<u16>().ok())
+                        .unwrap_or(5432),
+                    postgres_dbname: std::env::var("LUMINA_POSTGRES_DATABASE")
+                        .unwrap_or("lumina_config".to_string()),
+                };
+                pg_config.postgres_username =
+                    std::env::var("LUMINA_POSTGRES_USERNAME").unwrap_or("lumina".to_string());
+                let dbname = std::env::var("LUMINA_POSTGRES_DATABASE")
+                    .unwrap_or("lumina_config".to_string());
+                uuu.0 = dbname.clone();
+                pg_config.postgres_dbname = dbname;
+                let port = match std::env::var("LUMINA_POSTGRES_PORT") {
+                    Err(..) => {
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database port provided under environment variable 'LUMINA_POSTGRES_PORT'. Using default value '5432'."
+                        );
+                        "5432".to_string()
+                    }
+                    Ok(c) => c,
+                };
+                uuu.2 = port.clone();
+                // Parse the port as u16, if it fails, return an error
+                pg_config.postgres_port = port
+                    .parse::<u16>()
+                    .map_err(|_| LuminaError::ConfInvalid(LUMINA_POSTGRES_PORT))?;
+                match std::env::var("LUMINA_POSTGRES_HOST") {
+                    Ok(val) => {
+                        uuu.1 = val.clone();
+                        pg_config.postgres_host = val;
+                    }
+                    Err(_) => {
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database host provided under environment variable 'LUMINA_POSTGRES_HOST'. Using default value 'localhost'."
+                        );
+                        // Default to localhost if not set
+                        uuu.1 = "localhost".to_string();
+                        pg_config.postgres_host = "localhost".to_string();
+                    }
+                };
+                match std::env::var("LUMINA_POSTGRES_PASSWORD") {
+                    Ok(val) => {
+                        pg_config.postgres_password = Some(val);
+                    }
+                    Err(_) => {
+                        warn_elog!(
+                            ev_log,
+                            "No Postgres database password provided under environment variable 'LUMINA_POSTGRES_PASSWORD'. Trying passwordless authentication."
+                        );
+                    }
+                };
+                info_elog!(
+                    ev_log,
+                    "Using Postgres database at: {} on host: {} at port: {}",
+                    uuu.0.color_bright_cyan().style_bold(),
+                    uuu.1.color_bright_cyan().style_bold(),
+                    uuu.2.color_bright_cyan().style_bold(),
+                );
+                pg_config
+            };
 
-        // Create Postgres connection pool
-        let uri = format!(
-            "postgres://{}{}@{}:{}/{}",
-            pg_config.postgres_username,
-            pg_config
-                .postgres_password
-                .as_deref()
-                .map(|a| format!(":{}", a))
-                .unwrap_or_default(),
-            pg_config.postgres_host,
-            pg_config.postgres_port,
-            pg_config.postgres_dbname
-        );
+            // Create Postgres connection pool
+            format!(
+                "postgres://{}{}@{}:{}/{}",
+                pg_config.postgres_username,
+                pg_config
+                    .postgres_password
+                    .as_deref()
+                    .map(|a| format!(":{}", a))
+                    .unwrap_or_default(),
+                pg_config.postgres_host,
+                pg_config.postgres_port,
+                pg_config.postgres_dbname
+            )
+        };
         let pg_pool: sqlx::Pool<Postgres> = PgPool::connect(uri.as_str()).await?;
         {
             // This is where previously the database schema was created if it did not exist, but now
@@ -376,16 +382,21 @@ async fn check_timeline_invalidations(
         .query_async(&mut **redis_conn)
         .await
         .unwrap_or(None)
-        .map(|a: String| time::OffsetDateTime::parse(a.as_str(), &time::format_description::well_known::Rfc3339));
+        .map(|a: String| {
+            time::OffsetDateTime::parse(a.as_str(), &time::format_description::well_known::Rfc3339)
+        });
 
     let query = if let Some(Ok(timestamp)) = last_check {
-        sqlx::query!("SELECT DISTINCT tlid FROM timelines WHERE timestamp > $1", timestamp)
-            .fetch_all(
-                pg_pool,
-            )
-            .await
+        sqlx::query!(
+            "SELECT DISTINCT tlid FROM timelines WHERE timestamp > $1",
+            timestamp
+        )
+        .fetch_all(pg_pool)
+        .await
     } else if let Some(Err(_)) = last_check {
-        panic!("timeline_cache_last_check returned an error, this means there's probably been tampering with the Redis DB.");
+        panic!(
+            "timeline_cache_last_check returned an error, this means there's probably been tampering with the Redis DB."
+        );
     } else {
         // First run, don't invalidate anything
         let _: () = redis::cmd("SET")
@@ -403,7 +414,6 @@ async fn check_timeline_invalidations(
     match query {
         Ok(timelines) => {
             for timeline in timelines {
-
                 let _ = timeline::invalidate_timeline_cache(redis_conn, timeline.tlid).await;
             }
 
@@ -444,7 +454,9 @@ mod operations {
     /// ```rust
     /// Vec<(String, String)> // (email, username)
     /// ```
-    pub async fn list_users_and_emails(pool: &PgPool) -> Result<Vec<(String, String)>, sqlx::Error> {
+    pub async fn list_users_and_emails(
+        pool: &PgPool,
+    ) -> Result<Vec<(String, String)>, sqlx::Error> {
         let recs = sqlx::query!(
             r#"
 SELECT email, username
@@ -457,6 +469,6 @@ FROM users
         for rec in recs {
             res.push((rec.email, rec.username));
         }
-         Ok(res)
+        Ok(res)
     }
 }

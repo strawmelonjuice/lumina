@@ -34,7 +34,7 @@ use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
 use crate::{
     AppState, LuminaError, authentication_error_elog, error_elog, http_code_elog, incoming_elog,
-    info_elog, registration_error_elog, warn_elog,
+    info_elog, registration_error_elog,
 };
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;

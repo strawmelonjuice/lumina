@@ -175,16 +175,15 @@ pub async fn invalidate_timeline_cache(
 async fn fetch_timeline_total_count(db: &DbConn, timeline_id: &str) -> Result<usize, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
-            let row = client
-                .query_one(
-                    "SELECT COUNT(*) FROM timelines WHERE tlid = $1",
-                    &[&timeline_uuid],
-                )
-                .await?;
+            let row = sqlx::query!(
+                "SELECT COUNT(*) AS count FROM timelines WHERE tlid = $1",
+                &timeline_uuid
+            )
+            .fetch_one(pg_pool)
+            .await?;
 
-            let count: i64 = row.get(0);
+            let count: i64 = row.count.unwrap_or(0);
             Ok(count as usize)
         }
     }
@@ -199,19 +198,19 @@ async fn fetch_timeline_from_db(
 ) -> Result<Vec<String>, LuminaError> {
     match db {
         DbConn::PgsqlConnection(pg_pool, _redis_pool) => {
-            let client = pg_pool.get().await?;
             let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
-            let rows = client
-				.query(
+            let rows =
+				sqlx::query!(
 					"SELECT item_id FROM timelines WHERE tlid = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3",
-					&[&timeline_uuid, &(limit as i64), &(offset as i64)],
+					&timeline_uuid, &(limit as i64), &(offset as i64),
 				)
+				.fetch_all(pg_pool)
 				.await
 				?;
 
             let post_ids = rows
                 .into_iter()
-                .map(|row| row.get::<_, Uuid>(0).to_string())
+                .map(|row| row.item_id.to_string())
                 .collect();
             Ok(post_ids)
         }
@@ -223,9 +222,10 @@ async fn fetch_timeline_from_db(
 pub async fn fetch_timeline_post_ids(
     event_logger: EventLogger,
     db: &DbConn,
-    timeline_id: &str,
+    timeline: &Uuid,
     page: Option<usize>,
 ) -> Result<(Vec<String>, usize, bool), LuminaError> {
+    let timeline_id = timeline.to_string();
     let page = page.unwrap_or(0);
     let offset = page * TIMELINE_PAGE_SIZE;
 
@@ -241,12 +241,12 @@ pub async fn fetch_timeline_post_ids(
         .await?;
 
     // Check if this timeline should be cached
-    let should_cache = is_high_traffic_timeline(&mut redis_conn, timeline_id).await?;
+    let should_cache = is_high_traffic_timeline(&mut redis_conn, &timeline_id).await?;
 
     // Try to get from cache if it's a high-traffic timeline
     if should_cache
         && let Some(cached_page) =
-            get_cached_timeline_page(&mut redis_conn, timeline_id, page).await?
+            get_cached_timeline_page(&mut redis_conn, &timeline_id, page).await?
     {
         let has_more = (page + 1) * TIMELINE_PAGE_SIZE < cached_page.total_count;
         return Ok((cached_page.post_ids, cached_page.total_count, has_more));
@@ -255,14 +255,14 @@ pub async fn fetch_timeline_post_ids(
     // Cache miss or low-traffic timeline - fetch from database
     if timeline_id == GLOBAL_TIMELINE_ID || should_cache {
         // Get total count
-        let total_count = fetch_timeline_total_count(db, timeline_id).await?;
+        let total_count = fetch_timeline_total_count(db, &timeline_id).await?;
 
         // Get page data
-        let post_ids = fetch_timeline_from_db(db, timeline_id, offset, TIMELINE_PAGE_SIZE).await?;
+        let post_ids = fetch_timeline_from_db(db, &timeline_id, offset, TIMELINE_PAGE_SIZE).await?;
 
         // Cache the result if it's high-traffic
         if should_cache {
-            match cache_timeline_page(&mut redis_conn, timeline_id, page, &post_ids, total_count)
+            match cache_timeline_page(&mut redis_conn, &timeline_id, page, &post_ids, total_count)
                 .await
             {
                 Ok(_) => info_elog!(
@@ -324,11 +324,11 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
     );
     // For now, only global timeline is supported.
     if timeline_name == "global" {
-        let timeline_uuid =
+        let global_timeline_uuid =
             Uuid::parse_str(GLOBAL_TIMELINE_ID).map_err(|_| LuminaError::UUidError)?;
         let (post_ids, total_count, has_more) =
-            fetch_timeline_post_ids(event_logger, db, GLOBAL_TIMELINE_ID, page).await?;
-        Ok((timeline_uuid, post_ids, total_count, has_more))
+            fetch_timeline_post_ids(event_logger, db, &global_timeline_uuid, page).await?;
+        Ok((global_timeline_uuid, post_ids, total_count, has_more))
     } else {
         // Handle other timelines in the future
         error_elog!(
@@ -344,29 +344,27 @@ pub async fn fetch_timeline_post_ids_by_timeline_name(
 pub async fn add_to_timeline(
     event_logger: EventLogger,
     db: &DbConn,
-    timeline_id: &str,
-    item_id: &str,
+    timeline: &Uuid,
+    item: &Uuid,
 ) -> Result<(), LuminaError> {
     // Add to database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool.get().await?;
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
-            let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
-            client
-                .execute(
-                    "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
-                    &[&timeline_uuid, &item_uuid],
-                )
-                .await?;
+            sqlx::query!(
+                "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
+                *timeline,
+                item,
+            )
+            .execute(pg_pool)
+            .await?;
 
             // Invalidate cache
             let mut redis_conn = redis_pool.get().await?;
-            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
+            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, *timeline).await {
                 error_elog!(
                     event_logger,
                     "Failed to invalidate cache for timeline {}: {:?}",
-                    timeline_id,
+                    timeline.to_string(),
                     e
                 );
             }
@@ -381,29 +379,27 @@ pub async fn add_to_timeline(
 pub async fn remove_from_timeline(
     event_logger: EventLogger,
     db: &DbConn,
-    timeline_id: &str,
-    item_id: &str,
+    timeline: &Uuid,
+    item: &Uuid,
 ) -> Result<(), LuminaError> {
     // Remove from database
     match db {
         DbConn::PgsqlConnection(pg_pool, redis_pool) => {
-            let client = pg_pool.get().await?;
-            let timeline_uuid = Uuid::parse_str(timeline_id).map_err(|_| LuminaError::UUidError)?;
-            let item_uuid = Uuid::parse_str(item_id).map_err(|_| LuminaError::UUidError)?;
-            client
-                .execute(
-                    "DELETE FROM timelines WHERE tlid = $1 AND item_id = $2",
-                    &[&timeline_uuid, &item_uuid],
-                )
-                .await?;
+            sqlx::query!(
+                "DELETE FROM timelines WHERE tlid = $1 AND item_id = $2",
+                &timeline,
+                &item
+            )
+            .execute(pg_pool)
+            .await?;
 
             // Invalidate cache
             let mut redis_conn = redis_pool.get().await?;
-            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, timeline_id).await {
+            if let Err(e) = invalidate_timeline_cache(&mut redis_conn, *timeline).await {
                 error_elog!(
                     event_logger,
                     "Failed to invalidate cache for timeline {}: {:?}",
-                    timeline_id,
+                    timeline.to_string(),
                     e
                 );
             }

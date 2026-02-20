@@ -38,6 +38,7 @@ pub(crate) enum LuminaError {
     RegexError,
     SerializationError(serde_json::Error),
     JoinFaillure,
+    AuthenticationNoSuchUser,
 }
 
 impl From<LuminaDbError> for LuminaError {
@@ -114,6 +115,7 @@ impl std::fmt::Display for LuminaError {
                 LuminaError::RegexError => "Regex error".to_string(),
                 LuminaError::SerializationError(s) => format!("Serialization error: {}", s),
                 LuminaError::JoinFaillure => "Process join failure".to_string(),
+                LuminaError::AuthenticationNoSuchUser => "No such user".to_string(),
                 LuminaError::Unknown => "Unknown error".to_string(),
             }
         )

@@ -26,7 +26,7 @@
 use crate::LuminaError;
 use crate::database::PgConn;
 use cynthia_con::{CynthiaColors, CynthiaStyles};
-use time::OffsetDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 
 /// Levels of logging supported by the Logger.
 #[derive(Debug)]
@@ -86,7 +86,8 @@ impl EventLogger {
     /// asynchronously inserts a log entry in the logs table.
     pub async fn log(&self, level: EventType, message: &str) {
         // Get the current timestamp.
-        let now = OffsetDateTime::now_utc();
+        let now_odt = OffsetDateTime::now_utc();
+        let now_pdt = PrimitiveDateTime::new(now_odt.date(), now_odt.time());
 
         // Determine the appropriate prefix for stdout.
         // These prefixes are colored and styled matching helpers::prefixes().
@@ -166,17 +167,22 @@ impl EventLogger {
                     .chars()
                     .filter(|c| !c.is_control() || c.is_whitespace())
                     .collect();
-                let ts = now
-                    .format(&time::format_description::well_known::Rfc3339)
-                    .unwrap();
-
-                if let Ok(pg_conn) = db_conn.postgres_pool.get().await {
-                    let _ = pg_conn
-                        .execute(
-                            "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
-                            &[&level_str, &message_db, &ts],
+                match sqlx::query!(
+                    "INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)",
+                    &level_str,
+                    &message_db,
+                    &now_pdt,
+                )
+                .execute(&db_conn.postgres_pool)
+                .await
+                {
+                    Ok(_) => (),
+                    Err(p) => {
+                        panic!(
+                            "{0}\n\n\n{1}\n\n\n\n{0}",
+                            "Could not write logs to database! Crashing.", p
                         )
-                        .await;
+                    }
                 }
             }
             EventLogger::OnlyStdout => {
