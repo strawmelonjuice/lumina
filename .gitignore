@@ -33,6 +33,7 @@ node_modules
 client/build/dev/javascript/lumina_client/lumina_client.ts
 client/build/
 /client/priv/static/lumina_client*.css
+/client/priv/static/lumina_client*.hash
 /client/priv/static/lumina_client*.mjs
 instance.sqlite
 instance.sqlite-shm

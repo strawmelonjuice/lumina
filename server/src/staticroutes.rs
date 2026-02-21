@@ -47,24 +47,26 @@ pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
     RawHtml(format!(
         r#"<!doctype html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-	<title>Lumina</title>
-	<link rel="preconnect" href="https://fontlay.com" corossorigin />
-	<link href="https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap" rel="stylesheet">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		<title>Lumina</title>
+		<link rel="preconnect" href="https://fontlay.com" corossorigin />
+		<link href="https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap" rel="stylesheet">
 
-	<link
-		rel="stylesheet"
-		href="/static/lumina.css"
-	/>
-	<script type="module" src="{}"></script>
-</head>
-
-<body id="app">
-</body>
+		<link
+			rel="stylesheet"
+			href="/static/lumina.css"
+		/>
+		<script>
+			window.clientHash = "{}";
+		</script>
+		<script type="module" src="{}"></script>
+	</head>
+	<body id="app"></body>
 </html>"#,
-        js
+        include_str!("../../client/priv/static/lumina_client_rev.hash").trim(),
+        js,
     ))
 }
 
@@ -88,6 +90,29 @@ pub(crate) async fn lumina_d_js(state: &State<AppState>) -> RawJavaScript<String
     http_code_elog!(ev_log, 200, "/static/lumina.mjs");
 
     RawJavaScript(include_str!("../../client/priv/static/lumina_client.mjs").to_string())
+}
+
+/// Serves a single hash, meant to indicate what client version is expected (what client version the
+/// server was built with, more specifically...)
+/// This hash is also incorporated into the HTML loading the client as
+/// ```javascript
+/// window.clientHash
+/// ```
+/// This allows a client to check if the hash it carries still matches the hash currently served, if
+/// not, it'll prompt a reload.
+#[get("/api/client-rev")]
+pub(crate) async fn client_rev(state: &State<AppState>) -> RawText<String> {
+    let ev_log = {
+        let appstate = state.0.clone();
+        appstate.event_logger.clone()
+    };
+    http_code_elog!(ev_log, 200, "/client-rev");
+
+    RawText(
+        include_str!("../../client/priv/static/lumina_client_rev.hash")
+            .trim()
+            .to_string(),
+    )
 }
 
 #[get("/static/lumina.css")]

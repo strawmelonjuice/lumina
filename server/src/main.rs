@@ -325,6 +325,7 @@ async fn main() {
                                 staticroutes::index,
                                 staticroutes::lumina_js,
                                 staticroutes::lumina_d_js,
+                                staticroutes::client_rev,
                                 staticroutes::lumina_css,
                                 staticroutes::licence,
                                 staticroutes::license_redirect,

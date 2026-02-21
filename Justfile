@@ -22,6 +22,7 @@ build-server-release: build-client
 build-client: build-styles
     cd ./client/ &&\
     gleam build --target javascript &&\
+    find ./client/src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "./priv/static/lumina_client_rev.hash" &&\
     echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
     bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser &&\
     bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ./priv/static/lumina_client.mjs --target=browser
