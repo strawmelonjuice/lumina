@@ -37,15 +37,13 @@ use helpers::events::EventLogger;
 use rocket::config::LogLevel;
 use std::io::ErrorKind;
 use std::{net::IpAddr, process, sync::Arc};
-use tokio::sync::Mutex;
 use uuid::Uuid;
 mod user;
 
 struct AppState(Arc<InnerAppState>);
 struct InnerAppState {
-    #[allow(dead_code)]
     config: ServerConfig,
-    db: Mutex<DbConn>,
+    db: DbConn,
     event_logger: EventLogger,
 }
 mod rate_limiter;
@@ -298,7 +296,7 @@ async fn main() {
 
                     let appstate = AppState(Arc::from(InnerAppState {
                         config: config.clone(),
-                        db: Mutex::from(db),
+                        db: db,
                         event_logger: ev_log.clone(),
                     }));
 
