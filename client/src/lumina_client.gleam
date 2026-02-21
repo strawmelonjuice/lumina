@@ -723,13 +723,15 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             <> bool.to_string(has_more)
             <> ").",
           )
-          let assert model_type.WsConnectionConnected(_socket) = model.ws
+          let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
           let posts_fetches =
             effect.batch(
               list.map(items, fn(post_id) {
-                let do_to = "Request post with id " <> post_id <> " here"
-                todo as do_to
+                PostContentRequest(post_id:)
+                |> encode_ws_msg
+                |> json.to_string
+                |> lustre_websocket.send(socket, _)
               }),
             )
 
@@ -898,6 +900,7 @@ type WsMsgFromClient {
     // Password only once? Yes, the equal password check is done in the view/update themselves.
     password: String,
   )
+  PostContentRequest(post_id: String)
 }
 
 fn encode_ws_msg(message: WsMsgFromClient) -> json.Json {
@@ -931,6 +934,12 @@ fn encode_ws_msg(message: WsMsgFromClient) -> json.Json {
         #("by_name", json.string(timeline_name)),
         #("page", json.int(page)),
       ])
+    PostContentRequest(post_id:) -> {
+      json.object([
+        #("type", json.string("post_view_request")),
+        #("post_id", json.string(post_id)),
+      ])
+    }
   }
 }
 
