@@ -3,6 +3,7 @@ bun = "1.2.20"
 gleam = "1.14.0"
 just = "latest"
 "rust" = { version = "latest", components = "rust-analyzer" }
+watchexec = "latest"
 
 
 [settings]
@@ -13,10 +14,10 @@ bun = true
 
 [task_config]
 includes = [
-  "./mise/tasks/podman.toml",
-  "./mise/tasks/format.toml",
-  "./mise/tasks/check.toml",
-  "./mise/tasks/run.toml",
-  "./mise/tasks/moved-to-just.toml",
+	"./mise/tasks/podman.toml",
+	"./mise/tasks/format.toml",
+	"./mise/tasks/check.toml",
+	"./mise/tasks/run.toml",
+	"./mise/tasks/moved-to-just.toml",
 ]
 dir = "{{ config_root }}"
