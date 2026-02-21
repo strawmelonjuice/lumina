@@ -490,7 +490,7 @@ pub(crate) enum Message {
     #[serde(rename = "data_textual_post")]
     TextPostDataSent {
         post_id: Uuid,
-        /// Source instance. 'local' by default, hostname if external.
+        /// Source instance. 'local' by default, hostname (IID) if external.
         source_instance: String,
         /// Markdown content.
         content: String,
