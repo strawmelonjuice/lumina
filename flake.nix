@@ -69,7 +69,7 @@
           shellHook = ''
             export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH"
 
-                        bun i --cwd=client/
+                        bun install --cwd=client/ --silent --only-missing
                         echo "❄️ dev environment loaded"
                         just --list
             			echo "use just to run them."
