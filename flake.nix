@@ -69,12 +69,8 @@
           shellHook = ''
             export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH"
 
-                        bun install --cwd=client/ --silent --only-missing
-                        echo "❄️ dev environment loaded"
-                        just --list
-            			echo "use just to run them."
-            			mise tasks
-            			echo "use mise run to run them."
+            bun install --cwd=client/ --silent --only-missing
+            echo "❄️ dev environment loaded, use 'just dev' next, or use either 'just --list' or 'mise tasks' for recipies."
           '';
         };
       }
