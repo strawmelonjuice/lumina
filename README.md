@@ -1,10 +1,9 @@
 # Lumina(/peonies) server
 
 > Notice:
-> This repo is edited on [My forge](https://forge.strawmelonjuice.com/strawmelonjuice/Lumina) and mirrorred
-> on [Codeberg](https://codeberg.org/strawmelonjuice/Lumina) and [GitHub](https://github.com/strawmelonjuice/lumina). But
-> you can still send in a PR!
-> See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+> This project lives on [Tangled](https://tangled.org/strawmelonjuice.com/Lumina), it is mirrored to Codeberg and a few
+> other places, but the main development happens on Tangled.
+> Please report issues and contribute on Tangled.
 
 ### Environment variables
 
