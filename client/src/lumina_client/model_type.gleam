@@ -1,21 +1,20 @@
 //// Lumina > Client > Model
 //// Lumina's model is the central source of truth for the client application state.
 
-//	Lumina/Peonies
-//	Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
-//
-//	This program is free software: you can redistribute it and/or modify
-//	it under the terms of the GNU Affero General Public License as published
-//	by the Free Software Foundation, either version 3 of the License, or
-//	(at your option) any later version.
-//
-//	This program is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU Affero General Public License for more details.
-//
-//	You should have received a copy of the GNU Affero General Public License
-//	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// Lumina/Peonies
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
+// 
+// This software is licensed under the European Union Public Licence (EUPL) v1.2.
+// You may not use this work except in compliance with the Licence.
+// You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+// 
+// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+// under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
+// See LICENSE file in the repository root for full details.
+// 
+// 
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
+// See the Licence for the specific language governing permissions and limitations. [cite: 6]
 
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode

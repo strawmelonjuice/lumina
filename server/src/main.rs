@@ -5,21 +5,20 @@
 //! commands, and more.
 
 /*
- *     Lumina/Peonies
- *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
+ * Lumina/Peonies
+ * Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
  *
- *     This program is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU Affero General Public License as published
- *     by the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *w
- *     This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU Affero General Public License for more details.
+ * This software is licensed under the European Union Public Licence (EUPL) v1.2.
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- *     You should have received a copy of the GNU Affero General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
+ * See LICENSE file in the repository root for full details.
+ *
+ *
+ * This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
+ * See the Licence for the specific language governing permissions and limitations. [cite: 6]
  */
 
 extern crate dotenv;
@@ -109,9 +108,10 @@ async fn main() {
             dotenv().ok();
             info_elog!(ev_log, "Starting {}.", me.clone().color_lightblue());
             let greet = format!(
-                "{} and contributors, licenced under the {}.",
+                "{} and contributors, licenced under the {} {}, as readable in our licence file.",
                 "MLC Bloeiman".color_pink(),
-                "GNU Affero General Public License v3.0".color_blue()
+                "European Union Public License v1.2".color_blue(),
+                " -- with specific terms".color_cyan()
             );
             info_elog!(ev_log, "{greet}");
             println!("{}", cynthia_con::horizline());
@@ -328,6 +328,7 @@ async fn main() {
                                 staticroutes::client_rev,
                                 staticroutes::lumina_css,
                                 staticroutes::licence,
+                                staticroutes::robots,
                                 staticroutes::license_redirect,
                                 client_communication::wsconnection,
                                 staticroutes::logo_svg,
@@ -461,7 +462,7 @@ async fn main() {
             );
             println!("MLC Bloeiman and contributors.");
             println!("{}", cynthia_con::horizline());
-            println!("{}", include_str!("../../COPYING"));
+            println!("{}", include_str!("../../LICENCE"));
         }
         (false, "help") | (false, "man") => {
             fn table_to_centered_string(a: &mut tabled::Table) -> String {

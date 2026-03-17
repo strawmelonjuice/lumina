@@ -2,7 +2,7 @@
 
 > IMPORTANT
 >
-> This project is primarily hosted on [Codeberg](https://codeberg.org/strawmelonjuice/lumina).
+> This project is primarily hosted on [Tangled.org](https://tangled.org/strawmelonjuice.com/Lumina).
 
 Thank you for your interest in contributing! This document outlines how to set up your environment, follow the style,
 and submit changes.
@@ -11,11 +11,11 @@ and submit changes.
 
 ## Where to contribute
 
-- Main repository (primary): <https://codeberg.org/strawmelonjuice/Lumina>
-- Official mirror 1:<https://git.strawmelonjuice.com/strawmelonjuice/Lumina>
-- Official mirror 2: <https://github.com/strawmelonjuice/lumina>
+- Main repository (primary): <https://tangled.org/strawmelonjuice.com/Lumina>
+- Email-to-pull: [lumina@strawmelonjuice.com](mailto:lumina@strawmelonjuice.com)
 
-Please open issues and submit pull requests (PRs) on the main repository or an official mirror.
+Please open issues and submit pull requests (PRs) on the main repository or mirror and email me to pull them to the
+main repository.
 
 ---
 
@@ -25,7 +25,7 @@ Please open issues and submit pull requests (PRs) on the main repository or an o
 - Assume good intent and seek clarity.
 - Harassment, discrimination, and personal attacks are not tolerated.
 
-If you experience or witness unacceptable behavior, contact the maintainer via the main forge.
+If you experience or witness unacceptable behavior, contact the maintainer via the main forge, [mlcbloeiman@strawmelonjuice.com](mailto:mlcbloeiman@strawmelonjuice.com) or [mar:strawmelonjuice.com on Matrix](https://matrix.to/#/@mar:strawmelonjuice.com).
 
 ---
 
@@ -33,13 +33,12 @@ If you experience or witness unacceptable behavior, contact the maintainer via t
 
 - `server/` — Rust (Rocket) server application.
 - `client/` — Gleam application targeting JavaScript (bundled to browser).
-- `mise/` — Task definitions for development flows.
 - `data/` — Local runtime data directory (created by tasks).
 - Root files — Workspace-level configuration, licence, docs, and Docker-related files.
 
 ---
 
-## Prerequisites
+## Prerequisites (Needs to be updated)
 
 - Rust toolchain (latest stable) with `rustfmt` and (optionally) `clippy`.
 - Gleam.
@@ -58,7 +57,7 @@ This repository uses `mise` to manage tools and developer tasks:
 
 ---
 
-## Local setup
+## Local setup (Needs to be updated)
 
 Local setup is pretty easy with mise, and to not do it with mise is actually kind of unthinkable for me at this point.
 
@@ -139,14 +138,16 @@ Conventions:
 
 ## Branching and commit messages
 
-- Create feature branches from the default branch (typically `main`).
-    - Suggested naming: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
+- Create feature branches from the default branch (typically `developemnt`).
+    - Suggested naming: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`. These are
+	preferred but not enforced.
 - Commit messages:
     - Be concise and descriptive.
     - Prefer Conventional Commits style when possible:
         - `feat: add user session cleanup job`
         - `fix(server): handle empty redis url`
         - `docs: improve contributing guide`
+- Prefer signing and adding a `signed-off-by` trail.
 
 ---
 
@@ -212,10 +213,10 @@ If you discover a security issue:
 
 ## Licence and contributor terms
 
-By contributing, you agree that your contributions are licensed under the AGPLv3 Licence of this repository,
+By contributing, you agree that your contributions are licensed under the Licence of this repository,
 unless explicitly stated otherwise in writing.
 
-See `COPYING` at the repository root.
+See `Licence` at the repository root.
 
 ---
 

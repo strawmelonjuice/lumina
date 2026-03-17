@@ -3,21 +3,20 @@
 //! This module defines static routes for serving static files like CSS, JS, and images.
 
 /*
- *     Lumina/Peonies
- *     Copyright (C) 2018-2026 MLC 'Strawmelonjuice'  Bloeiman and contributors.
+ * Lumina/Peonies
+ * Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
  *
- *     This program is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU Affero General Public License as published
- *     by the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
+ * This software is licensed under the European Union Public Licence (EUPL) v1.2.
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- *     This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU Affero General Public License for more details.
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
+ * See LICENSE file in the repository root for full details.
  *
- *     You should have received a copy of the GNU Affero General Public License
- *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
+ * See the Licence for the specific language governing permissions and limitations. [cite: 6]
  */
 
 extern crate rocket;
@@ -58,6 +57,7 @@ pub(crate) async fn index(state: &State<AppState>) -> RawHtml<String> {
 			rel="stylesheet"
 			href="/static/lumina.css"
 		/>
+		<meta name="robots" content="noai, noimageai, nofollow">
 		<script>
 			window.clientHash = "{}";
 		</script>
@@ -134,7 +134,18 @@ pub(crate) async fn licence(state: &State<AppState>) -> RawText<String> {
     };
     http_code_elog!(ev_log, 200, "/licence");
 
-    RawText(include_str!("../../COPYING").to_string())
+    RawText(include_str!("../../LICENCE").to_string())
+}
+
+#[get("/robots.txt")]
+pub(crate) async fn robots(state: &State<AppState>) -> RawText<String> {
+    let ev_log = {
+        let appstate = state.0.clone();
+        appstate.event_logger.clone()
+    };
+    http_code_elog!(ev_log, 200, "/robots.txt");
+
+    RawText(include_str!("../../robots.txt").to_string())
 }
 #[get("/license")]
 pub(crate) async fn license_redirect() -> rocket::response::Redirect {
