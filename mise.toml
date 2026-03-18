@@ -1,8 +1,8 @@
 [tools]
 bun = "1.2.20"
-gleam = "1.14.0"
+gleam = "1.15.0"
 just = "latest"
-"rust" = { version = "latest", components = "rust-analyzer" }
+"rust" = { version = "1.94.0", components = "rust-analyzer" }
 watchexec = "latest"
 
 
