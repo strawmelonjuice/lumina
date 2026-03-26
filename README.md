@@ -5,6 +5,51 @@
 > other places, but the main development happens on Tangled.
 > Please report issues and contribute on Tangled.
 
+Lumina is a project in development, as the short description says "Just trying out an old concept.". It is not in any
+way ready for you to try. However, you are encouraged to contribute in any way!
+
+## Roadmap
+
+This roadmap is only meant to support development, not place new constraints on an already overwhelmed...me.
+
+- [ ] Web client in Gleam+Lustre
+	- [x] A DaisyUI theme and basic defined interface, previewing what Lumina/Peonies will look like.
+	- [x] Login/Register UI/flow for Username-Password Authentication
+	- [ ] User settings
+	- [ ] Timelineview (tested mainly on `global`)
+		- [ ] Post to load in timeline
+	- [ ] Timelineswitch (seeing other timelines)
+	- [ ] ... more to be documented
+- [ ] Server backend and API's
+	- [ ] Server can send timeline global paginated...
+		- [x] Over authorized WS
+		- [ ] Through public HTTPS GET
+	- [ ] Client can request other timelines, by ID, paginated...
+		- [ ] Over session-protected WS
+		- [ ] 🧪 Not over unauthorized HTTPS GET
+		- [ ] Over authorized HTTPS GET
+	- [ ] Server can authorize session...
+		- [x] ...Based on username-password over WS
+		- [x] ...Based on session token over WS
+		- [ ] ...Based on API token over WS
+		- [ ] ...Based on API token over HTTPS POST.
+		- [ ] ...Based on oauth over HTTPS get.
+		- [ ] ... More?
+	- [ ] A DM timeline should be available to both (or more) users in the DM.
+	- [ ] ... More to be documented
+- [ ] Authentication:
+	- [x] Username-Password based login
+	- [ ] Oauth-based OIDC/Bsky login
+	- [ ] two-factor-auth
+- [ ] IIC (InterInstance Communicating)
+	- [ ] Redesign the IIC's ways completely, also see notes for this.
+	- [ ] Investigate federating to ATProto, making any Lumina instance also a PDS. (Except Lumina data would live mostly
+	off-protocol, and for example article posts would be published as Links to the Bluesky feed.)
+	- [ ] ... to be documented
+- [ ] ... More to be documented
+
+This roadmap is missing a lot, but it's primary goal is to help ME find a next thing to fix.
+
 ### Environment variables
 
 Part of the configuration is loaded from the database, part of it in environment variables.
