@@ -17,7 +17,7 @@
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
  * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
  * See LICENSE file in the repository root for full details.
  *
@@ -27,13 +27,14 @@
  */
 
 extern crate rocket;
+use crate::database::DatabaseConnections;
 use crate::errors::LuminaDbError;
 use crate::rate_limiter::RateLimit;
 use crate::timeline::fetch_timeline_post_ids_by_timeline_name;
 use crate::user::User;
 use crate::{
     AppState, LuminaError, authentication_error_elog, error_elog, http_code_elog, incoming_elog,
-    info_elog, registration_error_elog,
+    info_elog, registration_error_elog, warn_elog,
 };
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -56,6 +57,7 @@ pub(crate) async fn wsconnection<'k>(
         let appstate = state.0.clone();
         appstate.event_logger.clone()
     };
+    let db_pool = state.inner().0.db.get_postgres_pool();
     http_code_elog!(ev_log, 200, "/connection");
     use rocket::futures::{SinkExt, StreamExt};
 
@@ -79,7 +81,39 @@ pub(crate) async fn wsconnection<'k>(
 									{
 										info_elog!(
 										ev_log, "Post was requested: {}", post_id);
-										todo!("PostViewRequest not yet implemented!")
+
+										match crate::database::operations::get_public_timelineitem(&db_pool,post_id).await {
+            Ok(post) => {
+			            let _ = 							match post {
+                crate::database::typedreturns::PostItem::TextPost{post_id,source_instance,content,timestamp}=>
+                     {
+                         info_elog!(
+										            ev_log, "Serving text post {}", post_id);
+                         stream
+											            .send(ws::Message::from(msgtojson(Message::TextPostDataSent { post_id, source_instance, content })))
+											            .await}
+                ,
+                crate::database::typedreturns::PostItem::MediaPost { post_id, source_instance, description, medias, timestamp } => {
+                    info_elog!(ev_log, "Serving media post {}", post_id);
+
+
+                    stream
+											            .send(ws::Message::from(msgtojson(Message::MediaPostDataSent { post_id, source_instance, description, medias })))
+											            .await},
+                crate::database::typedreturns::PostItem::ArticlePost { post_id, source_instance,title, content, timestamp,author_id, } => {
+                    info_elog!(ev_log, "Serving article post {}", post_id);
+             let timestamp =       todo!("Convert timestamp to unix or Rfc3339 format here?");
+                    stream
+											            .send(ws::Message::from(msgtojson(Message::ArticlePostDataSent { post_id, source_instance, title, content, timestamp, author_id })))
+											            .await},
+            };
+
+										            }
+            Err(m) => {
+										            warn_elog!(ev_log, "Not serving {}, {m}.", post_id);
+										            }
+        };
+
 									}
 									Ok(Message::Introduction { client_kind, try_revive }) => {
 										match client_kind.as_str() {

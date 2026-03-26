@@ -10,7 +10,7 @@
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
  * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
  * See LICENSE file in the repository root for full details.
  *
@@ -444,7 +444,16 @@ async fn check_timeline_invalidations(
     Ok(())
 }
 
-mod operations {
+pub(crate) mod operations {
+
+    use std::str::FromStr;
+
+    use anyhow::bail;
+    use time::OffsetDateTime;
+    use uuid::Uuid;
+
+    use crate::timeline::GLOBAL_TIMELINE_ID;
+
     use super::*;
     /// List all users and their emails from the database, used for populating bloom filters on
     ///startup
@@ -469,5 +478,96 @@ FROM users
             res.push((rec.email, rec.username));
         }
         Ok(res)
+    }
+    /// Returns a post if it is on any public timeline, including bubble timelines but excluding DM timelines.
+    // (This because all bubble timelines are also published to the global timeline, for now)
+    /// The answer from this is not necessarily safe for public API's, though it is yet unspecified how public API's would handle single postrequests.
+    pub(crate) async fn get_public_timelineitem(
+        pool: &PgPool,
+        postid: Uuid,
+    ) -> anyhow::Result<typedreturns::PostItem> {
+        let gltl = Uuid::from_str(GLOBAL_TIMELINE_ID)?;
+        let timeline_lookup = sqlx::query!(
+            "SELECT * FROM timelines WHERE item_id = $1 AND tlid = $2",
+            postid,
+            gltl
+        )
+        .fetch_optional(pool)
+        .await?;
+        let _ = if let None = timeline_lookup {
+            bail!("No post was found on global timeline")
+        };
+        let type_lookup = sqlx::query!("SELECT * FROM itemtypes WHERE item_id = $1", postid,)
+            .fetch_one(pool)
+            .await?;
+        match type_lookup.itemtype.as_str() {
+            "text" => {
+                let post = sqlx::query!("SELECT * FROM post_text WHERE id = $1", postid,)
+                    .fetch_one(pool)
+                    .await?;
+                let location = match (post.foreign_instance_id, post.foreign_post_id) {
+                    (Some(pid), Some(iid)) => (Uuid::from_str(pid.as_str())?, iid),
+                    _ => (postid, String::from("local")),
+                };
+                anyhow::Ok(typedreturns::PostItem::TextPost {
+                    post_id: postid,
+                    source_instance: location.1,
+                    content: post.content,
+                    timestamp: post.created_at,
+                })
+            }
+            "media" => {
+                todo!("Media post fetching not yet implemented.");
+            }
+            "article" => {
+                todo!("Article post fetching not yet implemented.");
+            }
+            _ => {
+                bail!("Unsupported post for the global timeline, something got mixed up here.")
+            }
+        }
+    }
+}
+
+pub(crate) mod typedreturns {
+    use time::OffsetDateTime;
+    use uuid::Uuid;
+
+    pub(crate) enum TimelineItem {
+        Post(PostItem),
+    }
+    pub(crate) enum PostItem {
+        ArticlePost {
+            post_id: Uuid,
+            /// Source instance. 'local' by default, hostname if external.
+            source_instance: String,
+            title: String,
+            content: String,
+            /// Timestamp of the moment of posting
+            timestamp: OffsetDateTime,
+            /// User id of poster, which is why the source_instance matters.
+            /// This means that client will do a lookup and stores the user once it gets it.
+            author_id: String,
+        },
+        MediaPost {
+            post_id: Uuid,
+            /// Source instance. 'local' by default, hostname if external.
+            source_instance: String,
+            /// Media description
+            description: String,
+            /// Base64 encoded media strings, either webp or mp4.
+            medias: Vec<String>,
+            /// Timestamp of the moment of posting
+            timestamp: OffsetDateTime,
+        },
+        TextPost {
+            post_id: Uuid,
+            /// Source instance. 'local' by default, hostname (IID) if external.
+            source_instance: String,
+            /// Markdown content.
+            content: String,
+            /// Timestamp of the moment of posting
+            timestamp: OffsetDateTime,
+        },
     }
 }
