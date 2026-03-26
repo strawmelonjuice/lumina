@@ -1,0 +1,1 @@
+-record(logger, {namespace :: binary()}).

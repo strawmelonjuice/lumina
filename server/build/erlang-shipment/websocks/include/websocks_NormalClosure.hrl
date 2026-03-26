@@ -1,0 +1,1 @@
+-record(normal_closure, {data :: bitstring()}).

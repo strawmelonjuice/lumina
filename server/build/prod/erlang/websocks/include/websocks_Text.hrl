@@ -1,0 +1,1 @@
+-record(text, {payload :: bitstring()}).

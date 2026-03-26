@@ -1,0 +1,1 @@
+-record(resolve_failed, {reason :: websocks:resolve_error()}).

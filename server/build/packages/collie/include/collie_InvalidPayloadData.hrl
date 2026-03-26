@@ -1,0 +1,1 @@
+-record(invalid_payload_data, {data :: bitstring()}).

@@ -1,0 +1,14 @@
+name = "websocks"
+version = "3.0.1"
+description = "🧦 WebSocket protocol in Gleam"
+licences = ["Apache-2.0"]
+target = "erlang"
+repository = { type = "github", user = "vshakitskiy", repo = "websocks" }
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+gleam_crypto = ">= 1.5.1 and < 2.0.0"
+gleam_erlang = ">= 1.3.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

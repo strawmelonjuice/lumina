@@ -1,0 +1,1 @@
+-record(close, {reason :: websocks:close_reason()}).

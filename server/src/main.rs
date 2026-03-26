@@ -267,7 +267,7 @@ async fn main() {
                                             println!(
                                                 "Created two users with password 'MyTestPassw9292!' and usernames 'testuser1' and 'testuser2'."
                                             );
-                                            sqlx::query!("INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING",
+                                            sqlx::query!("INSERT INTO post_text (id, author_id, content, created_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)",
 													&generated_uuid, &user_1.id, &hello_content
 												)
 												.execute(&pg_pool)
@@ -278,6 +278,7 @@ async fn main() {
                                                 &db,
                                                 &Uuid::nil(),
                                                 &generated_uuid,
+                                                crate::timeline::ItemType::Text,
                                             )
                                             .await
                                             .unwrap_or(());

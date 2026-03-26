@@ -1,0 +1,1 @@
+-record(config, {json_file_path :: binary(), gleam_module_out_path :: binary()}).

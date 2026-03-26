@@ -1,0 +1,13 @@
+{application, compresso, [
+    {vsn, "0.1.0"},
+    {applications, [exception,
+                    gleam_erlang,
+                    gleam_stdlib,
+                    gleam_yielder,
+                    logging]},
+    {description, "WIP: Compression package with Gzip, Deflate/Inflate & Brotli support using zlib."},
+    {modules, [compresso,
+               compresso@@main,
+               compresso@compression]},
+    {registered, []}
+]}.

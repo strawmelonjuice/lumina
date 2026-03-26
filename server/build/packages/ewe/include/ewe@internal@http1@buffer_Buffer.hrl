@@ -1,0 +1,1 @@
+-record(buffer, {data :: bitstring(), pending :: integer()}).
