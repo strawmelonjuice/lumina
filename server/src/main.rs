@@ -12,7 +12,7 @@
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
  * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
  * See LICENSE file in the repository root for full details.
  *
