@@ -1,5 +1,6 @@
 [tools]
 bun = "1.2.20"
+"cargo:sqlx-cli" = "latest"
 gleam = "1.15.0"
 just = "latest"
 "rust" = { version = "1.94.0", components = "rust-analyzer" }
