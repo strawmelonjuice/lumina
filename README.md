@@ -8,9 +8,9 @@
 Lumina is a project in development, as the short description says "Just trying out an old concept.". It is not in any
 way ready for you to try. However, you are encouraged to contribute in any way!
 
-## Roadmap
+## Progress
 
-This roadmap is only meant to support development, not place new constraints on an already overwhelmed...me.
+This 'roadmap' is only meant to support development, not place new constraints on an already overwhelmed...me.
 
 - [ ] Web client in Gleam+Lustre
 	- [x] A DaisyUI theme and basic defined interface, previewing what Lumina/Peonies will look like.
@@ -48,7 +48,7 @@ This roadmap is only meant to support development, not place new constraints on 
 	- [ ] ... to be documented
 - [ ] ... More to be documented
 
-This roadmap is missing a lot, but it's primary goal is to help ME find a next thing to fix.
+This list is missing a lot, but it's primary goal is to help ME find a next thing to fix.
 
 ### Environment variables
 
