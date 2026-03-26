@@ -1,0 +1,1 @@
+-record(service_restart, {data :: bitstring()}).

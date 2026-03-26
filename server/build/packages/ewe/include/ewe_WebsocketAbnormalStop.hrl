@@ -1,0 +1,1 @@
+-record(websocket_abnormal_stop, {reason :: binary()}).

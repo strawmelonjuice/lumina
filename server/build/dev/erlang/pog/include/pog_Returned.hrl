@@ -1,0 +1,1 @@
+-record(returned, {count :: integer(), rows :: list(any())}).

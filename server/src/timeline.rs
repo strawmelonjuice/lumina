@@ -345,6 +345,7 @@ pub async fn add_to_timeline(
     db: &DbConn,
     timeline: &Uuid,
     item: &Uuid,
+    item_type: ItemType,
 ) -> Result<(), LuminaError> {
     // Add to database
     match db {
@@ -352,6 +353,18 @@ pub async fn add_to_timeline(
             sqlx::query!(
                 "INSERT INTO timelines (tlid, item_id, timestamp) VALUES ($1, $2, NOW())",
                 *timeline,
+                item,
+            )
+            .execute(pg_pool)
+            .await?;
+
+            sqlx::query!(
+                "INSERT INTO itemtypes (itemtype, item_id) VALUES ($1, $2)",
+                match item_type {
+                    ItemType::Text => "text",
+                    ItemType::Article => "article",
+                    ItemType::Media => "media",
+                },
                 item,
             )
             .execute(pg_pool)
@@ -371,6 +384,13 @@ pub async fn add_to_timeline(
     }
 
     Ok(())
+}
+
+pub(crate) enum ItemType {
+    Text,
+    Article,
+    Media,
+    // ... More
 }
 
 #[expect(dead_code, reason = "Not used yet")]

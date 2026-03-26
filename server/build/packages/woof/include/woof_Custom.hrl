@@ -1,0 +1,1 @@
+-record(custom, {formatter :: fun((woof:entry()) -> binary())}).

@@ -1,0 +1,1 @@
+-record(enum, {name :: binary(), vals :: list(binary()), comment :: binary()}).

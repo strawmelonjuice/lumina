@@ -1,0 +1,11 @@
+{application,pgo,
+             [{description,"Postgres client with connection pool"},
+              {vsn,"0.20.0"},
+              {registered,[]},
+              {mod,{pgo_app,[]}},
+              {applications,[kernel,stdlib,backoff,opentelemetry_api,
+                             pg_types]},
+              {env,[]},
+              {modules,[]},
+              {licenses,["Apache-2.0"]},
+              {links,[{"Github","https://github.com/erleans/pgo"}]}]}.

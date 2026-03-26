@@ -1,0 +1,1 @@
+-record(ping, {payload :: bitstring()}).

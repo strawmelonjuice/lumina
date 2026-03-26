@@ -1,0 +1,79 @@
+
+NifSharedSources = ["c_src/esqlite3_nif.c"].
+NifStaticSources = NifSharedSources ++ ["c_src/sqlite3/sqlite3.c"].
+CFlagsDefault = "$CFLAGS -Os -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=1 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_MAX_EXPR_DEPTH=0 -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_USE_ALLOCA -DSQLITE_OMIT_AUTOINIT -DSQLITE_USE_URI -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY".
+DrvLdFlagsDefault = "-shared -lsqlite3".
+
+DrvLdFlags =
+    case os:getenv("ESQLITE_CFLAGS") of
+        NotDefined when NotDefined == false; NotDefined == [] -> DrvLdFlagsDefault;
+        DrvLdFlagsOverride -> DrvLdFlagsOverride
+    end.
+
+{NifSources, LdEnv, CFlagsExt} =
+    case os:getenv("ESQLITE_USE_SYSTEM") of
+        NotDefined when NotDefined == false; NotDefined == [] -> {NifStaticSources, [], " -Ic_src/sqlite3"};
+        _Defined -> {NifSharedSources, [{"DRV_LDFLAGS", DrvLdFlags}], []}
+    end.
+
+CFlags =
+    case os:getenv("ESQLITE_CFLAGS") of
+        NotDefined when NotDefined == false; NotDefined == [] -> CFlagsDefault ++ CFlagsExt;
+        CFlagsOverride -> CFlagsOverride
+    end.
+
+[
+    {minimum_otp_vsn, "22.0"},
+
+    {erl_opts, [debug_info]},
+
+    {xref_checks, [undefined_function_calls,
+                   undefined_functions,
+                   locals_not_used,
+                   deprecated_function_calls,
+                   deprecated_functions]},
+
+    {port_env, [
+        %% Default darwin ldflags causes loading of system sqlite. Build a dynamiclib.
+        {"darwin", "DRV_LDFLAGS",
+            "-dynamiclib -undefined dynamic_lookup $ERL_LDFLAGS"},
+
+        {"solaris", "CFLAGS",
+            "$CFLAGS -std=c99"},
+
+        {"android", "DRV_LDFLAGS",
+             "$DRV_LDFLAGS -lm"},
+
+        {"linux", "CFLAGS",
+            "$CFLAGS -std=c11"},
+
+        {"CFLAGS", CFlags}
+    ] ++ LdEnv},
+    {port_specs, [
+        {"priv/esqlite3_nif.so", NifSources}
+    ]},
+
+    {plugins, [{pc, "~> 1.15"}]},
+
+    {provider_hooks,
+        [{post,
+        [{compile, {pc, compile}},
+            {clean, {pc, clean}}]}]},
+
+    {dialyzer, [
+        {warnings, [
+            unmatched_returns,
+            error_handling,
+            race_conditions,
+            underspecs,
+            unknown
+        ]}
+    ]},
+
+    {edoc_opts, [{preprocess, true},
+                 {stylesheet, "style.css"},
+                 {sort_functions, false}]},
+
+    {hex, [{doc, edoc}]}
+
+].

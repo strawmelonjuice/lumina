@@ -1,0 +1,1 @@
+-record(stats, {used :: integer(), highwater :: integer()}).

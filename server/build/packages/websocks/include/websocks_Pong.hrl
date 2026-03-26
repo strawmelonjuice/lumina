@@ -1,0 +1,1 @@
+-record(pong, {payload :: bitstring()}).

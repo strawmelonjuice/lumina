@@ -1,0 +1,7 @@
+{application, logging, [
+    {vsn, "1.5.0"},
+    {applications, [gleam_stdlib]},
+    {description, "Configuration for the Erlang logger"},
+    {modules, []},
+    {registered, []}
+]}.
