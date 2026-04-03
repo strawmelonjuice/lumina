@@ -8,6 +8,19 @@
 Lumina is a project in development, as the short description says "Just trying out an old concept.". It is not in any
 way ready for you to try. However, you are encouraged to contribute in any way!
 
+## `gleam` branch
+
+On both `gleam` and the `rust` branch (and the development branch, which both split out from), Lumina iteration `Lumina:Peonies:itr2` is still ongoing, however, the Gleam for backend experiment has re-opened. Some key differences from the Rust implementation:
+
+- Postgres database swapped out for a SQLite one, inspired by <https://curling.io/blog/why-we-chose-sqlite> and another project I am working on where SQLite proved to be 'enough'. Of course, WAL is enabled, and in case a single Lumina instance splits over multiple servers (highly unlikely), Postgres would still need to be implemented (the Rust implementation may be better in those cases!)
+- Redis database for caching is replaced by ETS, as provided by [booklet](https://hex.pm/packages/booklet). Providing high speed caching within the Erlang runtime itself!
+- More technical:
+	- Tokio async runtime being replaced with OTP means concurrency will be much more used
+	- [Rocket](https://rocket.rs) being replaced by [Ewe](https://hex.pm/packages/ewe).
+	- [Collie](https://hex.pm/packages/collie) (not Erlang OTP cross-machine messaging) for IIC
+- More (probably)
+The client 
+
 ## Progress
 
 This 'roadmap' is only meant to support development, not place new constraints on an already overwhelmed...me.
@@ -22,15 +35,15 @@ This 'roadmap' is only meant to support development, not place new constraints o
 	- [ ] ... more to be documented
 - [ ] Server backend and API's
 	- [ ] Server can send timeline global paginated...
-		- [x] Over authorized WS
+		- [ ] Over authorized WS
 		- [ ] Through public HTTPS GET
 	- [ ] Client can request other timelines, by ID, paginated...
 		- [ ] Over session-protected WS
 		- [ ] 🧪 Not over unauthorized HTTPS GET
 		- [ ] Over authorized HTTPS GET
 	- [ ] Server can authorize session...
-		- [x] ...Based on username-password over WS
-		- [x] ...Based on session token over WS
+		- [ ] ...Based on username-password over WS
+		- [ ] ...Based on session token over WS
 		- [ ] ...Based on API token over WS
 		- [ ] ...Based on API token over HTTPS POST.
 		- [ ] ...Based on oauth over HTTPS get.
@@ -38,7 +51,7 @@ This 'roadmap' is only meant to support development, not place new constraints o
 	- [ ] A DM timeline should be available to both (or more) users in the DM.
 	- [ ] ... More to be documented
 - [ ] Authentication:
-	- [x] Username-Password based login
+	- [ ] Username-Password based login
 	- [ ] Oauth-based OIDC/Bsky login
 	- [ ] two-factor-auth
 - [ ] IIC (InterInstance Communicating)

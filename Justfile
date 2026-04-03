@@ -5,12 +5,12 @@ default:
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
-    cd ./client/ && bun x @tailwindcss/cli@4.1.18 -i ./app.css -o ./priv/static/lumina_client.css
+    cd ./client/ && tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css
 
 [doc("Build the server-side of Lumina")]
 [group('building')]
 build-server: build-client
-    cargo build
+    cd server && gleam build && gleam export erlang-shipment
 
 [doc("Build the server-side of Lumina optimised for release")]
 [group('building')]
@@ -24,8 +24,8 @@ build-client: build-styles
     gleam build --target javascript &&\
     find ./client/src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "./priv/static/lumina_client_rev.hash" &&\
     echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
-    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ./priv/static/lumina_client.min.mjs --target=browser &&\
-    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ./priv/static/lumina_client.mjs --target=browser
+    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ../server/priv/static/lumina_client.min.mjs --target=browser &&\
+    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ../server/priv/static/lumina_client.mjs --target=browser
 
 [doc("Prefetch Gleam dependencies to speed up future builds")]
 [group('prepare')]
@@ -56,6 +56,8 @@ clean-all:
 [doc("Just runs the Podman image for a Redis and Postgres server for local development run to connect to.")]
 [group("local-devel")]
 local-devel-prep: create-data-dirs
+   @echo "This script needs to be rewritten for the gleam branch you are on."
+   @exit 1
    @podman inspect -f '{{{{.State.Running}}}}' lumina-redis 2>/dev/null | grep -q 'true' \
         && echo "lumina-redis is already running." \
         || podman run -d --replace \
@@ -81,7 +83,8 @@ local-devel-prep: create-data-dirs
 [doc("Run the server in development mode")]
 [group("local-devel")]
 local-devel $LUMINA_POSTGRES_PASSWORD="lumina_pw": build-server
-    ./target/debug/lumina-server
+   @echo "This script needs to be rewritten for the gleam branch you are on."
+   @exit 1
 
 [doc("Run the server in development mode with file watching")]
 [group("local-devel")]
