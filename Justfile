@@ -1,104 +1,88 @@
 [private]
 default:
-    @just --list
+	@just --list
 
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
-    cd ./client/ && tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css
+	cd ./client/ && tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css
 
 [doc("Build the server-side of Lumina")]
 [group('building')]
 build-server: build-client
-    cd server && gleam build && gleam export erlang-shipment
+	cd server; \
+	gleam export erlang-shipment
+	git add -N ./server/build/erlang-shipment/* -f
+	nix build  --impure ".#container" || { \
+	    if [[ -d .jj ]]; then jj file untrack ./server/build/erlang-shipment/* >/dev/null 2>&1; \
+	    else git reset ./server/build/erlang-shipment/* >/dev/null 2>&1; fi; \
+	    exit 1; \
+	}
+	@if [[ -d .jj ]]; then jj file untrack ./server/build/erlang-shipment/*; else git reset ./server/build/erlang-shipment/* >/dev/null 2>&1; fi
 
-[doc("Build the server-side of Lumina optimised for release")]
-[group('building')]
-build-server-release: build-client
-    cargo build --release
+	@echo "Loading into Podman ..."
+	@podman load < result && echo -e "Podman image \033[1;35mluminapeonies:latest\033[0m built!"
+	@rm result
 
 [doc("Build the client-side of Lumina and it's styles")]
 [group('building')]
 build-client: build-styles
-    cd ./client/ &&\
-    gleam build --target javascript &&\
-    find ./client/src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "./priv/static/lumina_client_rev.hash" &&\
-    echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
-    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ../server/priv/static/lumina_client.min.mjs --target=browser &&\
-    bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ../server/priv/static/lumina_client.mjs --target=browser
+	cd ./client/ &&\
+	gleam build --target javascript &&\
+	find ./src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "../server/priv/static/lumina_client_rev.hash" &&\
+	echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
+	bun build ./build/dev/javascript/lumina_client/lumina_client.ts --minify --outfile ../server/priv/static/lumina_client.min.mjs --target=browser &&\
+	bun build ./build/dev/javascript/lumina_client/lumina_client.ts --outfile ../server/priv/static/lumina_client.mjs --target=browser
 
 [doc("Prefetch Gleam dependencies to speed up future builds")]
 [group('prepare')]
 prefetch-gleam-deps:
-    cd ./client && gleam deps download
+	cd ./client && gleam deps download
 
 [doc("Install Bun dependencies")]
 [group('prepare')]
 bun-install:
-    cd ./client && bun i
+	cd ./client && bun i
 
 [group('prepare')]
 create-data-dirs:
-    mkdir -p ./data
-    mkdir -p ./data/postgres
-    mkdir -p ./data/redis
+	mkdir -p ./data
 
 [doc("Clean all build artifacts")]
 clean-all:
-    cargo clean
-    rm -rf ./client/node_modules
-    rm -rf ./client/build
-    rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs
-    rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts
-    rm -rf ./client/priv/static/lumina_client.min.mjs
-    rm -rf ./client/priv/static/lumina_client.css
+	cargo clean
+	rm -rf ./client/node_modules
+	rm -rf ./client/build
+	rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs
+	rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts
+	rm -rf ./server/priv/static/lumina_client.min.mjs
+	rm -rf ./server/priv/static/lumina_client.css
 
-[doc("Just runs the Podman image for a Redis and Postgres server for local development run to connect to.")]
+[doc("Prepares database")]
 [group("local-devel")]
 local-devel-prep: create-data-dirs
-   @echo "This script needs to be rewritten for the gleam branch you are on."
-   @exit 1
-   @podman inspect -f '{{{{.State.Running}}}}' lumina-redis 2>/dev/null | grep -q 'true' \
-        && echo "lumina-redis is already running." \
-        || podman run -d --replace \
-           --name lumina-redis \
-           -p 6379:6379 \
-           -v ./data/redis:/data \
-           docker.io/redis/redis-stack:7.2.0-v18
-   @podman inspect -f '{{{{.State.Running}}}}' luminadb 2>/dev/null | grep -q 'true' \
-        && echo "luminadb is already running." \
-        || podman run -d --replace \
-           -p 5432:5432 \
-           --name luminadb \
-           -e POSTGRES_USER=lumina \
-           -e POSTGRES_PASSWORD=lumina_pw \
-           -e POSTGRES_DB=lumina_config \
-           -v ./data/postgres:/var/lib/postgresql/data:Z \
-           docker.io/library/postgres:17-alpine3.22
-   sqlx db create
-   sqlx migrate run
-   echo "Postgres database created and migrations ran"
+   dbmate up
 
 
 [doc("Run the server in development mode")]
 [group("local-devel")]
-local-devel $LUMINA_POSTGRES_PASSWORD="lumina_pw": build-server
-   @echo "This script needs to be rewritten for the gleam branch you are on."
-   @exit 1
+local-devel: local-devel-prep build-server
+   podman run -v ./data/:/data -p 3000:3000 localhost/luminapeonies:latest
 
 [doc("Run the server in development mode with file watching")]
 [group("local-devel")]
 local-devel-watch:
-    watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json -- just local-devel
+	watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json -- just local-devel
 
 [doc("Runs the commands from local-devel automatically, watches")]
 [group("local-devel")]
 dev:
-    @just local-devel-prep
-    @just local-devel-watch
+	@just local-devel-prep
+	@just local-devel-watch
 
 [group("local-devel")]
 [doc("Run pgweb (8081) and redis-commander (8082) for local development")]
 local-devel-dataexplorer: local-devel-prep
-   podman run -d --replace --name lumina-redis-commander -p 8082:8081 -e REDIS_HOSTS=host.containers.internal:6379 ghcr.io/joeferner/redis-commander:latest
-   podman run -d --replace --name lumina-pgweb -p 8081:8081 -e'PGWEB_DATABASE_URL=postgres://lumina:lumina_pw@host.containers.internal:5432/lumina_config?sslmode=disable' sosedoff/pgweb:latest
+   @echo "This script needs to be rewritten for the gleam branch you are on."
+   @exit 1
+

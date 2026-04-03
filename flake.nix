@@ -31,9 +31,8 @@
               "run"
             ];
             WorkingDir = "/data";
-            # Env should be at the same level as Cmd
             Env = [
-              "PATH=${pkgs.jre21_minimal}/bin:${pkgs.rcon-cli}/bin:/usr/bin:/bin"
+              "PATH=/usr/bin:/bin"
               "PORT=3000"
             ];
           };
@@ -51,6 +50,10 @@
         packages.container = myImage;
 
         devShells.default = pkgs.mkShell {
+          shellHook = ''
+            bun install --cwd=client/ --silent --only-missing
+            echo "❄️ dev environment loaded, use 'just dev' next, or use 'just --list' for recipies."
+          '';
           buildInputs = with pkgs; [
             # Gleam application
             gleam
@@ -59,9 +62,12 @@
             bun
             tailwindcss_4
             # Task runner
-          watchexec
-          just
-            # Build image and run development pg using:
+            watchexec
+            just
+            # Migrations
+            dbmate
+            sqlite
+            # Containerisation
             podman
           ];
         };

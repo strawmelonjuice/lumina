@@ -1,24 +1,10 @@
 *.beam
 *.ez
 /target/
-
-# Ignore Gleam backend build artifacts
-backend/build
-client/priv/generated
-
-# Ignore Rust backend build artifacts
-backend-rs/target
-backend-rs/generated
-
-# Ignore Gleam frontend build artifacts
-frontend/prelude.mjs
-
 erl_crash.dump
 /test
 *.log
 package-lock.json
-rsffi/target
-rsffi/test
 node_modules
 # Ignore Editor files
 .idea/
@@ -30,14 +16,11 @@ node_modules
 /target
 
 # Added by me
-client/build/dev/javascript/lumina_client/lumina_client.ts
 client/build/
-/client/priv/static/lumina_client*.css
-/client/priv/static/lumina_client*.hash
-/client/priv/static/lumina_client*.mjs
-instance.sqlite
-instance.sqlite-shm
-instance.sqlite-wal
+server/build/
+/server/priv/static/lumina_client*.css
+/server/priv/static/lumina_client*.hash
+/server/priv/static/lumina_client*.mjs
 .env
 /data
 /built
@@ -49,4 +32,6 @@ instance.sqlite-wal
 /notes/.obsidian/appearance.json
 /notes/.obsidian/workspace.json
 /notes/.obsidian/app.json
+
+# Direnv cache
 .direnv/
