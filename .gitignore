@@ -17,7 +17,7 @@ node_modules
 
 # Added by me
 client/build
-server/buildq
+/server/build
 /server/priv/static/lumina_client*.css
 /server/priv/static/lumina_client*.hash
 /server/priv/static/lumina_client*.mjs
