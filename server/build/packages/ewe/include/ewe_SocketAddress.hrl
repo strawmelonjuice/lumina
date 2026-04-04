@@ -1,1 +1,0 @@
--record(socket_address, {ip :: ewe:ip_address(), port :: integer()}).

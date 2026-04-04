@@ -1,1 +1,0 @@
--record(bad_gateway, {data :: bitstring()}).

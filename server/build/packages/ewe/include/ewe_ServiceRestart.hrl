@@ -1,1 +1,0 @@
--record(service_restart, {data :: binary()}).

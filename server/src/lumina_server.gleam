@@ -2,11 +2,13 @@ import envoy
 import ewe.{type Request, type Response}
 import gleam/erlang/application
 import gleam/erlang/process
+import gleam/function
 import gleam/http/response
 import gleam/int
 import gleam/list
 import gleam/option.{None}
 import gleam/result
+import gleam/string
 import gleam/uri
 import simplifile
 import sqlight
@@ -88,10 +90,18 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
     vars: List(#(String, String)),
   ) {
     woof.new("WEBSERVER")
-    |> woof.log(level, msg, vars |> list.append([#("path", req.path)]))
+    |> woof.log(
+      level,
+      msg,
+      vars
+        |> list.append([
+          woof.field("uri path", req.path),
+        ]),
+    )
   }
   case req.path |> uri.path_segments() {
     ["/"] | [""] | [] -> {
+      httplogger(woof.Info, "OK", [])
       response.new(200)
       |> response.set_header("content-type", "text/html; charset=utf-8")
       |> response.set_body(ewe.TextData(
@@ -110,6 +120,7 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
           |> response.set_body(ewe.TextData("500 Internal Server Error"))
         }
         Ok(outcome) -> {
+          httplogger(woof.Info, "OK", [])
           response.new(200)
           |> response.set_header(
             "content-type",
@@ -129,6 +140,7 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
           |> response.set_body(ewe.TextData("500 Internal Server Error"))
         }
         Ok(outcome) -> {
+          httplogger(woof.Info, "OK", [])
           response.new(200)
           |> response.set_header(
             "content-type",
@@ -148,8 +160,27 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
           |> response.set_body(ewe.TextData("500 Internal Server Error"))
         }
         Ok(outcome) -> {
+          httplogger(woof.Info, "OK", [])
           response.new(200)
           |> response.set_header("content-type", "text/css; charset=utf-8")
+          |> response.set_body(outcome)
+        }
+      }
+    }
+
+    ["favicon.ico"] | ["static", "logo.png"] -> {
+      let file = handler_ctx.assets <> "/static/logo.png"
+      case ewe.file(file, None, None) {
+        Error(_) -> {
+          httplogger(woof.Error, "Missing application assets.", [])
+          response.new(500)
+          |> response.set_header("content-type", "text/plain; charset=utf-8")
+          |> response.set_body(ewe.TextData("500 Internal Server Error"))
+        }
+        Ok(outcome) -> {
+          httplogger(woof.Info, "OK", [])
+          response.new(200)
+          |> response.set_header("content-type", "image/png;")
           |> response.set_body(outcome)
         }
       }
@@ -159,13 +190,28 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
       let file = handler_ctx.assets <> "/static/" <> staticfile
       case ewe.file(file, None, None) {
         Error(_) -> {
-          httplogger(woof.Warning, "Not found.", [#("file", file)])
+          httplogger(woof.Warning, "Not found.", [woof.field("file", file)])
           response.new(404)
           |> response.set_header("content-type", "text/plain; charset=utf-8")
           |> response.set_body(ewe.TextData("404! Not found!"))
         }
         Ok(outcome) -> {
+          httplogger(woof.Info, "OK", [woof.field("file", file)])
           response.new(200)
+          |> case
+            {
+              staticfile
+              |> string.split(".")
+              |> list.last()
+              |> result.unwrap("")
+            }
+          {
+		    "png" -> response.set_header(_, "content-type", "image/png;")
+            "html" -> response.set_header(_, "content-type","text/html; charset=utf-8")
+			"svg" -> response.set_header(_, "content-type", "image/svg+xml")
+			"ttf" -> response.set_header(_, "content-type", "font/ttf")
+            _ -> function.identity
+          }
           |> response.set_body(outcome)
         }
       }

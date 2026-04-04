@@ -1,8 +1,0 @@
-{application, woof, [
-    {vsn, "1.2.0"},
-    {applications, [gleam_stdlib]},
-    {description, "A straightforward logging library for Gleam."},
-    {modules, [woof,
-               woof_ffi]},
-    {registered, []}
-]}.

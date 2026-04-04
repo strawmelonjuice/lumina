@@ -1,1 +1,0 @@
--record(chunked_abnormal_stop, {reason :: binary()}).

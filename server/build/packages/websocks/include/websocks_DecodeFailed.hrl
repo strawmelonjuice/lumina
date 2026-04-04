@@ -1,1 +1,0 @@
--record(decode_failed, {reason :: websocks:decode_error()}).

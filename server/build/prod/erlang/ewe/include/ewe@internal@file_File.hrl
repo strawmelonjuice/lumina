@@ -1,1 +1,0 @@
--record(file, {descriptor :: ewe@internal@file:io_device(), size :: integer()}).

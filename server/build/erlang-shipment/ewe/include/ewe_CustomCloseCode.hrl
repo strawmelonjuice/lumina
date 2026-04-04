@@ -1,1 +1,0 @@
--record(custom_close_code, {code :: integer(), data :: binary()}).

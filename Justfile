@@ -14,11 +14,11 @@ build-server: build-client
 	gleam export erlang-shipment
 	git add -N ./server/build/erlang-shipment/* -f
 	nix build  --impure ".#container" || { \
-	    if [[ -d .jj ]]; then jj file untrack ./server/build/erlang-shipment/* >/dev/null 2>&1; \
-	    else git reset ./server/build/erlang-shipment/* >/dev/null 2>&1; fi; \
+	    if [[ -d .jj ]]; then git rm ./server/build/erlang-shipment -r; jj file untrack ./server/build/erlang-shipment; >/dev/null 2>&1; \
+	    else git rm ./server/build/erlang-shipment -r >/dev/null 2>&1; fi; \
 	    exit 1; \
 	}
-	@if [[ -d .jj ]]; then jj file untrack ./server/build/erlang-shipment/*; else git reset ./server/build/erlang-shipment/* >/dev/null 2>&1; fi
+	@if [[ -d .jj ]]; then git rm ./server/build/erlang-shipment -r; jj file untrack ./server/build/erlang-shipment/*;  else git rm ./server/build/erlang-shipment -r >/dev/null 2>&1; fi
 
 	@echo "Loading into Podman ..."
 	@podman load < result && echo -e "Podman image \033[1;35mluminapeonies:latest\033[0m built!"
@@ -67,7 +67,7 @@ local-devel-prep: create-data-dirs
 [doc("Run the server in development mode")]
 [group("local-devel")]
 local-devel: local-devel-prep build-server
-   podman run -v ./data/:/data -p 3000:3000 localhost/luminapeonies:latest
+   podman run --replace --name lumina-local-devel -v ./data/:/data -p 3000:3000 localhost/luminapeonies:latest
 
 [doc("Run the server in development mode with file watching")]
 [group("local-devel")]

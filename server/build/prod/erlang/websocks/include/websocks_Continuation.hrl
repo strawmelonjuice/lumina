@@ -1,1 +1,0 @@
--record(continuation, {payload :: bitstring()}).

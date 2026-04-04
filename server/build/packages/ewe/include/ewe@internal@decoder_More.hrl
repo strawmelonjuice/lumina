@@ -1,1 +1,0 @@
--record(more, {length :: gleam@option:option(integer())}).

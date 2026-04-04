@@ -1,1 +1,0 @@
--record(going_away, {data :: bitstring()}).

@@ -1,1 +1,0 @@
--record(chunk_abort, {reason :: binary()}).
