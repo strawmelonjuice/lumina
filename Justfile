@@ -13,7 +13,7 @@ build-server: build-client
 	cd server; \
 	gleam export erlang-shipment
 	git add -N ./server/build/erlang-shipment/* -f
-	nix build  --impure ".#container" || { \
+	nix build  ".#container" || { \
 	    if [[ -d .jj ]]; then git rm ./server/build/erlang-shipment -r; jj file untrack ./server/build/erlang-shipment; >/dev/null 2>&1; \
 	    else git rm ./server/build/erlang-shipment -r >/dev/null 2>&1; fi; \
 	    exit 1; \
@@ -50,9 +50,9 @@ create-data-dirs:
 
 [doc("Clean all build artifacts")]
 clean-all:
-	cargo clean
 	rm -rf ./client/node_modules
-	rm -rf ./client/build
+	cd client && gleam clean
+	cd server && gleam clean
 	rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.mjs
 	rm -rf ./client/build/dev/javascript/lumina_client/lumina_client.ts
 	rm -rf ./server/priv/static/lumina_client.min.mjs
