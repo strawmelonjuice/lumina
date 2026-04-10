@@ -156,10 +156,17 @@ fn static(
       >>,
       client_hash |> bit_array.from_string,
       <<"\";</script><script type=\"module\">":utf8>>,
-      {
-        let assert Ok(client_js) =
-          simplifile.read_bits(assets <> "/static/lumina_client.min.mjs")
-        client_js
+      case simplifile.read_bits(assets <> "/static/lumina_client.min.mjs") {
+        Error(_) -> {
+          setuplog
+          |> woof.log(woof.Error, "Missing application assets.", [
+            woof.field("File", assets <> "/static/lumina_client.min.mjs"),
+          ])
+          panic as "Missing application assets."
+        }
+        Ok(outcome) -> {
+          outcome
+        }
       },
       <<"</script></head><body id=\"app\"></body></html>":utf8>>,
     ]
