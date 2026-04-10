@@ -1,1 +1,0 @@
--record(continue, {state :: ewe@internal@http1@handler:http1_handler()}).

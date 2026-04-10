@@ -1,1 +1,0 @@
--record(codegen, {unknown_types :: list(binary())}).

@@ -1,1 +1,0 @@
--record(invalid_payload_data, {data :: binary()}).

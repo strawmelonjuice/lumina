@@ -6,7 +6,7 @@
  * You may not use this work except in compliance with the Licence.
  * You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+ * AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
  * under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
  * See LICENSE file in the repository root for full details.
  *
@@ -53,8 +53,8 @@
 	default: true;
 	prefersdark: false;
 	color-scheme: "light";
-	--color-base-100: oklch(96% 0.044 156.743);
-	--color-base-200: oklch(97% 0.071 103.193);
+	--color-base-100: oklch(0.9516 0.0312 70.53);
+	--color-base-200: oklch(0.8622 0.0447 122.78);
 	--color-base-300: oklch(94% 0.028 342.258);
 	--color-base-content: oklch(51% 0.096 186.391);
 	--color-primary: oklch(87% 0.15 154.449);
@@ -91,24 +91,17 @@
 	color-scheme: "dark";
 
 	--color-base-100: oklch(14% 0.02 156.743);
-	/* Darker background */
-	--color-base-200: oklch(20% 0.03 103.193);
+	--color-base-200: oklch(26.9% 0 5);
 	--color-base-300: oklch(25% 0.02 342.258);
 	--color-base-content: oklch(85% 0.08 186.391);
-	/* Brighter text */
 	--color-primary: oklch(50% 0.15 154.449);
-	/* Stronger primary */
 	--color-primary-content: oklch(88% 0.09 229.695);
-	/* Brighter */
 	--color-secondary: oklch(38% 0.23 323.949);
 	--color-secondary-content: oklch(90% 0.05 342.258);
-	/* Higher contrast */
 	--color-accent: oklch(55% 0.12 19.571);
 	--color-accent-content: oklch(87% 0.07 257.281);
 	--color-neutral: oklch(12% 0.01 247.858);
-	/* Darker neutral */
 	--color-neutral-content: oklch(88% 0.06 264.695);
-	/* Higher contrast */
 	--color-info: oklch(55% 0.14 181.071);
 	--color-info-content: oklch(90% 0.08 243.157);
 	--color-success: oklch(42% 0.22 130.85);

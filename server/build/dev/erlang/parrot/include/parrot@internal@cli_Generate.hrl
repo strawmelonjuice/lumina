@@ -1,1 +1,0 @@
--record(generate, {engine :: parrot@internal@sqlc:engine(), db :: binary()}).

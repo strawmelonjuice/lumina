@@ -1,1 +1,0 @@
--record(table_ref, {catalog :: binary(), schema :: binary(), name :: binary()}).

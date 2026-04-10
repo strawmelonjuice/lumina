@@ -1,1 +1,0 @@
--record(control, {control :: websocks:control()}).

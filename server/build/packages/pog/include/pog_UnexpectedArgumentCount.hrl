@@ -1,1 +1,0 @@
--record(unexpected_argument_count, {expected :: integer(), got :: integer()}).

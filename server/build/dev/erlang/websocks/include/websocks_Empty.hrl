@@ -1,1 +1,0 @@
--record(empty, {compression :: websocks:compression(), buffer :: bitstring()}).

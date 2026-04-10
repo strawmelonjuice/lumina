@@ -1,1 +1,0 @@
--record(text, {payload :: bitstring()}).

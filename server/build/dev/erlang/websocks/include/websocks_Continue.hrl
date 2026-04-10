@@ -1,1 +1,0 @@
--record(continue, {state :: any()}).

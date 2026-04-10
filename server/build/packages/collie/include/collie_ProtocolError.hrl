@@ -1,1 +1,0 @@
--record(protocol_error, {data :: bitstring()}).

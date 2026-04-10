@@ -1,1 +1,0 @@
--record(binary, {payload :: bitstring()}).

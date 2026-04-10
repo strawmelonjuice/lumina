@@ -1,1 +1,0 @@
--record(http2_upgrade, {upgrade :: ewe@internal@http1:http2_upgrade()}).

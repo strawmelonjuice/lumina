@@ -1,1 +1,0 @@
--record(direct, {data :: bitstring()}).

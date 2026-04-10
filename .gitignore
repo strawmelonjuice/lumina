@@ -3,7 +3,7 @@
 /target/
 
 # Ignore Gleam backend build artifacts
-backend/build
+server/build
 client/priv/generated
 
 # Ignore Rust backend build artifacts

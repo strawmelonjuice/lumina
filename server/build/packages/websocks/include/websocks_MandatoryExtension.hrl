@@ -1,1 +1,0 @@
--record(mandatory_extension, {data :: bitstring()}).
