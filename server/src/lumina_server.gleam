@@ -221,7 +221,7 @@ fn static(
       "text/css; charset=utf-8",
     )
   let icon_png = builtin_file(assets <> "/static/logo.png", "image/png")
-  let icon_svg = builtin_file(assets <> "/static/logo.svg", "image/svg")
+  let icon_svg = builtin_file(assets <> "/static/logo.svg", "image/svg+xml")
   fn(route: StaticRoute) {
     case route {
       RouteForIndex -> index
@@ -285,7 +285,7 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
           #(state, selector)
         },
         handler: client_communication_handler,
-        on_close: fn(_conn, _state) { todo as "On close not yet written." },
+        on_close: fn(_conn, _state) { Nil },
       )
     }
     _ -> {
