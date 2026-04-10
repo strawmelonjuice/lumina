@@ -16,43 +16,60 @@
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
 // See the Licence for the specific language governing permissions and limitations. [cite: 6]
 
-
+import booklet.{type Booklet}
 import envoy
 import ewe.{type Request, type Response}
+import gleam/bit_array
 import gleam/erlang/application
 import gleam/erlang/process
-import gleam/function
 import gleam/http/response
 import gleam/int
-import gleam/list
 import gleam/option.{None}
 import gleam/result
-import gleam/string
 import gleam/uri
-import booklet.{type Booklet}
+import humanise
 import simplifile
 import sqlight
 import woof
 
 type HandlerContext {
-  HandlerContext(db: sqlight.Connection, client_hash: String, assets: String)
+  HandlerContext(
+    db: sqlight.Connection,
+    client_hash: String,
+    assets: String,
+    static_responses: StaticResponses,
+  )
 }
+
+type StaticRoute {
+  RouteForIndex
+  RouteForClientAsMinifiedJavascript
+  RouteForClientAsJavascript
+  RouteForClientStyles
+  RouteForIconAsPNG
+  RouteForIconAsSVG
+}
+
+type StaticResponses =
+  fn(StaticRoute) -> response.Response(ewe.ResponseBody)
+
 type ClientConnectionData {
-	ClientConnectionData(
-	client_type: option.Option(ClientType),
-	user: option.Option(User)
-	)
+  ClientConnectionData(
+    client_type: option.Option(ClientType),
+    user: option.Option(User),
+  )
 }
+
 type ClientType {
-	WebClient
-NativeApp
+  WebClient
+  NativeApp
 }
 
 type User {
-	User(
-	// Todo
-	Nil
-	)
+  User(
+    // Todo
+    Nil,
+  )
 }
 
 pub fn main() {
@@ -101,13 +118,20 @@ pub fn main() {
     }
     Ok(outcome) -> {
       setuplog
-      |> woof.log(woof.Info, "Found client revision!", [#("revision", outcome)])
+      |> woof.log(woof.Info, "Found client revision!", [
+        woof.field("revision", outcome),
+      ])
       outcome
     }
   }
+
+  let static_responses = static(client_hash, assets, setuplog)
   // And start!
   let assert Ok(_) =
-    ewe.new(handler(_, HandlerContext(db:, assets:, client_hash:)))
+    ewe.new(handler(
+      _,
+      HandlerContext(db:, assets:, client_hash:, static_responses:),
+    ))
     |> ewe.bind("0.0.0.0")
     |> ewe.listening(
       port: envoy.get("PORT")
@@ -120,6 +144,89 @@ pub fn main() {
   process.sleep_forever()
 }
 
+fn static(
+  client_hash: String,
+  assets: String,
+  setuplog: woof.Logger,
+) -> StaticResponses {
+  let client_servible =
+    [
+      <<
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" /><title>Lumina</title><link rel=\"preconnect\" href=\"https://fontlay.com\" corossorigin /><link href=\"https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap\" rel=\"stylesheet\"><link	rel=\"stylesheet\" href=\"/static/lumina.css\"/><meta name=\"robots\" content=\"noai, noimageai, nofollow\"><script>window.clientHash = \"":utf8,
+      >>,
+      client_hash |> bit_array.from_string,
+      <<"\";</script><script type=\"module\">":utf8>>,
+      {
+        let assert Ok(client_js) =
+          simplifile.read_bits(assets <> "/static/lumina_client.min.mjs")
+        client_js
+      },
+      <<"</script></head><body id=\"app\"></body></html>":utf8>>,
+    ]
+    |> bit_array.concat()
+  setuplog
+  |> woof.log(
+    woof.Debug,
+    "Total client size is: "
+      <> bit_array.byte_size(client_servible) |> humanise.bytes_int(),
+    [#("revision", client_hash)],
+  )
+  let builtin_file = fn(file: String, mime: String) -> response.Response(
+    ewe.ResponseBody,
+  ) {
+    case simplifile.read_bits(file) {
+      Error(_) -> {
+        setuplog
+        |> woof.log(woof.Error, "Missing application assets.", [
+          woof.field("File", file),
+        ])
+        panic as "Missing application assets."
+      }
+      Ok(outcome) -> {
+        response.new(200)
+        |> response.set_header("content-type", mime)
+        |> response.set_body(ewe.BitsData(outcome))
+      }
+    }
+  }
+  let index =
+    response.set_body(
+      response.set_header(
+        response.new(200),
+        "content-type",
+        "text/html; charset=utf-8",
+      ),
+      ewe.BitsData(client_servible),
+    )
+  let client_js_min =
+    builtin_file(
+      assets <> "/static/lumina_client.min.mjs",
+      "application/javascript; charset=utf-8",
+    )
+  let client_js =
+    builtin_file(
+      assets <> "/static/lumina_client.mjs",
+      "application/javascript; charset=utf-8",
+    )
+  let client_styles =
+    builtin_file(
+      assets <> "/static/lumina_client.css",
+      "text/css; charset=utf-8",
+    )
+  let icon_png = builtin_file(assets <> "/static/logo.png", "image/png")
+  let icon_svg = builtin_file(assets <> "/static/logo.svg", "image/svg")
+  fn(route: StaticRoute) {
+    case route {
+      RouteForIndex -> index
+      RouteForIconAsSVG -> icon_svg
+      RouteForIconAsPNG -> icon_png
+      RouteForClientStyles -> client_styles
+      RouteForClientAsJavascript -> client_js
+      RouteForClientAsMinifiedJavascript -> client_js_min
+    }
+  }
+}
+
 fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
   let httplogger = fn(
     level: woof.Level,
@@ -127,152 +234,53 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
     vars: List(#(String, String)),
   ) {
     woof.new("WEBSERVER")
-    |> woof.log(
-      level,
-      msg,
-      vars
-        |> list.append([
-          woof.field("uri path", req.path),
-        ]),
-    )
+    |> woof.log(level, msg, [woof.field("uri path", req.path), ..vars])
   }
   case req.path |> uri.path_segments() {
-	  ["/"] | [""] | [] -> {
-		  httplogger(woof.Info, "OK", [])
-		  response.new(200)
-		  |> response.set_header("content-type", "text/html; charset=utf-8")
-		  |> response.set_body(ewe.TextData(
-		  "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" /><title>Lumina</title><link rel=\"preconnect\" href=\"https://fontlay.com\" corossorigin /><link href=\"https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap\" rel=\"stylesheet\"><link	rel=\"stylesheet\" href=\"/static/lumina.css\"/><meta name=\"robots\" content=\"noai, noimageai, nofollow\"><script>window.clientHash = \""
-		  <> { handler_ctx.client_hash }
-		  <> "\";</script><script type=\"module\" src=\"/static/lumina.min.mjs\"></script></head><body id=\"app\"></body></html>",
-		  ))
-	  }
-	  ["static", "lumina.min.mjs"] -> {
-		  let file = handler_ctx.assets <> "/static/lumina_client.min.mjs"
-		  case ewe.file(file, None, None) {
-			  Error(_) -> {
-				  httplogger(woof.Error, "Missing application assets.", [])
-				  response.new(500)
-				  |> response.set_header("content-type", "text/plain; charset=utf-8")
-				  |> response.set_body(ewe.TextData("500 Internal Server Error"))
-			  }
-			  Ok(outcome) -> {
-				  httplogger(woof.Info, "OK", [])
-				  response.new(200)
-				  |> response.set_header(
-				  "content-type",
-				  "application/javascript; charset=utf-8",
-				  )
-				  |> response.set_body(outcome)
-			  }
-		  }
-	  }
-	  ["static", "lumina.mjs"] -> {
-		  let file = handler_ctx.assets <> "/static/lumina_client.mjs"
-		  case ewe.file(file, None, None) {
-			  Error(_) -> {
-				  httplogger(woof.Error, "Missing application assets.", [])
-				  response.new(500)
-				  |> response.set_header("content-type", "text/plain; charset=utf-8")
-				  |> response.set_body(ewe.TextData("500 Internal Server Error"))
-			  }
-			  Ok(outcome) -> {
-				  httplogger(woof.Info, "OK", [])
-				  response.new(200)
-				  |> response.set_header(
-				  "content-type",
-				  "application/javascript; charset=utf-8",
-				  )
-				  |> response.set_body(outcome)
-			  }
-		  }
-	  }
-	  ["static", "lumina.css"] -> {
-		  let file = handler_ctx.assets <> "/static/lumina_client.css"
-		  case ewe.file(file, None, None) {
-			  Error(_) -> {
-				  httplogger(woof.Error, "Missing application assets.", [])
-				  response.new(500)
-				  |> response.set_header("content-type", "text/plain; charset=utf-8")
-				  |> response.set_body(ewe.TextData("500 Internal Server Error"))
-			  }
-			  Ok(outcome) -> {
-				  httplogger(woof.Info, "OK", [])
-				  response.new(200)
-				  |> response.set_header("content-type", "text/css; charset=utf-8")
-				  |> response.set_body(outcome)
-			  }
-		  }
-	  }
+    ["/"] | [""] | [] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForIndex)
+    }
+    ["static", "lumina.min.mjs"] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForClientAsMinifiedJavascript)
+    }
+    ["static", "lumina.mjs"] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForClientAsJavascript)
+    }
+    ["static", "lumina.css"] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForClientStyles)
+    }
 
-	  ["favicon.ico"] | ["static", "logo.png"] -> {
-		  let file = handler_ctx.assets <> "/static/logo.png"
-		  case ewe.file(file, None, None) {
-			  Error(_) -> {
-				  httplogger(woof.Error, "Missing application assets.", [])
-				  response.new(500)
-				  |> response.set_header("content-type", "text/plain; charset=utf-8")
-				  |> response.set_body(ewe.TextData("500 Internal Server Error"))
-			  }
-			  Ok(outcome) -> {
-				  httplogger(woof.Info, "OK", [])
-				  response.new(200)
-				  |> response.set_header("content-type", "image/png;")
-				  |> response.set_body(outcome)
-			  }
-		  }
-	  }
-	  ["static", staticfile] -> {
-		  let file = handler_ctx.assets <> "/static/" <> staticfile
-		  case ewe.file(file, None, None) {
-			  Error(_) -> {
-				  httplogger(woof.Warning, "Not found.", [woof.field("file", file)])
-				  response.new(404)
-				  |> response.set_header("content-type", "text/plain; charset=utf-8")
-				  |> response.set_body(ewe.TextData("404! Not found!"))
-			  }
-			  Ok(outcome) -> {
-				  httplogger(woof.Info, "OK", [woof.field("file", file)])
-				  response.new(200)
-				  |> case
-				  {
-					  staticfile
-					  |> string.split(".")
-					  |> list.last()
-					  |> result.unwrap("")
-				  }
-				  {
-					  "png" -> response.set_header(_, "content-type", "image/png;")
-					  "html" -> response.set_header(_, "content-type","text/html; charset=utf-8")
-					  "svg" -> response.set_header(_, "content-type", "image/svg+xml")
-					  "ttf" -> response.set_header(_, "content-type", "font/ttf")
-					  _ -> function.identity
-				  }
-				  |> response.set_body(outcome)
-			  }
-		  }
-	  }
-	["connection"] ->
-	{
-		ewe.upgrade_websocket(
-		req,
-		// If ever we need to send messages through processes to get to and from the client over here, we should
-		// take a second look at the ewe example on
-		// https://github.com/vshakitskiy/ewe/blob/mistress/examples/src/websocket.gleam
-		on_init: fn(_conn, selector) {
-			// Initial state for THIS specific client
-			let state = WebsocketState(
-			ctx: handler_ctx,
-			conn_data: ClientConnectionData(None, None)
-			)
-			#(state, selector)
-		},
-		handler: client_communication_handler,
-		on_close: fn(_conn, _state) {
-			todo
-		},
-		)
-	}
+    ["favicon.ico"] | ["static", "logo.png"] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForIconAsPNG)
+    }
+    ["static", "logo.svg"] -> {
+      httplogger(woof.Info, "OK", [])
+      handler_ctx.static_responses(RouteForIconAsSVG)
+    }
+    ["connection"] -> {
+      ewe.upgrade_websocket(
+        req,
+        // If ever we need to send messages through processes to get to and from the client over here, we should
+        // take a second look at the ewe example on
+        // https://github.com/vshakitskiy/ewe/blob/mistress/examples/src/websocket.gleam
+        on_init: fn(_conn, selector) {
+          // Initial state for THIS specific client
+          let state =
+            WebsocketState(
+              ctx: handler_ctx,
+              conn_data: ClientConnectionData(None, None),
+            )
+          #(state, selector)
+        },
+        handler: client_communication_handler,
+        on_close: fn(_conn, _state) { todo as "On close not yet written." },
+      )
+    }
     _ -> {
       httplogger(woof.Warning, "Not found.", [])
       response.new(404)
@@ -283,24 +291,22 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
 }
 
 type WebsocketState {
-	WebsocketState(
-	ctx: HandlerContext,
-	conn_data: ClientConnectionData,
-	)
+  WebsocketState(ctx: HandlerContext, conn_data: ClientConnectionData)
 }
 
 fn client_communication_handler(
-_conn: ewe.WebsocketConnection,
-state: WebsocketState,
-// That Nil is the internal message, again if we'd follow the example. But
-// Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
-message: ewe.WebsocketMessage(Nil)) -> ewe.WebsocketNext(WebsocketState, Nil){
-	case message {
-		ewe.Text(json_str) -> {
-			// Todo
-			ewe.websocket_continue(state)
-		}
-		ewe.Binary(_) -> ewe.websocket_continue(state)
-		ewe.User(Nil) -> ewe.websocket_continue(state)
-	}
+  _conn: ewe.WebsocketConnection,
+  state: WebsocketState,
+  // That Nil is the internal message, again if we'd follow the example. But
+  // Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
+  message: ewe.WebsocketMessage(Nil),
+) -> ewe.WebsocketNext(WebsocketState, Nil) {
+  case message {
+    ewe.Text(json_str) -> {
+      // Todo
+      ewe.websocket_continue(state)
+    }
+    ewe.Binary(_) -> ewe.websocket_continue(state)
+    ewe.User(Nil) -> ewe.websocket_continue(state)
+  }
 }
