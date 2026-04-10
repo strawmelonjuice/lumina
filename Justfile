@@ -7,9 +7,9 @@ default:
 build-styles:
 	cd ./client/ && tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css
 
-[doc("Build the server-side of Lumina")]
+[doc("Build the server-side of Lumina into a Podman image, from the Flake! This builds most of Lumina inside your worktree, albeit not tracked.")]
 [group('building')]
-build-server: build-client
+build-server-flake: build-client
 	cd server; \
 	gleam export erlang-shipment
 	git add -N ./server/build/erlang-shipment/* -f
@@ -23,6 +23,11 @@ build-server: build-client
 	@echo "Loading into Podman ..."
 	@podman load < result && echo -e "Podman image \033[1;35mluminapeonies:latest\033[0m built!"
 	@rm result
+
+[doc("Build the server-side of Lumina from the Containerfile")]
+[group('building')]
+build-server:
+	podman build . --tag luminapeonies
 
 [doc("Build the client-side of Lumina and it's styles")]
 [group('building')]
