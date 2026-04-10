@@ -73,6 +73,7 @@ type User {
 }
 
 pub fn main() {
+  let debug = simplifile.is_file("/data/debug") == Ok(True)
   use db <- sqlight.with_connection("/data/instance.db")
   // At some point everything should go here, I think.
   // woof.set_sink(woof.beam_logger_sink)
@@ -90,7 +91,12 @@ pub fn main() {
 
   // Logging
   woof.configure(woof.Config(
-    level: woof.Debug,
+    level: {
+      case debug {
+        True -> woof.Debug
+        False -> woof.Info
+      }
+    },
     format: woof.Text,
     colors: woof.Auto,
   ))

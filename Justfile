@@ -67,7 +67,9 @@ clean-all:
 [group("local-devel")]
 local-devel-prep: create-data-dirs
    dbmate up
-
+   # I don't know if I want to build for the devmode script?
+   # May also make the user from the app, if debug mode is detected.
+   touch data/debug
 
 [doc("Run the server in development mode")]
 [group("local-devel")]
