@@ -24,10 +24,14 @@ import gleam/erlang/application
 import gleam/erlang/process
 import gleam/http/response
 import gleam/int
-import gleam/option.{None}
+import gleam/list
+import gleam/option.{None, Some}
+import gleam/pair
 import gleam/result
+import gleam/string
 import gleam/uri
 import humanise
+import lumina_server/database/events
 import simplifile
 import sqlight
 import woof
@@ -73,14 +77,60 @@ type User {
 }
 
 pub fn main() {
-  let debug = simplifile.is_file("/data/debug") == Ok(True)
+  case simplifile.create_directory_all("/data/configvars") {
+    Ok(_) -> Nil
+    Error(_) -> {
+      panic as "Could not create /data/configvars"
+    }
+  }
+  let output_format = {
+    case
+      simplifile.read("/data/configvars/log_format")
+      |> result.unwrap("")
+      |> string.split_once("\n")
+      |> result.map(pair.first)
+      |> result.map(string.lowercase)
+    {
+      Ok("compact") -> woof.Compact
+      Ok("json") -> woof.Json
+      Ok("text") -> woof.Text
+      _ -> {
+        let _ =
+          simplifile.write(
+            "/data/configvars/log_format",
+            "json\n\nThis file sets the log format!"
+              <> "Default is 'json', other values available are 'compact' and 'text'."
+              <> "\nIf the set value is invalid or onextistent, this file is reset.",
+          )
+        woof.Json
+      }
+    }
+  }
+  let debug = simplifile.is_file("/data/configvars/debug") == Ok(True)
   use db <- sqlight.with_connection("/data/instance.db")
+  let log_to_db = booklet.new(True)
   // At some point everything should go here, I think.
-  // woof.set_sink(woof.beam_logger_sink)
   // But for now, do both!
   woof.set_sink(fn(entry, formatted) {
-    woof.beam_logger_sink(entry, formatted)
     woof.default_sink(entry, formatted)
+    let fields_formatted =
+      entry.fields
+      |> list.map(fn(field) { field.0 <> ": " <> field.1 })
+      |> string.join("; ")
+      |> string.to_option()
+    case log_to_db |> booklet.get() {
+      True ->
+        case events.log_to_db(entry, fields_formatted, db) {
+          Ok(_) -> Nil
+          _ -> {
+            // echo e
+            log_to_db |> booklet.set(False)
+            woof.error("Could not log to database! No longer trying.", [])
+          }
+        }
+      False -> Nil
+    }
+    woof.beam_logger_sink(entry, formatted)
   })
   let setuplog = woof.new("WARMUP")
   // PRAGMA's
@@ -90,16 +140,26 @@ pub fn main() {
   let _ = sqlight.exec("PRAGMA foreign_keys = ON;", db)
 
   // Logging
-  woof.configure(woof.Config(
-    level: {
-      case debug {
-        True -> woof.Debug
-        False -> woof.Info
-      }
-    },
-    format: woof.Text,
-    colors: woof.Auto,
-  ))
+  case debug {
+    True -> {
+      woof.configure(woof.Config(
+        level: woof.Debug,
+        format: woof.Text,
+        colors: woof.Auto,
+      ))
+      woof.info(
+        "Debug mode enabled.\n\n"
+          <> "This also means `configvars/log_format` is overridden to 'text'",
+        [],
+      )
+    }
+    False ->
+      woof.configure(woof.Config(
+        level: woof.Info,
+        format: output_format,
+        colors: woof.Auto,
+      ))
+  }
 
   let assets = case application.priv_directory("lumina_server") {
     Ok(outcome) -> outcome

@@ -5,7 +5,7 @@ import sqlight
 /// This will generate the testing username-password combinations defined in the README, as well
 /// as a `/data/debug` file, which sets log levels to... Yup! To debug instead of Info
 pub fn main() {
-  case simplifile.create_file("../data/debug") {
+  case simplifile.create_file("../data/configvars/debug") {
     Ok(..) | Error(simplifile.Eexist) -> Nil
     Error(fuck) -> {
       let fucking_error = string.inspect(fuck)

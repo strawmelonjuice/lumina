@@ -2,7 +2,9 @@ CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(128) primary key
 CREATE TABLE logs (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	level TEXT CHECK(level IN ('INFO', 'WARN', 'ERROR', 'DEBUG')),
+	namespace TEXT,
 	message TEXT NOT NULL,
+	variables TEXT,
 	timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE users (
