@@ -17,6 +17,7 @@
 // See the Licence for the specific language governing permissions and limitations. [cite: 6]
 
 import parrot/dev
+import sqlight
 
 pub fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
   case param {
