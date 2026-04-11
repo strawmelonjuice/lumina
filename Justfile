@@ -51,7 +51,8 @@ bun-install:
 
 [group('prepare')]
 create-data-dirs:
-	mkdir -p ./data
+	mkdir -p ./data/configvars/
+	chmod 777 data
 
 [doc("Clean all build artifacts")]
 clean-all:
@@ -69,7 +70,7 @@ local-devel-prep: create-data-dirs
    dbmate up
    # I don't know if I want to build for the devmode script?
    # May also make the user from the app, if debug mode is detected.
-   touch data/debug
+   touch data/configvars/debug
 
 [doc("Run the server in development mode")]
 [group("local-devel")]
@@ -93,3 +94,6 @@ local-devel-dataexplorer: local-devel-prep
    @echo "This script needs to be rewritten for the gleam branch you are on."
    @exit 1
 
+[group("development")]
+parrot:
+  cd server && gleam run -m parrot -- --sqlite ../data/instance.db

@@ -31,10 +31,20 @@ COPY ./server/ /app/
 RUN cd /app/ && gleam export erlang-shipment
 
 FROM docker.io/library/erlang:28-alpine
-RUN adduser -D lumina
-USER lumina
+RUN mkdir -p /data && chown 1000 /data
+
+COPY --from=ghcr.io/amacneil/dbmate:latest /usr/local/bin/dbmate /usr/local/bin/dbmate
+COPY ./db/migrations /app/migrations
+COPY --from=package-client --chown=1000 /build/dist /app/lumina_server/priv/static
+COPY --from=package-server --chown=1000 /app/build/erlang-shipment /app
+
 WORKDIR /app
-COPY --from=package-server --chown=lumina:lumina /app/build/erlang-shipment /app
-COPY --from=package-client --chown=lumina:lumina /build/dist /app/lumina_server/priv/static
+
+RUN echo '#!/bin/sh' > /app/entrypoint_.sh && \
+    echo 'dbmate --url "sqlite:/data/instance.db" --migrations-dir "/app/migrations" up' >> /app/entrypoint_.sh && \
+    echo '/app/entrypoint.sh run' >> /app/entrypoint_.sh && \
+    chmod +x /app/entrypoint_.sh
+
+USER 1000
 VOLUME /data
-ENTRYPOINT ["/app/entrypoint.sh", "run"]
+ENTRYPOINT ["/app/entrypoint_.sh"]
