@@ -35,6 +35,7 @@ import lumina_server/database/events
 import simplifile
 import sqlight
 import woof
+import youid/uuid
 
 type HandlerContext {
   HandlerContext(
@@ -70,10 +71,7 @@ type ClientType {
 }
 
 type User {
-  User(
-    // Todo
-    Nil,
-  )
+  User(uid: uuid.Uuid, username: String)
 }
 
 pub fn main() {
@@ -210,6 +208,141 @@ pub fn main() {
   process.sleep_forever()
 }
 
+fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
+  let httplogger = fn(
+    level: woof.Level,
+    msg: String,
+    vars: List(#(String, String)),
+  ) {
+    woof.new("SERVER/HTTP")
+    |> woof.log(level, msg, [
+      woof.field("uri path", req.path),
+      woof.field("request-host", case req.host {
+        "0.0.0.0" -> "local (unsure)"
+        d -> d
+      }),
+      ..vars
+    ])
+  }
+  let ok = fn() { httplogger(woof.Info, "200/OK", []) }
+  case req.path |> uri.path_segments() {
+    ["/"] | [""] | [] -> {
+      ok()
+      handler_ctx.static_responses(RouteForIndex)
+    }
+    ["static", "lumina.min.mjs"] -> {
+      ok()
+      handler_ctx.static_responses(RouteForClientAsMinifiedJavascript)
+    }
+    ["static", "lumina.mjs"] -> {
+      ok()
+      handler_ctx.static_responses(RouteForClientAsJavascript)
+    }
+    ["static", "lumina.css"] -> {
+      ok()
+      handler_ctx.static_responses(RouteForClientStyles)
+    }
+
+    ["favicon.ico"] | ["static", "logo.png"] -> {
+      ok()
+      handler_ctx.static_responses(RouteForIconAsPNG)
+    }
+    ["static", "logo.svg"] -> {
+      ok()
+      handler_ctx.static_responses(RouteForIconAsSVG)
+    }
+    ["connection"] -> {
+      ewe.upgrade_websocket(
+        req,
+        // If ever we need to send messages through processes to get to and from the client over here, we should
+        // take a second look at the ewe example on
+        // https://github.com/vshakitskiy/ewe/blob/mistress/examples/src/websocket.gleam
+        on_init: fn(_conn, selector) {
+          // Initial state for THIS specific client
+          let state =
+            WebsocketState(
+              ctx: handler_ctx,
+              conn_data: ClientConnectionData(None, None),
+              logger: fn(
+                level: woof.Level,
+                msg: String,
+                vars: List(#(String, String)),
+                conn_data: ClientConnectionData,
+              ) {
+                woof.new("WEB/SOCKET:CLIENT")
+                |> woof.log(level, msg, [
+                  woof.field("uri path", req.path),
+                  woof.field("request-host", case req.host {
+                    "0.0.0.0" -> "local (unsure)"
+                    d -> d
+                  }),
+                  woof.field(
+                    "user",
+                    conn_data.user
+                      |> option.map(fn(user) { user.username })
+                      |> option.unwrap("unknown"),
+                  ),
+                  ..vars
+                ])
+              },
+            )
+          httplogger(woof.Info, "101/PROTOCOL UPGRADE", [])
+          #(state, selector)
+        },
+        handler: client_communication_handler,
+        on_close: fn(_conn, _state) { Nil },
+      )
+    }
+    _ -> {
+      httplogger(woof.Warning, "Not found.", [])
+      response.new(404)
+      |> response.set_header("content-type", "text/plain; charset=utf-8")
+      |> response.set_body(ewe.TextData("404! Not found!"))
+    }
+  }
+}
+
+type WebsocketState {
+  WebsocketState(
+    ctx: HandlerContext,
+    conn_data: ClientConnectionData,
+    logger: fn(
+      woof.Level,
+      String,
+      List(#(String, String)),
+      ClientConnectionData,
+    ) ->
+      Nil,
+  )
+}
+
+fn client_communication_handler(
+  _conn: ewe.WebsocketConnection,
+  state: WebsocketState,
+  // That Nil is the internal message, again if we'd follow the example. But
+  // Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
+  message: ewe.WebsocketMessage(Nil),
+) -> ewe.WebsocketNext(WebsocketState, Nil) {
+  let #(handler_context, connection_data, connection_logger) = {
+    #(
+      state.ctx,
+      state.conn_data,
+      fn(level: woof.Level, message: String, variables: List(#(String, String))) {
+        state.logger(level, message, variables, state.conn_data)
+      },
+    )
+  }
+  case message {
+    ewe.Text(json_str) -> {
+      connection_logger(woof.Debug, "Received: " <> json_str, [])
+      // Todo
+      ewe.websocket_continue(state)
+    }
+    ewe.Binary(_) -> ewe.websocket_continue(state)
+    ewe.User(Nil) -> ewe.websocket_continue(state)
+  }
+}
+
 fn static(
   client_hash: String,
   assets: String,
@@ -297,89 +430,5 @@ fn static(
       RouteForClientAsJavascript -> client_js
       RouteForClientAsMinifiedJavascript -> client_js_min
     }
-  }
-}
-
-fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
-  let httplogger = fn(
-    level: woof.Level,
-    msg: String,
-    vars: List(#(String, String)),
-  ) {
-    woof.new("WEBSERVER")
-    |> woof.log(level, msg, [woof.field("uri path", req.path), ..vars])
-  }
-  case req.path |> uri.path_segments() {
-    ["/"] | [""] | [] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForIndex)
-    }
-    ["static", "lumina.min.mjs"] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForClientAsMinifiedJavascript)
-    }
-    ["static", "lumina.mjs"] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForClientAsJavascript)
-    }
-    ["static", "lumina.css"] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForClientStyles)
-    }
-
-    ["favicon.ico"] | ["static", "logo.png"] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForIconAsPNG)
-    }
-    ["static", "logo.svg"] -> {
-      httplogger(woof.Info, "OK", [])
-      handler_ctx.static_responses(RouteForIconAsSVG)
-    }
-    ["connection"] -> {
-      ewe.upgrade_websocket(
-        req,
-        // If ever we need to send messages through processes to get to and from the client over here, we should
-        // take a second look at the ewe example on
-        // https://github.com/vshakitskiy/ewe/blob/mistress/examples/src/websocket.gleam
-        on_init: fn(_conn, selector) {
-          // Initial state for THIS specific client
-          let state =
-            WebsocketState(
-              ctx: handler_ctx,
-              conn_data: ClientConnectionData(None, None),
-            )
-          #(state, selector)
-        },
-        handler: client_communication_handler,
-        on_close: fn(_conn, _state) { Nil },
-      )
-    }
-    _ -> {
-      httplogger(woof.Warning, "Not found.", [])
-      response.new(404)
-      |> response.set_header("content-type", "text/plain; charset=utf-8")
-      |> response.set_body(ewe.TextData("404! Not found!"))
-    }
-  }
-}
-
-type WebsocketState {
-  WebsocketState(ctx: HandlerContext, conn_data: ClientConnectionData)
-}
-
-fn client_communication_handler(
-  _conn: ewe.WebsocketConnection,
-  state: WebsocketState,
-  // That Nil is the internal message, again if we'd follow the example. But
-  // Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
-  message: ewe.WebsocketMessage(Nil),
-) -> ewe.WebsocketNext(WebsocketState, Nil) {
-  case message {
-    ewe.Text(json_str) -> {
-      // Todo
-      ewe.websocket_continue(state)
-    }
-    ewe.Binary(_) -> ewe.websocket_continue(state)
-    ewe.User(Nil) -> ewe.websocket_continue(state)
   }
 }
