@@ -1,5 +1,6 @@
 *.beam
 *.ez
+./client
 /target/
 
 # Ignore Gleam backend build artifacts

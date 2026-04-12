@@ -366,7 +366,8 @@ pub(crate) async fn wsconnection<'k>(
 													avatar: Some((
 														"image/svg+xml".to_string(),
 														// Encode the included SVG bytes as base64 at compile time.
-														STANDARD.encode(include_bytes!("../../assets/svgs/dummy_user_120px.svg")),
+														STANDARD.encode(include_bytes!("../../client/priv/static/dummy_user_120px.svg"),
+													),
 													)),
 													uuid: user.id.to_string(),
 													//TODO: Fetch actual unread notification count

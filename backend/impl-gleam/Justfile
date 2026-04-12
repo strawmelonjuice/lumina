@@ -1,11 +1,16 @@
 [private]
 default:
 	@just --list
+[group('prepare')]
+[doc("Vendors the client code into this backend impl so it can be tested or built against.")]
+copy-over-client:
+	mkdir -p ./client
+	cp -fru $(git rev-parse --show-toplevel)/web/* ./client
 
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
-	cd ./client/ && tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css
+	
 
 [doc("Build the server-side of Lumina into a Podman image, from the Flake! This builds most of Lumina inside your worktree, albeit not tracked.")]
 [group('building')]
@@ -26,13 +31,14 @@ build-server-flake: build-client
 
 [doc("Build the server-side of Lumina from the Containerfile")]
 [group('building')]
-build-server:
+build-server: copy-over-client
 	podman build . --tag luminapeonies
 
 [doc("Build the client-side of Lumina and it's styles")]
 [group('building')]
-build-client: build-styles
+build-client: copy-over-client
 	cd ./client/ &&\
+	tailwindcss -i ./app.css -o ../server/priv/static/lumina_client.css && \
 	gleam build --target javascript &&\
 	find ./src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "../server/priv/static/lumina_client_rev.hash" &&\
 	echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
@@ -80,7 +86,7 @@ local-devel: local-devel-prep build-server
 [doc("Run the server in development mode with file watching")]
 [group("local-devel")]
 local-devel-watch:
-	watchexec --restart --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json -- just local-devel
+	watchexec --restart --debounce 10 --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json --print-events -- just local-devel
 
 [doc("Runs the commands from local-devel automatically, watches")]
 [group("local-devel")]

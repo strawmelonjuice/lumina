@@ -1,3 +1,8 @@
+backend/impl-gleam/client
+
+
+# -------------------- older ignores
+
 *.beam
 *.ez
 /target/

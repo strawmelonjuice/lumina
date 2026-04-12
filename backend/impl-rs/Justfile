@@ -2,14 +2,18 @@
 default:
     @just --list
 
-[doc("Build the styles for Lumina client")]
-[group('building')]
-build-styles:
-    cd ./client/ && bun x @tailwindcss/cli@4.1.18 -i ./app.css -o ./priv/static/lumina_client.css
+[group('prepare')]
+[doc("Vendors the client code into this backend impl so it can be tested or built against.")]
+copy-over-client:
+	mkdir -p ./client
+	cp -fru $(git rev-parse --show-toplevel)/web/* ./client
+
 
 [doc("Build the server-side of Lumina")]
 [group('building')]
 build-server: build-client
+    mkdir -p ./client/priv/static
+    cp -fru $(git rev-parse --show-toplevel)/assets/static/* ./client/priv/static
     cargo build
 
 [doc("Build the server-side of Lumina optimised for release")]
@@ -19,8 +23,9 @@ build-server-release: build-client
 
 [doc("Build the client-side of Lumina and it's styles")]
 [group('building')]
-build-client: build-styles
+build-client: copy-over-client bun-install
     cd ./client/ &&\
+    bun x @tailwindcss/cli@4.1.18 -i ./app.css -o ./priv/static/lumina_client.css && \
     gleam build --target javascript &&\
     find ./client/src/ -type f -print0 | xargs -0 sha256sum | sha256sum | awk '{print $1}' > "./priv/static/lumina_client_rev.hash" &&\
     echo 'import { main } from "./lumina_client.mjs";document.addEventListener("DOMContentLoaded", main())' > "./build/dev/javascript/lumina_client/lumina_client.ts" &&\
