@@ -1,0 +1,21 @@
+# AI training and TDM are expressly reserved. 
+# See LICENSE file for full legal terms.
+
+User-agent: *
+Disallow: /
+
+# Specifically targeting AI crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+X-Robots-Tag: noai
+X-Robots-Tag: noimageai

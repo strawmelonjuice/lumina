@@ -1,0 +1,21 @@
+# Ignore git and build files
+.git
+.gitignore
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.DS_Store
+
+# Editor/IDE files
+.vscode/
+.idea/
+
+# Misc
+*.env.local
+.envrc
+.env.*.local
+
+docker/
+data/

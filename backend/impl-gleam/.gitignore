@@ -1,0 +1,37 @@
+*.beam
+*.ez
+/target/
+erl_crash.dump
+/test
+*.log
+package-lock.json
+node_modules
+# Ignore Editor files
+.idea/
+.vscode/
+
+
+
+# Added by cargo
+/target
+
+# Added by me
+client/build
+/server/build
+/server/priv/static/lumina_client*.css
+/server/priv/static/lumina_client*.hash
+/server/priv/static/lumina_client*.mjs
+.env
+/data
+/built
+# mise system-specific config file
+.mise.toml
+
+
+# Obsidian
+/notes/.obsidian/appearance.json
+/notes/.obsidian/workspace.json
+/notes/.obsidian/app.json
+
+# Direnv cache
+.direnv/
