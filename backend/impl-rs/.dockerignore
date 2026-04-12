@@ -1,0 +1,29 @@
+# Ignore git and build files
+.git
+.gitignore
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.DS_Store
+
+# Rust build output
+target/
+
+# Node/Bun/Gleam build output
+client/build/
+client/node_modules/
+client/bun.lockb
+
+# Editor/IDE files
+.vscode/
+.idea/
+
+# Misc
+*.env.local
+.envrc
+.env.*.local
+
+docker/
+data/

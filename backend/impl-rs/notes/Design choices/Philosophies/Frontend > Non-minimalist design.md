@@ -1,0 +1,1 @@
+Lumina is not minimalistic. It follows web design trends from decades ago with that approach, but also prefers a clean and modern design. This is why coloured elements are very important, but it also allows us to implement features considered old-school nowadays. Like the ability  

@@ -1,0 +1,4 @@
+- Must provide a timeline for 'global' and user-specific (dynamic timelines), viewable on the front end.
+- Must be able to federate, and users be able to interact with "external" content ^4c6bf0
+- Must have a responsive web client implementing all 'Must' end-user-features.
+- Must have a web admin panel
