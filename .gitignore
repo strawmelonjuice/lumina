@@ -1,4 +1,7 @@
 backend/impl-gleam/client
+backend/impl-gleam/webapi
+backend/impl-rs/client
+backend/impl-rs/webapi
 
 
 # -------------------- older ignores

@@ -7,6 +7,7 @@ RUN mkdir -p /app/prepped && bun x @tailwindcss/cli -i /app/app.css -o /app/prep
 FROM ghcr.io/gleam-lang/gleam:v1.15.2-erlang-alpine AS build-client
 WORKDIR /app
 COPY ./client/gleam.toml ./client/manifest.toml ./
+COPY ./webapi/ ../webapi/
 RUN gleam deps download
 COPY ./client/ ./
 COPY --from=style-client /app/prepped/ /app/prepped/
@@ -26,9 +27,14 @@ FROM ghcr.io/gleam-lang/gleam:v1.15.2-erlang-alpine AS package-server
 RUN apk add build-base
 WORKDIR /app
 COPY ./server/gleam.toml ./server/manifest.toml ./
+COPY ./webapi/ ../webapi/
 RUN gleam deps download
 COPY ./server/ /app/
-RUN cd /app/ && gleam export erlang-shipment
+RUN --mount=type=cache,target=/app/build \
+    gleam export erlang-shipment && \
+    # Move the result out of the cache volume so the next stage can see it
+    cp -r /app/build/erlang-shipment /app/shipment_final
+# RUN cd /app/ && gleam export erlang-shipment # <-- THIS IS THE SLOW STEP.
 
 FROM docker.io/library/erlang:28-alpine
 RUN mkdir -p /data && chown 1000 /data
@@ -36,7 +42,7 @@ RUN mkdir -p /data && chown 1000 /data
 COPY --from=ghcr.io/amacneil/dbmate:latest /usr/local/bin/dbmate /usr/local/bin/dbmate
 COPY ./db/migrations /app/migrations
 COPY --from=package-client --chown=1000 /build/dist /app/lumina_server/priv/static
-COPY --from=package-server --chown=1000 /app/build/erlang-shipment /app
+COPY --from=package-server --chown=1000 /app/shipment_final /app
 
 WORKDIR /app
 

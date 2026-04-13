@@ -6,7 +6,7 @@ target = "erlang"
 # your project to the Hex package manager.
 #
 # description = ""
-# licences = ["Apache-2.0"]
+licences = ["EUPL-1.2"]
 # repository = { type = "github", user = "", repo = "" }
 # links = [{ title = "Website", href = "" }]
 #
@@ -34,6 +34,8 @@ sqlight = ">= 1.0.3 and < 2.0.0"
 simplifile = ">= 2.4.0 and < 3.0.0"
 booklet = ">= 1.1.0 and < 2.0.0"
 humanise = ">= 1.1.0 and < 2.0.0"
+webapi = { path = "../webapi" }
+
 
 [dev_dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

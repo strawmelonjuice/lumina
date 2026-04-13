@@ -3,22 +3,21 @@
 
 // Lumina/Peonies
 // Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
-// 
+//
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
 // You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-// 
-// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+//
+// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
 // under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
 // See LICENSE file in the repository root for full details.
-// 
-// 
+//
+//
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
 // See the Licence for the specific language governing permissions and limitations. [cite: 6]
 
 import gleam/bool
 import gleam/dict
-import gleam/dynamic/decode
 import gleam/float
 import gleam/int
 import gleam/json
@@ -28,6 +27,7 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp
 import gleamy_lights/console
+import webapi.{encode_ws_msg_from_client as encode_ws_msg, LoginAuthenticationRequest, RegisterPrecheck, RegisterRequest, }
 import gleamy_lights/premixed
 import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
@@ -87,7 +87,7 @@ pub fn request_next_timeline_page(
     Ok(timeline) -> {
       case homepage.get_next_page_to_load(timeline) {
         Some(next_page) ->
-          TimeLineRequest(timeline_name, next_page)
+		webapi.TimeLineRequest(timeline_name, next_page)
           |> encode_ws_msg
           |> json.to_string
           |> lustre_websocket.send(socket, _)
@@ -95,7 +95,7 @@ pub fn request_next_timeline_page(
       }
     }
     Error(_) ->
-      TimeLineRequest(timeline_name, 0)
+	webapi.TimeLineRequest(timeline_name, 0)
       |> encode_ws_msg
       |> json.to_string
       |> lustre_websocket.send(socket, _)
@@ -510,7 +510,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // Request unless cached or load next page if needed.
       let requ = case model.cache.cached_timelines |> dict.get(tid) {
         Error(..) ->
-          TimeLineRequest(tid, 0)
+		webapi.TimeLineRequest(tid, 0)
           |> encode_ws_msg
           |> json.to_string
           |> lustre_websocket.send(socket, _)
@@ -520,7 +520,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             True -> {
               case homepage.get_next_page_to_load(timeline) {
                 Some(next_page) ->
-                  TimeLineRequest(tid, next_page)
+				webapi.TimeLineRequest(tid, next_page)
                   |> encode_ws_msg
                   |> json.to_string
                   |> lustre_websocket.send(socket, _)
@@ -592,18 +592,13 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
     lustre_websocket.InvalidUrl -> panic
     lustre_websocket.OnTextMessage(notice) ->
       case
-        json.parse(notice, {
-          ws_msg_decoder(
-            json.parse(notice, ws_msg_typedefiner())
-            |> result.unwrap("Unparsable message"),
-          )
-        })
+	  json.parse(notice, webapi.ws_msg_from_server_decoder())
       {
-        Ok(Greeting(m)) -> {
+		  Ok(webapi.Greeting(m)) -> {
           console.log("The server says hi! '" <> m <> "'")
           #(model, effect.none())
         }
-        Ok(RegisterPrecheckResponse(ok, why)) -> {
+		  Ok(webapi.RegisterPrecheckResponse(ok, why)) -> {
           console.log("Register precheck response: " <> string.inspect(ok))
           let ready =
             case ok {
@@ -620,7 +615,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-        Ok(OwnUserInformationResponse(
+		  Ok(webapi.OwnUserInformationResponse(
           username:,
           email:,
           avatar:,
@@ -663,7 +658,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             effect.none(),
           )
         }
-        Ok(AuthenticationSuccess(_username, token:)) -> {
+		  Ok(webapi.AuthenticationSuccess(_username, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
           #(
@@ -674,19 +669,19 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               token: Some(token),
             ),
             effect.batch([
-              OwnUserInformationRequest
+			webapi.OwnUserInformationRequest
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
               // Even though 'officially' we don't show the global timeline, this should be the one requested firstly.
-              TimeLineRequest("global", 0)
+			webapi.TimeLineRequest("global", 0)
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
             ]),
           )
         }
-        Ok(AuthenticationFailure) -> {
+		  Ok(webapi.AuthenticationFailure) -> {
           case model.page {
             model_type.Landing | HomeTimeline(..) | NotFound(..) | Licence ->
               session_destroy()
@@ -698,7 +693,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Register(..) -> #(model, effect.none())
           }
         }
-        Ok(TimeLineResponse(
+		  Ok(webapi.TimeLineResponse(
           timeline_name:,
           timeline_id:,
           items:,
@@ -727,7 +722,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           let posts_fetches =
             effect.batch(
               list.map(items, fn(post_id) {
-                PostContentRequest(post_id:)
+				  webapi.PostContentRequest(post_id:)
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _)
@@ -786,7 +781,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           )
           #(model, effect.none())
         }
-        Ok(Undecodable) ->
+		  Ok(webapi.Undecodable) ->
           panic as "Received message that was explicitly marked as undecodable, this should not happen
 	as the decoder should have returned an error instead of Undecodable. Check the decoder implementation and the logs
 	for the raw message."
@@ -838,109 +833,16 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
       Model(..model, ws: model_type.WsConnectionConnected(socket)),
       lustre_websocket.send(
         socket,
-        {
-          let x = [
-            #("type", json.string("introduction")),
-            #("client_kind", json.string("web")),
-          ]
-          json.object(case model.user, model.token {
-            None, Some(token) -> {
-              // traversing x is okay.
-              list.append(x, [#("try_revive", json.string(token))])
-            }
-            _, _ -> x
-          })
-        }
-          |> json.to_string(),
-      ),
+	  webapi.Introduction("web", case model.user, model.token {
+		  None, Some(token) -> Some(token)
+		  _, _ -> None
+	  })|>encode_ws_msg|>json.to_string,
+
+	  ),
     )
   }
 }
 
-// WS Message decoding ---------------------------------------------------------
-
-type WsMsgFromServer {
-  Greeting(greeting: String)
-  RegisterPrecheckResponse(ok: Bool, why: String)
-  AuthenticationSuccess(username: String, token: String)
-  AuthenticationFailure
-  TimeLineResponse(
-    timeline_name: String,
-    timeline_id: String,
-    /// List of post ids as string.
-    items: List(String),
-    /// Total number of posts in timeline
-    total_count: Int,
-    /// Current page number
-    page: Int,
-    /// Whether there are more pages available
-    has_more: Bool,
-  )
-  OwnUserInformationResponse(
-    username: String,
-    email: String,
-    // Optional field populated with mime type and base64 of a profile picture.
-    avatar: option.Option(#(String, String)),
-    uuid: String,
-    /// Number of unread notifications, a timeline request for "notifications" can be used to get the actual notifications and fill the cache.
-    unread_notifications: Int,
-  )
-  Undecodable
-}
-
-type WsMsgFromClient {
-  OwnUserInformationRequest
-  LoginAuthenticationRequest(email_username: String, password: String)
-  RegisterRequest(email: String, username: String, password: String)
-  TimeLineRequest(timeline_name: String, page: Int)
-  RegisterPrecheck(
-    email: String,
-    username: String,
-    // Password only once? Yes, the equal password check is done in the view/update themselves.
-    password: String,
-  )
-  PostContentRequest(post_id: String)
-}
-
-fn encode_ws_msg(message: WsMsgFromClient) -> json.Json {
-  case message {
-    OwnUserInformationRequest ->
-      json.object([#("type", json.string("own_user_information_request"))])
-    LoginAuthenticationRequest(email_username, password) ->
-      json.object([
-        #("type", json.string("login_authentication_request")),
-        #("email_username", json.string(email_username)),
-        #("password", json.string(password)),
-      ])
-
-    RegisterRequest(email, username, password) ->
-      json.object([
-        #("type", json.string("register_request")),
-        #("email", json.string(email)),
-        #("username", json.string(username)),
-        #("password", json.string(password)),
-      ])
-    RegisterPrecheck(email, username, password) ->
-      json.object([
-        #("type", json.string("register_precheck")),
-        #("email", json.string(email)),
-        #("username", json.string(username)),
-        #("password", json.string(password)),
-      ])
-    TimeLineRequest(timeline_name:, page:) ->
-      json.object([
-        #("type", json.string("timeline_request")),
-        #("by_name", json.string(timeline_name)),
-        #("page", json.int(page)),
-      ])
-    PostContentRequest(post_id:) -> {
-      json.object([
-        #("type", json.string("post_view_request")),
-        #("post_id", json.string(post_id)),
-      ])
-    }
-  }
-}
 
 fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
   let current_time =
@@ -964,84 +866,6 @@ fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
       )
     }
   }
-}
-
-fn ws_msg_decoder(variant: String) -> decode.Decoder(WsMsgFromServer) {
-  case variant {
-    "auth_success" -> {
-      use username <- decode.field("username", decode.string)
-      use token <- decode.field("token", decode.string)
-      decode.success(AuthenticationSuccess(username:, token:))
-    }
-    "auth_failure" -> {
-      decode.success(AuthenticationFailure)
-    }
-    "unknown" -> decode.success(Undecodable)
-    "register_precheck_response" -> {
-      use ok <- decode.field("ok", decode.bool)
-      use why <- decode.field("why", decode.string)
-      decode.success(RegisterPrecheckResponse(ok, why))
-    }
-    "greeting" -> {
-      use greeting <- decode.field("greeting", decode.string)
-      decode.success(Greeting(greeting:))
-    }
-    "timeline_response" -> {
-      console.log("Decoding timeline response: " <> variant)
-      use timeline_name <- decode.field("timeline_name", decode.string)
-      use timeline_id <- decode.field("timeline_id", decode.string)
-      use items <- decode.field("post_ids", decode.list(decode.string))
-      use total_count <- decode.field("total_count", decode.int)
-      use page <- decode.field("page", decode.int)
-      use has_more <- decode.field("has_more", decode.bool)
-      decode.success(TimeLineResponse(
-        timeline_name:,
-        timeline_id:,
-        items:,
-        total_count:,
-        page:,
-        has_more:,
-      ))
-    }
-    "own_user_information_response" -> {
-      use username <- decode.field("username", decode.string)
-      use email <- decode.field("email", decode.string)
-      use unread_notifications <- decode.field(
-        "unread_notifications",
-        decode.int,
-      )
-      // avatar may be null or an array [mime, base64]
-      use avatar_list_opt <- decode.field(
-        "avatar",
-        decode.optional(decode.list(decode.string)),
-      )
-      let avatar = case avatar_list_opt {
-        Some(list) ->
-          case list {
-            [mime, b64] -> Some(#(mime, b64))
-            _ -> None
-          }
-        None -> None
-      }
-      use uuid <- decode.field("uuid", decode.string)
-      decode.success(OwnUserInformationResponse(
-        username:,
-        email:,
-        avatar:,
-        uuid:,
-        unread_notifications:,
-      ))
-    }
-    g -> {
-      console.error("Unknown message type: " <> g)
-      decode.failure(Undecodable, g)
-    }
-  }
-}
-
-fn ws_msg_typedefiner() -> decode.Decoder(String) {
-  use variant <- decode.field("type", decode.string)
-  decode.success(variant)
 }
 
 fn session_destroy() -> #(Model, Effect(Msg)) {

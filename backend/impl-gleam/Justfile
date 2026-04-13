@@ -6,11 +6,12 @@ default:
 copy-over-client:
 	mkdir -p ./client
 	cp -fru $(git rev-parse --show-toplevel)/web/* ./client
-
+	mkdir -p ./webapi
+	cp -fru $(git rev-parse --show-toplevel)/webapi/* ./webapi
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
-	
+
 
 [doc("Build the server-side of Lumina into a Podman image, from the Flake! This builds most of Lumina inside your worktree, albeit not tracked.")]
 [group('building')]
@@ -58,7 +59,7 @@ bun-install:
 [group('prepare')]
 create-data-dirs:
 	mkdir -p ./data/configvars/
-	chmod 777 data
+	chmod 777 data -fR || true
 
 [doc("Clean all build artifacts")]
 clean-all:
@@ -86,7 +87,7 @@ local-devel: local-devel-prep build-server
 [doc("Run the server in development mode with file watching")]
 [group("local-devel")]
 local-devel-watch:
-	watchexec --restart --debounce 10 --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json --print-events -- just local-devel
+	watchexec --restart -I -c --debounce=10s --stop-timeout=0 --shell=sh -e rs,gleam,toml,css,ts,json --print-events -- just local-devel
 
 [doc("Runs the commands from local-devel automatically, watches")]
 [group("local-devel")]
