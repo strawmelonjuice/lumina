@@ -51,7 +51,6 @@
 
         devShells.default = pkgs.mkShell {
           shellHook = ''
-            bun install --cwd=client/ --silent --only-missing
             echo "❄️ dev environment loaded, use 'just dev' next, or use 'just --list' for recipies."
           '';
           buildInputs = with pkgs; [
