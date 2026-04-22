@@ -16,8 +16,6 @@
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
 // See the Licence for the specific language governing permissions and limitations. [cite: 6]
 
-import webapi
-import gleam/json
 import booklet
 import envoy
 import ewe.{type Request, type Response}
@@ -26,6 +24,7 @@ import gleam/erlang/application
 import gleam/erlang/process
 import gleam/http/response
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/pair
@@ -36,6 +35,7 @@ import humanise
 import lumina_server/database/events
 import simplifile
 import sqlight
+import webapi
 import woof
 import youid/uuid
 
@@ -122,10 +122,12 @@ pub fn main() {
       True ->
         case events.log_to_db(entry, fields_formatted, db) {
           Ok(_) -> Nil
-		  Error(e) -> {
-			  woof.error("Could not log to database!\n\n"<>e.message, [])
-			  woof.append_global_context([woof.field("db_logging", "failed: " <> e.message)])
-			  booklet.set(in: log_to_db, to: False)
+          Error(e) -> {
+            woof.error("Could not log to database!\n\n" <> e.message, [])
+            woof.append_global_context([
+              woof.field("db_logging", "failed: " <> e.message),
+            ])
+            booklet.set(in: log_to_db, to: False)
           }
         }
       False -> Nil
@@ -319,7 +321,7 @@ type WebsocketState {
 }
 
 fn client_communication_handler(
-conn: ewe.WebsocketConnection,
+  conn: ewe.WebsocketConnection,
   state: WebsocketState,
   // That Nil is the internal message, again if we'd follow the example. But
   // Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
@@ -337,41 +339,56 @@ conn: ewe.WebsocketConnection,
   case message {
     ewe.Text(json_str) -> {
       connection_logger(woof.Debug, "Received: " <> json_str, [])
-		case json.parse(json_str, webapi.ws_msg_from_client_decoder()) {
-
-			Error(_) -> {
-				woof.tap_debug(woof.Warning, "Received malformed message from client.", [
-				woof.field("message", json_str),
-				])
-				ewe.send_close_frame(conn, ewe.CustomCloseCode(code: 4000, data: "Malformed message received."))
-				Some(ewe.websocket_stop_abnormal("Malformed message received."))
-			}
-			Ok(message) ->
-			case message {
-  				webapi.Introduction(client_kind:, try_revive:) -> {
-					case try_revive {
-						Some(_) -> todo as "Revive is not implemented yet."
-						None -> Nil
-					}
-					let client_type = case client_kind {
-						"web" -> {
-							connection_logger(woof.Debug, "A web client greeds us!", [])
-							WebClient}
-						_ -> todo
-					}
-					Some(ewe.websocket_continue(WebsocketState(..state, conn_data: ClientConnectionData(..connection_data, client_type: Some(client_type)))))
-				}
-				webapi.PostContentRequest(post_id:) -> todo
-				webapi.RegisterPrecheck(email:, username:, password:) -> todo
-				webapi.TimeLineRequest(timeline_name:, page:) -> todo
-				webapi.RegisterRequest(email:, username:, password:) -> todo
-				webapi.LoginAuthenticationRequest(email_username:, password:) -> todo
-				webapi.OwnUserInformationRequest -> todo
-			}
-		}
-		|> option.unwrap(ewe.websocket_continue(state))
-
-	}
+      case json.parse(json_str, webapi.ws_msg_from_client_decoder()) {
+        Error(_) -> {
+          woof.tap_debug(
+            woof.Warning,
+            "Received malformed message from client.",
+            [
+              woof.field("message", json_str),
+            ],
+          )
+          ewe.send_close_frame(
+            conn,
+            ewe.CustomCloseCode(code: 4000, data: "Malformed message received."),
+          )
+          Some(ewe.websocket_stop_abnormal("Malformed message received."))
+        }
+        Ok(message) ->
+          case message {
+            webapi.Introduction(client_kind:, try_revive:) -> {
+              case try_revive {
+                Some(_) -> todo as "Revive is not implemented yet."
+                None -> Nil
+              }
+              let client_type = case client_kind {
+                "web" -> {
+                  connection_logger(woof.Debug, "A web client greeds us!", [])
+                  WebClient
+                }
+                _ -> todo
+              }
+              Some(ewe.websocket_continue(
+                WebsocketState(
+                  ..state,
+                  conn_data: ClientConnectionData(
+                    ..connection_data,
+                    client_type: Some(client_type),
+                  ),
+                ),
+              ))
+            }
+            webapi.PostContentRequest(post_id:) -> todo
+            webapi.RegisterPrecheck(email:, username:, password:) -> todo
+            webapi.TimeLineRequest(timeline_name:, page:) -> todo
+            webapi.RegisterRequest(email:, username:, password:) -> todo
+            webapi.LoginAuthenticationRequest(email_username:, password:) ->
+              todo
+            webapi.OwnUserInformationRequest -> todo
+          }
+      }
+      |> option.unwrap(ewe.websocket_continue(state))
+    }
     ewe.Binary(_) -> ewe.websocket_continue(state)
     ewe.User(Nil) -> ewe.websocket_continue(state)
   }
