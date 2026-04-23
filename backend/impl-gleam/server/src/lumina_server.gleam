@@ -363,7 +363,7 @@ fn client_communication_handler(
               }
               let client_type = case client_kind {
                 "web" -> {
-                  connection_logger(woof.Debug, "A web client greeds us!", [])
+                  connection_logger(woof.Debug, "A web client greets us!", [])
                   WebClient
                 }
                 _ -> todo
