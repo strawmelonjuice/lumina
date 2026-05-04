@@ -27,7 +27,6 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp
 import gleamy_lights/console
-import webapi.{encode_ws_msg_from_client as encode_ws_msg, LoginAuthenticationRequest, RegisterPrecheck, RegisterRequest, }
 import gleamy_lights/premixed
 import lumina_client/dom
 import lumina_client/helpers.{login_view_checker, model_local_storage_key}
@@ -47,6 +46,10 @@ import lustre
 import lustre/effect.{type Effect}
 import lustre_websocket
 import plinth/javascript/storage
+import webapi.{
+  LoginAuthenticationRequest, RegisterPrecheck, RegisterRequest,
+  encode_ws_msg_from_client as encode_ws_msg,
+}
 
 // HELPER FUNCTIONS ------------------------------------------------------------
 
@@ -87,7 +90,7 @@ pub fn request_next_timeline_page(
     Ok(timeline) -> {
       case homepage.get_next_page_to_load(timeline) {
         Some(next_page) ->
-		webapi.TimeLineRequest(timeline_name, next_page)
+          webapi.TimeLineRequest(timeline_name, next_page)
           |> encode_ws_msg
           |> json.to_string
           |> lustre_websocket.send(socket, _)
@@ -95,7 +98,7 @@ pub fn request_next_timeline_page(
       }
     }
     Error(_) ->
-	webapi.TimeLineRequest(timeline_name, 0)
+      webapi.TimeLineRequest(timeline_name, 0)
       |> encode_ws_msg
       |> json.to_string
       |> lustre_websocket.send(socket, _)
@@ -510,7 +513,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // Request unless cached or load next page if needed.
       let requ = case model.cache.cached_timelines |> dict.get(tid) {
         Error(..) ->
-		webapi.TimeLineRequest(tid, 0)
+          webapi.TimeLineRequest(tid, 0)
           |> encode_ws_msg
           |> json.to_string
           |> lustre_websocket.send(socket, _)
@@ -520,7 +523,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             True -> {
               case homepage.get_next_page_to_load(timeline) {
                 Some(next_page) ->
-				webapi.TimeLineRequest(tid, next_page)
+                  webapi.TimeLineRequest(tid, next_page)
                   |> encode_ws_msg
                   |> json.to_string
                   |> lustre_websocket.send(socket, _)
@@ -591,14 +594,12 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
   case wsevent {
     lustre_websocket.InvalidUrl -> panic
     lustre_websocket.OnTextMessage(notice) ->
-      case
-	  json.parse(notice, webapi.ws_msg_from_server_decoder())
-      {
-		  Ok(webapi.Greeting(m)) -> {
+      case json.parse(notice, webapi.ws_msg_from_server_decoder()) {
+        Ok(webapi.Greeting(m)) -> {
           console.log("The server says hi! '" <> m <> "'")
           #(model, effect.none())
         }
-		  Ok(webapi.RegisterPrecheckResponse(ok, why)) -> {
+        Ok(webapi.RegisterPrecheckResponse(ok, why)) -> {
           console.log("Register precheck response: " <> string.inspect(ok))
           let ready =
             case ok {
@@ -615,7 +616,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             _ -> #(model, effect.none())
           }
         }
-		  Ok(webapi.OwnUserInformationResponse(
+        Ok(webapi.OwnUserInformationResponse(
           username:,
           email:,
           avatar:,
@@ -658,7 +659,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             effect.none(),
           )
         }
-		  Ok(webapi.AuthenticationSuccess(_username, token:)) -> {
+        Ok(webapi.AuthenticationSuccess(_username, token:)) -> {
           let assert model_type.WsConnectionConnected(socket) = model.ws
             as "Socket not connected"
           #(
@@ -669,19 +670,19 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
               token: Some(token),
             ),
             effect.batch([
-			webapi.OwnUserInformationRequest
+              webapi.OwnUserInformationRequest
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
               // Even though 'officially' we don't show the global timeline, this should be the one requested firstly.
-			webapi.TimeLineRequest("global", 0)
+              webapi.TimeLineRequest("global", 0)
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _),
             ]),
           )
         }
-		  Ok(webapi.AuthenticationFailure) -> {
+        Ok(webapi.AuthenticationFailure) -> {
           case model.page {
             model_type.Landing | HomeTimeline(..) | NotFound(..) | Licence ->
               session_destroy()
@@ -693,7 +694,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
             Register(..) -> #(model, effect.none())
           }
         }
-		  Ok(webapi.TimeLineResponse(
+        Ok(webapi.TimeLineResponse(
           timeline_name:,
           timeline_id:,
           items:,
@@ -722,7 +723,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           let posts_fetches =
             effect.batch(
               list.map(items, fn(post_id) {
-				  webapi.PostContentRequest(post_id:)
+                webapi.PostContentRequest(post_id:)
                 |> encode_ws_msg
                 |> json.to_string
                 |> lustre_websocket.send(socket, _)
@@ -781,7 +782,7 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
           )
           #(model, effect.none())
         }
-		  Ok(webapi.Undecodable) ->
+        Ok(webapi.Undecodable) ->
           panic as "Received message that was explicitly marked as undecodable, this should not happen
 	as the decoder should have returned an error instead of Undecodable. Check the decoder implementation and the logs
 	for the raw message."
@@ -833,16 +834,16 @@ fn update_ws(model: Model, wsevent: lustre_websocket.WebSocketEvent) {
       Model(..model, ws: model_type.WsConnectionConnected(socket)),
       lustre_websocket.send(
         socket,
-	  webapi.Introduction("web", case model.user, model.token {
-		  None, Some(token) -> Some(token)
-		  _, _ -> None
-	  })|>encode_ws_msg|>json.to_string,
-
-	  ),
+        webapi.Introduction(webapi.WebClient, case model.user, model.token {
+          None, Some(token) -> Some(token)
+          _, _ -> None
+        })
+          |> encode_ws_msg
+          |> json.to_string,
+      ),
     )
   }
 }
-
 
 fn send_refresh_request(model: model_type.Model) -> Effect(Msg) {
   let current_time =

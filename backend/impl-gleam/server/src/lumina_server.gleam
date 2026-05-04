@@ -35,7 +35,7 @@ import humanise
 import lumina_server/database/events
 import simplifile
 import sqlight
-import webapi
+import webapi.{WebClient}
 import woof
 import youid/uuid
 
@@ -62,14 +62,9 @@ type StaticResponses =
 
 type ClientConnectionData {
   ClientConnectionData(
-    client_type: option.Option(ClientType),
+    client_type: option.Option(webapi.Clients),
     user: option.Option(User),
   )
-}
-
-type ClientType {
-  WebClient
-  NativeApp
 }
 
 type User {
@@ -362,11 +357,27 @@ fn client_communication_handler(
                 None -> Nil
               }
               let client_type = case client_kind {
-                "web" -> {
+                WebClient -> {
                   connection_logger(woof.Debug, "A web client greets us!", [])
-                  WebClient
+                  client_kind
                 }
-                _ -> todo
+                webapi.NativeImplementation("android-reflector-" <> _) -> {
+                  connection_logger(
+                    woof.Debug,
+                    "A android client greets us!",
+                    [],
+                  )
+                  client_kind
+                }
+
+                _ -> {
+                  connection_logger(
+                    woof.Debug,
+                    "A unknown native client greets us!",
+                    [],
+                  )
+                  client_kind
+                }
               }
               Some(ewe.websocket_continue(
                 WebsocketState(
