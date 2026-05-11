@@ -1,7 +1,10 @@
-backend/impl-gleam/client
-backend/impl-gleam/webapi
+backend/**/client
+backend/**/.client
+backend/**/webapi
+backend/**/.webapi
 backend/impl-rs/client
 backend/impl-rs/webapi
+/web/gleam.mjs
 
 
 # -------------------- older ignores
@@ -43,3 +46,4 @@ client/build
 
 # Direnv cache
 .direnv/
+

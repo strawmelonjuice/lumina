@@ -3,19 +3,19 @@
 //// It's children shape the content inside the main application layout.
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
-// 
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
+//
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
 // You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-// 
-// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+//
+// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
 // under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
 // See LICENSE file in the repository root for full details.
-// 
-// 
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+//
+//
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import gleam/bool
 import gleam/dict
@@ -470,15 +470,12 @@ pub fn view(model: model_type.Model) -> Element(Msg) {
 
 pub fn timeline(model: Model) -> Element(Msg) {
   // Dissect the model
-  let assert model_type.Model(
-    page: model_type.HomeTimeline(timeline_name:, modal: _),
-    cache:,
-    ..,
-  ) = model
+  let #(timeline_name) = todo as "This used to be model."
   let timeline_name = option.unwrap(timeline_name, "global")
   // case timeline_name {
   //   Some(timeline_name) -> {
-  let timeline_posts = dict.get(cache.cached_timelines, timeline_name)
+  let timeline_posts =
+    dict.get(todo as "where do timelines live", timeline_name)
   case timeline_posts {
     Ok(cached_timeline) -> {
       let post_ids: List(String) = get_all_posts(cached_timeline)

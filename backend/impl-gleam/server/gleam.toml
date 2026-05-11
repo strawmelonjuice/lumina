@@ -1,4 +1,4 @@
-name = "lumina_server"
+name = "lumina"
 version = "1.0.0"
 target = "erlang"
 
@@ -14,19 +14,14 @@ licences = ["EUPL-1.2"]
 # https://gleam.run/writing-gleam/gleam-toml/.
 
 [dependencies]
-gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 gleam_json = ">= 3.1.0 and < 4.0.0"
 gleam_httpc = ">= 5.0.0 and < 6.0.0"
 gleam_http = ">= 4.3.0 and < 5.0.0"
 shellout = ">= 1.8.0 and < 2.0.0"
-envoy = ">= 1.1.0 and < 2.0.0"
-mist = ">= 6.0.2 and < 7.0.0"
-gleam_erlang = ">= 1.3.0 and < 2.0.0"
 wisp = ">= 2.2.2 and < 3.0.0"
 woof = ">= 1.2.0 and < 2.0.0"
 youid = ">= 1.6.0 and < 2.0.0"
 pog = ">= 4.1.0 and < 5.0.0"
-ewe = ">= 3.0.7 and < 4.0.0"
 gleam_otp = ">= 1.2.0 and < 2.0.0"
 collie = ">= 1.0.0 and < 2.0.0"
 parrot = ">= 2.2.1 and < 3.0.0"
@@ -34,7 +29,13 @@ sqlight = ">= 1.0.3 and < 2.0.0"
 simplifile = ">= 2.4.0 and < 3.0.0"
 booklet = ">= 1.1.0 and < 2.0.0"
 humanise = ">= 1.1.0 and < 2.0.0"
-webapi = { path = "../webapi" }
+lumina_client = { path = "../../../web" }
+gleam_stdlib = ">= 1.0.2 and < 2.0.0"
+gleam_erlang = ">= 1.3.0 and < 2.0.0"
+lustre = ">= 5.7.0 and < 6.0.0"
+gleam_time = ">= 1.8.0 and < 2.0.0"
+ewe = ">= 3.0.8 and < 4.0.0"
+envoy = ">= 1.2.0 and < 2.0.0"
 
 
 [dev_dependencies]

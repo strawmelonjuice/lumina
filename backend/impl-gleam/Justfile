@@ -4,10 +4,12 @@ default:
 [group('prepare')]
 [doc("Vendors the client code into this backend impl so it can be tested or built against.")]
 copy-over-client:
-	mkdir -p ./client
-	cp -fru $(git rev-parse --show-toplevel)/web/* ./client
-	mkdir -p ./webapi
-	cp -fru $(git rev-parse --show-toplevel)/webapi/* ./webapi
+	mkdir -p ./.client
+	cp -fru $(git rev-parse --show-toplevel)/web/* ./.client
+	mkdir -p ./.webapi
+	cp -fru $(git rev-parse --show-toplevel)/webapi/* ./.webapi
+
+	
 [doc("Build the styles for Lumina client")]
 [group('building')]
 build-styles:
@@ -78,10 +80,13 @@ local-devel-prep: create-data-dirs
    # I don't know if I want to build for the devmode script?
    # May also make the user from the app, if debug mode is detected.
    touch data/configvars/debug
+[private]
+[doc("Alias for run")]
+local-devel: run
 
 [doc("Run the server in development mode")]
 [group("local-devel")]
-local-devel: local-devel-prep build-server
+run: local-devel-prep build-server
    podman run --replace --name lumina-local-devel -v ./data/:/data -p 3000:3000 localhost/luminapeonies:latest
 
 [doc("Run the server in development mode with file watching")]
@@ -94,6 +99,7 @@ local-devel-watch:
 dev:
 	@just local-devel-prep
 	@just local-devel-watch
+
 
 [group("local-devel")]
 [doc("Run pgweb (8081) and redis-commander (8082) for local development")]

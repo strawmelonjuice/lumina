@@ -2,7 +2,7 @@
 //// Specialised helper functions for managing the logs database table.
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
 //
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
@@ -13,15 +13,15 @@
 // See LICENSE file in the repository root for full details.
 //
 //
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import gleam/dynamic/decode
 import gleam/list
 import gleam/option.{Some}
 import gleam/pair
-import lumina_server/database
-import lumina_server/sql
+import lumina/database
+import lumina/sql
 import sqlight
 import woof
 
@@ -37,6 +37,10 @@ pub fn log_to_db(
         woof.Warning -> "WARN"
         woof.Error -> "ERROR"
         woof.Debug -> "DEBUG"
+        woof.Notice -> todo
+        woof.Critical -> todo
+        woof.Alert -> todo
+        woof.Emergency -> todo
       }),
       namespace: entry.namespace,
       message: entry.message,

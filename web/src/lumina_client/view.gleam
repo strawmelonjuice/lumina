@@ -2,19 +2,19 @@
 //// Module containing the view function and it's splits
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
 //
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
 // You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
 //
-// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
 // under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
 // See LICENSE file in the repository root for full details.
 //
 //
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import gleam/dynamic/decode
 import gleam/list
@@ -30,7 +30,6 @@ import lumina_client/model_type.{
   UserNavigatedToRegisterPage, UserSubmittedLogin, UserSubmittedSignup,
   UserUpdatedControlledEmailField, UserUpdatedControlledPasswordConfirmField,
   UserUpdatedControlledPasswordField, UserUpdatedControlledUsernameField,
-  WSTryReconnect,
 }
 import lumina_client/view/common_view_parts.{common_view_parts}
 import lumina_client/view/common_view_parts/svgs
@@ -39,18 +38,9 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import plinth/javascript/storage
 
-pub fn view(model: Model) -> Element(Msg) {
-  let assert Ok(localstorage) = storage.local()
-    as "localstorage should be available on ALL major browsers."
-  let _ =
-    storage.set_item(
-      localstorage,
-      model_local_storage_key,
-      model_type.serialize(model),
-    )
-  let content = case model.page {
+pub fn view(model: Model) -> Element(model_type.MsgTo) {
+  case model.page {
     Landing -> view_landing()
     Register(..) -> view_register(model)
     Login(..) -> view_login(model)
@@ -59,73 +49,8 @@ pub fn view(model: Model) -> Element(Msg) {
     Licence ->
       todo as "Licence should be shown by the client if it's not shown by the server."
   }
-  html.div(
-    [get_color_scheme(model), attribute.class("w-screen h-screen content")],
-    [
-      case model.ws {
-        model_type.WsConnectionInitial ->
-          html.div(
-            [
-              attribute.attribute("open", ""),
-              attribute.class("modal modal-bottom sm:modal-middle"),
-            ],
-            [
-              html.div([attribute.class("modal-box")], [
-                element.text("Connecting to server..."),
-                html.div([attribute.class("float-right")], [
-                  html.span(
-                    [attribute.class("loading loading-spinner loading-xl")],
-                    [],
-                  ),
-                ]),
-              ]),
-            ],
-          )
-        model_type.WsConnectionDisconnected ->
-          html.div(
-            [
-              attribute.attribute("open", ""),
-              attribute.class("toast toast-top toast-center z-100"),
-            ],
-            [
-              html.div([attribute.class("alert alert-info")], [
-                element.text("Connection to server ended! "),
-                html.button(
-                  [
-                    attribute.class("btn btn-primary font-menuitems"),
-                    event.on_click(WSTryReconnect),
-                  ],
-                  [element.text("Reconnect")],
-                ),
-              ]),
-            ],
-          )
-
-        model_type.WsConnectionRetrying ->
-          html.div(
-            [
-              attribute.attribute("open", ""),
-              attribute.class("toast toast-top toast-center z-100"),
-            ],
-            [
-              html.div([attribute.class("alert alert-info")], [
-                element.text("Connection to server ended! Reconnecting..."),
-                html.div([attribute.class("float-right")], [
-                  html.span(
-                    [attribute.class("loading loading-spinner loading-lg")],
-                    [],
-                  ),
-                ]),
-              ]),
-            ],
-          )
-
-        model_type.WsConnectionConnected(..) | model_type.WsConnectionUnsure ->
-          element.none()
-      },
-      content,
-    ],
-  )
+  // This should be scoped closer and closer until we no longer need to use element.map and just have all messages wrapped in the first place.
+	|> element.map(model_type.PassThrough)
 }
 
 fn view_landing() -> Element(Msg) {

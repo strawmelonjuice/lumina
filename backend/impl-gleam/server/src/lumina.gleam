@@ -2,7 +2,7 @@
 //// Main entry point for Lumina.
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
 //
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
@@ -13,29 +13,40 @@
 // See LICENSE file in the repository root for full details.
 //
 //
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import booklet
 import envoy
 import ewe.{type Request, type Response}
 import gleam/bit_array
+import gleam/bytes_tree
+import gleam/dict
 import gleam/erlang/application
-import gleam/erlang/process
+import gleam/erlang/process.{type Selector, type Subject}
+import gleam/http/cookie
+import gleam/http/request
 import gleam/http/response
 import gleam/int
 import gleam/json
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{Some}
+import gleam/order
 import gleam/pair
 import gleam/result
 import gleam/string
+import gleam/time/duration
+import gleam/time/timestamp
 import gleam/uri
-import humanise
-import lumina_server/database/events
+import lumina/database/events
+import lumina/web
+import lustre
+import lustre/attribute
+import lustre/element
+import lustre/element/html.{html}
+import lustre/server_component
 import simplifile
 import sqlight
-import webapi.{WebClient}
 import woof
 import youid/uuid
 
@@ -45,6 +56,9 @@ type HandlerContext {
     client_hash: String,
     assets: String,
     static_responses: StaticResponses,
+    csrf_token_store: booklet.Booklet(
+      dict.Dict(String, #(String, timestamp.Timestamp)),
+    ),
   )
 }
 
@@ -55,21 +69,11 @@ type StaticRoute {
   RouteForClientStyles
   RouteForIconAsPNG
   RouteForIconAsSVG
+  RouteForLustreComponentRuntime
 }
 
 type StaticResponses =
   fn(StaticRoute) -> response.Response(ewe.ResponseBody)
-
-type ClientConnectionData {
-  ClientConnectionData(
-    client_type: option.Option(webapi.ClientKind),
-    user: option.Option(User),
-  )
-}
-
-type User {
-  User(uid: uuid.Uuid, username: String)
-}
 
 pub fn main() {
   case simplifile.create_directory_all("/data/configvars") {
@@ -120,7 +124,7 @@ pub fn main() {
           Error(e) -> {
             woof.error("Could not log to database!\n\n" <> e.message, [])
             woof.append_global_context([
-              woof.field("db_logging", "failed: " <> e.message),
+              woof.str("db_logging", "failed: " <> e.message),
             ])
             booklet.set(in: log_to_db, to: False)
           }
@@ -158,7 +162,7 @@ pub fn main() {
       ))
   }
 
-  let assets = case application.priv_directory("lumina_server") {
+  let assets = case application.priv_directory("lumina") {
     Ok(outcome) -> outcome
     Error(_) -> {
       setuplog |> woof.log(woof.Error, "could not get priv folder.", [])
@@ -182,19 +186,23 @@ pub fn main() {
     Ok(outcome) -> {
       setuplog
       |> woof.log(woof.Info, "Found client revision!", [
-        woof.field("revision", outcome),
+        woof.str("revision", outcome),
       ])
       outcome
     }
   }
-
-  let static_responses = static(client_hash, assets, setuplog)
+  let context =
+    HandlerContext(
+      db:,
+      assets:,
+      client_hash:,
+      static_responses: static(client_hash, assets, setuplog),
+      csrf_token_store: booklet.new(dict.new()),
+    )
   // And start!
   let assert Ok(_) =
-    ewe.new(handler(
-      _,
-      HandlerContext(db:, assets:, client_hash:, static_responses:),
-    ))
+    handler(_, context)
+    |> ewe.new()
     |> ewe.bind("0.0.0.0")
     |> ewe.listening(
       port: envoy.get("PORT")
@@ -204,6 +212,8 @@ pub fn main() {
     )
     |> ewe.start
 
+  process.spawn(csrf_token_cleaner(context.csrf_token_store))
+
   process.sleep_forever()
 }
 
@@ -211,12 +221,12 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
   let httplogger = fn(
     level: woof.Level,
     msg: String,
-    vars: List(#(String, String)),
+    vars: List(#(String, woof.FieldValue)),
   ) {
     woof.new("SERVER/HTTP")
     |> woof.log(level, msg, [
-      woof.field("uri path", req.path),
-      woof.field("request-host", case req.host {
+      woof.str("uri path", req.path),
+      woof.str("request-host", case req.host {
         "0.0.0.0" -> "local (unsure)"
         d -> d
       }),
@@ -225,7 +235,8 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
   }
   let ok = fn() { httplogger(woof.Info, "200/OK", []) }
   case req.path |> uri.path_segments() {
-    ["/"] | [""] | [] -> {
+    ["/"] | [""] | [] -> serve_html(req, handler_ctx.csrf_token_store)
+    ["legacy"] | ["legacy.html"] -> {
       ok()
       handler_ctx.static_responses(RouteForIndex)
     }
@@ -250,48 +261,11 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
       ok()
       handler_ctx.static_responses(RouteForIconAsSVG)
     }
-    ["connection"] -> {
-      ewe.upgrade_websocket(
-        req,
-        // If ever we need to send messages through processes to get to and from the client over here, we should
-        // take a second look at the ewe example on
-        // https://github.com/vshakitskiy/ewe/blob/mistress/examples/src/websocket.gleam
-        on_init: fn(_conn, selector) {
-          // Initial state for THIS specific client
-          let state =
-            WebsocketState(
-              ctx: handler_ctx,
-              conn_data: ClientConnectionData(None, None),
-              logger: fn(
-                level: woof.Level,
-                msg: String,
-                vars: List(#(String, String)),
-                conn_data: ClientConnectionData,
-              ) {
-                woof.new("WEB/SOCKET:CLIENT")
-                |> woof.log(level, msg, [
-                  woof.field("uri path", req.path),
-                  woof.field("request-host", case req.host {
-                    "0.0.0.0" -> "local (unsure)"
-                    d -> d
-                  }),
-                  woof.field(
-                    "user",
-                    conn_data.user
-                      |> option.map(fn(user) { user.username })
-                      |> option.unwrap("unknown"),
-                  ),
-                  ..vars
-                ])
-              },
-            )
-          httplogger(woof.Info, "101/PROTOCOL UPGRADE", [])
-          #(state, selector)
-        },
-        handler: client_communication_handler,
-        on_close: fn(_conn, _state) { Nil },
-      )
-    }
+    ["lustre", "runtime.mjs"] ->
+      handler_ctx.static_responses(RouteForLustreComponentRuntime)
+    // Newer implementation, the server component.
+    ["client"] -> serve_component(req, handler_ctx.csrf_token_store)
+
     _ -> {
       httplogger(woof.Warning, "Not found.", [])
       response.new(404)
@@ -301,108 +275,235 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
   }
 }
 
-type WebsocketState {
-  WebsocketState(
-    ctx: HandlerContext,
-    conn_data: ClientConnectionData,
-    logger: fn(
-      woof.Level,
-      String,
-      List(#(String, String)),
-      ClientConnectionData,
-    ) ->
-      Nil,
+fn serve_component(
+  request: Request,
+  csrf_token_store: booklet.Booklet(
+    dict.Dict(String, #(String, timestamp.Timestamp)),
+  ),
+) {
+  use session <- with_session(request:)
+  let expected_csrf_token = csrf_token(session, csrf_token_store)
+  // Extracts csrf token from request
+  let provided_csrf_token =
+    request
+    |> request.get_query
+    |> result.try(list.key_find(_, "csrf-token"))
+
+  case provided_csrf_token {
+    Ok(token) if token == expected_csrf_token ->
+      ewe.upgrade_websocket(
+        request,
+        on_init: init_component_socket,
+        handler: loop_message_socket,
+        on_close: close_component_socket,
+      )
+
+    Ok(_) | Error(_) -> {
+      response.new(403)
+      |> response.set_body(ewe.BytesData(bytes_tree.new()))
+    }
+  }
+}
+
+type LuminaServerComponentSocket {
+  LuminaServerComponentSocket(
+    component: lustre.Runtime(web.Message),
+    self: Subject(server_component.ClientMessage(web.Message)),
   )
 }
 
-fn client_communication_handler(
-  conn: ewe.WebsocketConnection,
-  state: WebsocketState,
-  // That Nil is the internal message, again if we'd follow the example. But
-  // Lumina mostly communicates with the database and stores more global variables in Booklets (which is ETS)... So no need.
-  message: ewe.WebsocketMessage(Nil),
-) -> ewe.WebsocketNext(WebsocketState, Nil) {
-  let #(handler_context, connection_data, connection_logger) = {
-    #(
-      state.ctx,
-      state.conn_data,
-      fn(level: woof.Level, message: String, variables: List(#(String, String))) {
-        state.logger(level, message, variables, state.conn_data)
-      },
-    )
-  }
-  case message {
-    ewe.Text(json_str) -> {
-      connection_logger(woof.Debug, "Received: " <> json_str, [])
-      case json.parse(json_str, webapi.ws_msg_from_client_decoder()) {
-        Error(_) -> {
-          woof.tap_debug(
-            woof.Warning,
-            "Received malformed message from client.",
-            [
-              woof.field("message", json_str),
-            ],
-          )
-          ewe.send_close_frame(
-            conn,
-            ewe.CustomCloseCode(code: 4000, data: "Malformed message received."),
-          )
-          Some(ewe.websocket_stop_abnormal("Malformed message received."))
-        }
-        Ok(message) ->
-          case message {
-            webapi.Introduction(client_kind:, try_revive:) -> {
-              case try_revive {
-                Some(_) -> todo as "Revive is not implemented yet."
-                None -> Nil
-              }
-              let client_type = case client_kind {
-                WebClient -> {
-                  connection_logger(woof.Debug, "A web client greets us!", [])
-                  client_kind
-                }
-                webapi.NativeImplementation("android-reflector-" <> _) -> {
-                  connection_logger(
-                    woof.Debug,
-                    "A android client greets us!",
-                    [],
-                  )
-                  client_kind
-                }
+type LuminaServerComponentSocketMessage =
+  server_component.ClientMessage(web.Message)
 
-                _ -> {
-                  connection_logger(
-                    woof.Debug,
-                    "A unknown native client greets us!",
-                    [],
-                  )
-                  client_kind
-                }
-              }
-              Some(ewe.websocket_continue(
-                WebsocketState(
-                  ..state,
-                  conn_data: ClientConnectionData(
-                    ..connection_data,
-                    client_type: Some(client_type),
-                  ),
-                ),
-              ))
-            }
-            webapi.PostContentRequest(post_id:) -> todo
-            webapi.RegisterPrecheck(email:, username:, password:) -> todo
-            webapi.TimeLineRequest(timeline_name:, page:) -> todo
-            webapi.RegisterRequest(email:, username:, password:) -> todo
-            webapi.LoginAuthenticationRequest(email_username:, password:) ->
-              todo
-            webapi.OwnUserInformationRequest -> todo
-          }
+fn init_component_socket(
+  _: ewe.WebsocketConnection,
+  _: Selector(LuminaServerComponentSocketMessage),
+) -> #(
+  LuminaServerComponentSocket,
+  Selector(LuminaServerComponentSocketMessage),
+) {
+  let component = web.component()
+  let assert Ok(component) = lustre.start_server_component(component, Nil)
+  let self = process.new_subject()
+  let selector =
+    process.new_selector()
+    |> process.select(self)
+  let selector = process.select(selector, self)
+
+  server_component.register_subject(self)
+  |> lustre.send(to: component)
+
+  #(LuminaServerComponentSocket(component:, self:), selector)
+}
+
+fn loop_message_socket(
+  connection: ewe.WebsocketConnection,
+  state: LuminaServerComponentSocket,
+  message: ewe.WebsocketMessage(LuminaServerComponentSocketMessage),
+) -> ewe.WebsocketNext(
+  LuminaServerComponentSocket,
+  LuminaServerComponentSocketMessage,
+) {
+  case message {
+    ewe.Text(json) -> {
+      case json.parse(json, server_component.runtime_message_decoder()) {
+        Ok(runtime_message) -> lustre.send(state.component, runtime_message)
+        Error(_) -> Nil
       }
-      |> option.unwrap(ewe.websocket_continue(state))
+
+      ewe.websocket_continue(state)
     }
-    ewe.Binary(_) -> ewe.websocket_continue(state)
-    ewe.User(Nil) -> ewe.websocket_continue(state)
+
+    ewe.Binary(_) -> {
+      ewe.websocket_continue(state)
+    }
+
+    ewe.User(client_message) -> {
+      let json = server_component.client_message_to_json(client_message)
+      let assert Ok(_) = ewe.send_text_frame(connection, json.to_string(json))
+
+      ewe.websocket_continue(state)
+    }
   }
+}
+
+fn close_component_socket(_, state: LuminaServerComponentSocket) -> Nil {
+  lustre.shutdown()
+  |> lustre.send(to: state.component)
+}
+
+// Helpers
+
+fn with_session(then: fn(String) -> Response, request req: Request) {
+  let session =
+    request.get_cookies(req)
+    |> list.key_find("session-set")
+    |> result.lazy_unwrap(uuid.v4_string)
+  woof.with_context([woof.str("server-session", session)], fn() {
+    then(session)
+    |> response.set_cookie(
+      "session-set",
+      session,
+      cookie.Attributes(
+        ..cookie.defaults(req.scheme),
+        http_only: True,
+        same_site: Some(cookie.Lax),
+        path: Some("/"),
+      ),
+    )
+  })
+}
+
+fn csrf_token_cleaner(
+  csrf_token_store: booklet.Booklet(
+    dict.Dict(String, #(String, timestamp.Timestamp)),
+  ),
+) {
+  fn() {
+    process.sleep(50_000)
+    booklet.update(
+      csrf_token_store,
+      dict.filter(_, fn(_, token) {
+        {
+          timestamp.difference(token.1, timestamp.system_time())
+          |> duration.compare(duration.hours(12))
+        }
+        // Must be Less-than 12 hours old.
+        == order.Lt
+        // ... otherwise is removed.
+      }),
+    )
+    csrf_token_cleaner(csrf_token_store)()
+  }
+}
+
+fn csrf_token(
+  session: String,
+  csrf_token_store: booklet.Booklet(
+    dict.Dict(String, #(String, timestamp.Timestamp)),
+  ),
+) {
+  case booklet.get(csrf_token_store) |> dict.get(session) {
+    Ok(token) -> token.0
+    Error(Nil) -> {
+      let new_token = #(uuid.v4_string(), timestamp.system_time())
+      booklet.update(csrf_token_store, dict.insert(_, session, new_token))
+      new_token.0
+    }
+  }
+}
+
+// HTML ------------------------------------------------------------------------
+
+fn serve_html(
+  request: Request,
+  csrf_token_store: booklet.Booklet(
+    dict.Dict(String, #(String, timestamp.Timestamp)),
+  ),
+) -> Response {
+  use session <- with_session(request:)
+  let csrf_token = csrf_token(session, csrf_token_store)
+  let html =
+    html([attribute.lang("en")], [
+      html.head([], [
+        html.meta([attribute.charset("utf-8")]),
+        html.meta([
+          attribute.content(
+            "width=device-width, initial-scale=1.0, viewport-fit=cover",
+          ),
+          attribute.name("viewport"),
+        ]),
+        html.title([], "Lumina"),
+        html.link([
+          attribute.attribute("corossorigin", ""),
+          attribute.href("https://fontlay.com"),
+          attribute.rel("preconnect"),
+        ]),
+        html.link([
+          attribute.rel("stylesheet"),
+          attribute.href(
+            "https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap",
+          ),
+        ]),
+        html.link([
+          attribute.href("/static/lumina.css"),
+          attribute.rel("stylesheet"),
+        ]),
+        html.meta([
+          attribute.content("noai, noimageai, nofollow"),
+          attribute.name("robots"),
+        ]),
+        html.meta([
+          attribute.name("csrf-token"),
+          attribute.content(csrf_token),
+          // attribute.content("invalid-token"),
+        ]),
+        html.title([], "Lumina"),
+        html.script(
+          [attribute.type_("module"), attribute.src("/lustre/runtime.mjs")],
+          "",
+        ),
+      ]),
+      html.body(
+        [
+//		attribute.styles([#("max-width", "40rem"), #("margin", "3rem auto")])
+		],
+        [
+          server_component.element([server_component.route("/client")], []),
+        ],
+      ),
+    ])
+    |> element.to_document_string_tree
+    |> bytes_tree.from_string_tree
+
+  response.set_body(
+    response.set_header(
+      response.new(200),
+      "content-type",
+      "text/html; charset=utf-8",
+    ),
+    ewe.BytesData(html),
+  )
 }
 
 fn static(
@@ -421,7 +522,7 @@ fn static(
         Error(_) -> {
           setuplog
           |> woof.log(woof.Error, "Missing application assets.", [
-            woof.field("File", assets <> "/static/lumina_client.min.mjs"),
+            woof.str("File", assets <> "/static/lumina_client.min.mjs"),
           ])
           panic as "Missing application assets."
         }
@@ -432,13 +533,7 @@ fn static(
       <<"</script></head><body id=\"app\"></body></html>":utf8>>,
     ]
     |> bit_array.concat()
-  setuplog
-  |> woof.log(
-    woof.Debug,
-    "Total client size is: "
-      <> bit_array.byte_size(client_servible) |> humanise.bytes_int(),
-    [#("revision", client_hash)],
-  )
+
   let builtin_file = fn(file: String, mime: String) -> response.Response(
     ewe.ResponseBody,
   ) {
@@ -446,7 +541,7 @@ fn static(
       Error(_) -> {
         setuplog
         |> woof.log(woof.Error, "Missing application assets.", [
-          woof.field("File", file),
+          woof.str("File", file),
         ])
         panic as "Missing application assets."
       }
@@ -476,6 +571,11 @@ fn static(
       assets <> "/static/lumina_client.mjs",
       "application/javascript; charset=utf-8",
     )
+  let lustre_component_runtime = {
+    let assert Ok(lustre_priv) = application.priv_directory("lustre")
+    let file_path = lustre_priv <> "/static/lustre-server-component.mjs"
+    builtin_file(file_path, "application/javascript; charset=utf-8")
+  }
   let client_styles =
     builtin_file(
       assets <> "/static/lumina_client.css",
@@ -483,6 +583,7 @@ fn static(
     )
   let icon_png = builtin_file(assets <> "/static/logo.png", "image/png")
   let icon_svg = builtin_file(assets <> "/static/logo.svg", "image/svg+xml")
+
   fn(route: StaticRoute) {
     case route {
       RouteForIndex -> index
@@ -491,6 +592,7 @@ fn static(
       RouteForClientStyles -> client_styles
       RouteForClientAsJavascript -> client_js
       RouteForClientAsMinifiedJavascript -> client_js_min
+      RouteForLustreComponentRuntime -> lustre_component_runtime
     }
   }
 }

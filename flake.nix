@@ -26,6 +26,7 @@
             echo "❄️ Welcome!"
             # just --list # No just recipes yet.
             # echo "Use just to run them."
+            gleam export javascript-prelude > web/gleam.mjs
           '';
         };
       });

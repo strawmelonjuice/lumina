@@ -2,7 +2,7 @@
 //// Database helpers and specialised functions.
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
 //
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
@@ -13,8 +13,8 @@
 // See LICENSE file in the repository root for full details.
 //
 //
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import parrot/dev
 import sqlight
@@ -30,6 +30,6 @@ pub fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamBool(_) -> panic as "sqlite does not support booleans"
     dev.ParamDate(_) -> panic as "sqlite does not support dates"
     dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
-    dev.ParamDynamic(_) -> todo
+    dev.ParamDynamic(_) -> panic as "Dynamic type?"
   }
 }

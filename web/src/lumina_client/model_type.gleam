@@ -2,19 +2,19 @@
 //// Lumina's model is the central source of truth for the client application state.
 
 // Lumina/Peonies
-// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors. [cite: 4]
-// 
+// Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
+//
 // This software is licensed under the European Union Public Licence (EUPL) v1.2.
 // You may not use this work except in compliance with the Licence.
 // You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-// 
-// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED 
+//
+// AI TRAINING NOTICE: Rights for TDM and AI training are EXPRESSLY RESERVED
 // under Art 4(3) Dir 2019/790. AI training constitutes a Derivative Work.
 // See LICENSE file in the repository root for full details.
-// 
-// 
-// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND. [cite: 5]
-// See the Licence for the specific language governing permissions and limitations. [cite: 6]
+//
+//
+// This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
+// See the Licence for the specific language governing permissions and limitations.
 
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
@@ -22,14 +22,10 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/uri.{type Uri}
-import lustre_websocket
+
 
 pub type Msg {
-  WSTryReconnect
-  EffectPast150ms
   UpdateLastRefreshRequestTime(Int)
-  WsDisconnectDefinitive
-  WebSocketIncomingMessage(lustre_websocket.WebSocketEvent)
   UserNavigatedToLoginPage
   UserNavigatedToRegisterPage
   UserNavigatedToLandingPage
@@ -38,7 +34,7 @@ pub type Msg {
   // Can be re-used for both login and register pages
   UserUpdatedControlledEmailField(String)
   UserUpdatedControlledPasswordField(String)
-  // Register page
+  /// Register page
   UserUpdatedControlledUsernameField(String)
   UserUpdatedControlledPasswordConfirmField(String)
   EmailFieldLostFocus
@@ -61,10 +57,10 @@ pub type Msg {
   MoveModalBoxTo(Float, Float)
 }
 
-pub type Route =
-  Page
+pub type Page = Route
 
-pub fn parse_route(uri: Uri) -> Route {
+
+pub fn parse_route(uri: Uri) -> Page {
   case uri.path_segments(uri.path) {
     [] | [""] -> Landing
     ["login"] -> Login(fields: LoginFields("", ""), success: None)
@@ -86,7 +82,7 @@ pub fn parse_route(uri: Uri) -> Route {
 /// Lumina has always been an SPA behind the login page, splitting the three "main" pages: Login, Signup, and Home from "subpages". Home contained subpages like Dashboard, Profile, and Settings, etc.
 /// In this model, Login and Dashboard would be equal. The model keeps track of the current page and the user's authentication status.
 /// The Page type is, pretty explanatory, an enum of all the pages in the app. Nested if needed, to track fields like the current tab in the Dashboard or the username form field in the login page.
-pub type Page {
+pub type Route {
   Landing
   Register(fields: RegisterPageFields, ready: Option(Result(Nil, String)))
   Login(fields: LoginFields, success: Option(Bool))
@@ -107,24 +103,10 @@ pub type Model {
     page: Page,
     /// User, if known
     user: Option(UserSubmodel),
-    /// WebSocket connection
-    ws: WsConnectionStatus,
     /// Used to restore sessions
     token: Option(String),
     /// Used to show error screens on unrecoverable errors
     status: Result(Nil, String),
-    /// To keep the client going while navigating, the websocket just requests certain data and then stores it in the model so that view can update once it's there
-    /// Displaying some loading screen in between.
-    /// Once it is there, this is where it's stored:
-    cache: Cached,
-    // /// Ticks are upped by one every 50ms since initialisation.
-    // ticks: Int,
-    /// Replaces ticks: Tracks if the client has been running for over 150ms
-    has_been_running_for_150ms: Bool,
-    /// Last time send_refresh_request was called, in unix timestamp seconds.
-    /// If send_refresh_request(), it will update this value. If the last refresh request was over 30 seconds ago,
-    /// the client will send a new refresh request to the server.
-    last_refresh_request_time: Int,
   )
 }
 
@@ -137,50 +119,7 @@ pub type NotificationsSubModel {
   )
 }
 
-pub fn create_cache_inventory(model: Model) -> CacheInventory {
-  let cache = model.cache
-  let timelines =
-    cache.cached_timelines
-    |> dict.to_list()
-    |> list.map(fn(timeline) {
-      let timeline = timeline.1
-      #(timeline.id, timeline.last_updated)
-    })
-  let users =
-    cache.cached_users
-    |> dict.to_list()
-    |> list.map(fn(user) { #(user.0, { user.1 }.last_updated) })
-  let posts =
-    cache.cached_posts
-    |> dict.to_list()
-    |> list.map(fn(post) { #(post.0, { post.1 }.last_updated) })
-  CacheInventory(timelines:, users:, posts:)
-}
-
-pub type CacheInventory {
-  CacheInventory(
-    /// Timelines by #(id, last_updated)
-    timelines: List(#(String, Int)),
-    /// Users by #(id, last_updated)
-    users: List(#(String, Int)),
-    /// Posts by #(id, last_updated)
-    posts: List(#(String, Int)),
-  )
-}
-
-pub type WsConnectionStatus {
-  /// Before connection is created
-  WsConnectionInitial
-  /// An established socket
-  WsConnectionConnected(lustre_websocket.WebSocket)
-  /// A disconnected socket
-  WsConnectionDisconnected
-  /// A non-connected socket, may also occur while connecting.
-  /// This'll either turn into a `WsConnectionConnected` or an `WsConnectionDisconnected`.
-  WsConnectionUnsure
-  /// Retrying to connect.
-  WsConnectionRetrying
-}
+pub type WsConnectionStatus
 
 pub type Cached {
   Cached(
