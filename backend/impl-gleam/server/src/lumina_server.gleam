@@ -62,7 +62,7 @@ type StaticResponses =
 
 type ClientConnectionData {
   ClientConnectionData(
-    client_type: option.Option(webapi.Clients),
+    client_type: option.Option(webapi.ClientKind),
     user: option.Option(User),
   )
 }
