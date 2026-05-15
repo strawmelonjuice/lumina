@@ -3,6 +3,7 @@
 ////
 //// It'll also contain one of the two update() function implementations, the websocket one. Since the Gleam backend
 //// now consumes this frontend as a server component, the websocket is implemented as a 'plug-in' solution.
+//// returning the server's (json) String response, which is then parseable on the Gleam end.
 
 // Lumina/Peonies
 // Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
@@ -19,7 +20,7 @@
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
 // See the Licence for the specific language governing permissions and limitations.
 
-// Imports
+// Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 import gleam/option.{None}
 import lumina_client/model_type
@@ -27,17 +28,69 @@ import lumina_client/view
 import lustre
 import lustre/effect
 
-// Entrypoints
+// Entrypoints ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /// Entry point for mainly the Rust backend, which doesn't use server-components and does a server-client based
 /// approach instead.
-pub fn main() {
+pub fn main() -> Result(lustre.Runtime(model_type.Msg), lustre.Error) {
   // This module was a mess, and the lustre_websocket package is outdated.
   // Good reason for me to throw it all out amidst a refactor!
   // - Mar
-  let assert Ok(websocket) = self_restoring_websocket()
-  let assert Ok(_) = lustre.start(app(websocket_based_updates), "#app", Nil)
+  let assert Ok(_) =
+    lustre.start(
+      app(websocket_based_updates),
+      "#app",
+      receives_websocket_messages(),
+    )
 }
 
+/// Entrypoint to interface directly, usable in server components
+pub fn app(
+  update: fn(model_type.Model, model_type.Msg) ->
+    #(model_type.Model, effect.Effect(model_type.Msg)),
+) -> lustre.App(effect.Effect(model_type.Msg), model_type.Model, model_type.Msg) {
+  lustre.application(init:, update:, view: view.view)
+}
+
+// Common functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/// Init function
+/// Inherits effects, because these depend on where the init is ran from.
+fn init(
+  with_effect: effect.Effect(model_type.Msg),
+) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
+  #(
+    model_type.Model(
+      page: model_type.Landing,
+      user: None,
+      token: None,
+      status: Ok(Nil),
+    ),
+    with_effect,
+  )
+}
+
+// Websockets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/// Update function used mainly with the Rust backend
+fn websocket_based_updates(
+  model: model_type.Model,
+  msg: model_type.Msg,
+) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
+  #(model, effect.none())
+}
+
+fn receives_websocket_messages() -> effect.Effect(model_type.Msg) {
+  use dispatch <- effect.from
+  let message_parser = fn(incoming) {
+    case incoming {
+      _ -> todo
+    }
+    |> dispatch
+  }
+  let assert Ok(Nil) = self_restoring_websocket(message_parser)
+    as "The self-restoring-websocket could not connect, this may be because you are running this code outside of a browser."
+  Nil
+}
 
 /// This creates a browser-to-server websocket connection using js FFI, which is then stored in `window.connection`, this means
 /// no Gleam can touch it.
@@ -48,42 +101,11 @@ pub fn main() {
 ///
 /// Since this implementation depends entirely on the browser, it'll always return an error when not running in a browser.
 ///
-/// The `./lumina_client/websocket_ffi.mjs` file also contains a simple function, taking in a (json) String, and
-//// returning the server's (json) String response, which is then parseable on the Gleam end.
-@external(javascript,"./lumina_client/websocket_ffi.mjs", "createSelfRestoringWebsocket")
-fn self_restoring_websocket(on_message: fn (String) -> effect.Effect(model_type.Msg)) -> Result(Nil, Nil) {
-	Error(Nil)
-}
-
-/// Entrypoint to interface directly, usable in server components
+/// Any messages of type (json-)String that the websocket receives, are send into the callback function.
 ///
-/// "preprocess": allows us to update a message depending on which platform it runs on.
-/// (off_topic may be in the future)
-pub fn app(update: fn(model_type.Model, model_type.Msg) -> #(model_type.Model, effect.Effect(model_type.Msg))) {
-  lustre.application(
-    init:,
-    update:,
-    view: view.view,
-  )
-}
-
-/// Update function used mainly with the Rust backend
-fn websocket_based_updates(
-  model: model_type.Model,
-  msg: model_type.Msg,
-) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
-  #(model, effect.none())
-}
-
-// Init function
-fn init(_) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
-  #(
-    model_type.Model(
-      page: model_type.Landing,
-      user: None,
-      token: None,
-      status: Ok(Nil),
-    ),
-    effect.none(),
-  )
+/// The `./lumina_client/websocket_ffi.mjs` file also contains a simple function, taking in a (json) String, and
+/// sending it to the server.
+@external(javascript, "./lumina_client/websocket_ffi.mjs", "createSelfRestoringWebsocket")
+fn self_restoring_websocket(_on_message: fn(String) -> Nil) -> Result(Nil, Nil) {
+  Error(Nil)
 }

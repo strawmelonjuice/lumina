@@ -42,6 +42,7 @@ import lumina/database/events
 import lumina/web
 import lustre
 import lustre/attribute
+import lustre/effect
 import lustre/element
 import lustre/element/html.{html}
 import lustre/server_component
@@ -323,7 +324,8 @@ fn init_component_socket(
   Selector(LuminaServerComponentSocketMessage),
 ) {
   let component = web.component()
-  let assert Ok(component) = lustre.start_server_component(component, Nil)
+  let assert Ok(component) =
+    lustre.start_server_component(component, effect.none())
   let self = process.new_subject()
   let selector =
     process.new_selector()
@@ -456,13 +458,13 @@ fn serve_html(
         html.title([], "Lumina"),
         html.link([
           attribute.attribute("corossorigin", ""),
-          attribute.href("https://fontlay.com"),
+          attribute.href("https://fonts.mar.ollie.earth/"),
           attribute.rel("preconnect"),
         ]),
         html.link([
           attribute.rel("stylesheet"),
           attribute.href(
-            "https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap",
+            "https://fonts.mar.ollie.earth/https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap",
           ),
         ]),
         html.link([
@@ -486,8 +488,8 @@ fn serve_html(
       ]),
       html.body(
         [
-//		attribute.styles([#("max-width", "40rem"), #("margin", "3rem auto")])
-		],
+          //		attribute.styles([#("max-width", "40rem"), #("margin", "3rem auto")])
+        ],
         [
           server_component.element([server_component.route("/client")], []),
         ],

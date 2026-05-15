@@ -15,95 +15,91 @@
  * See the Licence for the specific language governing permissions and limitations.
  */
 
-import { Result$Ok, Result$Error } from '../../gleam.mjs';
+import { Ok, Error } from '../../prelude.mjs';
 
 let lumina_connection;
 let reconnectAttempts = 0;
+let messageCallback;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 /**
  * Creates and manages the self-restoring websocket connection.
- * Stored in window to keep Gleam pure and handle browser-level crashes safely.
  *
- * @returns {{type: "Ok", value: null} | {type: "Error", value: null}} Gleam Result format
+ * @param {Function} onMessage - Sends Json back so it can be used as Effect
+ * @returns {Result} - Returns an Ok(Nil), if things aren't too horribly wrong
  */
-export function createSelfRestoringWebsocket() {
-	// Guard clause for server-side rendering environments
-	if (typeof window === 'undefined' || typeof document === 'undefined') {
-		return { type: "Error", value: null };
-	}
+export function createSelfRestoringWebsocket(onMessage) {
+    // Guard clause for server-side rendering environments
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return new Error(null);
+    }
 
-	try {
-		connectWebSocket();
-		return { type: "Ok", value: null };
-	} catch (error) {
-		console.error("Failed to initialize websocket infrastructure:", error);
-		return { type: "Error", value: null };
-	}
+    try {
+        // Save the callback handler reference globally
+        messageCallback = onMessage;
+        
+        connectWebSocket();
+        return new Ok(null);
+    } catch (error) {
+        console.error("Failed to initialize websocket infrastructure:", error);
+        return new Error(null);
+    }
 }
 
-/**
- * Internal function to handle connection and lifecycle hooks
- */
-function connectWebSocket(cb) {
-	const ws = new WebSocket(`ws://${window.location.host}/connection`);
+function connectWebSocket() {
+    const ws = new WebSocket(`ws://${window.location.host}/connection`);
 
-	// Attach to window so JS can access it globally for sending data
-	lumina_connection = ws;
+    // Attach to module variable so JS can access it globally for sending data
+    lumina_connection = ws;
 
-	ws.onopen = () => {
-		console.log("⚡ Lumina connected to backend.");
-		reconnectAttempts = 0;
-		removeReconnectionModal();
-	};
+    ws.onopen = () => {
+        console.log("⚡ Lumina connected to backend.");
+        reconnectAttempts = 0;
+        removeReconnectionModal();
+    };
 
-	ws.onmessage = (event) => {
+    ws.onmessage = (event) => {
+        // Forward raw string message safely into the Gleam runtime handler
+        if (messageCallback && typeof event.data === 'string') {
+            messageCallback(event.data);
+        }
+    };
 
-	};
+    ws.onclose = (event) => {
+        console.warn(`WebSocket closed. Code: ${event.code}. Attempting recovery...`);
+        handleDisconnect();
+    };
 
-	ws.onclose = (event) => {
-		console.warn(`🔌 WebSocket closed. Code: ${event.code}. Attempting recovery...`);
-		handleDisconnect();
-	};
-
-	ws.onerror = (error) => {
-		console.error("❌ WebSocket error:", error);
-	};
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
 }
 
-/**
- * Handles the recovery logic when a disconnect occurs
- */
 function handleDisconnect() {
-	if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-		reconnectAttempts++;
-		showReconnectionModal();
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        showReconnectionModal();
 
-		// Exponential backoff or simple delay (e.g., 3 seconds)
-		setTimeout(() => {
-			connectWebSocket();
-		}, 3000);
-	} else {
-		crashScreen();
-	}
+        setTimeout(() => {
+            connectWebSocket();
+        }, 3000);
+    } else {
+        crashScreen();
+    }
 }
 
 
-/**
- * Injects a DaisyUI modal over the #app container without removing it yet
- */
 function showReconnectionModal() {
-	if (document.getElementById('lumina-reconnect-modal')) return;
+    if (document.getElementById('lumina-reconnect-modal')) return;
 
-	const appContainer = document.querySelector('#app');
-	if (!appContainer) return;
+    const appContainer = document.querySelector('#app');
+    if (!appContainer) return;
 
-	// Ensure the app container can host an absolute/fixed modal over it safely
-	if (getComputedStyle(appContainer).position === 'static') {
-		appContainer.style.position = 'relative';
-	}
+    if (getComputedStyle(appContainer).position === 'static') {
+        appContainer.style.position = 'relative';
+    }
 
-	const modalHtml = `
+    const modalHtml = `
     <div id="lumina-reconnect-modal" class="absolute inset-0 bg-base-300/70 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
       <div class="modal-box border border-warning/20 bg-base-100 shadow-2xl text-center max-w-sm">
         <h3 class="text-lg font-bold text-warning flex items-center justify-center gap-2">
@@ -118,22 +114,19 @@ function showReconnectionModal() {
     </div>
   `;
 
-	appContainer.insertAdjacentHTML('beforeend', modalHtml);
+    appContainer.insertAdjacentHTML('beforeend', modalHtml);
 }
 
-/**
- * Removes the DaisyUI modal once connection is restored
- */
 function removeReconnectionModal() {
-	const modal = document.getElementById('lumina-reconnect-modal');
-	if (modal) modal.remove();
+    const modal = document.getElementById('lumina-reconnect-modal');
+    if (modal) modal.remove();
 }
 
 
 function crashScreen() {
-	console.error("Fatality encountered, crashing the runtime.");
+    console.error("Fatality encountered, crashing the runtime.");
 
-	document.body.innerHTML = `
+    document.body.innerHTML = `
     <div class="hero min-h-screen bg-base-200 text-base-content font-sans antialiased">
       <div class="hero-content text-center">
         <div class="max-w-md card bg-base-100 shadow-xl border border-error/30 p-8">
@@ -154,7 +147,7 @@ function crashScreen() {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
-            Reload Application
+            Reload Lumina
           </button>
         </div>
       </div>
@@ -162,18 +155,11 @@ function crashScreen() {
   `;
 }
 
-/**
- * A utility helper function to send messages through the global connection.
- * Can be mapped to a Gleam external function if needed.
- *
- * @param {string} jsonPayload
- * @returns {boolean} Success status
- */
 export function sendWebSocketMessage(jsonPayload) {
-	if (lumina_connection && lumina_connection.readyState === WebSocket.OPEN) {
-		lumina_connection.send(jsonPayload);
-		return true;
-	}
-	console.error("Cannot send message. WebSocket is not open.");
-	return false;
+    if (lumina_connection && lumina_connection.readyState === WebSocket.OPEN) {
+        lumina_connection.send(jsonPayload);
+        return true;
+    }
+    console.error("Cannot send message. WebSocket is not open.");
+    return false;
 }

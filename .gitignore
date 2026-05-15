@@ -4,7 +4,7 @@ backend/**/webapi
 backend/**/.webapi
 backend/impl-rs/client
 backend/impl-rs/webapi
-/web/gleam.mjs
+/web/prelude.mjs
 
 
 # -------------------- older ignores

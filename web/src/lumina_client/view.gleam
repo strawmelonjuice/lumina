@@ -39,7 +39,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn view(model: Model) -> Element(model_type.MsgTo) {
+pub fn view(model: Model) -> Element(model_type.Msg) {
   case model.page {
     Landing -> view_landing()
     Register(..) -> view_register(model)
@@ -49,8 +49,6 @@ pub fn view(model: Model) -> Element(model_type.MsgTo) {
     Licence ->
       todo as "Licence should be shown by the client if it's not shown by the server."
   }
-  // This should be scoped closer and closer until we no longer need to use element.map and just have all messages wrapped in the first place.
-	|> element.map(model_type.PassThrough)
 }
 
 fn view_landing() -> Element(Msg) {
