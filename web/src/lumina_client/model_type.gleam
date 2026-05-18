@@ -23,7 +23,6 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/uri.{type Uri}
 
-
 pub type Msg {
   UpdateLastRefreshRequestTime(Int)
   UserNavigatedToLoginPage
@@ -55,12 +54,14 @@ pub type Msg {
   /// Move the modal box to a new position
   /// Parameters: new x and y positions
   MoveModalBoxTo(Float, Float)
+  /// Modem detected a change of page.
+  ModemChangePage(Route)
 }
 
-pub type Page = Route
+pub type Page =
+  Route
 
-
-pub fn parse_route(uri: Uri) -> Page {
+pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] | [""] -> Landing
     ["login"] -> Login(fields: LoginFields("", ""), success: None)
@@ -74,6 +75,17 @@ pub fn parse_route(uri: Uri) -> Page {
     ["licence"] | ["license"] -> Licence
 
     _ -> NotFound(uri:)
+  }
+}
+
+pub fn href(for: Route) {
+  case for {
+    Landing -> "/"
+    Register(fields:, ready:) -> ""
+    Login(fields:, success:) -> todo
+    HomeTimeline(timeline_name:, modal:) -> todo
+    Licence -> todo
+    NotFound(uri:) -> todo
   }
 }
 

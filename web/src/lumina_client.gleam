@@ -23,89 +23,312 @@
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 import gleam/option.{None}
-import lumina_client/model_type
+import gleam/result
+import gleam/string
+import lumina_client/model_type.{
+  type Model, type Msg as Message, type Route, Model,
+}
 import lumina_client/view
 import lustre
 import lustre/effect
+import off_topic
 
 // Entrypoints ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /// Entry point for mainly the Rust backend, which doesn't use server-components and does a server-client based
 /// approach instead.
-pub fn main() -> Result(lustre.Runtime(model_type.Msg), lustre.Error) {
+pub fn main() -> Result(lustre.Runtime(Message), lustre.Error) {
   // This module was a mess, and the lustre_websocket package is outdated.
   // Good reason for me to throw it all out amidst a refactor!
   // - Mar
-  let assert Ok(_) =
-    lustre.start(
-      app(websocket_based_updates),
-      "#app",
-      receives_websocket_messages(),
-    )
+  // let assert Ok(_) = lustre.start(app(api_based_updates), "#app", Nil)
+  todo as "The api wrapper should kick in here."
 }
 
-/// Entrypoint to interface directly, usable in server components
-pub fn app(
-  update: fn(model_type.Model, model_type.Msg) ->
-    #(model_type.Model, effect.Effect(model_type.Msg)),
-) -> lustre.App(effect.Effect(model_type.Msg), model_type.Model, model_type.Msg) {
-  lustre.application(init:, update:, view: view.view)
+/// Main entry of the lumina_client, meant to be consumed as a server component
+pub fn app() {
+  off_topic.component(
+    init:,
+    update:,
+    view: view.view,
+    subscriptions:,
+    options: [],
+  )
 }
 
 // Common functionality ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /// Init function
-/// Inherits effects, because these depend on where the init is ran from.
-fn init(
-  with_effect: effect.Effect(model_type.Msg),
-) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
+fn init(_) -> #(Model, effect.Effect(Message)) {
+  let initial_route = model_type.Landing
   #(
-    model_type.Model(
-      page: model_type.Landing,
-      user: None,
-      token: None,
-      status: Ok(Nil),
-    ),
-    with_effect,
+    Model(page: initial_route, user: None, token: None, status: Ok(Nil)),
+    effect.none(),
   )
+  |> echo as "Init output"
 }
 
-// Websockets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Event handling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/// Subscriptions
+fn subscriptions(_model: Model) -> off_topic.Subscription(Message) {
+  off_topic.batch([])
+}
 
 /// Update function used mainly with the Rust backend
-fn websocket_based_updates(
-  model: model_type.Model,
-  msg: model_type.Msg,
-) -> #(model_type.Model, effect.Effect(model_type.Msg)) {
-  #(model, effect.none())
-}
-
-fn receives_websocket_messages() -> effect.Effect(model_type.Msg) {
-  use dispatch <- effect.from
-  let message_parser = fn(incoming) {
-    case incoming {
-      _ -> todo
+fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
+  echo message as "Received message"
+  case message {
+    model_type.UserNavigatedToLoginPage -> #(
+      Model(
+        ..model,
+        page: model_type.Login(
+          fields: model_type.LoginFields("", ""),
+          success: None,
+        ),
+      ),
+      effect.none(),
+    )
+    model_type.UserNavigatedToRegisterPage -> #(
+      Model(
+        ..model,
+        page: model_type.Register(
+          fields: model_type.RegisterPageFields("", "", "", ""),
+          ready: None,
+        ),
+      ),
+      effect.none(),
+    )
+    model_type.UserNavigatedToLandingPage -> #(
+      Model(..model, page: model_type.Landing),
+      effect.none(),
+    )
+    model_type.UserUpdatedControlledEmailField(new_email) -> {
+      case model.page {
+        model_type.Register(fields, ready) -> #(
+          Model(
+            ..model,
+            page: model_type.Register(
+              fields: model_type.RegisterPageFields(
+                ..fields,
+                emailfield: new_email,
+              ),
+              ready:,
+            ),
+          ),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            todo as "RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            )"
+          },
+        )
+        model_type.Login(fields, _) -> #(
+          Model(
+            ..model,
+            page: model_type.Login(
+              fields: model_type.LoginFields(..fields, emailfield: new_email),
+              success: None,
+            ),
+          ),
+          effect.none(),
+        )
+        _ -> #(model, effect.none())
+      }
     }
-    |> dispatch
-  }
-  let assert Ok(Nil) = self_restoring_websocket(message_parser)
-    as "The self-restoring-websocket could not connect, this may be because you are running this code outside of a browser."
-  Nil
-}
+    model_type.UserUpdatedControlledPasswordField(new_password) -> {
+      case model.page {
+        model_type.Register(fields, ready) -> #(
+          Model(
+            ..model,
+            page: model_type.Register(
+              model_type.RegisterPageFields(
+                ..fields,
+                passwordfield: new_password,
+              ),
+              ready:,
+            ),
+          ),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            todo as "RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            )"
+          },
+        )
+        model_type.Login(fields, _success) -> {
+          let username_email = case string.starts_with(fields.emailfield, "@") {
+            True -> string.drop_start(fields.emailfield, 1)
+            False -> fields.emailfield
+          }
+          let new_username_email = case string.contains(username_email, "@") {
+            True -> {
+              // Is an email, what now!
+              username_email
+            }
+            False -> {
+              string.trim(username_email)
+              |> string.replace(" ", "")
+              |> string.lowercase()
+              |> string.replace("@", "")
+              |> string.replace(".", "")
+            }
+          }
+          #(
+            Model(
+              ..model,
+              page: model_type.Login(
+                fields: model_type.LoginFields(
+                  passwordfield: new_password,
+                  emailfield: new_username_email,
+                ),
+                success: None,
+              ),
+            ),
+            effect.none(),
+          )
+        }
+        _ -> #(model, effect.none())
+      }
+    }
+    model_type.UserUpdatedControlledPasswordConfirmField(
+      new_password_confirmation,
+    ) -> {
+      case model.page {
+        model_type.Register(fields, ready) -> #(
+          Model(
+            ..model,
+            page: model_type.Register(
+              fields: model_type.RegisterPageFields(
+                ..fields,
+                passwordconfirmfield: new_password_confirmation,
+              ),
+              ready:,
+            ),
+          ),
+          {
+            // This block emits an effect to send RegisterPrecheck message to the server
+            todo as "RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            )"
+          },
+        )
+        _ -> #(model, effect.none())
+      }
+    }
+    model_type.UserUpdatedControlledUsernameField(new_username) -> {
+      case model.page {
+        model_type.Register(fields, ready) -> #(
+          Model(
+            ..model,
+            page: model_type.Register(
+              fields: model_type.RegisterPageFields(..fields, usernamefield: {
+                case string.starts_with(new_username, "@") {
+                  True -> string.drop_start(new_username, 1)
+                  False -> new_username
+                }
+                |> string.trim()
+                |> string.replace(" ", "")
+                |> string.lowercase()
+                |> string.replace("@", "")
+                |> string.replace(".", "")
+              }),
+              ready:,
+            ),
+          ),
+          {
+            todo as "RegisterPrecheck(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            )"
+          },
+        )
+        _ -> #(model, effect.none())
+      }
+    }
+    model_type.EmailFieldLostFocus -> {
+      // This handles the login username/email field value once the user seems to be done typing.
+      let assert model_type.Login(fields, _success) = model.page
+      let value = case string.starts_with(fields.emailfield, "@") {
+        True -> string.drop_start(fields.emailfield, 1)
+        False -> fields.emailfield
+      }
+      let new_value = case string.contains(value, "@") {
+        True -> {
+          // Is an email, what now!
+          value
+        }
+        False -> {
+          string.trim(value)
+          |> string.replace(" ", "")
+          |> string.lowercase()
+          |> string.replace("@", "")
+          |> string.replace(".", "")
+        }
+      }
+      #(
+        Model(
+          ..model,
+          page: model_type.Login(
+            fields: model_type.LoginFields(..fields, emailfield: new_value),
+            success: None,
+          ),
+        ),
+        effect.none(),
+      )
+    }
+    model_type.UserClickedLogout -> todo as "session should be destroyed here"
+    model_type.UserSubmittedLogin(_) -> {
+      // let assert model_type.Login(fields, _) = model.page
+      todo as "LoginAuthenticationRequest(
+              fields.emailfield,
+              fields.passwordfield,
+            )"
+    }
+    model_type.UserSubmittedSignup(_) -> {
+      let assert model_type.Register(fields, ready) = model.page
 
-/// This creates a browser-to-server websocket connection using js FFI, which is then stored in `window.connection`, this means
-/// no Gleam can touch it.
-/// Storing it in `window` also means it's implementation stays there where it's used: In the browser.
-///
-/// If the websocket experiences a disconnect, it'll modify the DOM to display a reconnection modal over #app,
-/// if it still fails, it'll replace the entire body with an error screen, thereby crashing the Lustre runtime.
-///
-/// Since this implementation depends entirely on the browser, it'll always return an error when not running in a browser.
-///
-/// Any messages of type (json-)String that the websocket receives, are send into the callback function.
-///
-/// The `./lumina_client/websocket_ffi.mjs` file also contains a simple function, taking in a (json) String, and
-/// sending it to the server.
-@external(javascript, "./lumina_client/websocket_ffi.mjs", "createSelfRestoringWebsocket")
-fn self_restoring_websocket(_on_message: fn(String) -> Nil) -> Result(Nil, Nil) {
-  Error(Nil)
+      case
+        {
+          { ready |> option.is_some() }
+          && { ready |> option.unwrap(Error("")) |> result.is_ok() }
+          && { fields.passwordfield == fields.passwordconfirmfield }
+        }
+      {
+        True -> {
+          // console.log("Submitting signup form")
+          let effect =
+            todo as "RegisterRequest(
+              fields.emailfield,
+              fields.usernamefield,
+              fields.passwordfield,
+            )"
+          #(model, effect)
+        }
+        False -> {
+          // console.error("Form not ready to submit")
+          #(model, effect.none())
+        }
+      }
+    }
+    model_type.UserSwitchedTimeLineTo(tid) -> todo
+
+    model_type.LoadMorePosts(timeline_name) -> todo
+
+    model_type.UserClosedModal -> todo
+
+    model_type.StartDraggingModalBox(x, y) -> todo
+
+    model_type.MoveModalBoxTo(x, y) -> todo
+
+    model_type.UpdateLastRefreshRequestTime(_) -> todo
+    model_type.ModemChangePage(_) -> todo
+    model_type.SetModal(_) -> todo
+  }
 }

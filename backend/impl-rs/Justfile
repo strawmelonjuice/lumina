@@ -7,8 +7,6 @@ default:
 copy-over-client:
 	mkdir -p ./client
 	cp -fru $(git rev-parse --show-toplevel)/web/* ./client
-	mkdir -p ./webapi
-	cp -fru $(git rev-parse --show-toplevel)/webapi/* ./webapi
 
 
 [doc("Build the server-side of Lumina")]

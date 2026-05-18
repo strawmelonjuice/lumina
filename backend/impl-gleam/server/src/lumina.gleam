@@ -40,12 +40,15 @@ import gleam/time/timestamp
 import gleam/uri
 import lumina/database/events
 import lumina/web
+import lumina_client
+import lumina_client/model_type.{type Route}
 import lustre
 import lustre/attribute
 import lustre/effect
 import lustre/element
 import lustre/element/html.{html}
 import lustre/server_component
+import off_topic
 import simplifile
 import sqlight
 import woof
@@ -71,6 +74,9 @@ type StaticRoute {
   RouteForIconAsPNG
   RouteForIconAsSVG
   RouteForLustreComponentRuntime
+  RouteForLustreComponentRuntimeMinified
+  RouteForOffTopicComponentRuntime
+  RouteForOffTopicComponentRuntimeMinified
 }
 
 type StaticResponses =
@@ -262,8 +268,14 @@ fn handler(req: Request, handler_ctx: HandlerContext) -> Response {
       ok()
       handler_ctx.static_responses(RouteForIconAsSVG)
     }
-    ["lustre", "runtime.mjs"] ->
+    ["static", "lustre-thin.mjs"] ->
       handler_ctx.static_responses(RouteForLustreComponentRuntime)
+    ["static", "lustre-thin.min.mjs"] ->
+      handler_ctx.static_responses(RouteForLustreComponentRuntimeMinified)
+    ["static", "off-topic.mjs"] ->
+      handler_ctx.static_responses(RouteForOffTopicComponentRuntime)
+    ["static", "off-topic.min.mjs"] ->
+      handler_ctx.static_responses(RouteForOffTopicComponentRuntimeMinified)
     // Newer implementation, the server component.
     ["client"] -> serve_component(req, handler_ctx.csrf_token_store)
 
@@ -308,13 +320,15 @@ fn serve_component(
 
 type LuminaServerComponentSocket {
   LuminaServerComponentSocket(
-    component: lustre.Runtime(web.Message),
-    self: Subject(server_component.ClientMessage(web.Message)),
+    component: lustre.Runtime(off_topic.Message(model_type.Msg)),
+    self: Subject(
+      server_component.ClientMessage(off_topic.Message(model_type.Msg)),
+    ),
   )
 }
 
 type LuminaServerComponentSocketMessage =
-  server_component.ClientMessage(web.Message)
+  server_component.ClientMessage(off_topic.Message(model_type.Msg))
 
 fn init_component_socket(
   _: ewe.WebsocketConnection,
@@ -323,9 +337,8 @@ fn init_component_socket(
   LuminaServerComponentSocket,
   Selector(LuminaServerComponentSocketMessage),
 ) {
-  let component = web.component()
   let assert Ok(component) =
-    lustre.start_server_component(component, effect.none())
+    lustre.start_server_component(lumina_client.app(), Nil)
   let self = process.new_subject()
   let selector =
     process.new_selector()
@@ -457,7 +470,7 @@ fn serve_html(
         ]),
         html.title([], "Lumina"),
         html.link([
-          attribute.attribute("corossorigin", ""),
+          attribute.crossorigin(""),
           attribute.href("https://fonts.mar.ollie.earth/"),
           attribute.rel("preconnect"),
         ]),
@@ -482,18 +495,23 @@ fn serve_html(
         ]),
         html.title([], "Lumina"),
         html.script(
-          [attribute.type_("module"), attribute.src("/lustre/runtime.mjs")],
+          [
+            attribute.type_("module"),
+            attribute.src("/static/lustre-thin.min.mjs"),
+          ],
+          "",
+        ),
+        html.script(
+          [
+            attribute.type_("module"),
+            attribute.src("/static/off-topic.min.mjs"),
+          ],
           "",
         ),
       ]),
-      html.body(
-        [
-          //		attribute.styles([#("max-width", "40rem"), #("margin", "3rem auto")])
-        ],
-        [
-          server_component.element([server_component.route("/client")], []),
-        ],
-      ),
+      html.body([], [
+        server_component.element([server_component.route("/client")], []),
+      ]),
     ])
     |> element.to_document_string_tree
     |> bytes_tree.from_string_tree
@@ -516,7 +534,7 @@ fn static(
   let client_servible =
     [
       <<
-        "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" /><title>Lumina</title><link rel=\"preconnect\" href=\"https://fontlay.com\" corossorigin /><link href=\"https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap\" rel=\"stylesheet\"><link	rel=\"stylesheet\" href=\"/static/lumina.css\"/><meta name=\"robots\" content=\"noai, noimageai, nofollow\"><script>window.clientHash = \"":utf8,
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" /><title>Lumina</title><link rel=\"preconnect\" href=\"https://fontlay.com\" crossorigin /><link href=\"https://fontlay.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Elms+Sans:ital,wght@0,100..900;1,100..900&family=Gantari:ital,wght@0,100..900;1,100..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Vend+Sans&display=swap\" rel=\"stylesheet\"><link	rel=\"stylesheet\" href=\"/static/lumina.css\"/><meta name=\"robots\" content=\"noai, noimageai, nofollow\"><script>window.clientHash = \"":utf8,
       >>,
       client_hash |> bit_array.from_string,
       <<"\";</script><script type=\"module\">":utf8>>,
@@ -573,9 +591,24 @@ fn static(
       assets <> "/static/lumina_client.mjs",
       "application/javascript; charset=utf-8",
     )
+  let lustre_component_runtime_min = {
+    let assert Ok(lustre_priv) = application.priv_directory("lustre")
+    let file_path = lustre_priv <> "/static/lustre-server-component.min.mjs"
+    builtin_file(file_path, "application/javascript; charset=utf-8")
+  }
   let lustre_component_runtime = {
     let assert Ok(lustre_priv) = application.priv_directory("lustre")
     let file_path = lustre_priv <> "/static/lustre-server-component.mjs"
+    builtin_file(file_path, "application/javascript; charset=utf-8")
+  }
+  let offtopic_component_runtime_min = {
+    let assert Ok(offtopic_priv) = application.priv_directory("off_topic")
+    let file_path = offtopic_priv <> "/static/off-topic.min.mjs"
+    builtin_file(file_path, "application/javascript; charset=utf-8")
+  }
+  let offtopic_component_runtime = {
+    let assert Ok(offtopic_priv) = application.priv_directory("off_topic")
+    let file_path = offtopic_priv <> "/static/off-topic.mjs"
     builtin_file(file_path, "application/javascript; charset=utf-8")
   }
   let client_styles =
@@ -595,6 +628,9 @@ fn static(
       RouteForClientAsJavascript -> client_js
       RouteForClientAsMinifiedJavascript -> client_js_min
       RouteForLustreComponentRuntime -> lustre_component_runtime
+      RouteForLustreComponentRuntimeMinified -> lustre_component_runtime_min
+      RouteForOffTopicComponentRuntime -> offtopic_component_runtime
+      RouteForOffTopicComponentRuntimeMinified -> offtopic_component_runtime_min
     }
   }
 }

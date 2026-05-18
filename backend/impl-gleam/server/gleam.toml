@@ -36,6 +36,7 @@ lustre = ">= 5.7.0 and < 6.0.0"
 gleam_time = ">= 1.8.0 and < 2.0.0"
 ewe = ">= 3.0.8 and < 4.0.0"
 envoy = ">= 1.2.0 and < 2.0.0"
+off_topic = ">= 1.0.0-rc3 and < 2.0.0"
 
 
 [dev_dependencies]
