@@ -35,8 +35,6 @@ client/build
 .env
 /data
 /built
-# mise system-specific config file
-.mise.toml
 
 
 # Obsidian
@@ -46,4 +44,3 @@ client/build
 
 # Direnv cache
 .direnv/
-
