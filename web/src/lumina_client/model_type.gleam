@@ -1,5 +1,7 @@
 //// Lumina > Client > Model
 //// Lumina's model is the central source of truth for the client application state.
+////
+//// This module is to be replaced by the newer and more targeted model.gleam module.
 
 // Lumina/Peonies
 // Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
@@ -15,13 +17,25 @@
 //
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
 // See the Licence for the specific language governing permissions and limitations.
+pub fn from_itr2_message(
+  from: element.Element(Msg),
+) -> element.Element(message.Message) {
+  element.map(from, fn(original_message: Msg) -> message.Message {
+    case original_message {
+      _ -> message.OldMessage(string.inspect(original_message))
+    }
+  })
+}
 
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/string
 import gleam/uri.{type Uri}
+import lumina_client/message
+import lustre/element
 
 pub type Msg {
   UpdateLastRefreshRequestTime(Int)

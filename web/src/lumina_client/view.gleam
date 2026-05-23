@@ -24,6 +24,7 @@ import gleam/string
 import lumina_client/helpers.{
   get_color_scheme, login_view_checker, model_local_storage_key,
 }
+import lumina_client/message
 import lumina_client/model_type.{
   type Model, type Msg, HomeTimeline, Landing, Licence, Login, NotFound,
   Register, UserNavigatedToLandingPage, UserNavigatedToLoginPage,
@@ -39,12 +40,20 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn view(model: Model) -> Element(model_type.Msg) {
+pub fn view(model: Model) -> Element(message.Message) {
   case model.page {
-    Landing -> view_landing()
-    Register(..) -> view_register(model)
-    Login(..) -> view_login(model)
-    HomeTimeline(..) -> view_homepage(model)
+    Landing ->
+      view_landing()
+      |> model_type.from_itr2_message
+    Register(..) ->
+      view_register(model)
+      |> model_type.from_itr2_message
+    Login(..) ->
+      view_login(model)
+      |> model_type.from_itr2_message
+    HomeTimeline(..) ->
+      view_homepage(model)
+      |> model_type.from_itr2_message
     NotFound(uri:) -> todo as "No 404 page yet."
     Licence ->
       todo as "Licence should be shown by the client if it's not shown by the server."
