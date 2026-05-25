@@ -39,12 +39,10 @@ import gleam/time/duration
 import gleam/time/timestamp
 import gleam/uri
 import lumina/database/events
-import lumina/web
 import lumina_client
-import lumina_client/model_type.{type Route}
+import lumina_client/message
 import lustre
 import lustre/attribute
-import lustre/effect
 import lustre/element
 import lustre/element/html.{html}
 import lustre/server_component
@@ -320,15 +318,15 @@ fn serve_component(
 
 type LuminaServerComponentSocket {
   LuminaServerComponentSocket(
-    component: lustre.Runtime(off_topic.Message(model_type.Msg)),
+    component: lustre.Runtime(off_topic.Message(message.Message)),
     self: Subject(
-      server_component.ClientMessage(off_topic.Message(model_type.Msg)),
+      server_component.ClientMessage(off_topic.Message(message.Message)),
     ),
   )
 }
 
 type LuminaServerComponentSocketMessage =
-  server_component.ClientMessage(off_topic.Message(model_type.Msg))
+  server_component.ClientMessage(off_topic.Message(message.Message))
 
 fn init_component_socket(
   _: ewe.WebsocketConnection,
@@ -338,7 +336,10 @@ fn init_component_socket(
   Selector(LuminaServerComponentSocketMessage),
 ) {
   let assert Ok(component) =
-    lustre.start_server_component(lumina_client.app(), Nil)
+    lustre.start_server_component(
+      lumina_client.app(todo as "Update function goes here"),
+      Nil,
+    )
   let self = process.new_subject()
   let selector =
     process.new_selector()
