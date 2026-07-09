@@ -1,5 +1,6 @@
-# AI training and TDM are expressly reserved. 
-# See LICENSE file for full legal terms.
+# AI training and TDM are expressly reserved.
+# See LICENCE file for full legal terms, you can visit this file in the public repository at
+# https://tangled.org/strawmelonjuice.com/Lumina
 
 User-agent: *
 Disallow: /
@@ -16,6 +17,3 @@ Disallow: /
 
 User-agent: CCBot
 Disallow: /
-
-X-Robots-Tag: noai
-X-Robots-Tag: noimageai
