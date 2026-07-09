@@ -4,13 +4,12 @@ root = true
 
 [*]
 indent_style = tab
-indent_size = 4
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 max_line_length = 120
-tab_width = 4
+tab_width = 5
 ij_continuation_indent_size = 8
 ij_formatter_off_tag = @formatter:off
 ij_formatter_on_tag = @formatter:on
@@ -18,6 +17,16 @@ ij_formatter_tags_enabled = true
 ij_smart_tabs = false
 ij_visual_guides =
 ij_wrap_on_typing = false
+
+[*.nix]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+tab_width = 4
+
+
 
 [*.css]
 ij_css_align_closing_brace_with_properties = false
@@ -694,3 +703,4 @@ ij_qmllang_wrap_comments = false
 
 [{*.toml,Cargo.lock,Cargo.toml.orig,Gopkg.lock,Pipfile,poetry.lock,uv.lock}]
 ij_toml_keep_indents_on_empty_lines = false
+
