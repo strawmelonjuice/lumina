@@ -27,6 +27,7 @@ import gleam/http
 import gleam/http/cookie
 import gleam/http/request
 import gleam/http/response
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
@@ -101,11 +102,7 @@ pub fn child(global: data.Globals) {
       )
       // Legals
       _, ["robots.txt"] -> serves_robots_txt
-      _, ["licence.txt"]
-      | _, ["license.txt"]
-      | _, ["licence"]
-      | _, ["license"]
-      -> serves_priv_file(
+      _, ["licence.txt"] | _, ["license.txt"] | _, ["licence"] | _, ["license"] -> serves_priv_file(
         _,
         application: "lumina_server",
         path: "/licence",
@@ -116,6 +113,32 @@ pub fn child(global: data.Globals) {
   })
   |> ewe.bind(config.application_web_host())
   |> ewe.listening(port: config.application_web_port())
+  |> ewe.on_start(fn(scheme, addr) {
+    let address = case addr.ip {
+      ewe.IpV6(..) -> "[" <> ewe.ip_address_to_string(addr.ip) <> "]"
+      ewe.IpV4(..) -> ewe.ip_address_to_string(addr.ip)
+    }
+
+    witness.this(
+      logging.Info,
+      "Server started on "
+        <> {
+        http.scheme_to_string(scheme)
+        <> "://"
+        <> address
+        <> ":"
+        <> int.to_string(addr.port)
+      },
+      [
+        // witness.string("Scheme", scheme |> http.scheme_to_string()),
+        witness.string("Address", ewe.ip_address_to_string(addr.ip)),
+        witness.int("Port", addr.port),
+        // Repeating this here as we apparently crossed a session boundary
+        witness.string("Process", "Webserver - main"),
+      ],
+    )
+  })
+  |> ewe.idle_timeout(20_000)
   |> ewe.supervised()
 }
 
@@ -132,8 +155,10 @@ fn serve_component(
       fn(ewe.WebsocketConnection, b, ewe.WebsocketMessage(a)) ->
         ewe.WebsocketNext(b, a),
       fn(ewe.WebsocketConnection, b) -> Nil,
-    ) -> response.Response(ewe.ResponseBody),
-  ) -> response.Response(ewe.ResponseBody),
+    ) ->
+      response.Response(ewe.ResponseBody),
+  ) ->
+    response.Response(ewe.ResponseBody),
 ) -> response.Response(ewe.ResponseBody) {
   use session_id <- with_session(request:)
   let consumption =
