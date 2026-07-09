@@ -136,8 +136,16 @@ pub fn session_janitor(
               process.sleep(session_janitor_delay)
             }
           }
+          witness.this(logging.Info, "Session janitor check ended.", [])
         }
-        Error(_) -> process.sleep(session_janitor_delay)
+        Error(_) -> {
+          witness.this(
+            logging.Info,
+            "Session janitor found no sessions yet. Waiting longer before next check.",
+            [],
+          )
+          process.sleep(session_janitor_delay)
+        }
       }
 
       process.sleep(session_janitor_delay)
@@ -159,6 +167,7 @@ pub fn csrf_create_session(
   session_id: String,
   csrf_token: String,
 ) {
+  use _ <- result.try(queue.push(session_store.cleanup_queue, session_id))
   table.insert_new(
     session_store.table,
     session_id,
