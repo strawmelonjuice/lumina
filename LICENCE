@@ -4,33 +4,42 @@ Copyright (C) 2018-2026 M.L.C. 'Strawmelonjuice' Bloeiman and contributors.
 ===============================================================================
 OFFICIAL NOTICE: RESERVATION OF RIGHTS & DERIVATIVE WORKS (ART. 4(3) DIR 2019/790)
 ===============================================================================
-1. MACHINE-READABLE OPT-OUT: In accordance with Article 4(3) of Directive 
-   (EU) 2019/790, the Licensor hereby expressly reserves all rights for 
-   Text and Data Mining (TDM) and the training of Artificial Intelligence (AI) 
+1. MACHINE-READABLE OPT-OUT: In accordance with Article 4(3) of Directive
+   (EU) 2019/790, the Licensor hereby expressly reserves all rights for
+   Text and Data Mining (TDM) and the training of Artificial Intelligence (AI)
    models in an appropriate and machine-readable manner.
 
-   A robots.txt is added to the web interface of this program itself (/robots.txt), 
-   and exists as a file in the root of the code repository available on 
+   A robots.txt is added to the web interface of this program itself (/robots.txt),
+   and exists as a file in the root of the code repository available on
    <https://tangled.org/strawmelonjuice.com/Lumina> and official mirrors.
 
 
-2. CLARIFICATION ON DERIVATION: For the purpose of Article 1 of this Licence, 
-   the Licensor defines the use of this Work for training, fine-tuning, or 
-   optimizing AI models as the creation of a Derivative Work. 
+2. CLARIFICATION ON DERIVATION: For the purpose of Article 1 of this Licence,
+   the Licensor defines the use of this Work for training, fine-tuning, or
+   optimizing AI models as the creation of a Derivative Work.
 
-3. COPYLEFT OBLIGATION: Any party utilizing this Work for the development 
-   of AI models acknowledges that the resulting model weights, parameters, 
-   and architecture are subject to the Copyleft Clause (Article 5) of the 
-   EUPL v1.2. Distribution of such derivatives must occur under the terms 
+3. COPYLEFT OBLIGATION: Any party utilizing this Work for the development
+   of AI models acknowledges that the resulting model weights, parameters,
+   and architecture are subject to the Copyleft Clause (Article 5) of the
+   EUPL v1.2. Distribution of such derivatives must occur under the terms
    of the EUPL or a Compatible Licence.
 
-4. SEVERABILITY: Pursuant to Article 13, if any provision of this Special 
-   Notice is found to be invalid or unenforceable, the validity of the 
-   remainder of the Licence and its core Copyleft protections shall remain 
+4. SEVERABILITY: Pursuant to Article 13, if any provision of this Special
+   Notice is found to be invalid or unenforceable, the validity of the
+   remainder of the Licence and its core Copyleft protections shall remain
    in full effect.
+
+Summary of this note: I (M.L.C. Bloeiman), do not consent and in fact
+specifically dissallow the training on and or consuming of this project's code
+for the use or enhancement of LLM's or other text or concept-transformative
+models. If you ignore that previous statement, you acknowledge that the
+resulting product is now a derivative of Lumina and are subjected to the same
+copyleft that other derivatives are subjected to, following art. 5.
+This note expands the definitions as set in clause 1 of the attached licence (EUPL-1.2),
+future-proofing it for an era within which definitions seem to be a point of debate.
 ===============================================================================
 
-For the EUPL v1.2 in other languages, see 
+For the EUPL v1.2 in other languages, see
 <https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12>.
 
 This software is licensed under the European Union Public Licence (EUPL) v1.2.
