@@ -1,46 +1,14 @@
-backend/**/client
-backend/**/.client
-backend/**/webapi
-backend/**/.webapi
-backend/impl-rs/client
-backend/impl-rs/webapi
-/web/prelude.mjs
 
+# Ignore build artifacts
+lumina/backend/priv/client.js
+lumina/backend/priv/client.min.js
+lumina/backend/priv/lumina.css
+lumina/backend/priv/lumina.min.css
+lumina/backend/priv/licence
+build/
+lumina/web/initialiser/prelude.mts
+lumina/web/initialiser/src/gleam.mts
+lumina/web/initialiser/src/gleam.mjs
 
-# -------------------- older ignores
-
-*.beam
-*.ez
-/target/
-erl_crash.dump
-/test
-*.log
-package-lock.json
-node_modules
-# Ignore Editor files
-.idea/
-.vscode/
-
-
-
-# Added by cargo
-/target
-
-# Added by me
-client/build
-/server/build
-/server/priv/static/lumina_client*.css
-/server/priv/static/lumina_client*.hash
-/server/priv/static/lumina_client*.mjs
-.env
-/data
-/built
-
-
-# Obsidian
-/notes/.obsidian/appearance.json
-/notes/.obsidian/workspace.json
-/notes/.obsidian/app.json
-
-# Direnv cache
+# Ignore direnv cache
 .direnv/
