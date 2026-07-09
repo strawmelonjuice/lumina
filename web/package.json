@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
-    "postcss": "^8.5.15",
-    "tailwindcss": "^4"
-  }
-}
