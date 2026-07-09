@@ -1,6 +1,4 @@
 {
-  description = "Lumina Development Environment";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
@@ -16,82 +14,44 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-
-        myImage = pkgs.dockerTools.buildLayeredImage {
-          name = "luminapeonies";
-          tag = "latest";
-          contents = [
-            pkgs.bash
-            pkgs.coreutils
-            pkgs.erlang_28
-          ];
-          config = {
-            Cmd = [
-              "/app/entrypoint.sh"
-              "run"
-            ];
-            WorkingDir = "/data";
-            Env = [
-              "PATH=/usr/bin:/bin"
-              "PORT=3000"
-            ];
-          };
-          # Volumes = {
-          #   "/data" = { };
-          # };
-          extraCommands = ''
-            mkdir -p app
-            cp -r ${./server/build/erlang-shipment}/* app/
-            chmod +x app/entrypoint.sh
-          '';
-        };
       in
       {
-        packages.container = myImage;
-
         devShells.default = pkgs.mkShell {
-          shellHook = ''
-            echo "❄️ dev environment loaded, use 'just dev' next, or use 'just --list' for recipies."
-          '';
           buildInputs = with pkgs; [
-            # Gleam application
             gleam
-            erlang_28
-            rebar3
+            beam29Packages.erlang
+            beam29Packages.rebar3
             deno
-            tailwindcss_4
-            # Task runner
-            watchexec
             just
-            # Migrations
+            watchexec
+            postgresql_18
             dbmate
-            sqlite
-            # Containerisation
-            podman
           ];
+
+          shellHook = ''
+            just --list
+            echo "Use just to run these recipes."
+
+            if [ -n "''${DIRENV_IN_ENVRC}" ]; then
+               echo "Note: Use 'nix develop' to start the database, this doesn't work in direnv shells."
+            else
+               if [ ! -d "$PGDATA" ]; then
+                  export PGDATA="$(pwd)/lumina/backend/build/data/data/.postgres"
+                  export PGHOST="/tmp"
+                  export LOG_PATH="$PGDATA/server.log"
+                  initdb --auth=trust -U postgres
+                  echo "listen_addresses = '127.0.0.1'" >> "$PGDATA/postgresql.conf"
+                  echo "port = 5432" >> "$PGDATA/postgresql.conf"
+                  echo "unix_socket_directories = '$PGHOST'" >> "$PGDATA/postgresql.conf"
+               fi
+               if ! pg_ctl status >/dev/null 2>&1; then
+                  pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start
+               fi
+               trap 'pg_ctl stop' EXIT
+               echo "Database is active and can be accessed on `just --evaluate LUMINA_DB_URL`."
+            fi
+          '';
         };
       }
-    )
-    // {
-      nixosModules.default =
-        {
-          config,
-          lib,
-          pkgs,
-          ...
-        }:
-        {
-          virtualisation.oci-containers.containers."strawmelonjuice-lumina" = {
-            # image = "strawmelonjuice/luminapeonies:latest";
-            image = "luminapeonies:latest";
-            ports = [
-              "3000:3000"
-            ];
-            volumes = [
-              "/var/lib/lumina-peonies:/data"
-            ];
-            extraOptions = [ "--network=slirp4netns" ];
-          };
-        };
-    };
+    );
 }

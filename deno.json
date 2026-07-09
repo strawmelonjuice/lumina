@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "minifier": "npm:minifier@^0.8.1"
+  }
+}
