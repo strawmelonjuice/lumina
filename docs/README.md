@@ -1,0 +1,36 @@
+This is the `Lumina/Peonies`'s Obsidian vault for design choices, philosophies and concepts or even psuedocode. 
+
+## Designs
+
+Designs currently documented here:
+
+| Category       | Main section                                           | Sub-sections                                                                                       | Description                                                                     | [Asociated issues](./Design/Conceptual.md) |
+| -------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
+| **UI**         | [Styling the (web) UI](Design/Practical/UI/Styling.md) |                                                                                                    | Describes the way the UI should be styled.                                      |                                            |
+|                |                                                        | [About the web frontend](Design/Practical/UI/Web.md)                                               | The web frontend is the implementation reference for Lumina's UI.               |                                            |
+|                |                                                        | [Tailwind usage](Design/Practical/UI/Styling/Tailwind%20usage.md)                                  | Describes when and how Tailwind CSS should be used within Lumina.               |                                            |
+|                |                                                        | [Lumina's theme](Design/Practical/UI/Styling/Theme.md)                                             | Describes the way Lumina should look                                            |                                            |
+| **Federation** | [Federation](Design/Practical/Federation.md)           |                                                                                                    |                                                                                 |                                            |
+|                |                                                        | [Polite Protocol](Design/Practical/Federation/Inter-instance%20communication/Polite%20Protocol.md) | Describes Lumina's own inter-instance communications.                           |                                            |
+|                |                                                        | [AT Proto](Design/Practical/Federation/Communication%20with%20other%20platforms/AT%20Proto.md)     |                                                                                 |                                            |
+|                |                                                        | [Fediverse](Design/Practical/Federation/Communication%20with%20other%20platforms/Fediverse.md)     |                                                                                 |                                            |
+|                |                                                        | [Users IDs](Design/Practical/Federation/Users%20IDs.md)                                            | Short description noting how users are identified for both humans and machines. |                                            |
+
+## Technical implementations
+
+Technical implementations are also documented here, see the documents in [technical implementation](Technical%20implementation/./).
+## Earlier iterations
+
+`Lumina:Peonies:itr3` is the current and seemingly final iteration of this project, as of 2026.
+
+This project has been conceptualised and prototyped into many earlier iterations before, each with different approaches and final result. Some known older iterations had different names, listing a few:
+
+| Codenamed                  | About                                                                                                                                                                                                                                                                                                                                       | Introduced                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| _Peonies-Lumina_ (current) | `Lumina:Peonies:itr2`-`Lumina:Peonies:itr3`, after seeing a project where Gleam was used for the entire stack show too much promise to keep it out of the official implementation, underwent a major refactor.                                                                                                                              |                                                                     |
+|                            | Factually `Lumina:Peonies:itr1`, had a much bigger approach where multiple backends were explored, including ones based on the BEAM (Gleam-Erlang backend to be precise), is what itr2 draws most inspiration of.  <br>  <br>Having multiple backends with non-matching features proved to be too complicated to maintain or draw straight. | Federation, conceptually                                            |
+| _Lumina-Ephew_             | A concept-only iteration that never made it past the drawing board.                                                                                                                                                                                                                                                                         | Lumina's principles and the global chronological timeline           |
+| _Ephew_                    | A near-complete PHP implementation with a plain HTML+CSS frontend (no scripts), fell apart due to the quickly aging PHP ecosystem at the time.                                                                                                                                                                                              | introducing the idea that 'multiple types of posts can feel native' |
+| FNew                       | A public text-only message pinboard                                                                                                                                                                                                                                                                                                         | ~~Criticism, mostly~~                                               |
+
+The current iteration is a more well-documented and slower approach, giving time to learn and chances to refactor. It also comes in a time where the tech for it is perfect and the influence of weaponised social media is high, and so are the stakes because of it.

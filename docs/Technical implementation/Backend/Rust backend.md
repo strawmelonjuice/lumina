@@ -1,0 +1,4 @@
+# Rust backend
+[Iteration 2](../../README.md) considered the Rust backend to be the leading implementation, as it was the only implementation until the Gleam experiment.
+
+In iteration 3, the Gleam backend is the leading backend, this however does not mean it is the only backend. The Rust backend is a following backend, which means it should attempt feature parity with the Gleam backend, and may deviate if compliant with the design, but mustn't include features that are not defined. The Gleam backend may purposefully omit defined optional features, which the Rust backend can then implement. But it should not 'take the lead' by creating new features.

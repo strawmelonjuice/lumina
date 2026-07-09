@@ -1,0 +1,4 @@
+# Federation
+Lumina's goal is to be widely-federated while remaining moderatable. Lumina is not the first social media software with federation, which is why it should likely also communicate with existing platforms (like [AT Proto](Federation/Communication%20with%20other%20platforms/AT%20Proto.md) and the [Fediverse](Federation/Communication%20with%20other%20platforms/Fediverse.md)).
+
+Lumina instances themselves can however federate fully or mostly using what was before named [IIC (interinstance communications) and has now been nicknamed the Polite Protocol](Federation/Inter-instance%20communication/Polite%20Protocol.md). 
