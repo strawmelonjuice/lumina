@@ -1,6 +1,6 @@
 oat_version := "0.6.2"
-export LUMINA_CONF_DIR := `echo "$(pwd)/lumina/backend/build/data/config"`
-export LUMINA_DATA_DIR := `echo "$(pwd)/lumina/backend/build/data/data"`
+export LUMINA_CONF_DIR := `mkdir -p "$(pwd)/lumina/backend/build/data/config" && echo "$(pwd)/lumina/backend/build/data/config"`
+export LUMINA_DATA_DIR := `mkdir -p "$(pwd)/lumina/backend/build/data/data" && echo "$(pwd)/lumina/backend/build/data/data"`
 export LUMINA_DB_URL := "postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable"
 
 [private]
@@ -58,3 +58,7 @@ build: prepare-build
 
 dev:
 	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam,mjs,mts,djot,css --debounce 500ms -- just run
+[doc('Runs gleam clean for all Gleam packages within the repository, as well as clear the database.')]
+clean:
+	cd ./lumina/backend/ && gleam clean
+	cd ./lumina/web/initialiser/ && gleam clean
