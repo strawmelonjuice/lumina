@@ -19,19 +19,22 @@
 // See the Licence for the specific language governing permissions and limitations.
 
 // Imports
+import argus
 import gleam/bit_array
 import gleam/bool
 import gleam/erlang/process
+import gleam/option.{Some}
 import gleam/order
 import gleam/otp/actor
 import gleam/otp/supervision
 import gleam/result
+import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp.{type Timestamp}
 import group_registry
 import logging
 import lumina_server/config
-import lumina_server/server/components/shared as lumina_server_components
+import lumina_server/data/sql
 import pog
 import rasa/queue.{type Queue}
 import rasa/table.{type Table}
@@ -42,11 +45,22 @@ pub type Globals {
   Globals(
     sessions: SessionsStore,
     app_registries: #(
-      group_registry.GroupRegistry(lumina_server_components.GlobalMessage),
-      group_registry.GroupRegistry(lumina_server_components.SessionMessage),
+      group_registry.GroupRegistry(GlobalMessage),
+      group_registry.GroupRegistry(SessionMessage),
     ),
     postgres_pool_name: process.Name(pog.Message),
   )
+}
+
+/// Messages sent between either server components or from the server to it's components.
+pub type GlobalMessage {
+  /// Broadcasts the creation of a new user globally, for now this has no use.
+  NewUser(id: BitArray)
+}
+
+/// Messages sent between components --or sent from the server to it's components-- within a specific session.
+pub type SessionMessage {
+  SessionAuthorized
 }
 
 pub fn initialise_global_context(
@@ -212,4 +226,82 @@ pub fn pk_ldid_decode(lumina_did ldid: String) -> Result(BitArray, Nil) {
     }
     _ -> Error(Nil)
   }
+}
+
+// User sessions
+pub type UserSessionAuthError {
+  UserSessionAuthNotExists
+  UserSessionAuthHasIncorrectDid
+  UserSessionAuthNoMatch
+  UserSessionAuthDBError
+  UserSessionAuthArgon2Error
+}
+
+/// Given a session id and basic username-password credentials, creates a UserSession in the database and then returns
+/// the logged in users' information.
+pub fn user_session_authorise(
+  postgres_pool_name postgres_pool_name: process.Name(pog.Message),
+  session_id session_id: String,
+  identifyer identifyer: String,
+  password password: String,
+) {
+  let conn = pog.named_connection(postgres_pool_name)
+  use id <- result.try(case identifyer, string.contains(identifyer, "@") {
+    email, True -> {
+      case sql.local_user_id_by_email(conn, email) {
+        Ok(pog.Returned(count: 1, rows: [sql.LocalUserIdByEmailRow(id)])) ->
+          id
+          |> Ok
+        Ok(pog.Returned(count: 0, rows: [])) -> Error(UserSessionAuthNotExists)
+        Ok(pog.Returned(count: _, rows: _)) -> Error(UserSessionAuthDBError)
+        Error(_) -> Error(UserSessionAuthDBError)
+      }
+    }
+    "did:lumina:" <> _, _ ->
+      pk_ldid_decode(identifyer)
+      |> result.replace_error(UserSessionAuthHasIncorrectDid)
+
+    username, _ -> {
+      case sql.local_user_id_by_username(conn, username) {
+        Ok(pog.Returned(count: 1, rows: [sql.LocalUserIdByUsernameRow(id)])) ->
+          id
+          |> Ok
+        Ok(pog.Returned(count: 0, rows: [])) -> Error(UserSessionAuthNotExists)
+        Ok(pog.Returned(count: _, rows: _)) -> Error(UserSessionAuthDBError)
+        Error(_) -> Error(UserSessionAuthDBError)
+      }
+    }
+  })
+  use password_hashed <- result.try(
+    case sql.password_hash_for_userid(conn, id) {
+      Ok(pog.Returned(
+        count: 1,
+        rows: [sql.PasswordHashForUseridRow(password: Some(hashed))],
+      )) -> Ok(hashed)
+      // We just fetched their id, so if this returns an error in any way,
+      // it's a database error.
+      _ -> Error(UserSessionAuthDBError)
+    },
+  )
+  use match <- result.try(
+    user_password_hash_verify(password_hashed:, password_humane: password)
+    |> result.replace_error(UserSessionAuthArgon2Error),
+  )
+  use <- bool.guard(!match, Error(UserSessionAuthNoMatch))
+  todo as "On successful authorization"
+}
+
+fn user_password_hash_gen(password_humane: String) {
+  use hashes <- result.map({
+    argus.hasher_argon2i()
+    |> argus.hash(password_humane, argus.gen_salt())
+  })
+  hashes.encoded_hash
+}
+
+fn user_password_hash_verify(
+  password_hashed password_hashed: String,
+  password_humane password_humane: String,
+) {
+  argus.verify(password_hashed, password_humane)
 }

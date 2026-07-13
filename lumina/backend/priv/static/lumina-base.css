@@ -151,6 +151,16 @@ html {
     user-select: none;
 }
 
+input {
+    -webkit-user-select: auto;
+    user-select: auto;
+}
+
+input::placeholder {
+	opacity: 30%;
+}
+
+
 /*Pride month banner*/
 body:has(.monthclass-6) main::before {
     margin: 0;

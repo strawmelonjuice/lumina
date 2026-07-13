@@ -30,20 +30,9 @@ import lumina_server/server/components/shared.{
 import lustre
 import lustre/server_component
 
-/// A component consumes certain data to be started.
-/// For now, it only consumes what is normally found in 
-/// `lumina_server_components.ComponentInitialisation`, as that is the only thing beind built, but this may expand!
-pub type ComponentConsumption {
-  ComponentConsumption(
-    global_app_registry: GroupRegistry(GlobalMessage),
-    session_app_registry: GroupRegistry(SessionMessage),
-    session_id: String,
-  )
-}
-
 // Login component ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn login(
-  from: ComponentConsumption,
+  from: lumina_server_components.ComponentInitialisation,
   websocket: fn(
     fn(
       ewe.WebsocketConnection,
@@ -92,15 +81,7 @@ pub fn login(
       process.Selector(server_component.ClientMessage(login.Message)),
     ) {
       let component = login.component()
-      let assert Ok(component) =
-        lustre.start_server_component(
-          component,
-          lumina_server_components.ComponentInitialisation(
-            global_app_registry: from.global_app_registry,
-            session_id: from.session_id,
-            session_app_registry: from.session_app_registry,
-          ),
-        )
+      let assert Ok(component) = lustre.start_server_component(component, from)
 
       let self = process.new_subject()
       let selector =

@@ -37,6 +37,7 @@ import logging
 import lumina_server/config
 import lumina_server/data.{type SessionsStore}
 import lumina_server/server/components
+import lumina_server/server/components/shared
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -102,7 +103,11 @@ pub fn child(global: data.Globals) {
       )
       // Legals
       _, ["robots.txt"] -> serves_robots_txt
-      _, ["licence.txt"] | _, ["license.txt"] | _, ["licence"] | _, ["license"] -> serves_priv_file(
+      _, ["licence.txt"]
+      | _, ["license.txt"]
+      | _, ["licence"]
+      | _, ["license"]
+      -> serves_priv_file(
         _,
         application: "lumina_server",
         path: "/licence",
@@ -148,25 +153,19 @@ fn serve_component(
   request: request.Request(ewe.Connection),
   global: data.Globals,
   component: fn(
-    components.ComponentConsumption,
+    shared.ComponentInitialisation,
     fn(
       fn(ewe.WebsocketConnection, process.Selector(a)) ->
         #(b, process.Selector(a)),
       fn(ewe.WebsocketConnection, b, ewe.WebsocketMessage(a)) ->
         ewe.WebsocketNext(b, a),
       fn(ewe.WebsocketConnection, b) -> Nil,
-    ) ->
-      response.Response(ewe.ResponseBody),
-  ) ->
-    response.Response(ewe.ResponseBody),
+    ) -> response.Response(ewe.ResponseBody),
+  ) -> response.Response(ewe.ResponseBody),
 ) -> response.Response(ewe.ResponseBody) {
   use session_id <- with_session(request:)
   let consumption =
-    components.ComponentConsumption(
-      global_app_registry: global.app_registries.0,
-      session_app_registry: global.app_registries.1,
-      session_id:,
-    )
+    shared.ComponentInitialisation(session_id:, global_context: global)
   component(consumption, fn(value, value_2, value_3) {
     ewe.upgrade_websocket(request, value, value_2, value_3)
   })

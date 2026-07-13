@@ -1,7 +1,7 @@
 //// **Lumina > Server >**
 //// # Web components - Shared
 ////
-//// Shared parts related to and used by the server components 
+//// Shared parts related to and used by the server components
 
 // Lumina/Peonies
 // Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
@@ -22,23 +22,29 @@
 import gleam/erlang/process
 import gleam/list
 import group_registry.{type GroupRegistry}
+import lumina_server/data
 import lustre/effect.{type Effect}
 import lustre/server_component
 
 // Shared types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Re-exports
 /// Messages sent between either server components or from the server to it's components.
-pub type GlobalMessage
+pub type GlobalMessage =
+  data.GlobalMessage
 
 /// Messages sent between components --or sent from the server to it's components-- within a specific session.
-pub type SessionMessage
+pub type SessionMessage =
+  data.SessionMessage
+
+/// Represents a controlled input field value and an error message if invalid.
+/// First value is True when the value is set as initial value, and should be set to False after any update.
+pub type ControlledInput(d) {
+  ControlledInput(initial: Bool, value: d, validity: Result(Nil, String))
+}
 
 /// Default data from which a component is initialised.
 pub type ComponentInitialisation {
-  ComponentInitialisation(
-    global_app_registry: GroupRegistry(GlobalMessage),
-    session_app_registry: GroupRegistry(SessionMessage),
-    session_id: String,
-  )
+  ComponentInitialisation(global_context: data.Globals, session_id: String)
 }
 
 // Shared functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

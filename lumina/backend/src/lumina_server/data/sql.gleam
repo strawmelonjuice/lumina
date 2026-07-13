@@ -5,6 +5,7 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/option.{type Option}
 import pog
 
 /// A row you get from running the `get_self_instance` query
@@ -45,6 +46,120 @@ SELECT name
 	LIMIT 1;
 "
   |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `local_user_id_by_email` query
+/// defined in `./src/lumina_server/data/sql/local_user_id_by_email.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type LocalUserIdByEmailRow {
+  LocalUserIdByEmailRow(id: BitArray)
+}
+
+/// Gets a local user's id (publickey) from the database based on the email they use.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn local_user_id_by_email(
+  db: pog.Connection,
+  email: String,
+) -> Result(pog.Returned(LocalUserIdByEmailRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, decode.bit_array)
+    decode.success(LocalUserIdByEmailRow(id:))
+  }
+
+  "-- Gets a local user's id (publickey) from the database based on the email they use.
+
+SELECT id
+	FROM users
+	WHERE instance_id = '00000000-0000-0000-0000-000000000000'
+	AND email = $1
+	LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(email))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `local_user_id_by_username` query
+/// defined in `./src/lumina_server/data/sql/local_user_id_by_username.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type LocalUserIdByUsernameRow {
+  LocalUserIdByUsernameRow(id: BitArray)
+}
+
+/// Gets a local user's id (publickey) from the database based on the username they use.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn local_user_id_by_username(
+  db: pog.Connection,
+  username: String,
+) -> Result(pog.Returned(LocalUserIdByUsernameRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, decode.bit_array)
+    decode.success(LocalUserIdByUsernameRow(id:))
+  }
+
+  "-- Gets a local user's id (publickey) from the database based on the username they use.
+
+SELECT id
+	FROM users
+	WHERE instance_id = '00000000-0000-0000-0000-000000000000'
+	AND username = $1
+	LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(username))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `password_hash_for_userid` query
+/// defined in `./src/lumina_server/data/sql/password_hash_for_userid.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type PasswordHashForUseridRow {
+  PasswordHashForUseridRow(password: Option(String))
+}
+
+/// Gets a local user's password hash from the database for their id (publickey).
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn password_hash_for_userid(
+  db: pog.Connection,
+  id: BitArray,
+) -> Result(pog.Returned(PasswordHashForUseridRow), pog.QueryError) {
+  let decoder = {
+    use password <- decode.field(0, decode.optional(decode.string))
+    decode.success(PasswordHashForUseridRow(password:))
+  }
+
+  "-- Gets a local user's password hash from the database for their id (publickey).
+
+SELECT password
+	FROM users
+	WHERE instance_id = '00000000-0000-0000-0000-000000000000'
+	AND id = $1
+	LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.bytea(id))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
