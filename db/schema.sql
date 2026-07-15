@@ -299,7 +299,7 @@ COMMENT ON COLUMN public.users.password IS 'The password has of a local user, fo
 CREATE TABLE public.usersessions (
     id uuid NOT NULL,
     user_id bytea NOT NULL,
-    session_key text NOT NULL,
+    session_key bytea NOT NULL,
     last_touched timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -440,14 +440,6 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.usersessions
     ADD CONSTRAINT usersessions_pkey PRIMARY KEY (id);
-
-
---
--- Name: usersessions usersessions_session_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.usersessions
-    ADD CONSTRAINT usersessions_session_key_key UNIQUE (session_key);
 
 
 --

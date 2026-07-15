@@ -7,6 +7,59 @@
 import gleam/dynamic/decode
 import gleam/option.{type Option}
 import pog
+import youid/uuid.{type Uuid}
+
+/// A row you get from running the `create_authenticated_usersession` query
+/// defined in `./src/lumina_server/data/sql/create_authenticated_usersession.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type CreateAuthenticatedUsersessionRow {
+  CreateAuthenticatedUsersessionRow(username: String, email: Option(String))
+}
+
+/// Creates an authenticated session from a session id, and a user id.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn create_authenticated_usersession(
+  db: pog.Connection,
+  arg_1: Uuid,
+  id: BitArray,
+  arg_3: BitArray,
+) -> Result(pog.Returned(CreateAuthenticatedUsersessionRow), pog.QueryError) {
+  let decoder = {
+    use username <- decode.field(0, decode.string)
+    use email <- decode.field(1, decode.optional(decode.string))
+    decode.success(CreateAuthenticatedUsersessionRow(username:, email:))
+  }
+
+  "-- Creates an authenticated session from a session id, and a user id.
+
+
+
+WITH inserted AS (
+	INSERT
+		INTO usersessions (id, user_id, session_key)
+		VALUES ($1, $2, $3)
+		RETURNING 1
+)
+SELECT username,email
+	FROM users
+	WHERE instance_id = '00000000-0000-0000-0000-000000000000'
+	AND id = $2
+	AND EXISTS (SELECT 1 FROM inserted)
+	LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.bytea(id))
+  |> pog.parameter(pog.bytea(arg_3))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
 
 /// A row you get from running the `get_self_instance` query
 /// defined in `./src/lumina_server/data/sql/get_self_instance.sql`.

@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS timelines (
 CREATE TABLE IF NOT EXISTS usersessions (
     id uuid PRIMARY KEY,
     user_id BYTEA NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    session_key TEXT NOT NULL UNIQUE,
+    session_key BYTEA NOT NULL,
     last_touched TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE usersessions IS 'User sessions are not to be confused with the Session Store ETS table, user sessions refer to logged in sessions. However, the "id" used here, refers to the SessionStore entry.';

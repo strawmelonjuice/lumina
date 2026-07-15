@@ -18,12 +18,13 @@
 // This software is provided "AS IS", WITHOUT WARRANTY OF ANY KIND.
 // See the Licence for the specific language governing permissions and limitations.
 
-// Imports
+// Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import argus
 import gleam/bit_array
 import gleam/bool
+import gleam/crypto
 import gleam/erlang/process
-import gleam/option.{Some}
+import gleam/option.{type Option, Some}
 import gleam/order
 import gleam/otp/actor
 import gleam/otp/supervision
@@ -39,6 +40,7 @@ import pog
 import rasa/queue.{type Queue}
 import rasa/table.{type Table}
 import witness
+import youid/uuid
 
 // Globals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub type Globals {
@@ -228,13 +230,24 @@ pub fn pk_ldid_decode(lumina_did ldid: String) -> Result(BitArray, Nil) {
   }
 }
 
-// User sessions
+// User sessions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub type UserSessionAuthError {
   UserSessionAuthNotExists
   UserSessionAuthHasIncorrectDid
   UserSessionAuthNoMatch
+  UserSessionAuthSessionUUIDInvalid
   UserSessionAuthDBError
   UserSessionAuthArgon2Error
+}
+
+pub type UserSession {
+  UserSession(
+    user_id: BitArray,
+    session_uuid: uuid.Uuid,
+    revival_key: String,
+    username: String,
+    email: Option(String),
+  )
 }
 
 /// Given a session id and basic username-password credentials, creates a UserSession in the database and then returns
@@ -246,7 +259,12 @@ pub fn user_session_authorise(
   password password: String,
 ) {
   let conn = pog.named_connection(postgres_pool_name)
-  use id <- result.try(case identifyer, string.contains(identifyer, "@") {
+  use session_uuid <- result.try(
+    session_id
+    |> uuid.from_string()
+    |> result.replace_error(UserSessionAuthSessionUUIDInvalid),
+  )
+  use user_id <- result.try(case identifyer, string.contains(identifyer, "@") {
     email, True -> {
       case sql.local_user_id_by_email(conn, email) {
         Ok(pog.Returned(count: 1, rows: [sql.LocalUserIdByEmailRow(id)])) ->
@@ -273,7 +291,7 @@ pub fn user_session_authorise(
     }
   })
   use password_hashed <- result.try(
-    case sql.password_hash_for_userid(conn, id) {
+    case sql.password_hash_for_userid(conn, user_id) {
       Ok(pog.Returned(
         count: 1,
         rows: [sql.PasswordHashForUseridRow(password: Some(hashed))],
@@ -288,7 +306,23 @@ pub fn user_session_authorise(
     |> result.replace_error(UserSessionAuthArgon2Error),
   )
   use <- bool.guard(!match, Error(UserSessionAuthNoMatch))
-  todo as "On successful authorization"
+  // User is authenticated! Time to make a UserSession for them.
+  let revival_key = random_string(80)
+  case
+    sql.create_authenticated_usersession(
+      conn,
+      session_uuid,
+      user_id,
+      crypto.hash(crypto.Sha384, <<revival_key:utf8>>),
+    )
+  {
+    Ok(pog.Returned(
+      count: 1,
+      rows: [sql.CreateAuthenticatedUsersessionRow(username:, email:)],
+    )) ->
+      Ok(UserSession(user_id:, revival_key:, username:, session_uuid:, email:))
+    _ -> Error(UserSessionAuthDBError)
+  }
 }
 
 fn user_password_hash_gen(password_humane: String) {
@@ -304,4 +338,11 @@ fn user_password_hash_verify(
   password_humane password_humane: String,
 ) {
   argus.verify(password_hashed, password_humane)
+}
+
+// Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pub fn random_string(length: Int) -> String {
+  crypto.strong_random_bytes(length)
+  |> bit_array.base64_url_encode(False)
+  |> string.slice(0, length)
 }

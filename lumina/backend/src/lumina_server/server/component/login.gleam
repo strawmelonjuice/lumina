@@ -93,7 +93,9 @@ pub opaque type Message {
   UserChangedInputUsername(now: String)
   UserChangedInputPassword(now: String)
   UserClickedSubmit
-  AuthorisationAttemptResult(Result(Nil, data.UserSessionAuthError))
+  AuthorisationAttemptResult(
+    Result(data.UserSession, data.UserSessionAuthError),
+  )
 }
 
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
@@ -186,7 +188,14 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       )
     }
 
-    AuthorisationAttemptResult(Ok(_)) -> todo
+    AuthorisationAttemptResult(Ok(data.UserSession(
+      user_id:,
+      session_uuid:,
+      revival_key:,
+      username:,
+      email:,
+    ))) -> todo
+
     AuthorisationAttemptResult(Error(data.UserSessionAuthNoMatch))
     | AuthorisationAttemptResult(Error(data.UserSessionAuthNotExists)) -> #(
       Model(
@@ -224,7 +233,8 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       ),
       effect.none(),
     )
-    AuthorisationAttemptResult(Error(data.UserSessionAuthDBError))
+    AuthorisationAttemptResult(Error(data.UserSessionAuthSessionUUIDInvalid))
+    | AuthorisationAttemptResult(Error(data.UserSessionAuthDBError))
     | AuthorisationAttemptResult(Error(data.UserSessionAuthArgon2Error)) -> #(
       Model(
         ..model,
