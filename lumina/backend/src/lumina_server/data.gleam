@@ -20,14 +20,16 @@
 
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import argus
+import envoy
 import gleam/bit_array
 import gleam/bool
 import gleam/crypto
 import gleam/erlang/process
-import gleam/option.{type Option, Some}
+import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/otp/actor
 import gleam/otp/supervision
+import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/time/duration
@@ -39,12 +41,14 @@ import lumina_server/data/sql
 import pog
 import rasa/queue.{type Queue}
 import rasa/table.{type Table}
+import simplifile
 import witness
 import youid/uuid
 
 // Globals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub type Globals {
   Globals(
+    secrets: GlobalSecrets,
     sessions: SessionsStore,
     app_registries: #(
       group_registry.GroupRegistry(GlobalMessage),
@@ -52,6 +56,10 @@ pub type Globals {
     ),
     postgres_pool_name: process.Name(pog.Message),
   )
+}
+
+pub type GlobalSecrets {
+  GlobalSecrets(cookie_secret: BitArray)
 }
 
 /// Messages sent between either server components or from the server to it's components.
@@ -80,6 +88,70 @@ pub fn initialise_global_context(
     )
   }
 
+  let secrets =
+    GlobalSecrets(cookie_secret: {
+      let secretfile = absname_join(data_dir(), "./session-cookie-secret")
+      case
+        simplifile.read(secretfile)
+        |> result.map_error(Some)
+        |> result.try(fn(string) {
+          string.split_once(string, "\n") |> result.replace_error(None)
+        })
+        |> result.map(pair.second)
+        |> result.try(fn(string) {
+          bit_array.base64_decode(string)
+          |> result.replace_error(None)
+        })
+      {
+        Ok(res) -> res
+        Error(is_fs) -> {
+          use <- bool.lazy_guard(
+            is_fs |> option.is_some
+              && simplifile.is_file(secretfile) == Ok(True),
+            fn() {
+              witness.this(
+                logging.Critical,
+                "Could not read cookie secrets file",
+                [
+                  witness.string("path", secretfile),
+                ],
+              )
+              panic as "Could not read cookie secrets file."
+            },
+          )
+          witness.this(logging.Notice, "Writing new cookie secrets file.", [
+            witness.string("path", secretfile),
+          ])
+          let new_secret = crypto.strong_random_bytes(300)
+          case
+            simplifile.write(
+              to: secretfile,
+              contents: string.join(
+                [
+                  "This file contains the secret used to sign session cookies with, please don't ever edit it! If you want to invalidate all cookies, deleting this file is better.",
+                  new_secret |> bit_array.base64_encode(False),
+                ],
+                with: "\n",
+              ),
+            )
+          {
+            Ok(Nil) -> new_secret
+            Error(e) -> {
+              witness.this(
+                logging.Critical,
+                "Could not write cookie secrets file",
+                [
+                  witness.string("path", secretfile),
+                  witness.string("error", simplifile.describe_error(e)),
+                ],
+              )
+              panic as "Could not write cookie secrets file."
+            }
+          }
+        }
+      }
+    })
+
   let app_registries = {
     let assert Ok(actor.Started(data: global_app_registry, ..)) =
       group_registry.start(process.new_name("global-app-registry"))
@@ -87,7 +159,7 @@ pub fn initialise_global_context(
       group_registry.start(process.new_name("session-app-registry"))
     #(global_app_registry, session_app_registry)
   }
-  Globals(sessions:, app_registries:, postgres_pool_name:)
+  Globals(sessions:, app_registries:, postgres_pool_name:, secrets:)
 }
 
 // Sessions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,7 +266,7 @@ pub fn csrf_create_session(
 // Postgres interaction ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /// Actor managing the Postgres database pool in the background.
-/// Supervised by main process.
+/// Supervised by main process
 pub fn db_child(pool_name: process.Name(pog.Message)) {
   let db_url = config.database_url()
   case pog.url_config(pool_name, db_url) {
@@ -345,4 +417,12 @@ pub fn random_string(length: Int) -> String {
   crypto.strong_random_bytes(length)
   |> bit_array.base64_url_encode(False)
   |> string.slice(0, length)
+}
+
+@external(erlang, "filename", "absname_join")
+fn absname_join(dir: String, file: String) -> String
+
+fn data_dir() -> String {
+  envoy.get("LUMINA_DATA_DIR")
+  |> result.unwrap("/data/data")
 }

@@ -21,6 +21,7 @@
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import ewe.{type Request, type Response}
 import gleam/bytes_tree
+import gleam/crypto
 import gleam/erlang/application
 import gleam/erlang/process
 import gleam/http
@@ -45,7 +46,7 @@ import witness
 import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pub fn child(global: data.Globals) {
+pub fn child(global_context: data.Globals) {
   witness.set_process_fields([
     witness.string("Process", "Webserver - main"),
   ])
@@ -60,45 +61,53 @@ pub fn child(global: data.Globals) {
     |> case req.method, request.path_segments(req) {
       http.Get, [] | http.Get, ["app"] | http.Get, ["app", ..] -> serves_spa(
         _,
-        global.sessions,
+        global_context:,
       )
       http.Get, ["static", "lumina", "lumina.svg"]
       | http.Get, ["favicon.ico"]
       | http.Get, ["lumina.svg"]
       -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/static/lumina.svg",
         mime: "image/svg+xml; charset=utf-8",
       )
       http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/lumina.min.css",
         mime: "text/css; charset=utf-8",
       )
       http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/lumina.css",
         mime: "text/css; charset=utf-8",
       )
       http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/client.min.js",
         mime: "application/javascript; charset=utf-8",
       )
       http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/client.js",
         mime: "application/javascript; charset=utf-8",
       )
-      http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status
+      http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
+        _,
+        global_context,
+      )
       http.Get, ["ws", "web", "login"] -> serve_component(
         _,
-        global,
+        global_context,
         components.login,
       )
       // Legals
@@ -109,6 +118,7 @@ pub fn child(global: data.Globals) {
       | _, ["license"]
       -> serves_priv_file(
         _,
+        global_context:,
         application: "lumina_server",
         path: "/licence",
         mime: "text/plain",
@@ -163,7 +173,7 @@ fn serve_component(
     ) -> response.Response(ewe.ResponseBody),
   ) -> response.Response(ewe.ResponseBody),
 ) -> response.Response(ewe.ResponseBody) {
-  use session_id <- with_session(request:)
+  use session_id <- with_session(request:, global_context: global)
   let consumption =
     shared.ComponentInitialisation(session_id:, global_context: global)
   component(consumption, fn(value, value_2, value_3) {
@@ -173,8 +183,9 @@ fn serve_component(
 
 fn api_auth_status(
   request: request.Request(ewe.Connection),
+  global_context: data.Globals,
 ) -> response.Response(ewe.ResponseBody) {
-  use session <- with_session(request:)
+  use session <- with_session(request:, global_context:)
   witness.this(logging.Info, "Request answered with hardcoded answer", [
     witness.int("HTTP CODE", 200),
   ])
@@ -190,11 +201,12 @@ fn api_auth_status(
 
 fn serves_priv_file(
   request: Request,
+  global_context global_context: data.Globals,
   application application: String,
   path path: String,
   mime mime: String,
 ) -> Response {
-  use _ <- with_session(request:)
+  use _ <- with_session(request:, global_context:)
   use dir <- try_404(application.priv_directory(application))
   let resolved = absname_join(dir, string.remove_prefix(path, "/"))
   case string.starts_with(resolved, dir <> "/") {
@@ -222,8 +234,12 @@ fn not_found(_) -> Response {
   |> response.set_body(ewe.TextData("Could not find that!"))
 }
 
-fn serves_spa(request: Request, session_store: SessionsStore) -> Response {
-  use session_id <- with_session(request:)
+fn serves_spa(
+  request: Request,
+  global_context global_context: data.Globals,
+) -> Response {
+  let session_store = global_context.sessions
+  use session_id <- with_session(request:, global_context:)
   let csrf_token = csrf_token(session_id, session_store)
   let html =
     html.html([attribute.lang("en")], [
@@ -403,16 +419,51 @@ Disallow: /
 
 // Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-fn with_session(then: fn(String) -> Response, request req: Request) {
+fn with_session(
+  then: fn(String) -> Response,
+  request req: Request,
+  global_context globals: data.Globals,
+) {
   let session =
     request.get_cookies(req)
     |> list.key_find("session-set")
-    |> result.lazy_unwrap(uuid.v4_string)
-  witness.add_process_fields([witness.string("session cookie", session)])
-  then(session)
+    |> result.map(fn(unverified) {
+      case
+        crypto.verify_signed_message(unverified, globals.secrets.cookie_secret)
+      {
+        Ok(verified) -> uuid.from_bit_array(verified)
+        Error(Nil) -> {
+          witness.this(
+            logging.Warning,
+            "Tampered session cookie found, new session is generated.",
+            [],
+          )
+          uuid.v4()
+          |> Ok
+        }
+      }
+    })
+    |> result.flatten()
+    |> result.lazy_unwrap(fn() {
+      witness.this(
+        logging.Error,
+        "Could not decode session cookie, new session is generated.",
+        [],
+      )
+      uuid.v4()
+    })
+  let session_stringified = session |> uuid.to_string
+  witness.add_process_fields([
+    witness.string("session cookie", session_stringified),
+  ])
+  then(session_stringified)
   |> response.set_cookie(
     "session-set",
-    session,
+    crypto.sign_message(
+      session |> uuid.to_bit_array,
+      globals.secrets.cookie_secret,
+      crypto.Sha512,
+    ),
     cookie.Attributes(
       ..cookie.defaults(req.scheme),
       http_only: True,
