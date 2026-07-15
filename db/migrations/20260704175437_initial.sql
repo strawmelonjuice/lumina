@@ -115,7 +115,7 @@ COMMENT ON COLUMN usersessions.user_id IS 'The user logged in to this session.';
 COMMENT ON COLUMN usersessions.session_key IS 'Secret hash that on match allows a session to be revived. Upon successful revival, the id is replaced with the id of the session that revived the user session.';
 COMMENT ON COLUMN usersessions.last_touched IS 'Changed on INSERT or UPDATE to allow garbage cleanup of user sessions if they are older than 30 days.';
 
--- Indices for performance
+-- Indices for performance ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CREATE INDEX IF NOT EXISTS idx_items_author ON items(author_id);
 CREATE INDEX IF NOT EXISTS idx_timelines_ts ON timelines(timestamp);
 CREATE INDEX IF NOT EXISTS idx_users_instance ON users(instance_id);
@@ -137,4 +137,4 @@ DROP TABLE IF EXISTS logs;
 
 DROP TYPE IF EXISTS item_type_enum;
 DROP TYPE IF EXISTS log_level;
-DROP COMMENT IF EXISTS
+DROP TYPE IF EXISTS federationlevel;
