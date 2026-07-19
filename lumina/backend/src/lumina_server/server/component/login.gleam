@@ -21,6 +21,8 @@
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import gleam/bool
 import gleam/int
+import gleam/json
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import lumina_server/data
@@ -35,6 +37,7 @@ import lustre/element
 import lustre/element/html
 import lustre/event
 import lustre/server_component
+import youid/uuid
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn component() -> App(ComponentInitialisation, Model, Message) {
@@ -101,10 +104,53 @@ pub opaque type Message {
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
   case message {
     AppReceivedGlobalBroadcast(data.NewUser(..)) -> #(model, effect.none())
-    AppReceivedSessionMessage(data.SessionAuthorized) -> {
+    AppReceivedSessionMessage(data.SessionAuthorized(..)) -> {
       // This was likely this application's own call
       #(model, effect.none())
     }
+
+    AuthorisationAttemptResult(Ok(data.UserSession(
+      user_id:,
+      session_uuid:,
+      revival_key:,
+      username:,
+      email:,
+    ))) -> #(
+      Model(..model, page_status: Error("Success!")),
+      effect.batch([
+        lumina_server_components.broadcast_sessionwide(
+          model.global_context.app_registries.1,
+          model.session_id,
+          data.SessionAuthorized(data.UserSession(
+            user_id:,
+            session_uuid:,
+            revival_key:,
+            username:,
+            email:,
+          )),
+        ),
+        server_component.emit(
+          "update",
+          json.object([
+            #("user_did", json.string(data.pk_ldid_encode(user_id))),
+            #("user_name", json.string(username)),
+            #("user_email", case email {
+              Some(email) -> json.string(email)
+              None -> json.null()
+            }),
+            #(
+              "user_avatar",
+              // for now
+              json.null(),
+            ),
+
+            #("session_id", json.string(uuid.to_string(session_uuid))),
+            #("session_revive-key", json.string(revival_key)),
+          ]),
+        ),
+      ]),
+    )
+
     UserChangedInputUsername(now:) -> #(
       Model(..model, field_username: {
         let now =
@@ -187,14 +233,6 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
         effect.none(),
       )
     }
-
-    AuthorisationAttemptResult(Ok(data.UserSession(
-      user_id:,
-      session_uuid:,
-      revival_key:,
-      username:,
-      email:,
-    ))) -> todo
 
     AuthorisationAttemptResult(Error(data.UserSessionAuthNoMatch))
     | AuthorisationAttemptResult(Error(data.UserSessionAuthNotExists)) -> #(

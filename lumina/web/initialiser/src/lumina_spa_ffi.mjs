@@ -2,29 +2,32 @@ import { Result$Ok, Result$Error } from "./gleam";
 
 // localStorage helpers
 export function getSessionRevivekey() {
- let val = window.localStorage.getItem("sessionrevive")
- if (val !== null) {
-    return Result$Ok(val);
-  } else {
-    return Result$Error(null);
-  }
+	let val = window.localStorage.getItem("sessionrevive");
+	if (val !== null) {
+		return Result$Ok(val);
+	} else {
+		return Result$Error(null);
+	}
+}
+export function storeSessionRevivekey(c) {
+	window.localStorage.setItem("sessionrevive", c);
 }
 
 // Timer helper
 export function with_timeout(delay, cb) {
-  return window.setTimeout(cb, delay);
+	return window.setTimeout(cb, delay);
 }
 
 // Console log helpers
 export function logLog(any) {
-  console.log("[lumina_spa] ", any)
+	console.log("[lumina_spa] ", any);
 }
 export function logInfo(any) {
-  console.info("[lumina_spa] ", any)
+	console.info("[lumina_spa] ", any);
 }
 export function logWarn(any) {
-  console.warn("[lumina_spa] ", any)
+	console.warn("[lumina_spa] ", any);
 }
 export function logError(any) {
-  console.warn("[lumina_spa] ", any)
+	console.warn("[lumina_spa] ", any);
 }

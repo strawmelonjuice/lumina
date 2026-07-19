@@ -38,19 +38,24 @@ pub fn main() {
 // Model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 type Model {
-  Model(route: Route, user_authenticated: Option(MyUser))
+  Model(
+    route: Route,
+    user_authenticated: Option(MyUser),
+    session_id: Option(String),
+  )
 }
 
 pub type MyUser {
   MyUser(
     /// User ID (uuid)
-    uid: String,
+    user_did: String,
     /// Username
-    username: String,
+    user_name: String,
     /// Email
-    email: String,
-    /// Avatar as uri string, either a full URL or a base64-encoded 'data:'-string
-    avatar: String,
+    user_email: Option(String),
+    /// Avatar as uri string, either a full URL or a base64-encoded 'data:'-string. If set to none, the user's display
+    /// name initials are used instead.
+    user_avatar: Option(String),
     /// Notifications
     notifs: List(
       // This should be something more specific than a string, but for now it's not.
@@ -119,7 +124,7 @@ fn init(_) -> #(Model, Effect(Message)) {
     Error(_) -> Index
   }
 
-  let model = Model(route:, user_authenticated: None)
+  let model = Model(route:, user_authenticated: None, session_id: None)
 
   let effect =
     effect.batch([
@@ -157,10 +162,26 @@ fn wait_message(message: Message, delay: Int) {
 fn check_auth_status() {
   let url = "/api/3.1/session/auth-status/"
   let decoder = {
-    use authenticated <- decode.field("authenticated", decode.bool)
+    use authenticated <- decode.then(decode.at(["authenticated"], decode.bool))
     case authenticated {
-      False -> decode.success(None)
-      True -> todo
+      False ->
+        None
+        |> decode.success
+      True -> {
+        use user_did <- decode.field("user_did", decode.string)
+        use user_name <- decode.field("user_name", decode.string)
+        use user_email <- decode.field(
+          "user_email",
+          decode.optional(decode.string),
+        )
+        use session_id <- decode.field("session_id", decode.string)
+        use session_revive_key <- decode.field(
+          "session_revive-key",
+          decode.string,
+        )
+
+        todo
+      }
     }
   }
   let handler =
@@ -178,6 +199,9 @@ fn check_auth_status() {
 @external(javascript, "./lumina_spa_ffi", "getSessionRevivekey")
 fn get_session_revive_key() -> Result(String, Nil)
 
+@external(javascript, "./lumina_spa_ffi", "storeSessionRevivekey")
+fn store_session_revive_key(_: String) -> Nil
+
 // Update ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 type Message {
@@ -185,6 +209,14 @@ type Message {
   AuthenticationCheckResponse(Option(MyUser))
   RetryAuthenticationCheck
   UserNavigatedBack(by: Int)
+  NewUserSession(
+    user_did: String,
+    user_name: String,
+    user_email: Option(String),
+    user_avatar: Option(String),
+    session_id: String,
+    session_revive_key: String,
+  )
 }
 
 fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
@@ -197,50 +229,125 @@ fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
       model,
       wait_message(RetryAuthenticationCheck, 1200),
     )
-    RetryAuthenticationCheck -> #(model, check_auth_status())
+    RetryAuthenticationCheck -> {
+      #(model, {
+        case model.user_authenticated {
+          Some(..) -> effect.none()
+          None -> check_auth_status()
+        }
+      })
+    }
 
     AuthenticationCheckResponse(_) -> todo
+    NewUserSession(
+      user_did:,
+      user_name:,
+      user_email:,
+      user_avatar:,
+      session_id:,
+      session_revive_key:,
+    ) -> {
+      #(
+        Model(
+          ..model,
+          session_id: Some(session_id),
+          user_authenticated: Some(
+            MyUser(user_did:, user_name:, user_email:, user_avatar:, notifs: []),
+          ),
+        ),
+        effect.batch([
+          wait_message(UserNavigatedTo(route: Timeline("global")), 300),
+          effect.from(fn(_) { store_session_revive_key(session_revive_key) }),
+        ]),
+      )
+    }
   }
 }
 
 // View ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 fn view(model: Model) -> Element(Message) {
-  let #(sidebar_content, main_page_content) = case model.route {
-    Index -> view_index(model)
-    Login -> #(view_default_sidebar(model), [
-      server_component.element([server_component.route("/ws/web/login")], []),
-    ])
+  let #(sidebar_content, main_page_content) = {
+    case model.route {
+      Index -> view_index(model)
+      Login -> {
+        #(view_default_sidebar(model), [
+          server_component.element(
+            [
+              server_component.route("/ws/web/login"),
+              event.on("update", {
+                // details
+                decode.field(
+                  "details",
+                  {
+                    use user_did <- decode.field("user_did", decode.string)
+                    use user_name <- decode.field("user_name", decode.string)
+                    use user_email <- decode.field(
+                      "user_email",
+                      decode.optional(decode.string),
+                    )
+                    use user_avatar <- decode.field(
+                      "user_avatar",
+                      decode.optional(decode.string),
+                    )
+                    use session_id <- decode.field("session_id", decode.string)
+                    use session_revive_key <- decode.field(
+                      "session_revive-key",
+                      decode.string,
+                    )
 
-    Post(post_id) -> #(view_default_sidebar(model), [
-      html.div([], [
-        server_component.element(
-          [server_component.route("/ws/web/postrender/" <> post_id)],
-          [],
-        ),
-      ]),
-    ])
+                    decode.success(NewUserSession(
+                      user_did:,
+                      user_name:,
+                      user_email:,
+                      user_avatar:,
+                      session_id:,
+                      session_revive_key:,
+                    ))
+                  },
+                  decode.success,
+                )
+                // end details
+              }),
+            ],
+            [],
+          ),
+        ])
+      }
 
-    About -> view_about(model)
-    NotFound(_) -> view_not_found()
-    Register -> #(view_default_sidebar(model), [
-      server_component.element([server_component.route("/ws/web/register")], []),
-    ])
-    Timeline(id:) -> #(
-      [
+      Post(post_id) -> #(view_default_sidebar(model), [
+        html.div([], [
+          server_component.element(
+            [server_component.route("/ws/web/postrender/" <> post_id)],
+            [],
+          ),
+        ]),
+      ])
+
+      About -> view_about(model)
+      NotFound(_) -> view_not_found()
+      Register -> #(view_default_sidebar(model), [
         server_component.element(
-          [server_component.route("/ws/web/timeline/" <> id <> "/aside")],
+          [server_component.route("/ws/web/register")],
           [],
         ),
-      ],
-      [
-        server_component.element(
-          [server_component.route("/ws/web/timeline/" <> id <> "/main")],
-          [],
-        ),
-      ],
-    )
-    External(location:) -> view_external(location)
+      ])
+      Timeline(id:) -> #(
+        [
+          server_component.element(
+            [server_component.route("/ws/web/timeline/" <> id <> "/aside")],
+            [],
+          ),
+        ],
+        [
+          server_component.element(
+            [server_component.route("/ws/web/timeline/" <> id <> "/main")],
+            [],
+          ),
+        ],
+      )
+      External(location:) -> view_external(location)
+    }
   }
 
   html.div([attribute.data("sidebar-layout", "")], [

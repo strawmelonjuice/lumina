@@ -70,7 +70,7 @@ pub type GlobalMessage {
 
 /// Messages sent between components --or sent from the server to it's components-- within a specific session.
 pub type SessionMessage {
-  SessionAuthorized
+  SessionAuthorized(UserSession)
 }
 
 pub fn initialise_global_context(
