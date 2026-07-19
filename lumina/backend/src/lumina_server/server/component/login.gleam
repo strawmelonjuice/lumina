@@ -321,7 +321,7 @@ fn view(model: Model) -> element.Element(Message) {
           html.form([], [
             html.fieldset([attribute.class("vstack")], [
               html.div([attribute.data("field", "")], [
-                html.label([attribute.for("username-error-input")], [
+                html.label([attribute.for("field-id")], [
                   html.text(" Email or username "),
                 ]),
                 html.input([
