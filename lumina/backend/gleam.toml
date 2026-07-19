@@ -28,6 +28,7 @@ group_registry = ">= 1.0.0 and < 2.0.0"
 pog = ">= 4.1.0 and < 5.0.0"
 gleam_crypto = ">= 1.6.0 and < 2.0.0"
 argus = ">= 1.0.4 and < 2.0.0"
+friendly_id = ">= 2.1.0 and < 3.0.0"
 
 [dev_dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

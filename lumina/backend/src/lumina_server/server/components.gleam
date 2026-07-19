@@ -22,11 +22,9 @@
 import ewe
 import gleam/erlang/process.{type Subject}
 import gleam/json
-import group_registry.{type GroupRegistry}
 import lumina_server/server/component/login
-import lumina_server/server/components/shared.{
-  type GlobalMessage, type SessionMessage,
-} as lumina_server_components
+import lumina_server/server/component/signup
+import lumina_server/server/components/shared as lumina_server_components
 import lustre
 import lustre/server_component
 
@@ -131,6 +129,115 @@ pub fn login(
       state: #(
         Subject(server_component.ClientMessage(login.Message)),
         lustre.Runtime(login.Message),
+      ),
+    ) -> Nil {
+      lustre.shutdown()
+      |> lustre.send(to: state.1)
+    },
+  )
+}
+
+// Register ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pub fn signup(
+  from: lumina_server_components.ComponentInitialisation,
+  websocket: fn(
+    fn(
+      ewe.WebsocketConnection,
+      process.Selector(server_component.ClientMessage(signup.Message)),
+    ) ->
+      #(
+        #(
+          Subject(server_component.ClientMessage(signup.Message)),
+          lustre.Runtime(signup.Message),
+        ),
+        process.Selector(server_component.ClientMessage(signup.Message)),
+      ),
+    fn(
+      ewe.WebsocketConnection,
+      #(
+        Subject(server_component.ClientMessage(signup.Message)),
+        lustre.Runtime(signup.Message),
+      ),
+      ewe.WebsocketMessage(server_component.ClientMessage(signup.Message)),
+    ) ->
+      ewe.WebsocketNext(
+        #(
+          Subject(server_component.ClientMessage(signup.Message)),
+          lustre.Runtime(signup.Message),
+        ),
+        server_component.ClientMessage(signup.Message),
+      ),
+    fn(
+      ewe.WebsocketConnection,
+      #(
+        Subject(server_component.ClientMessage(signup.Message)),
+        lustre.Runtime(signup.Message),
+      ),
+    ) -> Nil,
+  ) -> response,
+) -> response {
+  websocket(
+    fn(
+      _: ewe.WebsocketConnection,
+      _: process.Selector(server_component.ClientMessage(signup.Message)),
+    ) -> #(
+      #(
+        Subject(server_component.ClientMessage(signup.Message)),
+        lustre.Runtime(signup.Message),
+      ),
+      process.Selector(server_component.ClientMessage(signup.Message)),
+    ) {
+      let component = signup.component()
+      let assert Ok(component) = lustre.start_server_component(component, from)
+
+      let self = process.new_subject()
+      let selector =
+        process.new_selector()
+        |> process.select(self)
+      let selector = process.select(selector, self)
+
+      server_component.register_subject(self)
+      |> lustre.send(to: component)
+      #(#(self, component), selector)
+    },
+    fn(
+      connection: ewe.WebsocketConnection,
+      state: #(
+        Subject(server_component.ClientMessage(signup.Message)),
+        lustre.Runtime(signup.Message),
+      ),
+      message: ewe.WebsocketMessage(
+        server_component.ClientMessage(signup.Message),
+      ),
+    ) {
+      case message {
+        ewe.Text(json) -> {
+          case json.parse(json, server_component.runtime_message_decoder()) {
+            Ok(runtime_message) -> lustre.send(state.1, runtime_message)
+            Error(_) -> Nil
+          }
+
+          ewe.websocket_continue(state)
+        }
+
+        ewe.Binary(_) -> {
+          ewe.websocket_continue(state)
+        }
+
+        ewe.User(client_message) -> {
+          let json = server_component.client_message_to_json(client_message)
+          let assert Ok(_) =
+            ewe.send_text_frame(connection, json.to_string(json))
+
+          ewe.websocket_continue(state)
+        }
+      }
+    },
+    fn(
+      _,
+      state: #(
+        Subject(server_component.ClientMessage(signup.Message)),
+        lustre.Runtime(signup.Message),
       ),
     ) -> Nil {
       lustre.shutdown()

@@ -110,6 +110,12 @@ pub fn child(global_context: data.Globals) {
         global_context,
         components.login,
       )
+
+      http.Get, ["ws", "web", "register"] -> serve_component(
+        _,
+        global_context,
+        components.signup,
+      )
       // Legals
       _, ["robots.txt"] -> serves_robots_txt
       _, ["licence.txt"]

@@ -397,6 +397,24 @@ pub fn user_session_authorise(
   }
 }
 
+pub type UserRegistrationError {
+  RegistrationSuccessButSessionCreationFailed(UserSessionAuthError)
+}
+
+pub fn user_register_and_authorise(
+  postgres_pool_name postgres_pool_name: process.Name(pog.Message),
+  session_id session_id: String,
+  email new_email: String,
+  username new_username: String,
+  password new_password: String,
+  display_name new_display_name: String,
+  // This depends on config we haven't specified well enough yet!
+  invite_code invite_code: Option(String),
+) -> Result(UserSession, UserRegistrationError) {
+  todo
+}
+
+// Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fn user_password_hash_gen(password_humane: String) {
   use hashes <- result.map({
     argus.hasher_argon2i()
@@ -412,7 +430,6 @@ fn user_password_hash_verify(
   argus.verify(password_hashed, password_humane)
 }
 
-// Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn random_string(length: Int) -> String {
   crypto.strong_random_bytes(length)
   |> bit_array.base64_url_encode(False)
