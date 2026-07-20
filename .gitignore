@@ -6,6 +6,7 @@ lumina/backend/priv/lumina.css
 lumina/backend/priv/lumina.min.css
 lumina/backend/priv/licence
 build/
+vendor/
 lumina/web/initialiser/prelude.mts
 lumina/web/initialiser/src/gleam.mts
 lumina/web/initialiser/src/gleam.mjs
