@@ -34,6 +34,8 @@ import witness
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+/// This is the main entrypoint to `gleam run`, and as long as this function runs, the application defined in `start()` runs.
+/// It also starts the OTP observer when ran with `just dev`.
 pub fn main() {
   let _ =
     envoy.get("START_OBSERVER")
@@ -47,6 +49,8 @@ type ErlangResult
 @external(erlang, "observer", "start")
 fn observer_start() -> ErlangResult
 
+/// This callback is ran by the OTP runtime when Lumina is loaded into the BEAM, it
+/// starts the application as an OTP application, which means the supervision tree is actually utilised!
 pub fn start(
   _app: atom.Atom,
   _type: a,
