@@ -38,16 +38,20 @@ reference](https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13) (par
 
 | What have you done?                         | Commit message prefix |
 | ------------------------------------------- | --------------------- |
-| Bug fix?	                               | `[fix]`               |
-| New or changed feature in API/UI?           | `[feat]`              |
-| Performance improvement?                    | `[perf]`              |
-| Code restructuring without behavior change? | `[refactor]`          |
-| Formatting only?						 | `[style]`             |
-| Tests added/corrected?					 | `[test]`			|
-| Documentation only?					 | `[docs]`			|
-| Build tools, dependencies, versions?		 | `[build]`			|
-| DevOps, infrastructure, or backups?		 | `[ops]`			|
-| Anything else						 | `[chore]`			|
+| Bug fix?	                               | `fix:`               |
+| New or changed feature in API/UI?           | `feat:`              |
+| Performance improvement?                    | `perf:`              |
+| Code restructuring without behavior change? | `refactor:`          |
+| Formatting only?						 | `style:`             |
+| Tests added/corrected?					 | `test:`			|
+| CI workflow modified/added/corrected					 | `ci:`			|
+| Documentation only?					 | `docs:`			|
+| Build tools, dependencies, versions?		 | `build:`			|
+| DevOps, infrastructure, or backups?		 | `ops:`			|
+| Anything else						 | `chore:`			|
+
+Where applicable and preferred, you can use scopes like (examples) `ci(test): Created an action to test for x` 
+or `style(database): Scheme now includes a whitespace before SELECT`.
 
 While following this can make commits easier to categorise, for bigger groups of changes (usually branched changes in
 this case) that may be squashed, it's completely understandable not to follow this.
@@ -64,19 +68,25 @@ Lumina, and most other projects have a philosophy on the use of AI and other too
 For Lumina, a commit is a commitment. This means indeed, we want as many _humans_ to have touched our code as possible.
 Automated ways of creating code are considered a disappointment or a failure to compel a contributor to get their
 hands dirty. You are required to clearly state any form of automated help you may have received in creating your
-contribution, this including but not limited to:
-- translation tools
-- spellcheckers, and
-- (obviously) LLMs and agents
+contribution.
 Also, make sure that if your tool includes telemetry, it doesn't accidentally violate our [licence](./LICENCE).
+
+> Note:
+> 
+> You may not have English as your first language or may not be good at spelling. Using a translation tool or a spellchecker 
+> is NEVER a bad thing! But please, if you use any non-LLM based tool that significantly modifies your text, also let a reviewer know.
+> This will help your contribution get appreciated as much as it should be.
+> 
+> LLM/AI based tools should always be disclosed.
 
 We understand if you need some tooling, especially spellcheckers or translation tooling are important and necessary beneficial
 tools for many people, but telling us helps in the review process, so we know exactly what caused a phrasing to be the way it is.
 
 The PR message and commit messages are considered part of the contribution.
 
-Based on the urgency, number of interested contributors, quality and the PR reviewer's ideals, your contribution may or
-may not be taken in consideration for taking it in.
+Based on the urgency, number of interested contributors, quality and code style, your contribution may or
+may not be taken in consideration for taking it in. Maintainers always reserve the right to decide not to accept your
+contribution if they feel like maintaining it would be too big of a burden.
 
 Yes, you could say, everyone who's gotten their hands on the Lumina codebase is a contributor who put their soul into it.
 
