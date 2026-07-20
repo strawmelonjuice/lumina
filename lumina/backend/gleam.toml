@@ -2,6 +2,9 @@ name = "lumina_server"
 version = "1.0.0"
 target = "erlang"
 licences = ["EUPL-1.2"]
+[erlang]
+application_start_module = "lumina_server"
+
 
 [dependencies]
 gleam_json = ">= 3.1.0 and < 4.0.0"

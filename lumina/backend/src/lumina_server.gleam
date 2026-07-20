@@ -20,8 +20,12 @@
 
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+import envoy
+import gleam/erlang/atom
 import gleam/erlang/process
+import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import gleam/result
 import logging
 import lumina_server/config
 import lumina_server/data
@@ -31,6 +35,37 @@ import witness
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pub fn main() {
+  let _ =
+    envoy.get("START_OBSERVER")
+    |> result.map(fn(_) { observer_start() })
+
+  process.sleep_forever()
+}
+
+type ErlangResult
+
+@external(erlang, "observer", "start")
+fn observer_start() -> ErlangResult
+
+pub fn start(
+  _app: atom.Atom,
+  _type: a,
+) -> Result(process.Pid, actor.StartError) {
+  case start_supervisor() {
+    Ok(actor.Started(pid, _data)) -> {
+      let sup_name = process.new_name("lumina")
+      let _ = process.register(pid, sup_name)
+      witness.this(logging.Info, "Starting!", [])
+      Ok(pid)
+    }
+    Error(reason) -> Error(reason)
+  }
+}
+
+pub fn start_supervisor() -> Result(
+  actor.Started(supervisor.Supervisor),
+  actor.StartError,
+) {
   logging.configure()
 
   case config.application_debug() {
@@ -51,12 +86,9 @@ pub fn main() {
   let db_pool = process.new_name("Databasepool")
   let global_context =
     data.initialise_global_context(postgres_pool_name: db_pool)
-  let assert Ok(_) =
-    supervisor.new(supervisor.RestForOne)
-    |> supervisor.add(data.db_child(db_pool))
-    |> supervisor.add(server.child(global_context))
-    |> supervisor.add(data.session_janitor(global_context.sessions))
-    |> supervisor.start
-
-  process.sleep_forever()
+  supervisor.new(supervisor.RestForOne)
+  |> supervisor.add(data.db_child(db_pool))
+  |> supervisor.add(server.child(global_context))
+  |> supervisor.add(data.session_janitor(global_context.sessions))
+  |> supervisor.start
 }
