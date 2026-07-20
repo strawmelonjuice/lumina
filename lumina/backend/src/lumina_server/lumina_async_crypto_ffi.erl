@@ -2,8 +2,10 @@
 %% # Asynchronous cryptography
 %%
 
+
 -module(lumina_async_crypto_ffi).
--export([generate_keypair/0, sign/2, verify/3, ed25519_to_x25519_public/1, compute_x25519_shared_secret/2]).
+
+-export([generate_keypair/0, sign/2, verify/3]).
 
 %% Generates an ed25519 keypair, used for the identification and signing of a Lumina user!
 generate_keypair() ->
