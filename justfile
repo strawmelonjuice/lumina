@@ -9,6 +9,7 @@ default:
 	@just --list
 	@echo "Data is stored in $LUMINA_DATA_DIR, configuration in $LUMINA_CONF_DIR."
 
+[doc('Vendor dependencies and prepare files for building Lumina')]
 prepare-build:
 	# Download required files if not already downloaded.
 	mkdir -p ./lumina/web/initialiser/build/
@@ -49,21 +50,26 @@ prepare-build:
 	# Also copy over other files, such as licence file.
 	cp ./LICENCE ./lumina/backend/priv/licence
 
+[doc('Migrate or initialise database and update Squirrel with it. This requires the database, so either run it from just
+dev or start the database by hand.')]
 migrate $DATABASE_URL=`echo "$LUMINA_DB_URL"`:
 	dbmate up
 	cd ./lumina/backend/ && (gleam run -m squirrel check || gleam run -m squirrel)
 
+[doc('Manually start the postgres database.')]
 start-db:
 	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
 	@echo "Be sure to run pg_ctl stop when done!"
 
+[doc('Build and run Lumina.')]
 run: prepare-build
 	cd ./lumina/backend && gleam run
 
+[doc('Build Lumina.')]
 build: prepare-build
-	# Build and run backend.
 	cd ./lumina/backend && gleam export erlang-shipment
 
+[doc('Continuously build and run Lumina, including database.')]
 dev $START_OBSERVER='1':
 	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
 	trap 'pg_ctl stop' EXIT; watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam,mjs,mts,djot,css --debounce 500ms -- just migrate \&\& just run
