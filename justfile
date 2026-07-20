@@ -53,16 +53,21 @@ migrate $DATABASE_URL=`echo "$LUMINA_DB_URL"`:
 	dbmate up
 	cd ./lumina/backend/ && (gleam run -m squirrel check || gleam run -m squirrel)
 
-run: migrate prepare-build
-	# Build and run backend.
+start-db:
+	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
+	@echo "Be sure to run pg_ctl stop when done!"
+
+run: prepare-build
 	cd ./lumina/backend && gleam run
 
 build: prepare-build
 	# Build and run backend.
 	cd ./lumina/backend && gleam export erlang-shipment
 
-dev:
-	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam,mjs,mts,djot,css --debounce 500ms -- just run
+dev $START_OBSERVER='1':
+	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
+	trap 'pg_ctl stop' EXIT; watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam,mjs,mts,djot,css --debounce 500ms -- just migrate \&\& just run
+
 [doc('Runs gleam clean for all Gleam packages within the repository, as well as clear the database.')]
 clean:
 	cd ./lumina/backend/ && gleam clean
