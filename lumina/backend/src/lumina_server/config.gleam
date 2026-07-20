@@ -1,9 +1,7 @@
 //// **Lumina > Backend >**
 //// # Configuration
 ////
-//// Loads in configuration from JSON files using storail.
-////
-//// Storail is used here, mostly with single-use collections, which is not what storail is primarily designed for.
+//// Loads in configuration from JSON files.
 
 // Lumina/Peonies
 // Copyright (C) 2018-2026 MLC 'Strawmelonjuice' Bloeiman and contributors.
