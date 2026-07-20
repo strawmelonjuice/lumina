@@ -19,6 +19,7 @@ import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/element/keyed
 import lustre/event
 import lustre/server_component
 import modem
@@ -272,46 +273,55 @@ fn view(model: Model) -> Element(Message) {
       Index -> view_index(model)
       Login -> {
         #(view_default_sidebar(model), [
-          server_component.element(
-            [
-              server_component.route("/ws/web/login"),
-              event.on("update", {
-                // details
-                decode.field(
-                  "details",
-                  {
-                    use user_did <- decode.field("user_did", decode.string)
-                    use user_name <- decode.field("user_name", decode.string)
-                    use user_email <- decode.field(
-                      "user_email",
-                      decode.optional(decode.string),
-                    )
-                    use user_avatar <- decode.field(
-                      "user_avatar",
-                      decode.optional(decode.string),
-                    )
-                    use session_id <- decode.field("session_id", decode.string)
-                    use session_revive_key <- decode.field(
-                      "session_revive-key",
-                      decode.string,
-                    )
+          keyed.div([], [
+            #(
+              "logincomponent",
+              server_component.element(
+                [
+                  server_component.route("/ws/web/login"),
+                  event.on("update", {
+                    decode.field(
+                      "details",
+                      {
+                        use user_did <- decode.field("user_did", decode.string)
+                        use user_name <- decode.field(
+                          "user_name",
+                          decode.string,
+                        )
+                        use user_email <- decode.field(
+                          "user_email",
+                          decode.optional(decode.string),
+                        )
+                        use user_avatar <- decode.field(
+                          "user_avatar",
+                          decode.optional(decode.string),
+                        )
+                        use session_id <- decode.field(
+                          "session_id",
+                          decode.string,
+                        )
+                        use session_revive_key <- decode.field(
+                          "session_revive-key",
+                          decode.string,
+                        )
 
-                    decode.success(NewUserSession(
-                      user_did:,
-                      user_name:,
-                      user_email:,
-                      user_avatar:,
-                      session_id:,
-                      session_revive_key:,
-                    ))
-                  },
-                  decode.success,
-                )
-                // end details
-              }),
-            ],
-            [],
-          ),
+                        decode.success(NewUserSession(
+                          user_did:,
+                          user_name:,
+                          user_email:,
+                          user_avatar:,
+                          session_id:,
+                          session_revive_key:,
+                        ))
+                      },
+                      decode.success,
+                    )
+                  }),
+                ],
+                [],
+              ),
+            ),
+          ]),
         ])
       }
 
@@ -327,10 +337,17 @@ fn view(model: Model) -> Element(Message) {
       About -> view_about(model)
       NotFound(_) -> view_not_found()
       Register -> #(view_default_sidebar(model), [
-        server_component.element(
-          [server_component.route("/ws/web/register")],
-          [],
-        ),
+        keyed.div([], [
+          #(
+            "registercomponent",
+            server_component.element(
+              [
+                server_component.route("/ws/web/register"),
+              ],
+              [],
+            ),
+          ),
+        ]),
       ])
       Timeline(id:) -> #(
         [
