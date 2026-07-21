@@ -117,6 +117,15 @@ COMMENT ON COLUMN usersessions.user_id IS 'The user logged in to this session.';
 COMMENT ON COLUMN usersessions.session_key IS 'Secret hash that on match allows a session to be revived. Upon successful revival, the id is replaced with the id of the session that revived the user session.';
 COMMENT ON COLUMN usersessions.last_touched IS 'Changed on INSERT or UPDATE to allow garbage cleanup of user sessions if they are older than 30 days.';
 
+-- Invites, only used if this option is enabled ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CREATE TABLE IF NOT EXISTS invites (
+    invite_code TEXT NOT NULL,
+    created_by BYTEA REFERENCES users (id) ON DELETE CASCADE,
+    used_by BYTEA REFERENCES users (id) ON DELETE CASCADE,
+    valid BOOLEAN,
+    created TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices for performance ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CREATE INDEX IF NOT EXISTS idx_items_author ON items(author_id);
 CREATE INDEX IF NOT EXISTS idx_timelines_ts ON timelines(timestamp);
