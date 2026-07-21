@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS users (
     private_key BYTEA,
     instance_id uuid NOT NULL REFERENCES instances (id) ON DELETE CASCADE,
     email TEXT,
+    displayname TEXT,
     username TEXT NOT NULL UNIQUE,
     password TEXT,
     CONSTRAINT unique_username_per_instance UNIQUE (username, instance_id)
@@ -60,6 +61,7 @@ COMMENT ON COLUMN users.id IS 'The public key of this user, combined with the in
 COMMENT ON COLUMN users.private_key IS 'The ed25519 private key of a local user, used to sign important changes and, if requested, also posts and edits.';
 COMMENT ON COLUMN users.instance_id IS 'The instance id of this user.';
 COMMENT ON COLUMN users.email IS 'The email address of a local user, for administration purposes.';
+COMMENT ON COLUMN users.displayname IS 'The displayed name for a user';
 COMMENT ON COLUMN users.username IS 'The user-set and human-readable name for a user. For local users this contains only a username, for non-local users this is to be post-fixed with "@<instance-name>".';
 COMMENT ON COLUMN users.password IS 'The password has of a local user, for authentication.';
 
