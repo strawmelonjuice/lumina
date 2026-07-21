@@ -35,7 +35,6 @@
                 export PGDATA="$(pwd)/lumina/backend/build/data/data/.postgres"
                 export PGHOST="/tmp"
                 export LOG_PATH="$PGDATA/server.log"
-                export LDFLAGS="-undefined suppress $LDFLAGS"
                 initdb --auth=trust -U postgres
                 echo "listen_addresses = '127.0.0.1'" >> "$PGDATA/postgresql.conf"
                 echo "port = 5432" >> "$PGDATA/postgresql.conf"
