@@ -109,17 +109,13 @@ pub fn initialise_global_context(
             is_fs |> option.is_some
               && simplifile.is_file(secretfile) == Ok(True),
             fn() {
-              witness.this(
-                logging.Critical,
-                "Could not read cookie secrets file",
-                [
-                  witness.string("path", secretfile),
-                ],
-              )
+              witness.this(witness.Error, "Could not read cookie secrets file", [
+                witness.string("path", secretfile),
+              ])
               panic as "Could not read cookie secrets file."
             },
           )
-          witness.this(logging.Notice, "Writing new cookie secrets file.", [
+          witness.this(witness.Info, "Writing new cookie secrets file.", [
             witness.string("path", secretfile),
           ])
           let new_secret = crypto.strong_random_bytes(300)
@@ -138,7 +134,7 @@ pub fn initialise_global_context(
             Ok(Nil) -> new_secret
             Error(e) -> {
               witness.this(
-                logging.Critical,
+                witness.Error,
                 "Could not write cookie secrets file",
                 [
                   witness.string("path", secretfile),
@@ -187,7 +183,7 @@ pub fn session_janitor(
     |> actor.on_message(fn(state, msg) {
       witness.set_process_fields([witness.string("Process", "Session Janitor")])
       assert msg == Nil
-      witness.this(logging.Info, "Session janitor check in progress", [])
+      witness.this(witness.Info, "Session janitor check in progress", [])
 
       case
         queue.first(sessions.cleanup_queue)
@@ -210,7 +206,7 @@ pub fn session_janitor(
           case table.delete(sessions.table, session_id) {
             Error(Nil) -> {
               witness.this(
-                logging.Warning,
+                witness.Warning,
                 "Could not clean up expired session",
                 [
                   witness.string("session id", session_id),
@@ -218,17 +214,17 @@ pub fn session_janitor(
               )
             }
             Ok(_) -> {
-              witness.this(logging.Info, "Cleaned up expired session", [
+              witness.this(witness.Info, "Cleaned up expired session", [
                 witness.string("session id", session_id),
               ])
               process.sleep(session_janitor_delay)
             }
           }
-          witness.this(logging.Info, "Session janitor check ended.", [])
+          witness.this(witness.Info, "Session janitor check ended.", [])
         }
         Error(_) -> {
           witness.this(
-            logging.Info,
+            witness.Info,
             "Session janitor found no sessions yet. Waiting longer before next check.",
             [],
           )
@@ -272,11 +268,9 @@ pub fn db_child(pool_name: process.Name(pog.Message)) {
   case pog.url_config(pool_name, db_url) {
     Ok(config) -> config
     Error(_) -> {
-      witness.this(
-        logging.Critical,
-        "Database url could not be parsed properly.",
-        [witness.string("database url", db_url)],
-      )
+      witness.this(witness.Error, "Database url could not be parsed properly.", [
+        witness.string("database url", db_url),
+      ])
       panic
     }
   }

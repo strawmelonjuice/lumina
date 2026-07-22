@@ -17,17 +17,3 @@ export function storeSessionRevivekey(c) {
 export function with_timeout(delay, cb) {
 	return window.setTimeout(cb, delay);
 }
-
-// Console log helpers
-export function logLog(any) {
-	console.log("[lumina_spa] ", any);
-}
-export function logInfo(any) {
-	console.info("[lumina_spa] ", any);
-}
-export function logWarn(any) {
-	console.warn("[lumina_spa] ", any);
-}
-export function logError(any) {
-	console.warn("[lumina_spa] ", any);
-}

@@ -130,7 +130,7 @@ fn gets(
                 Ok(a) -> a
                 Error(_) -> {
                   witness.this(
-                    logging.Critical,
+                    witness.Error,
                     "The json at "
                       <> file
                       <> " no longer matches the expected data. Did something corrupt it?",
@@ -167,7 +167,7 @@ fn gets(
   {
     Error(Nil) -> {
       witness.this(
-        logging.Critical,
+        witness.Error,
         "Could not read configuration files - File system error.",
         [
           witness.string("config_module", module),

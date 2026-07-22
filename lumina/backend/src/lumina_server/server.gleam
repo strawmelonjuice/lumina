@@ -34,7 +34,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import logging
 import lumina_server/config
 import lumina_server/data.{type SessionsStore}
 import lumina_server/server/components
@@ -56,7 +55,7 @@ pub fn child(global_context: data.Globals) {
       witness.string("path", req.path),
       witness.string("method", req.method |> http.method_to_string),
     ])
-    witness.this(level: logging.Info, message: "New request", fields: [])
+    witness.this(level: witness.Info, message: "New request", fields: [])
     req
     |> case req.method, request.path_segments(req) {
       http.Get, [] | http.Get, ["app"] | http.Get, ["app", ..] -> serves_spa(
@@ -141,7 +140,7 @@ pub fn child(global_context: data.Globals) {
     }
 
     witness.this(
-      logging.Info,
+      witness.Info,
       "Server started on "
         <> {
         http.scheme_to_string(scheme)
@@ -192,7 +191,7 @@ fn api_auth_status(
   global_context: data.Globals,
 ) -> response.Response(ewe.ResponseBody) {
   use session <- with_session(request:, global_context:)
-  witness.this(logging.Info, "Request answered with hardcoded answer", [
+  witness.this(witness.Info, "Request answered with hardcoded answer", [
     witness.int("HTTP CODE", 200),
   ])
   response.new(200)
@@ -219,7 +218,7 @@ fn serves_priv_file(
     True -> {
       use file <- try_404(ewe.file(resolved, offset: None, limit: None))
 
-      witness.this(logging.Info, "Request answered with file", [
+      witness.this(witness.Info, "Request answered with file", [
         witness.int("HTTP CODE", 200),
         witness.string("File", resolved),
       ])
@@ -232,7 +231,7 @@ fn serves_priv_file(
 }
 
 fn not_found(_) -> Response {
-  witness.this(logging.Warning, "Not found", [
+  witness.this(witness.Warning, "Not found", [
     witness.int("HTTP CODE", 404),
   ])
   response.new(404)
@@ -387,7 +386,7 @@ fn serves_spa(
     ])
     |> element.to_document_string_tree
     |> bytes_tree.from_string_tree
-  witness.this(logging.Info, "Request answered with index", [
+  witness.this(witness.Info, "Request answered with index", [
     witness.int("HTTP CODE", 200),
   ])
   response.set_body(
@@ -440,7 +439,7 @@ fn with_session(
         Ok(verified) -> uuid.from_bit_array(verified)
         Error(Nil) -> {
           witness.this(
-            logging.Warning,
+            witness.Warning,
             "Tampered session cookie found, new session is generated.",
             [],
           )
@@ -452,7 +451,7 @@ fn with_session(
     |> result.flatten()
     |> result.lazy_unwrap(fn() {
       witness.this(
-        logging.Error,
+        witness.Error,
         "Could not decode session cookie, new session is generated.",
         [],
       )

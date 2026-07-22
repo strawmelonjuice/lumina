@@ -59,7 +59,7 @@ pub fn start(
     Ok(actor.Started(pid, _data)) -> {
       let sup_name = process.new_name("lumina")
       let _ = process.register(pid, sup_name)
-      witness.this(logging.Info, "Starting!", [])
+      witness.this(witness.Info, "Starting!", [])
       Ok(pid)
     }
     Error(reason) -> Error(reason)
@@ -85,7 +85,17 @@ pub fn start_supervisor() -> Result(
       witness.empty_config()
     }
   }
-  |> witness.with_sink(witness.Text, logging.log)
+  |> witness.with_sink(witness.Text, fn(level, msg) {
+    logging.log(
+      case level {
+        witness.Debug -> logging.Debug
+        witness.Info -> logging.Info
+        witness.Warning -> logging.Warning
+        witness.Error -> logging.Error
+      },
+      msg,
+    )
+  })
   |> witness.set_config()
   let db_pool = process.new_name("Databasepool")
   let global_context =

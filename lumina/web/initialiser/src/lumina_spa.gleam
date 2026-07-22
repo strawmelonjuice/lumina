@@ -8,12 +8,12 @@
 import gleam/bit_array
 import gleam/bool
 import gleam/dynamic/decode
+import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri.{type Uri}
-import lumina_spa/log
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
@@ -24,11 +24,15 @@ import lustre/event
 import lustre/server_component
 import modem
 import rsvp
+import witness
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pub fn main() {
-  log.log("Hello from lumina_spa!")
+  witness.default_config()
+  |> witness.set_config()
+
+  witness.this(witness.Info, "Hello from lumina_spa!", [])
 
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "body", Nil)
@@ -134,7 +138,7 @@ fn init(_) -> #(Model, Effect(Message)) {
       case get_session_revive_key() {
         Ok(key) -> try_session_revive(key)
         _ -> {
-          log.info("No past sessions to revive!")
+          witness.this(witness.Info, "No past sessions to revive!", [])
           check_auth_status()
         }
       },

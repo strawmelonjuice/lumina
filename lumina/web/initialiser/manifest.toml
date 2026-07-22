@@ -22,6 +22,7 @@ packages = [
   { name = "lustre", version = "5.7.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_json", "gleam_otp", "gleam_stdlib", "houdini"], otp_app = "lustre", source = "hex", outer_checksum = "38C6FCBD7B7BACE994D5BF643202BB69B02576D44250B4C5DCE738387C0E8F87" },
   { name = "modem", version = "2.1.3", build_tools = ["gleam"], requirements = ["gleam_stdlib", "lustre"], otp_app = "modem", source = "hex", outer_checksum = "F03560273C4E857025E7628BCE1EBA8B7E9A1A81A73CA998FC29FD1CED188968" },
   { name = "rsvp", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_fetch", "gleam_http", "gleam_httpc", "gleam_javascript", "gleam_json", "gleam_stdlib", "lustre"], otp_app = "rsvp", source = "hex", outer_checksum = "A38F2DB9657E84A584278DB50FD903693FF370C22C191753B773546FEB2465F0" },
+  { name = "witness", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_json", "gleam_stdlib", "gleam_time"], otp_app = "witness", source = "hex", outer_checksum = "CC6639A87AEAA17FA6C2AA4522E004B7042DCCDA34D958C1FBDF6225BE0A5C34" },
 ]
 
 [requirements]
@@ -33,3 +34,4 @@ humanise = { version = ">= 1.1.0 and < 2.0.0" }
 lustre = { version = ">= 5.7.0 and < 6.0.0" }
 modem = { version = ">= 2.1.3 and < 3.0.0" }
 rsvp = { version = ">= 2.0.0 and < 3.0.0" }
+witness = { version = ">= 2.0.0 and < 3.0.0" }
