@@ -61,7 +61,7 @@ pub fn start(
     Ok(actor.Started(pid, _data)) -> {
       let sup_name = process.new_name("Lumina")
       let _ = process.register(pid, sup_name)
-      witness.this(witness.Info, "Starting!", [])
+      witness.this(witness.Info, "Started Lumina server!", [])
       Ok(pid)
     }
     Error(reason) -> Error(reason)
