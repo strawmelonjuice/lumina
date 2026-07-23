@@ -59,7 +59,7 @@ pub fn start(
   witness.set_process_fields([witness.string("Process", "Initial OTP Starter")])
   case start_supervisor() {
     Ok(actor.Started(pid, _data)) -> {
-      let sup_name = process.new_name("Lumina")
+      let sup_name = process.new_name("Lumina Supervisor")
       let _ = process.register(pid, sup_name)
       witness.this(witness.Info, "Started Lumina server!", [])
       Ok(pid)
@@ -74,8 +74,10 @@ pub fn start_supervisor() -> Result(
 ) {
   logging.configure()
 
+  let assert Ok(_) =
+    process.register(process.self(), process.new_name("Lumina Starter"))
   witness.set_process_fields([
-    witness.string("Process", "Lumina OTP Supervisor"),
+    witness.string("Process", "Lumina Starter"),
   ])
   case config.application_debug() {
     True -> {
@@ -113,11 +115,18 @@ pub fn start_supervisor() -> Result(
       global_app_registry_name:,
       session_app_registry_name:,
     )
+  let webserver_name = process.new_name("Webserver")
+
+  // In the future, we may actually prestart web components from here.
+  //
+  //
+  // let login_component = process.new_name("Web component: Login")
+
   supervisor.new(supervisor.RestForOne)
   |> supervisor.add(group_registry.supervised(global_app_registry_name))
   |> supervisor.add(group_registry.supervised(session_app_registry_name))
   |> supervisor.add(data.db_child(db_pool))
-  |> supervisor.add(server.child(global_context))
+  |> supervisor.add(server.child(global_context, webserver_name))
   |> supervisor.add(data.session_janitor(global_context.sessions))
   |> supervisor.start
 }

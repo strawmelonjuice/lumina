@@ -45,7 +45,7 @@ import witness
 import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pub fn child(global_context: data.Globals) {
+pub fn child(global_context: data.Globals, name: process.Name(_)) {
   ewe.new(fn(req: Request) -> Response {
     witness.set_process_fields([
       witness.string("Process", "Webserver - request handler"),
@@ -138,7 +138,7 @@ pub fn child(global_context: data.Globals) {
 
     witness.this(
       witness.Info,
-      "Server started on "
+      "Web server started on "
         <> {
         http.scheme_to_string(scheme)
         <> "://"
@@ -150,12 +150,12 @@ pub fn child(global_context: data.Globals) {
         // witness.string("Scheme", scheme |> http.scheme_to_string()),
         witness.string("Address", ewe.ip_address_to_string(addr.ip)),
         witness.int("Port", addr.port),
-        // Repeating this here as we apparently crossed a session boundary
         witness.string("Process", "Webserver - main"),
       ],
     )
   })
   |> ewe.idle_timeout(20_000)
+  |> ewe.with_name(name)
   |> ewe.supervised()
 }
 
