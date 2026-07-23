@@ -123,6 +123,19 @@ COMMENT ON COLUMN public.instances.reason IS 'Administrative or automated explan
 
 
 --
+-- Name: invites; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invites (
+    invite_code text NOT NULL,
+    created_by bytea,
+    used_by bytea,
+    valid boolean,
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
 -- Name: items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -238,6 +251,7 @@ CREATE TABLE public.users (
     private_key bytea,
     instance_id uuid NOT NULL,
     email text,
+    displayname text,
     username text NOT NULL,
     password text
 );
@@ -276,6 +290,13 @@ COMMENT ON COLUMN public.users.instance_id IS 'The instance id of this user.';
 --
 
 COMMENT ON COLUMN public.users.email IS 'The email address of a local user, for administration purposes.';
+
+
+--
+-- Name: COLUMN users.displayname; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.users.displayname IS 'The displayed name for a user';
 
 
 --
@@ -461,6 +482,22 @@ CREATE INDEX idx_timelines_ts ON public.timelines USING btree ("timestamp");
 --
 
 CREATE INDEX idx_users_instance ON public.users USING btree (instance_id);
+
+
+--
+-- Name: invites invites_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invites
+    ADD CONSTRAINT invites_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: invites invites_used_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invites
+    ADD CONSTRAINT invites_used_by_fkey FOREIGN KEY (used_by) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
