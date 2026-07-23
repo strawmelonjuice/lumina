@@ -22,9 +22,12 @@
 import friendly_id
 import gleam/bool
 import gleam/int
+import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/pair
 import gleam/result
 import gleam/string
+import gleam/uri
 import lumina_server/data
 import lumina_server/server/components/shared.{
   type ComponentInitialisation, type ControlledInput, type GlobalMessage,
@@ -56,6 +59,7 @@ pub opaque type Model {
     field_password_re: ControlledInput(String),
     // This depends on config we haven't specified well enough yet!
     field_invite_code: Option(#(ControlledInput(String), List(String))),
+    placeholder_friendly_id: String,
   )
 }
 
@@ -95,6 +99,7 @@ fn init(initialisationdata: ComponentInitialisation) {
       field_invite_code: None,
       page_status: Ok(False),
       session_id:,
+      placeholder_friendly_id: "",
     )
   #(
     model,
@@ -115,6 +120,7 @@ fn init(initialisationdata: ComponentInitialisation) {
         global_message_registry_name: model.global_context.global_app_registry_name,
         session_message_registry_name: model.global_context.session_app_registry_name,
       ),
+      generate_random_friendly_id(),
     ]),
   )
 }
@@ -132,7 +138,10 @@ pub opaque type Message {
   )
   UserChangedInputEmail(now: String)
   UserChangedInputPasswordRetype(now: String)
+  UserChangedInputDisplayName(now: String)
+  UserChangedInputInviteCode(now: String)
   ConfigFetchedInviteOnly(Result(List(String), Nil))
+  RandomFriendlyIDGenerated(String)
 }
 
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
@@ -143,6 +152,25 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       #(model, effect.none())
     }
 
+    UserChangedInputDisplayName(now:) -> #(
+      Model(..model, field_displayname: {
+        ControlledInput(False, value: now, validity: {
+          use <- bool.guard(now == "", Error("Cannot be empty!"))
+          let length = string.length(now)
+          let minimum = 3
+          use <- bool.guard(
+            length <= { minimum - 1 },
+            Error(
+              "At least "
+              <> int.to_string(int.absolute_value(length - minimum))
+              <> " characters more!",
+            ),
+          )
+          Ok(Nil)
+        })
+      }),
+      effect.none(),
+    )
     UserChangedInputEmail(now:) -> #(
       Model(..model, field_email: {
         ControlledInput(False, value: now, validity: {
@@ -160,6 +188,34 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       }),
       effect.none(),
     )
+
+    UserChangedInputInviteCode(now:) ->
+      case model.field_invite_code {
+        None -> #(model, effect.none())
+        Some(#(_field_invite_code, accepted_codes)) -> #(
+          Model(
+            ..model,
+            field_invite_code: {
+                ControlledInput(False, value: now, validity: {
+                  use <- bool.guard(
+                    now == "",
+                    Error("This instance requires an invite code!"),
+                  )
+                  use <- bool.guard(
+                    !list.contains(accepted_codes, now),
+                    Error("Invalid invite code."),
+                  )
+
+                  Ok(Nil)
+                })
+              }
+              |> pair.new(accepted_codes)
+              |> Some,
+          ),
+          effect.none(),
+        )
+      }
+
     UserChangedInputUsername(now:) -> #(
       Model(..model, field_username: {
         let now =
@@ -168,6 +224,11 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
           |> string.lowercase
         ControlledInput(False, value: now, validity: {
           use <- bool.guard(now == "", Error("Cannot be empty!"))
+          use <- bool.guard(
+            now != uri.percent_encode(now),
+            Error("Seems to include invalid characters."),
+          )
+
           let length = string.length(now)
           let minimum = 3
           use <- bool.guard(
@@ -208,8 +269,6 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
 
     UserChangedInputPasswordRetype(now:) -> #(
       Model(..model, field_password_re: {
-        // Of course, we cannot really expose the password ("Another user with this password...", remember the meme)
-        // What we can do, is uphold the password to length requirements.
         ControlledInput(False, value: now, validity: {
           use <- bool.guard(
             now != model.field_password.value,
@@ -227,6 +286,7 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
         && model.field_password_re.validity == Ok(Nil)
         && model.field_email.validity == Ok(Nil)
         && model.field_username.validity == Ok(Nil)
+        && model.field_displayname.validity == Ok(Nil)
       }
     -> {
       #(Model(..model, page_status: Ok(True)), {
@@ -293,7 +353,22 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       Model(..model, field_invite_code: None),
       effect.none(),
     )
+    RandomFriendlyIDGenerated(friend_id) -> #(
+      Model(..model, placeholder_friendly_id: friend_id),
+      effect.none(),
+    )
   }
+}
+
+// Effects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/// Generates the random id you see as a placeholder.
+fn generate_random_friendly_id() -> effect.Effect(Message) {
+  use return <- effect.from
+  friendly_id.new_generator()
+  |> friendly_id.set_generator_separator("-")
+  |> friendly_id.generate
+  |> RandomFriendlyIDGenerated
+  |> return
 }
 
 // View ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -331,6 +406,119 @@ fn view(model: Model) -> element.Element(Message) {
           },
           html.form([], [
             html.fieldset([attribute.class("vstack")], [
+              // Invite code
+              case model.field_invite_code {
+                None -> element.none()
+                Some(#(field_invite_code, _)) -> {
+                  html.div([attribute.data("field", "")], [
+                    html.label([attribute.for("field-invite-code")], [
+                      html.text(" Invite code "),
+                    ]),
+                    html.input([
+                      attribute.value(field_invite_code.value),
+                      event.on_input(UserChangedInputInviteCode)
+                        |> server_component.include(["target.value"]),
+                      attribute.autocomplete("off"),
+                      attribute.id("field-invite-code"),
+                      attribute.aria_describedby("field-invite-code-status"),
+                      attribute.aria_invalid({
+                        case field_invite_code {
+                          ControlledInput(value: _, validity: _, initial: True)
+                          | ControlledInput(
+                              value: _,
+                              validity: Ok(Nil),
+                              initial: _,
+                            ) -> False
+                          ControlledInput(value: _, validity: _, initial: False) ->
+                            True
+                        }
+                        |> bool.to_string
+                        |> string.lowercase
+                      }),
+                      attribute.type_("text"),
+                    ]),
+                    case field_invite_code {
+                      ControlledInput(False, _, validity: Error(message)) -> {
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.class("error"),
+                            attribute.id("field-invite-code-status"),
+                          ],
+                          [element.text(message)],
+                        )
+                      }
+                      ControlledInput(value: _, validity: _, initial: True)
+                      | ControlledInput(value: _, validity: Ok(Nil), initial: _) ->
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.class("hidden"),
+                            attribute.id("field-invite-code-status"),
+                          ],
+                          [],
+                        )
+                    },
+                  ])
+                }
+              },
+
+              // Display name
+              html.div([attribute.data("field", "")], [
+                html.label([attribute.for("field-displayname")], [
+                  html.text(" Display name "),
+                ]),
+                html.input([
+                  attribute.value(model.field_displayname.value),
+                  event.on_input(UserChangedInputDisplayName)
+                    |> server_component.include(["target.value"]),
+                  attribute.autocomplete("off"),
+                  attribute.placeholder({
+                    model.placeholder_friendly_id
+                    |> string.split("-")
+                    |> list.map(string.capitalise)
+                    |> string.join(" ")
+                  }),
+                  attribute.id("field-displayname"),
+                  attribute.aria_describedby("field-displayname-status"),
+                  attribute.aria_invalid({
+                    case model.field_displayname {
+                      ControlledInput(value: _, validity: _, initial: True)
+                      | ControlledInput(value: _, validity: Ok(Nil), initial: _) ->
+                        False
+                      ControlledInput(value: _, validity: _, initial: False) ->
+                        True
+                    }
+                    |> bool.to_string
+                    |> string.lowercase
+                  }),
+                  attribute.type_("text"),
+                ]),
+                case model.field_displayname {
+                  ControlledInput(False, _, validity: Error(message)) -> {
+                    html.div(
+                      [
+                        attribute.role("status"),
+                        attribute.class("error"),
+                        attribute.id("field-displayname-status"),
+                      ],
+                      [element.text(message)],
+                    )
+                  }
+                  ControlledInput(value: _, validity: _, initial: True)
+                  | ControlledInput(value: _, validity: Ok(Nil), initial: _) ->
+                    html.div(
+                      [
+                        attribute.role("status"),
+                        attribute.class("hidden"),
+                        attribute.id("field-displayname-status"),
+                      ],
+                      [],
+                    )
+                },
+              ]),
+
+              // Email
               html.div([attribute.data("field", "")], [
                 html.label([attribute.for("field-email")], [
                   html.text(" Email "),
@@ -341,10 +529,7 @@ fn view(model: Model) -> element.Element(Message) {
                     |> server_component.include(["target.value"]),
                   attribute.autocomplete("off"),
                   attribute.placeholder(
-                    friendly_id.new_generator()
-                    |> friendly_id.set_generator_separator("-")
-                    |> friendly_id.generate
-                    <> "@example.com",
+                    model.placeholder_friendly_id <> "@example.com",
                   ),
                   attribute.id("field-email"),
                   attribute.aria_describedby("field-email-status"),
@@ -384,6 +569,8 @@ fn view(model: Model) -> element.Element(Message) {
                     )
                 },
               ]),
+
+              // Username
               html.div([attribute.data("field", "")], [
                 html.label([attribute.for("field-id")], [
                   html.text(" Username "),
@@ -393,11 +580,7 @@ fn view(model: Model) -> element.Element(Message) {
                   event.on_input(UserChangedInputUsername)
                     |> server_component.include(["target.value"]),
                   attribute.autocomplete("off"),
-                  attribute.placeholder(
-                    friendly_id.new_generator()
-                    |> friendly_id.set_generator_separator("-")
-                    |> friendly_id.generate,
-                  ),
+                  attribute.placeholder(model.placeholder_friendly_id),
                   attribute.id("field-id"),
                   attribute.aria_describedby("field-id-status"),
                   attribute.aria_invalid({
@@ -436,57 +619,65 @@ fn view(model: Model) -> element.Element(Message) {
                     )
                 },
               ]),
-              html.label(
-                [attribute.aria_invalid("true"), attribute.data("field", "")],
-                [
-                  html.text(" Password "),
-                  html.input([
-                    attribute.value(model.field_password.value),
-                    event.on_input(UserChangedInputPassword)
-                      |> server_component.include(["target.value"]),
-                    attribute.placeholder("•••••••••••••••"),
-                    attribute.aria_describedby("field-password-status"),
-                    attribute.id("field-password"),
-                    attribute.aria_invalid({
-                      case model.field_password {
-                        ControlledInput(value: _, validity: _, initial: True)
-                        | ControlledInput(
-                            value: _,
-                            validity: Ok(Nil),
-                            initial: _,
-                          ) -> False
-                        ControlledInput(value: _, validity: _, initial: False) ->
-                          True
+
+              // Password
+              html.div([attribute.data("field", "")], [
+                html.label(
+                  [attribute.aria_invalid("true"), attribute.data("field", "")],
+                  [
+                    html.text(" Password "),
+                    html.input([
+                      attribute.value(model.field_password.value),
+                      event.on_input(UserChangedInputPassword)
+                        |> server_component.include(["target.value"]),
+                      attribute.placeholder("•••••••••••••••"),
+                      attribute.aria_describedby("field-password-status"),
+                      attribute.id("field-password"),
+                      attribute.aria_invalid({
+                        case model.field_password {
+                          ControlledInput(value: _, validity: _, initial: True)
+                          | ControlledInput(
+                              value: _,
+                              validity: Ok(Nil),
+                              initial: _,
+                            ) -> False
+                          ControlledInput(value: _, validity: _, initial: False) ->
+                            True
+                        }
+                        |> bool.to_string
+                        |> string.lowercase
+                      }),
+                      attribute.type_("password"),
+                    ]),
+                    case model.field_password {
+                      ControlledInput(_, _, initial: True)
+                      | ControlledInput(_, _, validity: Ok(Nil)) ->
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.id("field-password-status"),
+                            attribute.class("hidden"),
+                          ],
+                          [],
+                        )
+                      ControlledInput(
+                        _,
+                        validity: Error(message),
+                        initial: False,
+                      ) -> {
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.class("error"),
+                            attribute.id("field-password-status"),
+                          ],
+                          [element.text(message)],
+                        )
                       }
-                      |> bool.to_string
-                      |> string.lowercase
-                    }),
-                    attribute.type_("password"),
-                  ]),
-                  case model.field_password {
-                    ControlledInput(_, _, initial: True)
-                    | ControlledInput(_, _, validity: Ok(Nil)) ->
-                      html.div(
-                        [
-                          attribute.role("status"),
-                          attribute.id("field-password-status"),
-                          attribute.class("hidden"),
-                        ],
-                        [],
-                      )
-                    ControlledInput(_, validity: Error(message), initial: False) -> {
-                      html.div(
-                        [
-                          attribute.role("status"),
-                          attribute.class("error"),
-                          attribute.id("field-password-status"),
-                        ],
-                        [element.text(message)],
-                      )
-                    }
-                  },
-                ],
-              ),
+                    },
+                  ],
+                ),
+              ]),
             ]),
           ]),
           html.div(
