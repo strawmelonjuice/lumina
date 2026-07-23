@@ -50,9 +50,11 @@ pub type Globals {
   Globals(
     secrets: GlobalSecrets,
     sessions: SessionsStore,
-    app_registries: #(
-      group_registry.GroupRegistry(GlobalMessage),
-      group_registry.GroupRegistry(SessionMessage),
+    global_app_registry_name: process.Name(
+      group_registry.Message(GlobalMessage),
+    ),
+    session_app_registry_name: process.Name(
+      group_registry.Message(SessionMessage),
     ),
     postgres_pool_name: process.Name(pog.Message),
   )
@@ -75,6 +77,12 @@ pub type SessionMessage {
 
 pub fn initialise_global_context(
   postgres_pool_name postgres_pool_name: process.Name(pog.Message),
+  global_app_registry_name global_app_registry_name: process.Name(
+    group_registry.Message(GlobalMessage),
+  ),
+  session_app_registry_name session_app_registry_name: process.Name(
+    group_registry.Message(SessionMessage),
+  ),
 ) -> Globals {
   let sessions: SessionsStore = {
     SessionsStore(
@@ -148,14 +156,13 @@ pub fn initialise_global_context(
       }
     })
 
-  let app_registries = {
-    let assert Ok(actor.Started(data: global_app_registry, ..)) =
-      group_registry.start(process.new_name("global-app-registry"))
-    let assert Ok(actor.Started(data: session_app_registry, ..)) =
-      group_registry.start(process.new_name("session-app-registry"))
-    #(global_app_registry, session_app_registry)
-  }
-  Globals(sessions:, app_registries:, postgres_pool_name:, secrets:)
+  Globals(
+    sessions:,
+    secrets:,
+    global_app_registry_name:,
+    session_app_registry_name:,
+    postgres_pool_name:,
+  )
 }
 
 // Sessions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

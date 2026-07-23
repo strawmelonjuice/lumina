@@ -26,6 +26,7 @@ import gleam/erlang/process
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
 import gleam/result
+import group_registry
 import logging
 import lumina_server/config
 import lumina_server/data
@@ -55,9 +56,10 @@ pub fn start(
   _app: atom.Atom,
   _type: a,
 ) -> Result(process.Pid, actor.StartError) {
+  witness.set_process_fields([witness.string("Process", "Initial OTP Starter")])
   case start_supervisor() {
     Ok(actor.Started(pid, _data)) -> {
-      let sup_name = process.new_name("lumina")
+      let sup_name = process.new_name("Lumina")
       let _ = process.register(pid, sup_name)
       witness.this(witness.Info, "Starting!", [])
       Ok(pid)
@@ -72,6 +74,9 @@ pub fn start_supervisor() -> Result(
 ) {
   logging.configure()
 
+  witness.set_process_fields([
+    witness.string("Process", "Lumina OTP Supervisor"),
+  ])
   case config.application_debug() {
     True -> {
       logging.set_level(logging.Debug)
@@ -98,9 +103,19 @@ pub fn start_supervisor() -> Result(
   })
   |> witness.set_config()
   let db_pool = process.new_name("Databasepool")
+  let global_app_registry_name =
+    process.new_name("App message registry: Intersession")
+  let session_app_registry_name =
+    process.new_name("App message registry: Globally")
   let global_context =
-    data.initialise_global_context(postgres_pool_name: db_pool)
+    data.initialise_global_context(
+      postgres_pool_name: db_pool,
+      global_app_registry_name:,
+      session_app_registry_name:,
+    )
   supervisor.new(supervisor.RestForOne)
+  |> supervisor.add(group_registry.supervised(global_app_registry_name))
+  |> supervisor.add(group_registry.supervised(session_app_registry_name))
   |> supervisor.add(data.db_child(db_pool))
   |> supervisor.add(server.child(global_context))
   |> supervisor.add(data.session_janitor(global_context.sessions))

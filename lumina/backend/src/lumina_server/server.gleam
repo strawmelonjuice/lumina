@@ -46,9 +46,6 @@ import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn child(global_context: data.Globals) {
-  witness.set_process_fields([
-    witness.string("Process", "Webserver - main"),
-  ])
   ewe.new(fn(req: Request) -> Response {
     witness.set_process_fields([
       witness.string("Process", "Webserver - request handler"),

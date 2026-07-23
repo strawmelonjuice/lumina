@@ -111,9 +111,9 @@ fn init(initialisationdata: ComponentInitialisation) {
       subscribe(
         on_global_message: AppReceivedGlobalBroadcast,
         on_session_message: AppReceivedSessionMessage,
-        global_app_registry: global_context.app_registries.0,
-        session_app_registry: global_context.app_registries.1,
         session_id:,
+        global_message_registry_name: model.global_context.global_app_registry_name,
+        session_message_registry_name: model.global_context.session_app_registry_name,
       ),
     ]),
   )

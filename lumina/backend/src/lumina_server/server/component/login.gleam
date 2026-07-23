@@ -25,6 +25,7 @@ import gleam/json
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
+import group_registry
 import lumina_server/data
 import lumina_server/server/components/shared.{
   type ComponentInitialisation, type ControlledInput, type GlobalMessage,
@@ -81,9 +82,9 @@ fn init(initialisationdata: ComponentInitialisation) {
     subscribe(
       on_global_message: AppReceivedGlobalBroadcast,
       on_session_message: AppReceivedSessionMessage,
-      global_app_registry: global_context.app_registries.0,
-      session_app_registry: global_context.app_registries.1,
       session_id:,
+      global_message_registry_name: model.global_context.global_app_registry_name,
+      session_message_registry_name: model.global_context.session_app_registry_name,
     ),
   )
 }
@@ -119,7 +120,7 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       Model(..model, page_status: Error("Success!")),
       effect.batch([
         lumina_server_components.broadcast_sessionwide(
-          model.global_context.app_registries.1,
+          model.global_context.session_app_registry_name,
           model.session_id,
           data.SessionAuthorized(data.UserSession(
             user_id:,

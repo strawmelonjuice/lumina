@@ -188,6 +188,7 @@ pub fn signup(
       process.Selector(server_component.ClientMessage(signup.Message)),
     ) {
       let component = signup.component()
+      //TODO: Investigate how to also supervise these
       let assert Ok(component) = lustre.start_server_component(component, from)
 
       let self = process.new_subject()

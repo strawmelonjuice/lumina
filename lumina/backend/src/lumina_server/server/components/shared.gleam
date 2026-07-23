@@ -52,13 +52,21 @@ pub type ComponentInitialisation {
 /// Allows a component to receive messages, both to the global topic and to it's session topic.
 @internal
 pub fn subscribe(
-  global_app_registry global_app_registry: GroupRegistry(GlobalMessage),
-  session_app_registry session_app_registry: GroupRegistry(SessionMessage),
+  global_message_registry_name global_message_registry_name: process.Name(
+    group_registry.Message(data.GlobalMessage),
+  ),
+  session_message_registry_name session_message_registry_name: process.Name(
+    group_registry.Message(data.SessionMessage),
+  ),
   session_id session_id: String,
   on_global_message handle_global_message: fn(GlobalMessage) -> message,
   on_session_message handle_session_message: fn(SessionMessage) -> message,
 ) -> Effect(message) {
   use _, _ <- server_component.select
+  let session_app_registry =
+    group_registry.get_registry(session_message_registry_name)
+  let global_app_registry =
+    group_registry.get_registry(global_message_registry_name)
   let global_subject =
     group_registry.join(global_app_registry, "global", process.self())
   let session_subject =
@@ -77,22 +85,32 @@ pub fn subscribe(
 /// Broadcasts a message from a component to the session topic.
 @internal
 pub fn broadcast_sessionwide(
-  registry: GroupRegistry(SessionMessage),
-  session_id: String,
-  message: SessionMessage,
+  session_message_registry_name session_message_registry_name: process.Name(
+    group_registry.Message(data.SessionMessage),
+  ),
+  session_id session_id: String,
+  message message: SessionMessage,
 ) -> Effect(any) {
   use _ <- effect.from
-  use member <- list.each(group_registry.members(registry, session_id))
+  use member <- list.each(group_registry.members(
+    group_registry.get_registry(session_message_registry_name),
+    session_id,
+  ))
   process.send(member, message)
 }
 
 /// Broadcasts a message from a component to the global topic.
 @internal
 pub fn broadcast_globally(
-  registry: GroupRegistry(GlobalMessage),
-  message: GlobalMessage,
+  global_message_registry_name global_message_registry_name: process.Name(
+    group_registry.Message(data.GlobalMessage),
+  ),
+  message message: GlobalMessage,
 ) -> Effect(any) {
   use _ <- effect.from
-  use member <- list.each(group_registry.members(registry, "global"))
+  use member <- list.each(group_registry.members(
+    group_registry.get_registry(global_message_registry_name),
+    "global",
+  ))
   process.send(member, message)
 }
