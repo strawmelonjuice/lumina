@@ -21,6 +21,7 @@
             gleam
             beam29Packages.erlang
             beam29Packages.rebar3
+            erlang-language-platform
             deno
             just
             watchexec
