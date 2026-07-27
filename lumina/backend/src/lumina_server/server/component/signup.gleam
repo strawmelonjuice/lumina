@@ -330,7 +330,50 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       email:,
     ))) -> todo
 
-    RegistrationAttemptResult(Error(_)) -> todo
+    RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+      data.UserSessionAuthHasIncorrectDid,
+    ))) -> #(
+      Model(
+        ..model,
+        field_username: ControlledInput(
+          True,
+          value: "",
+          validity: Error("Cannot be empty!"),
+        ),
+        field_password: ControlledInput(
+          True,
+          value: "",
+          validity: Error("Cannot be empty!"),
+        ),
+        page_status: Error(
+          "Unable to properly parse this DID into a Lumina DID.",
+        ),
+      ),
+      effect.none(),
+    )
+    RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+      data.UserSessionAuthNoMatch,
+    )))
+    | RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+        data.UserSessionAuthNotExists,
+      )))
+    | RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+        data.UserSessionAuthSessionUUIDInvalid,
+      )))
+    | RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+        data.UserSessionAuthDBError,
+      )))
+    | RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
+        data.UserSessionAuthArgon2Error,
+      ))) -> #(
+      Model(
+        ..model,
+        page_status: Error(
+          "Instance had an internal error processing your sign up.",
+        ),
+      ),
+      effect.none(),
+    )
     ConfigFetchedInviteOnly(Ok(valid_invites)) -> {
       #(
         Model(
