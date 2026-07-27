@@ -79,3 +79,52 @@ dev $START_OBSERVER='1':
 clean:
 	cd ./lumina/backend/ && gleam clean
 	cd ./lumina/web/initialiser/ && gleam clean
+update-elp:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	backend_dir="$(pwd)/lumina/backend"
+	app_name=$(awk -F'"' '/^name[[:space:]]*=/ { print $2; exit }' "$backend_dir/gleam.toml")
+	build_dir="$backend_dir/build/dev/erlang/$app_name"
+
+	rm -fr .elp
+	mkdir -p .elp
+
+	for erl_file in "$build_dir/_gleam_artefacts/*.erl"; do
+		[ -e "$erl_file" ] || continue
+		base_name=$(basename "$erl_file")
+		already_in_src=$(find src -name "$base_name" -print -quit)
+	  	if [ -z "$already_in_src" ]; then
+			ln -sf "$(pwd)/$erl_file" ".elp/$base_name"
+		fi
+	done
+
+	list_deps() {
+		for dep_dir in build/dev/erlang/*/; do
+			dep_name=$(basename "$dep_dir")
+			[ "$dep_name" = "$app_name" ] && continue
+
+			if [ -d "${dep_dir}_gleam_artefacts" ]; then
+
+				dep_src_dir=_gleam_artefacts
+				elif find "${dep_dir}src" -maxdepth 1 -iname "*.erl" -print -quit 2>/dev/null | grep -q .; then
+				dep_src_dir=src
+				else
+					continue
+				fi
+
+			jq -n --arg name "$dep_name" --arg dir "build/dev/erlang/$dep_name" --arg src_dir "$dep_src_dir" '{name: $name, dir: $dir, src_dirs: [$src_dir], include_dirs: ["include"], ebin: "ebin"}'
+		done
+	}
+	jq -n --arg name "$app_name" --arg include_dir "$build_dir/include" --arg ebin_dir "$build_dir/ebin" --slurpfile deps <(list_deps) '{
+	apps: [{
+		name: $name,
+		dir: ".",
+		src_dirs: ["src"],
+		extra_src_dirs: [".elp"],
+		include_dirs: [$include_dir],
+		ebin: $ebin_dir
+		}],
+		deps: $deps
+	}' > .elp.build_info
+	echo "wrote .elp.build_info for app \"$app_name\""
+

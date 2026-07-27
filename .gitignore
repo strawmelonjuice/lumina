@@ -1,4 +1,3 @@
-
 # Ignore build artifacts
 lumina/backend/priv/client.js
 lumina/backend/priv/client.min.js
@@ -11,5 +10,6 @@ lumina/web/initialiser/prelude.mts
 lumina/web/initialiser/src/gleam.mts
 lumina/web/initialiser/src/gleam.mjs
 
-# Ignore direnv cache
 .direnv/
+.elp
+.elp.build_info
