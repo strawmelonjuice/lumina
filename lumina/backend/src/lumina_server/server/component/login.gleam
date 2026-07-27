@@ -103,6 +103,9 @@ pub opaque type Message {
 }
 
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
+  let valid =
+    model.field_password.validity == Ok(Nil)
+    && model.field_username.validity == Ok(Nil)
   case message {
     AppReceivedGlobalBroadcast(data.NewUser(..)) -> #(model, effect.none())
     AppReceivedSessionMessage(data.SessionAuthorized(..)) -> {
@@ -198,12 +201,7 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       effect.none(),
     )
 
-    UserClickedSubmit
-      if {
-        model.field_password.validity == Ok(Nil)
-        && model.field_username.validity == Ok(Nil)
-      }
-    -> {
+    UserClickedSubmit if valid -> {
       #(Model(..model, page_status: Ok(True)), {
         use disp <- effect.from()
         data.user_session_authorise(
