@@ -29,9 +29,9 @@ import witness
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pub fn main() {
-  witness.default_config()
-  |> witness.set_config()
-
+  witness.new("Lumina SPA")
+  |> witness.with_console(witness.Debug, witness.Text)
+  |> witness.configure
   witness.this(witness.Info, "Hello from lumina_spa!", [])
 
   let app = lustre.application(init, update, view)

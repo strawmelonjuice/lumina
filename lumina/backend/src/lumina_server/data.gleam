@@ -182,13 +182,13 @@ const session_janitor_delay = 50_000
 pub fn session_janitor(
   sessions: SessionsStore,
 ) -> supervision.ChildSpecification(process.Subject(Nil)) {
-  let name: process.Name(Nil) = process.new_name("session janitor")
+  let name: process.Name(Nil) = process.new_name("Session Janitor")
   use <- supervision.worker()
   let inner =
     actor.new(Nil)
     |> actor.named(name)
     |> actor.on_message(fn(state, msg) {
-      witness.set_process_fields([witness.string("Process", "Session Janitor")])
+      witness.set_process_fields([witness.string("process", "Session Janitor")])
       assert msg == Nil
       witness.this(witness.Info, "Session janitor check in progress", [])
 
@@ -439,6 +439,14 @@ pub fn random_string(length: Int) -> String {
 
 @external(erlang, "filename", "absname_join")
 fn absname_join(dir: String, file: String) -> String
+
+pub fn log_file(name name: String) {
+  let logs_dir = absname_join(data_dir(), "./logs/")
+  let assert Ok(_) = simplifile.create_directory_all(logs_dir)
+    as "Could not create folder for logging."
+  absname_join(logs_dir, "./" <> name <> ".log")
+  |> witness.new_file()
+}
 
 fn data_dir() -> String {
   envoy.get("LUMINA_DATA_DIR")

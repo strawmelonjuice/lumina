@@ -56,7 +56,7 @@ pub fn start(
   _app: atom.Atom,
   _type: a,
 ) -> Result(process.Pid, actor.StartError) {
-  witness.set_process_fields([witness.string("Process", "Initial OTP Starter")])
+  witness.set_process_fields([witness.string("process", "Initial OTP Starter")])
   case start_supervisor() {
     Ok(actor.Started(pid, _data)) -> {
       let sup_name = process.new_name("Lumina Supervisor")
@@ -76,34 +76,33 @@ pub fn start_supervisor() -> Result(
 
   let assert Ok(_) =
     process.register(process.self(), process.new_name("Lumina Starter"))
-  witness.set_process_fields([
-    witness.string("Process", "Lumina Starter"),
-  ])
-  case config.application_debug() {
-    True -> {
-      logging.set_level(logging.Debug)
-      witness.with_global_fields(witness.empty_config(), [
-        witness.bool("Debug", True),
-      ])
-    }
-    False -> {
-      logging.set_level(logging.Info)
 
-      witness.empty_config()
+  witness.new("Lumina Server")
+  |> case config.application_debug() {
+    True -> fn(c) {
+      c
+      |> witness.with_global_fields([witness.bool("Debug mode", True)])
+      |> witness.with_console(witness.Debug, witness.Text)
+      |> witness.add_file(
+        witness.Debug,
+        witness.Json,
+        file: data.log_file("debug.json"),
+      )
     }
+    False -> witness.with_console(_, witness.Info, witness.Text)
   }
-  |> witness.with_sink(witness.Text, fn(level, msg) {
-    logging.log(
-      case level {
-        witness.Debug -> logging.Debug
-        witness.Info -> logging.Info
-        witness.Warning -> logging.Warning
-        witness.Error -> logging.Error
-      },
-      msg,
-    )
-  })
-  |> witness.set_config()
+  |> witness.add_file(
+    witness.Info,
+    witness.Json,
+    file: data.log_file("default.json"),
+  )
+  |> witness.add_file(
+    witness.Info,
+    witness.Text,
+    file: data.log_file("default"),
+  )
+  |> witness.configure
+
   let db_pool = process.new_name("Databasepool")
   let global_app_registry_name =
     process.new_name("App message registry: Intersession")

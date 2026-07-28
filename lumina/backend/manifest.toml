@@ -59,7 +59,7 @@ packages = [
   { name = "tom", version = "2.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "gleam_time"], otp_app = "tom", source = "hex", outer_checksum = "DCF04CB7AB35D58CFC598C66EA2E1816D160759802C89B2BA6238780D59BC256" },
   { name = "tote", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "tote", source = "hex", outer_checksum = "30CBB77B72867B1DE2D271A7FE61DBE8BB81CA7DC385A0E1FDF7D38E71F3791A" },
   { name = "websocks", version = "3.0.1", build_tools = ["gleam"], requirements = ["gleam_crypto", "gleam_erlang", "gleam_stdlib"], otp_app = "websocks", source = "hex", outer_checksum = "C70340E5B6C3390383ADA17029DCA6F8903863A7AD8CD8E1520EDCC4FE70D6FD" },
-  { name = "witness", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_json", "gleam_stdlib", "gleam_time"], otp_app = "witness", source = "hex", outer_checksum = "CC6639A87AEAA17FA6C2AA4522E004B7042DCCDA34D958C1FBDF6225BE0A5C34" },
+  { name = "witness", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], source = "git", repo = "https://tangled.org/ollie.earth/witness", commit = "90575485724eabc960b43a856cd43e3ba7bd8389" },
   { name = "youid", version = "1.6.0", build_tools = ["gleam"], requirements = ["gleam_crypto", "gleam_stdlib", "gleam_time"], otp_app = "youid", source = "hex", outer_checksum = "7A3ABA44B1B38BC2BDCB5474C5317AA372BE58DFBC649815EE08B03526DDA18D" },
 ]
 
@@ -89,5 +89,5 @@ rasa = { version = ">= 2.0.1 and < 3.0.0" }
 shellout = { version = ">= 1.8.0 and < 2.0.0" }
 simplifile = { version = ">= 2.4.0 and < 3.0.0" }
 squirrel = { version = ">= 4.7.0 and < 5.0.0" }
-witness = { version = ">= 2.0.0 and < 3.0.0" }
+witness = { git = "https://tangled.org/ollie.earth/witness", ref = "90575485724eabc960b43a856cd43e3ba7bd8389" }
 youid = { version = ">= 1.6.0 and < 2.0.0" }

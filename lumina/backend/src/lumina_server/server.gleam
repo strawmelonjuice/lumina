@@ -48,7 +48,7 @@ import youid/uuid
 pub fn child(global_context: data.Globals, name: process.Name(_)) {
   ewe.new(fn(req: Request) -> Response {
     witness.set_process_fields([
-      witness.string("Process", "Webserver - request handler"),
+      witness.string("process", "Webserver / request handler"),
       witness.string("path", req.path),
       witness.string("method", req.method |> http.method_to_string),
     ])
@@ -150,7 +150,7 @@ pub fn child(global_context: data.Globals, name: process.Name(_)) {
         // witness.string("Scheme", scheme |> http.scheme_to_string()),
         witness.string("Address", ewe.ip_address_to_string(addr.ip)),
         witness.int("Port", addr.port),
-        witness.string("Process", "Webserver - main"),
+        witness.string("process", "Webserver / main"),
       ],
     )
   })
