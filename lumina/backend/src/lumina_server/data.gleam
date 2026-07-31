@@ -35,7 +35,6 @@ import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp.{type Timestamp}
 import group_registry
-import logging
 import lumina_server/config
 import lumina_server/data/sql
 import pog

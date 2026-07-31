@@ -24,7 +24,6 @@ import envoy
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result
-import logging
 import simplifile
 import witness
 

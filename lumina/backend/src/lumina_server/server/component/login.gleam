@@ -25,7 +25,6 @@ import gleam/json
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import group_registry
 import lumina_server/data
 import lumina_server/server/components/shared.{
   type ComponentInitialisation, type ControlledInput, type GlobalMessage,

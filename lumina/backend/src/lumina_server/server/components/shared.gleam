@@ -21,7 +21,7 @@
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import gleam/erlang/process
 import gleam/list
-import group_registry.{type GroupRegistry}
+import group_registry
 import lumina_server/data
 import lustre/effect.{type Effect}
 import lustre/server_component
