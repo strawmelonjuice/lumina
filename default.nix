@@ -4,6 +4,32 @@ let
     config = { };
     overlays = [ ];
   };
+  gleam = pkgs.rustPlatform.buildRustPackage rec {
+    pname = "gleam";
+    version = "1.18.0";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "gleam-lang";
+      repo = "gleam";
+      rev = "603b8e37ab39d5570431d5be285e215707e4ed4d";
+      hash = "sha256-Qq55vu/urXMKzDwJMvGMA6qIyYeMxhFGV03oijUBVNk=";
+    };
+
+    cargoLock = {
+      lockFile = "${src}/Cargo.lock";
+    };
+
+    nativeBuildInputs = [ pkgs.pkg-config ];
+    buildInputs = [ pkgs.dbus ];
+
+    doCheck = false;
+    dontCargoInstallPostBuildHook = true;
+
+    installPhase = ''
+      mkdir -p $out/bin
+      find . -name gleam -type f -executable -exec cp {} $out/bin/gleam \;
+    '';
+  };
 in
 {
   shell = pkgs.mkShellNoCC {
