@@ -28,7 +28,9 @@ import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/uri
+import lumina_server/config
 import lumina_server/data
+import lumina_server/data/sql
 import lumina_server/server/components/shared.{
   type ComponentInitialisation, type ControlledInput, type GlobalMessage,
   type SessionMessage, ControlledInput, subscribe,
@@ -40,6 +42,7 @@ import lustre/element
 import lustre/element/html
 import lustre/event
 import lustre/server_component
+import pog
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn component() -> App(ComponentInitialisation, Model, Message) {
@@ -105,13 +108,22 @@ fn init(initialisationdata: ComponentInitialisation) {
     model,
     effect.batch([
       effect.from(fn(return) {
-        // This depends on config we haven't specified well enough yet!
-        // What this effect is supposed to do is ask config if this instance requires invite codes.
-        // For now, we just go and say no, which is done by doing...
-        return(ConfigFetchedInviteOnly(Error(Nil)))
-        // If we'd say yes there, it'd mean a trip to the database to fetch the currently valid invite keys.
-        // This allows our input field to immediately tell someone they're entering a wrong key, so that the data module
-        // later has less work declining invalid invites :)
+        return(case config.application_users_register_inviteonly() {
+          True -> {
+            case
+              sql.get_valid_invites(pog.named_connection(
+                model.global_context.postgres_pool_name,
+              ))
+            {
+              Ok(pog.Returned(_, results)) ->
+                ConfigFetchedInviteOnly(
+                  Ok(list.map(results, fn(invite) { invite.invite_code })),
+                )
+              Error(_) -> ConfigFetchError
+            }
+          }
+          False -> ConfigFetchedInviteOnly(Error(Nil))
+        })
       }),
       subscribe(
         on_global_message: AppReceivedGlobalBroadcast,
@@ -142,6 +154,7 @@ pub opaque type Message {
   UserChangedInputInviteCode(now: String)
   ConfigFetchedInviteOnly(Result(List(String), Nil))
   RandomFriendlyIDGenerated(String)
+  ConfigFetchError
 }
 
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
@@ -203,6 +216,10 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
             ..model,
             field_invite_code: {
                 ControlledInput(False, value: now, validity: {
+                  use <- bool.guard(
+                    accepted_codes == [],
+                    Error("This instance does not have any invites open."),
+                  )
                   use <- bool.guard(
                     now == "",
                     Error("This instance requires an invite code!"),
@@ -351,6 +368,21 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       ),
       effect.none(),
     )
+
+    RegistrationAttemptResult(Error(data.MissingInviteCode)) -> #(
+      Model(
+        ..model,
+        field_invite_code: Some(#(
+          ControlledInput(False, value: "", validity: Error("Cannot be empty!")),
+          model.field_invite_code
+            |> option.map(pair.second)
+            |> option.unwrap([]),
+        )),
+        page_status: Error("Missing your invite code!"),
+      ),
+      effect.none(),
+    )
+    RegistrationAttemptResult(Error(data.InvalidInviteCode)) -> todo
     RegistrationAttemptResult(Error(data.RegistrationSuccessButSessionCreationFailed(
       data.UserSessionAuthNoMatch,
     )))
@@ -374,6 +406,36 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       ),
       effect.none(),
     )
+
+    ConfigFetchError -> #(
+      Model(
+        ..model,
+        page_status: Error(
+          "Instance had an internal error. Please refresh now, or try later.",
+        ),
+      ),
+      effect.none(),
+    )
+    ConfigFetchedInviteOnly(Ok([])) -> #(
+      Model(
+        ..model,
+        page_status: Error(
+          "Instance does not have any invites open. Please try later or contact an instance admin.",
+        ),
+        field_invite_code: Some(
+          #(
+            ControlledInput(
+              initial: False,
+              value: "",
+              validity: Error("This instance does not have any invites open."),
+            ),
+            [],
+          ),
+        ),
+      ),
+      effect.none(),
+    )
+
     ConfigFetchedInviteOnly(Ok(valid_invites)) -> {
       #(
         Model(
@@ -414,6 +476,11 @@ fn generate_random_friendly_id() -> effect.Effect(Message) {
 
 // View ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fn view(model: Model) -> element.Element(Message) {
+  let may_proceed = {
+    model.field_invite_code
+    |> option.map(fn(v) { v.0.validity |> result.is_ok })
+    |> option.unwrap(True)
+  }
   html.div(
     [
       attribute.class("items-center justify-center flex"),
@@ -450,12 +517,14 @@ fn view(model: Model) -> element.Element(Message) {
               // Invite code
               case model.field_invite_code {
                 None -> element.none()
-                Some(#(field_invite_code, _)) -> {
+                Some(#(field_invite_code, accept)) -> {
                   html.div([attribute.data("field", "")], [
                     html.label([attribute.for("field-invite-code")], [
                       html.text(" Invite code "),
                     ]),
                     html.input([
+                      attribute.disabled(accept == []),
+                      attribute.aria_disabled(accept == []),
                       attribute.value(field_invite_code.value),
                       event.on_input(UserChangedInputInviteCode)
                         |> server_component.include(["target.value"]),
@@ -510,6 +579,8 @@ fn view(model: Model) -> element.Element(Message) {
                   html.text(" Display name "),
                 ]),
                 html.input([
+                  attribute.disabled(!may_proceed),
+                  attribute.aria_disabled(!may_proceed),
                   attribute.value(model.field_displayname.value),
                   event.on_input(UserChangedInputDisplayName)
                     |> server_component.include(["target.value"]),
@@ -565,6 +636,8 @@ fn view(model: Model) -> element.Element(Message) {
                   html.text(" Email "),
                 ]),
                 html.input([
+                  attribute.disabled(!may_proceed),
+                  attribute.aria_disabled(!may_proceed),
                   attribute.value(model.field_email.value),
                   event.on_input(UserChangedInputEmail)
                     |> server_component.include(["target.value"]),
@@ -617,6 +690,8 @@ fn view(model: Model) -> element.Element(Message) {
                   html.text(" Username "),
                 ]),
                 html.input([
+                  attribute.disabled(!may_proceed),
+                  attribute.aria_disabled(!may_proceed),
                   attribute.value(model.field_username.value),
                   event.on_input(UserChangedInputUsername)
                     |> server_component.include(["target.value"]),
@@ -668,6 +743,8 @@ fn view(model: Model) -> element.Element(Message) {
                   [
                     html.text(" Password "),
                     html.input([
+                      attribute.disabled(!may_proceed),
+                      attribute.aria_disabled(!may_proceed),
                       attribute.value(model.field_password.value),
                       event.on_input(UserChangedInputPassword)
                         |> server_component.include(["target.value"]),
@@ -711,6 +788,67 @@ fn view(model: Model) -> element.Element(Message) {
                             attribute.role("status"),
                             attribute.class("error"),
                             attribute.id("field-password-status"),
+                          ],
+                          [element.text(message)],
+                        )
+                      }
+                    },
+                  ],
+                ),
+              ]),
+
+              // Password confirm
+              html.div([attribute.data("field", "")], [
+                html.label(
+                  [attribute.aria_invalid("true"), attribute.data("field", "")],
+                  [
+                    html.text(" Re-enter password "),
+                    html.input([
+                      attribute.disabled(!may_proceed),
+                      attribute.aria_disabled(!may_proceed),
+                      attribute.value(model.field_password_re.value),
+                      event.on_input(UserChangedInputPasswordRetype)
+                        |> server_component.include(["target.value"]),
+                      attribute.placeholder("•••••••••••••••"),
+                      attribute.aria_describedby("field-password-retype-status"),
+                      attribute.id("field-password-retype"),
+                      attribute.aria_invalid({
+                        case model.field_password_re {
+                          ControlledInput(value: _, validity: _, initial: True)
+                          | ControlledInput(
+                              value: _,
+                              validity: Ok(Nil),
+                              initial: _,
+                            ) -> False
+                          ControlledInput(value: _, validity: _, initial: False) ->
+                            True
+                        }
+                        |> bool.to_string
+                        |> string.lowercase
+                      }),
+                      attribute.type_("password"),
+                    ]),
+                    case model.field_password_re {
+                      ControlledInput(_, _, initial: True)
+                      | ControlledInput(_, _, validity: Ok(Nil)) ->
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.id("field-password-retype-status"),
+                            attribute.class("hidden"),
+                          ],
+                          [],
+                        )
+                      ControlledInput(
+                        _,
+                        validity: Error(message),
+                        initial: False,
+                      ) -> {
+                        html.div(
+                          [
+                            attribute.role("status"),
+                            attribute.class("error"),
+                            attribute.id("field-password-retype-status"),
                           ],
                           [element.text(message)],
                         )

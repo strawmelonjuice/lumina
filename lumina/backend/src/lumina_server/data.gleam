@@ -399,6 +399,8 @@ pub fn user_session_authorise(
 
 pub type UserRegistrationError {
   RegistrationSuccessButSessionCreationFailed(UserSessionAuthError)
+  MissingInviteCode
+  InvalidInviteCode
 }
 
 pub fn user_register_and_authorise(
@@ -408,9 +410,17 @@ pub fn user_register_and_authorise(
   username new_username: String,
   password new_password: String,
   display_name new_display_name: String,
-  // This depends on config we haven't specified well enough yet!
   invite_code invite_code: Option(String),
 ) -> Result(UserSession, UserRegistrationError) {
+  let invited = case
+    config.application_users_register_inviteonly(),
+    invite_code
+  {
+    True, Some(..) -> todo as "Checking invites has not been implemented yet."
+    True, None -> Error(MissingInviteCode)
+    False, _ -> Ok(Nil)
+  }
+  use _ <- result.try(invited)
   todo
 }
 

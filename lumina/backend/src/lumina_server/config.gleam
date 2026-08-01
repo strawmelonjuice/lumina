@@ -44,6 +44,14 @@ pub fn application_admins() {
   )
 }
 
+pub fn application_users_register_inviteonly() {
+  gets(
+    config_module: "application",
+    with: decode.at(["users", "register", "on-invite-only"], decode.bool),
+    initial: application_config_init,
+  )
+}
+
 pub fn application_web_port() {
   gets(
     config_module: "application/web",
@@ -74,6 +82,12 @@ fn application_config_init() -> json.Json {
   json.object([
     #("debug", json.bool(False)),
     #("admins", json.array([], json.string)),
+    #(
+      "users",
+      json.object([
+        #("register", json.object([#("on-invite-only", json.bool(False))])),
+      ]),
+    ),
   ])
 }
 

@@ -103,6 +103,40 @@ SELECT name
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_valid_invites` query
+/// defined in `./src/lumina_server/data/sql/get_valid_invites.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetValidInvitesRow {
+  GetValidInvitesRow(invite_code: String)
+}
+
+/// Gets the list of instance invite codes for which `valid` is `True`.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_valid_invites(
+  db: pog.Connection,
+) -> Result(pog.Returned(GetValidInvitesRow), pog.QueryError) {
+  let decoder = {
+    use invite_code <- decode.field(0, decode.string)
+    decode.success(GetValidInvitesRow(invite_code:))
+  }
+
+  "-- Gets the list of instance invite codes for which `valid` is `True`.
+
+SELECT invite_code
+	FROM invites
+	WHERE valid = TRUE;
+"
+  |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `local_user_id_by_email` query
 /// defined in `./src/lumina_server/data/sql/local_user_id_by_email.sql`.
 ///
