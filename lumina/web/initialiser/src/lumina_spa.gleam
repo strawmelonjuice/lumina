@@ -8,7 +8,6 @@
 import gleam/bit_array
 import gleam/bool
 import gleam/dynamic/decode
-import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
