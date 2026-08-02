@@ -25,12 +25,15 @@ import gleam/erlang/atom
 import gleam/erlang/process
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import gleam/otp/supervision
 import gleam/result
 import group_registry
 import logging
 import lumina_server/config
 import lumina_server/data
+import lumina_server/data/sql
 import lumina_server/server
+import pog
 import witness
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +107,7 @@ pub fn start_supervisor() -> Result(
   |> witness.configure
 
   let db_pool = process.new_name("Databasepool")
+  let db_manager = process.new_name("Database manager")
   let global_app_registry_name =
     process.new_name("App message registry: Intersession")
   let session_app_registry_name =
@@ -122,10 +126,11 @@ pub fn start_supervisor() -> Result(
   // let login_component = process.new_name("Web component: Login")
 
   supervisor.new(supervisor.RestForOne)
+  |> supervisor.add(data.db_child(db_pool))
   |> supervisor.add(group_registry.supervised(global_app_registry_name))
   |> supervisor.add(group_registry.supervised(session_app_registry_name))
-  |> supervisor.add(data.db_child(db_pool))
   |> supervisor.add(server.child(global_context, webserver_name))
   |> supervisor.add(data.session_janitor(global_context.sessions))
+  |> supervisor.add(data.database_manager(db_manager, db_pool))
   |> supervisor.start
 }

@@ -188,9 +188,9 @@ fn api_auth_status(
   global_context: data.Globals,
 ) -> response.Response(ewe.ResponseBody) {
   use session <- with_session(request:, global_context:)
-  witness.this(witness.Info, "Request answered with hardcoded answer", [
-    witness.int("HTTP CODE", 200),
-  ])
+  // witness.this(witness.Info, "Request answered with hardcoded answer", [
+  //   witness.int("HTTP CODE", 200),
+  // ])
   response.new(200)
   |> response.set_header("content-type", "text/plain; charset=utf-8")
   |> response.set_body(ewe.BytesData(

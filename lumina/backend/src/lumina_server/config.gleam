@@ -53,6 +53,14 @@ pub fn application_users_register_inviteonly() {
   )
 }
 
+pub fn application_name() {
+  gets(
+    config_module: "application",
+    with: decode.at(["instance", "name"], decode.string),
+    initial: application_config_init,
+  )
+}
+
 pub fn application_web_port() {
   gets(
     config_module: "application/web",
@@ -89,6 +97,7 @@ fn application_config_init() -> json.Json {
         #("register", json.object([#("on-invite-only", json.bool(False))])),
       ]),
     ),
+    #("instance", json.object([#("name", json.string(""))])),
   ])
 }
 

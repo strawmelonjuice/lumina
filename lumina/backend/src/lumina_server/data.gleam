@@ -75,6 +75,69 @@ pub type SessionMessage {
   SessionAuthorized(UserSession)
 }
 
+pub fn database_manager(
+  name: process.Name(Nil),
+  db_pool: process.Name(pog.Message),
+) -> supervision.ChildSpecification(process.Subject(Nil)) {
+  use <- supervision.worker()
+  let inner =
+    actor.new(Nil)
+    |> actor.named(name)
+    |> actor.on_message(fn(_, _) {
+      let conn = pog.named_connection(db_pool)
+      case sql.get_self_instance(conn) {
+        Ok(pog.Returned(1, [sql.GetSelfInstanceRow(name:)])) -> {
+          witness.this(witness.Info, "Instance name found", [
+            witness.string("Instance name", name),
+          ])
+          actor.continue(Nil)
+        }
+        _ -> {
+          let name = config.application_name()
+          case name {
+            "" -> {
+              witness.this(
+                witness.Emergency,
+                "Instance name needs to be set in application.json!",
+                [],
+              )
+              actor.stop_abnormal(
+                "Instance name needs to be set in application.json!",
+              )
+            }
+            name ->
+              case sql.set_self_instance(conn, name) {
+                Ok(_) -> {
+                  witness.this(
+                    witness.Info,
+                    "Instance name imported from config",
+                    [
+                      witness.string("Instance name", name),
+                    ],
+                  )
+                  actor.stop()
+                }
+
+                Error(_) -> {
+                  witness.this(
+                    witness.Emergency,
+                    "Could not import instance name from config.",
+                    [],
+                  )
+                  actor.stop_abnormal(
+                    "Could not import instance name from config.",
+                  )
+                }
+              }
+          }
+        }
+      }
+    })
+    |> actor.start()
+  actor.send(process.named_subject(name), Nil)
+  inner
+}
+
 pub fn initialise_global_context(
   postgres_pool_name postgres_pool_name: process.Name(pog.Message),
   global_app_registry_name global_app_registry_name: process.Name(
