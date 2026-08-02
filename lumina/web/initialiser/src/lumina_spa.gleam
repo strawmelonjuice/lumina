@@ -16,7 +16,7 @@ import gleam/uri.{type Uri}
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
-import lustre/element.{type Element}
+import lustre/element.{type Element, text}
 import lustre/element/html
 import lustre/element/keyed
 import lustre/event
@@ -78,6 +78,7 @@ type Route {
   About
   NotFound(uri: Uri)
   External(location: String)
+  RegisterFromKey
 }
 
 /// Used to turn a uri into a Route
@@ -86,6 +87,7 @@ fn parse_route(uri: Uri) -> Route {
     [] | [""] -> Index
     ["login"] -> Login
     ["signup"] -> Register
+    ["signup", "manually"] -> RegisterFromKey
     ["post", post_id] -> Post(id: post_id)
     ["browse", tl_id] -> Timeline(id: tl_id)
     ["browse"] -> Timeline("global")
@@ -117,6 +119,7 @@ fn href(route: Route) -> Attribute(Message) {
       External(location:) ->
         "/out/"
         <> bit_array.from_string(location) |> bit_array.base64_url_encode(True)
+      RegisterFromKey -> "/signup/manually"
     }
 
   attribute.href(url)
@@ -276,6 +279,7 @@ fn view(model: Model) -> Element(Message) {
       Index -> view_index(model)
       Login -> {
         #(view_default_sidebar(model), [
+          html.h1([], [text("Login")]),
           keyed.div([], [
             #(
               "logincomponent",
@@ -339,19 +343,59 @@ fn view(model: Model) -> Element(Message) {
 
       About -> view_about(model)
       NotFound(_) -> view_not_found()
-      Register -> #(view_default_sidebar(model), [
-        keyed.div([], [
-          #(
-            "registercomponent",
-            server_component.element(
-              [
-                server_component.route("/ws/web/register"),
-              ],
-              [],
-            ),
+      Register -> #(
+        [
+          html.header([], [text("Advanced")]),
+          html.nav(
+            [
+              attribute.styles([
+                #("font-family", "var(--font-menuitems)"),
+              ]),
+            ],
+            [
+              view_menu_link(
+                current: model.route,
+                show_on: [],
+                to: RegisterFromKey,
+                label: "Use an existing keypair",
+              ),
+            ],
           ),
-        ]),
-      ])
+          html.footer([], [
+            text("Actions"),
+            html.nav(
+              [
+                attribute.styles([
+                  #("font-family", "var(--font-menuitems)"),
+                ]),
+              ],
+              [
+                view_sidebar_button(
+                  current: model.route,
+                  show_on: [],
+                  to: About,
+                  label: "About Lumina",
+                ),
+              ],
+            ),
+          ]),
+        ],
+        [
+          //TODO: Maybe make that "Sign up on <instance name>", sometime?
+          html.h1([], [text("Sign up on this instance")]),
+          keyed.div([], [
+            #(
+              "registercomponent",
+              server_component.element(
+                [
+                  server_component.route("/ws/web/register"),
+                ],
+                [],
+              ),
+            ),
+          ]),
+        ],
+      )
       Timeline(id:) -> #(
         [
           server_component.element(
@@ -367,6 +411,72 @@ fn view(model: Model) -> Element(Message) {
         ],
       )
       External(location:) -> view_external(location)
+      RegisterFromKey -> #(
+        [
+          html.header([], [text("Advanced")]),
+          html.nav(
+            [
+              attribute.styles([
+                #("font-family", "var(--font-menuitems)"),
+              ]),
+            ],
+            [
+              view_menu_link(
+                current: model.route,
+                show_on: [],
+                to: Register,
+                label: "Sign up normally",
+              ),
+            ],
+          ),
+          html.footer([], [
+            text("Actions"),
+            html.nav(
+              [
+                attribute.styles([
+                  #("font-family", "var(--font-menuitems)"),
+                ]),
+              ],
+              [
+                view_sidebar_button(
+                  current: model.route,
+                  show_on: [],
+                  to: About,
+                  label: "About Lumina",
+                ),
+              ],
+            ),
+          ]),
+        ],
+        [
+          html.h1([], [text("Signing up from an existing keypair")]),
+          html.div(
+            [attribute.data("variant", "warning"), attribute.role("alert")],
+            [
+              html.strong([], [text("Advanced")]),
+              text(" This is mainly meant for use by advanced users! "),
+            ],
+          ),
+          html.hr([]),
+          html.p([], [
+            text(" A Lumina account is built on top of an "),
+            html.a([href(External("https://ed25519.cr.yp.to"))], [
+              text("ED25519 keypair"),
+            ]),
+            text(
+              ", the public key being the identity and the
+		  private key being the verification that the
+		  instance can use to sign a message in your account's
+		  name. Verifiable for other instances anywhere,
+		  as long as they have your identity (public key). ",
+            ),
+          ]),
+          // Here should be a form, either a user can store their existing keypair on the instance (with a warning), or
+        // can upload their public key, and sign messages using their private key locally. This does mean they have to
+        // either store it on their browser, or manually go back and forth to their CLI each time. Optionally,
+        // supporting a hardware passkey could be the solution.
+        ],
+      )
     }
   }
 
@@ -393,7 +503,7 @@ fn view(model: Model) -> Element(Message) {
               #("height", "40px"),
             ]),
           ],
-          [html.text("☰")],
+          [text("☰")],
         ),
         html.span(
           [
@@ -420,7 +530,7 @@ fn view(model: Model) -> Element(Message) {
                 ]),
               ],
             ),
-            html.text("Lumina"),
+            text("Lumina"),
           ],
         ),
         html.nav(
@@ -435,6 +545,7 @@ fn view(model: Model) -> Element(Message) {
             view_header_button(
               current: model.route,
               show_on: list.append(if_unauthenticated([Index, About], model), [
+                RegisterFromKey,
                 Register,
                 Login,
               ]),
@@ -444,6 +555,7 @@ fn view(model: Model) -> Element(Message) {
             view_header_button(
               current: model.route,
               show_on: list.append(if_unauthenticated([Index, About], model), [
+                RegisterFromKey,
                 Register,
                 Login,
               ]),
@@ -467,7 +579,7 @@ fn view(model: Model) -> Element(Message) {
                         ],
                         [
                           html.abbr([attribute.attribute("title", "Jane Doe")], [
-                            html.text("OT"),
+                            text("OT"),
                           ]),
                         ],
                       ),
@@ -481,23 +593,23 @@ fn view(model: Model) -> Element(Message) {
                     [
                       html.button(
                         [attribute.class("ghost"), attribute.role("menuitem")],
-                        [html.text("Profile")],
+                        [text("Profile")],
                       ),
                       html.button(
                         [attribute.class("ghost"), attribute.role("menuitem")],
-                        [html.text("Help")],
+                        [text("Help")],
                       ),
                       html.a(
                         [
                           attribute.role("menuitem"),
                           attribute.href("#"),
                         ],
-                        [html.text("Link")],
+                        [text("Link")],
                       ),
                       html.hr([]),
                       html.button(
                         [attribute.class("ghost"), attribute.role("menuitem")],
-                        [html.text("Logout")],
+                        [text("Logout")],
                       ),
                     ],
                   ),
@@ -533,7 +645,7 @@ fn view_index(
 ) -> #(List(Element(Message)), List(Element(Message))) {
   #(
     [
-      html.header([], [element.text("Hai")]),
+      html.header([], [text("Hai")]),
       html.nav(
         [
           attribute.styles([
@@ -541,11 +653,11 @@ fn view_index(
           ]),
         ],
         [
-          html.text("on-page navigation"),
+          text("on-page navigation"),
         ],
       ),
       html.footer([], [
-        html.text("Actions"),
+        text("Actions"),
         html.nav(
           [
             attribute.styles([
@@ -566,7 +678,7 @@ fn view_index(
     [
       html.div([attribute.class("align-center justify-center p-4")], [
         html.h1([], [
-          html.text("Welcome to Lumina!"),
+          text("Welcome to Lumina!"),
         ]),
         leading("It's ... running?"),
         paragraph("There is not much going on at the moment still yet though!"),
@@ -581,7 +693,7 @@ fn view_index(
 
 fn view_default_sidebar(model: Model) -> List(Element(Message)) {
   [
-    html.header([], [element.text("Hai")]),
+    html.header([], [text("Hai")]),
     html.nav(
       [
         attribute.styles([
@@ -589,11 +701,11 @@ fn view_default_sidebar(model: Model) -> List(Element(Message)) {
         ]),
       ],
       [
-        html.text("on-page navigation"),
+        text("on-page navigation"),
       ],
     ),
     html.footer([], [
-      html.text("Actions"),
+      text("Actions"),
       html.nav(
         [
           attribute.styles([
@@ -618,7 +730,7 @@ fn view_about(
 ) -> #(List(Element(Message)), List(Element(Message))) {
   #(
     [
-      html.header([], [element.text("Go...")]),
+      html.header([], [text("Go...")]),
       html.nav(
         [
           attribute.styles([
@@ -643,7 +755,7 @@ fn view_about(
       html.footer([], []),
     ],
     [
-      html.h1([], [html.text("About Lumina")]),
+      html.h1([], [text("About Lumina")]),
       leading("Lumina/Peonies "),
     ],
   )
@@ -653,16 +765,17 @@ fn view_external(
   location: String,
 ) -> #(List(Element(Message)), List(Element(Message))) {
   #([], [
+    html.h1([], [text("Leaving Lumina")]),
     html.div(
       [
         attribute.class("items-center justify-center flex"),
-        attribute.styles([
-          #("position", "fixed"),
-          #("top", "0"),
-          #("left", "0"),
-          #("height", "100dVH"),
-          #("width", "100dVW"),
-        ]),
+        // attribute.styles([
+      //   #("position", "fixed"),
+      //   #("top", "0"),
+      //   #("left", "0"),
+      //   #("height", "100dVH"),
+      //   #("width", "100dVW"),
+      // ]),
       ],
       [
         html.article(
@@ -671,11 +784,10 @@ fn view_external(
           ],
           [
             html.header([], [
-              html.h3([], [html.text("Leaving Lumina")]),
-              leading("You are about to go to an external site."),
+              html.h3([], [text("You are about to go to an external site.")]),
             ]),
             html.p([], [
-              element.text("Do you trust "),
+              text("Do you trust "),
               html.code(
                 [
                   attribute.styles([
@@ -683,9 +795,9 @@ fn view_external(
                     #("-webkit-user-select", "text"),
                   ]),
                 ],
-                [element.text(location)],
+                [text(location)],
               ),
-              element.text("?"),
+              text("?"),
             ]),
             html.footer([attribute.class("hstack")], [
               html.button(
@@ -693,7 +805,7 @@ fn view_external(
                   attribute.class("outline"),
                   event.on_click(UserNavigatedBack(by: 1)),
                 ],
-                [html.text("Cancel")],
+                [text("Cancel")],
               ),
               html.a([attribute.href(location)], [
                 html.button(
@@ -702,7 +814,7 @@ fn view_external(
                     attribute.class("outline"),
                   ],
                   [
-                    html.text("Yes, take me there!"),
+                    text("Yes, take me there!"),
                   ],
                 ),
               ]),
@@ -725,13 +837,13 @@ fn view_not_found() -> #(List(Element(Message)), List(Element(Message))) {
         ],
         [
           html.li([], [
-            html.a([attribute.href("/app/")], [html.text("Back home")]),
+            html.a([attribute.href("/app/")], [text("Back home")]),
           ]),
         ],
       ),
     ],
     [
-      html.h1([], [html.text("Not found")]),
+      html.h1([], [text("Not found")]),
       paragraph(
         "You glimpse into the void and see -- nothing?
        Well that was somewhat expected.",
@@ -742,7 +854,7 @@ fn view_not_found() -> #(List(Element(Message)), List(Element(Message))) {
 
 // View helpers
 
-fn leading(text: String) -> Element(Message) {
+fn leading(content: String) -> Element(Message) {
   html.p(
     [
       attribute.class("text-light"),
@@ -753,12 +865,16 @@ fn leading(text: String) -> Element(Message) {
         #("margin-bottom", "var(--space-8)"),
       ]),
     ],
-    [html.text(text)],
+    [text(content)],
   )
 }
 
-fn paragraph(text: String) -> Element(Message) {
-  html.p([attribute.class("mt-3")], [html.text(text)])
+fn paragraph(content: String) -> Element(Message) {
+  html.p([attribute.class("mt-3")], [text(content)])
+}
+
+fn long_paragraph(content: List(String)) -> Element(Message) {
+  html.p([attribute.class("mt-3")], list.map(content, text))
 }
 
 fn link(target: Route, title: String) -> Element(Message) {
@@ -766,7 +882,7 @@ fn link(target: Route, title: String) -> Element(Message) {
     [
       href(target),
     ],
-    [html.text(title)],
+    [text(title)],
   )
 }
 
@@ -781,7 +897,7 @@ fn view_header_button(
   to target: Route,
   current current: Route,
   show_on show_on: List(Route),
-  label text: String,
+  label label: String,
 ) -> Element(Message) {
   use <- bool.guard(
     !bool.or(list.contains(show_on, current), list.is_empty(show_on)),
@@ -796,7 +912,7 @@ fn view_header_button(
       True -> [attribute.aria_current("page"), href(target)]
       False -> [href(target)]
     },
-    [html.button([attribute.class("small")], [html.text(text)])],
+    [html.button([attribute.class("small")], [text(label)])],
   )
 }
 
@@ -804,7 +920,7 @@ fn view_sidebar_button(
   to target: Route,
   current current: Route,
   show_on show_on: List(Route),
-  label text: String,
+  label label: String,
 ) -> Element(Message) {
   use <- bool.guard(
     !bool.or(list.contains(show_on, current), list.is_empty(show_on)),
@@ -825,7 +941,7 @@ fn view_sidebar_button(
           attribute.class("outline small"),
           attribute.styles([#("width", "100%")]),
         ],
-        [html.text(text)],
+        [text(label)],
       ),
     ],
   )
@@ -835,7 +951,7 @@ fn view_menu_link(
   to target: Route,
   current current: Route,
   show_on show_on: List(Route),
-  label text: String,
+  label label: String,
 ) -> Element(Message) {
   use <- bool.guard(
     !bool.or(list.contains(show_on, current), list.is_empty(show_on)),
@@ -851,7 +967,7 @@ fn view_menu_link(
         True -> [attribute.aria_current("page"), href(target)]
         False -> [href(target)]
       },
-      [html.text(text)],
+      [text(label)],
     ),
   ])
 }

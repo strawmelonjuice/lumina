@@ -484,13 +484,13 @@ fn view(model: Model) -> element.Element(Message) {
   html.div(
     [
       attribute.class("items-center justify-center flex"),
-      attribute.styles([
-        #("position", "fixed"),
-        #("top", "0"),
-        #("left", "0"),
-        #("height", "100dVH"),
-        #("width", "100dVW"),
-      ]),
+      // attribute.styles([
+    //   #("position", "fixed"),
+    //   #("top", "0"),
+    //   #("left", "0"),
+    //   #("height", "100dVH"),
+    //   #("width", "100dVW"),
+    // ]),
     ],
     [
       html.article(
