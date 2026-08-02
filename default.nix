@@ -6,13 +6,13 @@ let
   };
   gleam = pkgs.rustPlatform.buildRustPackage rec {
     pname = "gleam";
-    version = "1.18.0";
+    version = "1.18.1";
 
     src = pkgs.fetchFromGitHub {
       owner = "gleam-lang";
       repo = "gleam";
-      rev = "603b8e37ab39d5570431d5be285e215707e4ed4d";
-      hash = "sha256-Qq55vu/urXMKzDwJMvGMA6qIyYeMxhFGV03oijUBVNk=";
+      rev = "4a83802ca33a8a96227a1b332768725f232f9779";
+      hash = "sha256-974B+22Lvd7KB9M0yuuxkolLtRmg42NrAX5CIrIc3Ac=";
     };
 
     cargoLock = {
