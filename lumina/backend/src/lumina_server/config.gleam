@@ -29,7 +29,8 @@ import witness
 
 // Public getters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pub fn application_debug() {
-  gets(
+  envoy.get("LUMINA_DEBUG") |> result.is_ok()
+  || gets(
     config_module: "application",
     with: decode.at(["debug"], decode.bool),
     initial: application_config_init,

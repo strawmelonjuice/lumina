@@ -39,7 +39,7 @@ import witness
 /// It also starts the OTP observer when ran with `just dev`.
 pub fn main() {
   let _ =
-    envoy.get("START_OBSERVER")
+    envoy.get("LUMINA_DEBUG")
     |> result.map(fn(_) { observer_start() })
 
   process.sleep_forever()
