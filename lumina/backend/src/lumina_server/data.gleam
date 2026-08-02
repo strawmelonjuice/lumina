@@ -35,6 +35,7 @@ import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp.{type Timestamp}
 import group_registry
+import lumina_server/async_crypto
 import lumina_server/config
 import lumina_server/data/sql
 import pog
@@ -401,6 +402,7 @@ pub type UserRegistrationError {
   RegistrationSuccessButSessionCreationFailed(UserSessionAuthError)
   MissingInviteCode
   InvalidInviteCode
+  UserRegistrationDBError
 }
 
 pub fn user_register_and_authorise(
@@ -412,16 +414,52 @@ pub fn user_register_and_authorise(
   display_name new_display_name: String,
   invite_code invite_code: Option(String),
 ) -> Result(UserSession, UserRegistrationError) {
-  let invited = case
-    config.application_users_register_inviteonly(),
-    invite_code
-  {
-    True, Some(..) -> todo as "Checking invites has not been implemented yet."
+  let conn = pog.named_connection(postgres_pool_name)
+  let revival_key = random_string(80)
+  let new_user_keypair = async_crypto.generate_keypair()
+  let usersession_key = <<revival_key:utf8>>
+
+  use session_uuid <- result.try(
+    session_id
+    |> uuid.from_string()
+    |> result.replace_error(RegistrationSuccessButSessionCreationFailed(
+      UserSessionAuthSessionUUIDInvalid,
+    )),
+  )
+  case config.application_users_register_inviteonly(), invite_code {
+    True, Some(given_invite_code) -> {
+      case
+        sql.consume_invite(
+          conn,
+          new_user_keypair.public_key,
+          given_invite_code,
+          new_email,
+          new_display_name,
+          new_username,
+          new_password,
+          new_user_keypair.private_key,
+          session_uuid,
+          usersession_key,
+        )
+      {
+        Ok(pog.Returned(
+          count: 1,
+          rows: [sql.ConsumeInviteRow(username:, email:)],
+        )) ->
+          Ok(UserSession(
+            user_id: new_user_keypair.public_key,
+            revival_key:,
+            username:,
+            session_uuid:,
+            email:,
+          ))
+        _ -> Error(UserRegistrationDBError)
+      }
+      // |> result.map_error(RegistrationSuccessButSessionCreationFailed)
+    }
     True, None -> Error(MissingInviteCode)
-    False, _ -> Ok(Nil)
+    False, _ -> Ok(todo as "Implement inviteless registration.")
   }
-  use _ <- result.try(invited)
-  todo
 }
 
 // Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

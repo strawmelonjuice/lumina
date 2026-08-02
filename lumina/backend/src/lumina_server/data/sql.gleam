@@ -9,6 +9,120 @@ import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `consume_invite` query
+/// defined in `./src/lumina_server/data/sql/consume_invite.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ConsumeInviteRow {
+  ConsumeInviteRow(username: String, email: Option(String))
+}
+
+/// If invite code is valid, use it, assigning it to a new user id and invalidating it.
+///
+/// This query has a lot of parameters! So here's a short list:
+/// 1. The new user's generated ID (public key)
+/// 2. The used invite code
+/// 3. The new user's email
+/// 4. The new user's displayname
+/// 5. The new user's username
+/// 6. The new user's password
+/// 7. The new user's generated private key
+/// 8. The session ID to log in to this new account
+/// 9. Newly assigned usersession id.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn consume_invite(
+  db: pog.Connection,
+  arg_1: BitArray,
+  arg_2: String,
+  arg_3: String,
+  arg_4: String,
+  arg_5: String,
+  arg_6: String,
+  arg_7: BitArray,
+  arg_8: Uuid,
+  arg_9: BitArray,
+) -> Result(pog.Returned(ConsumeInviteRow), pog.QueryError) {
+  let decoder = {
+    use username <- decode.field(0, decode.string)
+    use email <- decode.field(1, decode.optional(decode.string))
+    decode.success(ConsumeInviteRow(username:, email:))
+  }
+
+  "-- If invite code is valid, use it, assigning it to a new user id and invalidating it.
+--
+-- This query has a lot of parameters! So here's a short list:
+-- 1. The new user's generated ID (public key)
+-- 2. The used invite code
+-- 3. The new user's email
+-- 4. The new user's displayname
+-- 5. The new user's username
+-- 6. The new user's password
+-- 7. The new user's generated private key
+-- 8. The session ID to log in to this new account
+-- 9. Newly assigned usersession id.
+
+WITH data(user_id, invite_code, email, displayname, username, password, private_key, session_id, usersession_id) AS (
+	VALUES
+	($1::bytea, $2, $3, $4, $5, $6, $7::bytea, $8::uuid, $9::bytea)
+), check_invite AS (
+	SELECT invite_code
+		FROM invites
+		WHERE valid = TRUE
+		AND invite_code = (SELECT invite_code FROM data)
+),      user_insert AS (
+         INSERT
+             INTO users (id, private_key, instance_id, email, displayname, username, password)
+
+                 VALUES (
+					(SELECT user_id FROM data), -- id (pubkey)
+                         (SELECT private_key FROM data), -- private key
+                         uuid_nil(), -- instance id
+                    	(SELECT email FROM data), -- email
+                         (SELECT displayname FROM data), -- displayname
+                         (SELECT username FROM data), -- username
+                    	(SELECT password FROM data) -- password
+                        )
+                 RETURNING id, username, email),
+invite_consume AS (
+    UPDATE invites
+        SET valid = FALSE,
+            used_by = (SELECT user_id FROM data)
+        WHERE invite_code = (SELECT invite_code FROM check_invite)
+	),
+
+     session_insert AS (
+         INSERT
+             INTO usersessions (id, user_id, session_key)
+                 VALUES ((SELECT session_id FROM data), -- Session ID
+                         (SELECT user_id FROM data), -- User ID
+                         (SELECT usersession_id FROM data) -- Usersession key
+                        )
+                 RETURNING 1)
+
+SELECT username, email
+	FROM user_insert
+	WHERE EXISTS (SELECT 1 FROM session_insert)
+LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.bytea(arg_1))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_3))
+  |> pog.parameter(pog.text(arg_4))
+  |> pog.parameter(pog.text(arg_5))
+  |> pog.parameter(pog.text(arg_6))
+  |> pog.parameter(pog.bytea(arg_7))
+  |> pog.parameter(pog.text(uuid.to_string(arg_8)))
+  |> pog.parameter(pog.bytea(arg_9))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `create_authenticated_usersession` query
 /// defined in `./src/lumina_server/data/sql/create_authenticated_usersession.sql`.
 ///

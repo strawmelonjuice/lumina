@@ -460,6 +460,7 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       Model(..model, placeholder_friendly_id: friend_id),
       effect.none(),
     )
+    RegistrationAttemptResult(Error(data.UserRegistrationDBError)) -> todo
   }
 }
 

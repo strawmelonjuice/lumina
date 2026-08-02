@@ -307,13 +307,6 @@ COMMENT ON COLUMN public.users.username IS 'The user-set and human-readable name
 
 
 --
--- Name: COLUMN users.password; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.users.password IS 'The password has of a local user, for authentication.';
-
-
---
 -- Name: usersessions; Type: TABLE; Schema: public; Owner: -
 --
 
