@@ -75,78 +75,30 @@ pub type SessionMessage {
   SessionAuthorized(UserSession)
 }
 
-pub fn database_manager(
-  name: process.Name(Nil),
-  db_pool: process.Name(pog.Message),
-) -> supervision.ChildSpecification(process.Subject(Nil)) {
-  use <- supervision.worker()
-  let inner =
-    actor.new(Nil)
-    |> actor.named(name)
-    |> actor.on_message(fn(_, _) {
-      let conn = pog.named_connection(db_pool)
-      case sql.get_self_instance(conn) {
-        Ok(pog.Returned(1, [sql.GetSelfInstanceRow(name:)])) -> {
-          witness.this(witness.Info, "Instance name found", [
-            witness.string("Instance name", name),
-          ])
-          actor.continue(Nil)
-        }
-        _ -> {
-          let name = config.application_name()
-          case name {
-            "" -> {
-              witness.this(
-                witness.Emergency,
-                "Instance name needs to be set in application.json!",
-                [],
-              )
-              actor.stop_abnormal(
-                "Instance name needs to be set in application.json!",
-              )
-            }
-            name ->
-              case sql.set_self_instance(conn, name) {
-                Ok(_) -> {
-                  witness.this(
-                    witness.Info,
-                    "Instance name imported from config",
-                    [
-                      witness.string("Instance name", name),
-                    ],
-                  )
-                  actor.stop()
-                }
-
-                Error(_) -> {
-                  witness.this(
-                    witness.Emergency,
-                    "Could not import instance name from config.",
-                    [],
-                  )
-                  actor.stop_abnormal(
-                    "Could not import instance name from config.",
-                  )
-                }
-              }
-          }
-        }
-      }
-    })
-    |> actor.start()
-  actor.send(process.named_subject(name), Nil)
-  inner
+pub type DataManagerMessage {
+  /// Sets and gets initial database values where necessary.
+  DBInitialiseValues
+  /// Runs a session cleanup by checking for the last session in the list (which was the first one to be instantiated), this is already done in an intervalled planner.
+  /// Cleans up sessions older than 12 hours.
+  SessionJanitor
+  /// Call the manager with this message to have the Globals spit out.
+  GetGlobals(process.Subject(Globals))
 }
 
-pub fn initialise_global_context(
-  postgres_pool_name postgres_pool_name: process.Name(pog.Message),
+pub type DataManagerState {
+  DataManagerState(globals: Globals)
+}
+
+pub fn manager(
+  name name: process.Name(DataManagerMessage),
+  db_pool db_pool: process.Name(pog.Message),
   global_app_registry_name global_app_registry_name: process.Name(
     group_registry.Message(GlobalMessage),
   ),
   session_app_registry_name session_app_registry_name: process.Name(
     group_registry.Message(SessionMessage),
   ),
-) -> Globals {
+) -> supervision.ChildSpecification(process.Subject(DataManagerMessage)) {
   let sessions: SessionsStore = {
     SessionsStore(
       table: table.new()
@@ -158,7 +110,6 @@ pub fn initialise_global_context(
         |> queue.build,
     )
   }
-
   let secrets =
     GlobalSecrets(cookie_secret: {
       let secretfile = absname_join(data_dir(), "./session-cookie-secret")
@@ -218,14 +169,144 @@ pub fn initialise_global_context(
         }
       }
     })
+  let inner =
+    actor.new(
+      DataManagerState(globals: Globals(
+        sessions:,
+        secrets:,
+        global_app_registry_name:,
+        session_app_registry_name:,
+        postgres_pool_name: db_pool,
+      )),
+    )
+    |> actor.on_message(fn(state: DataManagerState, msg: DataManagerMessage) {
+      case msg {
+        DBInitialiseValues -> {
+          let conn = pog.named_connection(db_pool)
+          case sql.get_self_instance(conn) {
+            Ok(pog.Returned(1, [sql.GetSelfInstanceRow(name:)])) -> {
+              witness.this(witness.Info, "Instance name found", [
+                witness.string("Instance name", name),
+              ])
+              actor.continue(state)
+            }
+            _ -> {
+              let name = config.application_name()
+              case name {
+                "" -> {
+                  witness.this(
+                    witness.Emergency,
+                    "Instance name needs to be set in application.json!",
+                    [],
+                  )
+                  actor.stop_abnormal(
+                    "Instance name needs to be set in application.json!",
+                  )
+                }
+                name ->
+                  case sql.set_self_instance(conn, name) {
+                    Ok(_) -> {
+                      witness.this(
+                        witness.Info,
+                        "Instance name imported from config",
+                        [
+                          witness.string("Instance name", name),
+                        ],
+                      )
+                      actor.stop()
+                    }
 
-  Globals(
-    sessions:,
-    secrets:,
-    global_app_registry_name:,
-    session_app_registry_name:,
-    postgres_pool_name:,
+                    Error(_) -> {
+                      witness.this(
+                        witness.Emergency,
+                        "Could not import instance name from config.",
+                        [],
+                      )
+                      actor.stop_abnormal(
+                        "Could not import instance name from config.",
+                      )
+                    }
+                  }
+              }
+            }
+          }
+        }
+
+        SessionJanitor -> {
+          witness.this(witness.Info, "Session janitor check in progress", [])
+          let next_sweep_time = case
+            queue.first(sessions.cleanup_queue)
+            |> result.try(fn(checked) {
+              table.lookup(sessions.table, checked.1)
+            })
+          {
+            Ok(SessionData(csrf_token: _, created_at:)) -> {
+              use <- bool.guard(
+                {
+                  {
+                    timestamp.difference(created_at, timestamp.system_time())
+                    |> duration.compare(duration.hours(12))
+                  }
+                  // Must be Less-than 12 hours old.
+                  == order.Lt
+                },
+                session_janitor_delay,
+              )
+              // Not Less-than 12 hours old means cleanup time!
+              let assert Ok(session_id) = queue.pop(sessions.cleanup_queue)
+              case table.delete(sessions.table, session_id) {
+                Error(Nil) -> {
+                  witness.this(
+                    witness.Warning,
+                    "Could not clean up expired session",
+                    [
+                      witness.string("session id", session_id),
+                    ],
+                  )
+                }
+                Ok(_) -> {
+                  witness.this(witness.Info, "Cleaned up expired session", [
+                    witness.string("session id", session_id),
+                  ])
+                }
+              }
+              witness.this(witness.Info, "Session janitor check ended.", [])
+              session_janitor_delay
+            }
+            Error(_) -> {
+              witness.this(
+                witness.Info,
+                "Session janitor found no sessions yet. Waiting longer before next check.",
+                [],
+              )
+              session_janitor_delay * 3
+            }
+          }
+          process.send_after(
+            process.named_subject(name),
+            next_sweep_time,
+            SessionJanitor,
+          )
+          actor.continue(state)
+        }
+        GetGlobals(reply_to) -> {
+          actor.send(reply_to, state.globals)
+          actor.continue(state)
+        }
+      }
+    })
+    |> actor.named(name)
+    |> actor.start()
+
+  process.send_after(process.named_subject(name), 20, DBInitialiseValues)
+  process.send_after(
+    process.named_subject(name),
+    session_janitor_delay,
+    SessionJanitor,
   )
+  use <- supervision.worker()
+  witness.this(witness.Info, "Preparing for takeoff!", [])
+  inner
 }
 
 // Sessions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -241,75 +322,8 @@ pub type SessionData {
 
 const session_janitor_delay = 50_000
 
-/// Cleans up sessions older than 12 hours.
-pub fn session_janitor(
-  sessions: SessionsStore,
-  name: process.Name(Nil),
-) -> supervision.ChildSpecification(process.Subject(Nil)) {
-  use <- supervision.worker()
-  let inner =
-    actor.new(Nil)
-    |> actor.named(name)
-    |> actor.on_message(fn(state, msg) {
-      witness.set_process_fields([witness.string("process", "Session Janitor")])
-      assert msg == Nil
-      witness.this(witness.Info, "Session janitor check in progress", [])
-
-      case
-        queue.first(sessions.cleanup_queue)
-        |> result.try(fn(checked) { table.lookup(sessions.table, checked.1) })
-      {
-        Ok(SessionData(csrf_token: _, created_at:)) -> {
-          use <- bool.lazy_guard(
-            {
-              {
-                timestamp.difference(created_at, timestamp.system_time())
-                |> duration.compare(duration.hours(12))
-              }
-              // Must be Less-than 12 hours old.
-              == order.Lt
-            },
-            fn() { process.sleep(session_janitor_delay) },
-          )
-          // Not Less-than 12 hours old means cleanup time!
-          let assert Ok(session_id) = queue.pop(sessions.cleanup_queue)
-          case table.delete(sessions.table, session_id) {
-            Error(Nil) -> {
-              witness.this(
-                witness.Warning,
-                "Could not clean up expired session",
-                [
-                  witness.string("session id", session_id),
-                ],
-              )
-            }
-            Ok(_) -> {
-              witness.this(witness.Info, "Cleaned up expired session", [
-                witness.string("session id", session_id),
-              ])
-              process.sleep(session_janitor_delay)
-            }
-          }
-          witness.this(witness.Info, "Session janitor check ended.", [])
-        }
-        Error(_) -> {
-          witness.this(
-            witness.Info,
-            "Session janitor found no sessions yet. Waiting longer before next check.",
-            [],
-          )
-          process.sleep(session_janitor_delay)
-        }
-      }
-
-      process.sleep(session_janitor_delay)
-      actor.send(process.named_subject(name), Nil)
-      actor.continue(state)
-    })
-    |> actor.start()
-  actor.send(process.named_subject(name), Nil)
-  inner
-}
+// Earlier, this session store was managed by a dedicated 'session janitor' actor, this now
+// is part of the bigger `data.manager()` actor.
 
 pub fn get_csrf_for_session(session_store: SessionsStore, session_id: String) {
   use value <- result.map(table.lookup(session_store.table, session_id))

@@ -104,34 +104,22 @@ pub fn start_supervisor() -> Result(
   |> witness.configure
 
   let db_pool = process.new_name("Databasepool")
-  let db_manager = process.new_name("Database manager")
+  let datamgr = process.new_name("Data management actor")
   let global_app_registry_name =
     process.new_name("App message registry: Intersession")
   let session_app_registry_name =
     process.new_name("App message registry: Globally")
-  let global_context =
-    data.initialise_global_context(
-      postgres_pool_name: db_pool,
-      global_app_registry_name:,
-      session_app_registry_name:,
-    )
   let webserver_name = process.new_name("Webserver")
-  let session_janitor_name = process.new_name("Session Janitor")
-
-  // In the future, we may actually prestart web components from here.
-  //
-  //
-  // let login_component = process.new_name("Web component: Login")
-
   supervisor.new(supervisor.RestForOne)
   |> supervisor.add(data.db_child(db_pool))
-  |> supervisor.add(group_registry.supervised(global_app_registry_name))
-  |> supervisor.add(group_registry.supervised(session_app_registry_name))
-  |> supervisor.add(server.child(global_context, webserver_name))
-  |> supervisor.add(data.session_janitor(
-    global_context.sessions,
-    session_janitor_name,
+  |> supervisor.add(data.manager(
+    name: datamgr,
+    db_pool:,
+    global_app_registry_name:,
+    session_app_registry_name:,
   ))
-  |> supervisor.add(data.database_manager(db_manager, db_pool))
+  |> supervisor.add(group_registry.supervised(session_app_registry_name))
+  |> supervisor.add(group_registry.supervised(global_app_registry_name))
+  |> supervisor.add(server.child(datamgr:, name: webserver_name))
   |> supervisor.start
 }

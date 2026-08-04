@@ -32,6 +32,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/otp/actor
 import gleam/result
 import gleam/string
 import lumina_server/config
@@ -45,7 +46,12 @@ import witness
 import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pub fn child(global_context: data.Globals, name: process.Name(_)) {
+pub fn child(
+  datamgr data_manager_name: process.Name(data.DataManagerMessage),
+  name name: process.Name(_),
+) {
+  let data_manager = process.named_subject(data_manager_name)
+  let global_context = actor.call(data_manager, 6000, data.GetGlobals)
   ewe.new(fn(req: Request) -> Response {
     witness.set_process_fields([
       witness.string("process", "Webserver / request handler"),
