@@ -25,15 +25,12 @@ import gleam/erlang/atom
 import gleam/erlang/process
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
-import gleam/otp/supervision
 import gleam/result
 import group_registry
 import logging
 import lumina_server/config
 import lumina_server/data
-import lumina_server/data/sql
 import lumina_server/server
-import pog
 import witness
 
 // Main ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
