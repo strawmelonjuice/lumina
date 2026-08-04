@@ -116,6 +116,7 @@ pub fn start_supervisor() -> Result(
       session_app_registry_name:,
     )
   let webserver_name = process.new_name("Webserver")
+  let session_janitor_name = process.new_name("Session Janitor")
 
   // In the future, we may actually prestart web components from here.
   //
@@ -127,7 +128,10 @@ pub fn start_supervisor() -> Result(
   |> supervisor.add(group_registry.supervised(global_app_registry_name))
   |> supervisor.add(group_registry.supervised(session_app_registry_name))
   |> supervisor.add(server.child(global_context, webserver_name))
-  |> supervisor.add(data.session_janitor(global_context.sessions))
+  |> supervisor.add(data.session_janitor(
+    global_context.sessions,
+    session_janitor_name,
+  ))
   |> supervisor.add(data.database_manager(db_manager, db_pool))
   |> supervisor.start
 }

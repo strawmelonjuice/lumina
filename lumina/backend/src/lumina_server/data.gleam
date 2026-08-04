@@ -244,8 +244,8 @@ const session_janitor_delay = 50_000
 /// Cleans up sessions older than 12 hours.
 pub fn session_janitor(
   sessions: SessionsStore,
+  name: process.Name(Nil),
 ) -> supervision.ChildSpecification(process.Subject(Nil)) {
-  let name: process.Name(Nil) = process.new_name("Session Janitor")
   use <- supervision.worker()
   let inner =
     actor.new(Nil)
