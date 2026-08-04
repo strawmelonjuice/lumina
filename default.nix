@@ -38,6 +38,7 @@ in
       beam29Packages.erlang
       beam29Packages.rebar3
       erlang-language-platform
+      clang
       deno
       just
       watchexec
