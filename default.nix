@@ -47,6 +47,7 @@ in
     ];
 
     shellHook = ''
+      export LUMINA_DEBUG='1'
       just --list
       echo "Use just to run these recipes."
       if [ ! -d "$PGDATA" ]; then

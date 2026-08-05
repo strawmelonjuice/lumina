@@ -70,7 +70,7 @@ build: prepare-build
 	cd ./lumina/backend && gleam export erlang-shipment
 
 [doc('Continuously build and run Lumina, including database.')]
-dev $LUMINA_DEBUG='1':
+dev:
 	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
 	just migrate || echo "Something went wrong running 'just migrate'."
 	trap 'pg_ctl stop' EXIT; watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam,mjs,mts,djot,css --debounce 500ms -- just run
