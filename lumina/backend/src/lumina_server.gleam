@@ -110,16 +110,24 @@ pub fn start_supervisor() -> Result(
   let session_app_registry_name =
     process.new_name("App message registry: Globally")
   let webserver_name = process.new_name("Webserver")
-  supervisor.new(supervisor.RestForOne)
-  |> supervisor.add(data.db_child(db_pool))
-  |> supervisor.add(data.manager(
-    name: datamgr,
-    db_pool:,
-    global_app_registry_name:,
-    session_app_registry_name:,
-  ))
+
+  let globals: data.Globals =
+    data.establish_globals(
+      db_pool_name: db_pool,
+      data_manager_name: datamgr,
+      global_app_registry_name:,
+      session_app_registry_name:,
+    )
+
+  supervisor.new(supervisor.OneForAll)
+  |> supervisor.add({
+    supervisor.new(supervisor.RestForOne)
+    |> supervisor.add(data.db_child(db_pool))
+    |> supervisor.add(data.manager(globals:))
+    |> supervisor.supervised
+  })
   |> supervisor.add(group_registry.supervised(session_app_registry_name))
   |> supervisor.add(group_registry.supervised(global_app_registry_name))
-  |> supervisor.add(server.child(datamgr:, name: webserver_name))
+  |> supervisor.add(server.child(globals:, name: webserver_name))
   |> supervisor.start
 }

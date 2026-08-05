@@ -36,7 +36,7 @@ import gleam/otp/actor
 import gleam/result
 import gleam/string
 import lumina_server/config
-import lumina_server/data.{type SessionsStore}
+import lumina_server/data
 import lumina_server/server/components
 import lumina_server/server/components/shared
 import lustre/attribute
@@ -46,12 +46,7 @@ import witness
 import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pub fn child(
-  datamgr data_manager_name: process.Name(data.DataManagerMessage),
-  name name: process.Name(_),
-) {
-  let data_manager = process.named_subject(data_manager_name)
-  let global_context = actor.call(data_manager, 6000, data.GetGlobals)
+pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
   ewe.new(fn(req: Request) -> Response {
     witness.set_process_fields([
       witness.string("process", "Webserver / request handler"),
@@ -63,59 +58,59 @@ pub fn child(
     |> case req.method, request.path_segments(req) {
       http.Get, [] | http.Get, ["app"] | http.Get, ["app", ..] -> serves_spa(
         _,
-        global_context:,
+        global_context: globals,
       )
       http.Get, ["static", "lumina", "lumina.svg"]
       | http.Get, ["favicon.ico"]
       | http.Get, ["lumina.svg"]
       -> serves_priv_file(
         _,
-        global_context:,
+        global_context: globals,
         application: "lumina_server",
         path: "/static/lumina.svg",
         mime: "image/svg+xml; charset=utf-8",
       )
       http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
         _,
-        global_context:,
+        global_context: globals,
         application: "lumina_server",
         path: "/lumina.min.css",
         mime: "text/css; charset=utf-8",
       )
       http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
         _,
-        global_context:,
+        global_context: globals,
         application: "lumina_server",
         path: "/lumina.css",
         mime: "text/css; charset=utf-8",
       )
       http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
         _,
-        global_context:,
+        global_context: globals,
         application: "lumina_server",
         path: "/client.min.js",
         mime: "application/javascript; charset=utf-8",
       )
       http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
         _,
-        global_context:,
+        global_context: globals,
         application: "lumina_server",
         path: "/client.js",
         mime: "application/javascript; charset=utf-8",
       )
       http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
         _,
-        global_context,
+        globals,
       )
       http.Get, ["ws", "web", "login"] -> serve_component(
         _,
-        global_context,
+        globals,
         components.login,
       )
 
       http.Get, ["ws", "web", "register"] -> serve_component(
         _,
-        global_context,
+        globals,
         components.signup,
       )
       // Legals
@@ -126,7 +121,7 @@ pub fn child(
       | _, ["license"]
       -> serves_priv_file(
         _,
-        global_context:,
+        globals,
         application: "lumina_server",
         path: "/licence",
         mime: "text/plain",
@@ -193,7 +188,7 @@ fn api_auth_status(
   request: request.Request(ewe.Connection),
   global_context: data.Globals,
 ) -> response.Response(ewe.ResponseBody) {
-  use session <- with_session(request:, global_context:)
+  use _session <- with_session(request:, global_context:)
   // witness.this(witness.Info, "Request answered with hardcoded answer", [
   //   witness.int("HTTP CODE", 200),
   // ])
@@ -246,9 +241,8 @@ fn serves_spa(
   request: Request,
   global_context global_context: data.Globals,
 ) -> Response {
-  let session_store = global_context.sessions
   use session_id <- with_session(request:, global_context:)
-  let csrf_token = csrf_token(session_id, session_store)
+  let csrf_token = csrf_token(session_id, globals: global_context)
   let html =
     html.html([attribute.lang("en")], [
       html.head([], [
@@ -428,9 +422,9 @@ Disallow: /
 // Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 fn with_session(
-  then: fn(String) -> Response,
   request req: Request,
   global_context globals: data.Globals,
+  then then: fn(String) -> Response,
 ) {
   let session =
     request.get_cookies(req)
@@ -481,15 +475,18 @@ fn with_session(
   )
 }
 
-fn csrf_token(session_id: String, session_store: SessionsStore) {
-  case data.get_csrf_for_session(session_store, session_id) {
+fn csrf_token(session_id: String, globals globals: data.Globals) {
+  // Try it without calling the actor first (directly from ETS), this relieves the pressure on the actor inbox and speeds up consequent
+  // requests within the same session.
+  case data.get_csrf_for_session(globals.sessions, session_id) {
     Ok(token) -> token
     Error(Nil) -> {
-      let new_token = uuid.v4_string()
-      assert Ok(Nil)
-        == data.csrf_create_session(session_store, session_id, new_token)
-        as "Could not insert session. Was a uuid non-unique or did data get corrupted?"
-      new_token
+      // Since there was no session found by, the actor will likely create a new one, or who knows, it may also just
+      // have found a session created for a concurrent request! Either way, the data manager actor can ensure a
+      // session will be available.
+      let session_data: data.SessionData =
+        actor.call(globals.datamgr, 300, data.GetSession(session_id, _))
+      session_data.csrf_token
     }
   }
 }
