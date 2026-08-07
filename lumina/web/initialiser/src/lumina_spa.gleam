@@ -5,7 +5,6 @@
 
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-import gleam/bit_array
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/list
@@ -92,13 +91,6 @@ fn parse_route(uri: Uri) -> Route {
     ["browse", tl_id] -> Timeline(id: tl_id)
     ["browse"] -> Timeline("global")
     ["about"] -> About
-    ["out", location] -> {
-      bit_array.base64_url_decode(location)
-      |> result.map(bit_array.to_string)
-      |> result.flatten
-      |> result.map(External)
-      |> result.unwrap(NotFound(uri:))
-    }
     _ -> NotFound(uri:)
   }
 }
@@ -116,13 +108,14 @@ fn href(route: Route) -> Attribute(Message) {
       Register -> "/signup"
       Timeline(id:) if id == "global" -> "/browse/"
       Timeline(id:) -> "/browse/" <> id
-      External(location:) ->
-        "/out/"
-        <> bit_array.from_string(location) |> bit_array.base64_url_encode(True)
-      RegisterFromKey -> "/signup/manually"
+      External(_) -> ""
+      Register1FromKey -> "/signup/key"
     }
 
-  attribute.href(url)
+  attribute.href(case route {
+    External(location:) -> location
+    _ -> url
+  })
 }
 
 fn init(_) -> #(Model, Effect(Message)) {
@@ -132,10 +125,22 @@ fn init(_) -> #(Model, Effect(Message)) {
   }
 
   let model = Model(route:, user_authenticated: None, session_id: None)
+  let initial_origin =
+    modem.initial_uri()
+    |> result.map(uri.origin)
+    |> result.flatten
 
   let effect =
     effect.batch([
-      modem.init(fn(uri) { UserNavigatedTo(parse_route(uri)) }),
+      modem.advanced(
+        modem.Options(handle_internal_links: True, handle_external_links: True),
+        fn(uri) {
+          case uri.origin(uri) == initial_origin {
+            True -> UserNavigatedTo(parse_route(uri))
+            False -> UserNavigatedTo(External(uri.to_string(uri)))
+          }
+        },
+      ),
 
       case get_session_revive_key() {
         Ok(key) -> try_session_revive(key)
@@ -216,6 +221,7 @@ type Message {
   AuthenticationCheckResponse(Option(MyUser))
   RetryAuthenticationCheck
   UserNavigatedBack(by: Int)
+  UserNavigatedExternally
   NewUserSession(
     user_did: String,
     user_name: String,
@@ -267,6 +273,15 @@ fn update(model: Model, message: Message) -> #(Model, Effect(Message)) {
           effect.from(fn(_) { store_session_revive_key(session_revive_key) }),
         ]),
       )
+    }
+    UserNavigatedExternally -> {
+      #(model, case model.route {
+        External(location:) ->
+          uri.parse(location)
+          |> result.map(modem.load)
+          |> result.unwrap(effect.none())
+        _ -> effect.none()
+      })
     }
   }
 }
@@ -460,7 +475,7 @@ fn view(model: Model) -> Element(Message) {
           html.hr([]),
           html.p([], [
             text(" A Lumina account is built on top of an "),
-            html.a([href(External("https://ed25519.cr.yp.to"))], [
+            html.a([attribute.href("https://ed25519.cr.yp.to")], [
               text("ED25519 keypair"),
             ]),
             text(
@@ -859,21 +874,23 @@ fn view_external(
               html.button(
                 [
                   attribute.class("outline"),
-                  event.on_click(UserNavigatedBack(by: 1)),
+                  attribute.attribute(
+                    "onclick",
+                    "javascript:window.location.reload(false)",
+                  ),
                 ],
                 [text("Cancel")],
               ),
-              html.a([attribute.href(location)], [
-                html.button(
-                  [
-                    attribute.data("variant", "danger"),
-                    attribute.class("outline"),
-                  ],
-                  [
-                    text("Yes, take me there!"),
-                  ],
-                ),
-              ]),
+              html.button(
+                [
+                  attribute.data("variant", "danger"),
+                  attribute.class("outline"),
+                  event.on_click(UserNavigatedExternally),
+                ],
+                [
+                  text("Yes, take me there!"),
+                ],
+              ),
             ]),
           ],
         ),
