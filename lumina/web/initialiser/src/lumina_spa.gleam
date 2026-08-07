@@ -77,7 +77,7 @@ type Route {
   About
   NotFound(uri: Uri)
   External(location: String)
-  RegisterFromKey
+  Register1FromKey
 }
 
 /// Used to turn a uri into a Route
@@ -86,7 +86,7 @@ fn parse_route(uri: Uri) -> Route {
     [] | [""] -> Index
     ["login"] -> Login
     ["signup"] -> Register
-    ["signup", "manually"] -> RegisterFromKey
+    ["signup", "key"] -> Register1FromKey
     ["post", post_id] -> Post(id: post_id)
     ["browse", tl_id] -> Timeline(id: tl_id)
     ["browse"] -> Timeline("global")
@@ -371,7 +371,7 @@ fn view(model: Model) -> Element(Message) {
               view_menu_link(
                 current: model.route,
                 show_on: [],
-                to: RegisterFromKey,
+                to: Register1FromKey,
                 label: "Use an existing keypair",
               ),
             ],
@@ -426,7 +426,7 @@ fn view(model: Model) -> Element(Message) {
         ],
       )
       External(location:) -> view_external(location)
-      RegisterFromKey -> #(
+      Register1FromKey -> #(
         [
           html.header([], [text("Advanced")]),
           html.nav(
@@ -616,7 +616,7 @@ fn view(model: Model) -> Element(Message) {
             view_header_button(
               current: model.route,
               show_on: list.append(if_unauthenticated([Index, About], model), [
-                RegisterFromKey,
+                Register1FromKey,
                 Register,
                 Login,
               ]),
@@ -626,7 +626,7 @@ fn view(model: Model) -> Element(Message) {
             view_header_button(
               current: model.route,
               show_on: list.append(if_unauthenticated([Index, About], model), [
-                RegisterFromKey,
+                Register1FromKey,
                 Register,
                 Login,
               ]),
