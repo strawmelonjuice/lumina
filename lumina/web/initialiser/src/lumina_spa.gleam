@@ -463,90 +463,7 @@ fn view(model: Model) -> Element(Message) {
             ),
           ]),
         ],
-        [
-          html.h1([], [text("Signing up from an existing keypair")]),
-          html.div(
-            [attribute.data("variant", "warning"), attribute.role("alert")],
-            [
-              html.strong([], [text("Advanced")]),
-              text(" This is mainly meant for use by advanced users! "),
-            ],
-          ),
-          html.hr([]),
-          html.p([], [
-            text(" A Lumina account is built on top of an "),
-            html.a([attribute.href("https://ed25519.cr.yp.to")], [
-              text("ED25519 keypair"),
-            ]),
-            text(
-              ", the public key being the identity and the
-		  private key being the verification that the
-		  instance can use to sign a message in your account's
-		  name. Verifiable for other instances anywhere,
-		  as long as they have your identity (public key). ",
-            ),
-          ]),
-          paragraph(
-            " This keypair is normally made on the instance itself, providing the easiest user experience, and
-		trusting the user's choice of instance. However, a few cases may ask for keypairs that are generated
-		elsewhere.",
-          ),
-          paragraph(" Some of these cases include: "),
-          html.ul([], [
-            html.li([], [
-              text(
-                " You may have a previously generated keypair already known, this
-		also works for migrating accounts! Migrating an account this way will however mean losing data. ",
-              ),
-              html.span([attribute.class("badge")], [
-                text("Importing a keypair"),
-              ]),
-            ]),
-            html.li([], [
-              text(" The account you're setting up is a "),
-              html.em([], [text("high profile target")]),
-              text(
-                " (for example a political
-		account), for forgery or compromise, and so wants to sign actions and messages from a trusted device. ",
-              ),
-              html.span([attribute.class("badge")], [
-                text("Local keypair"),
-              ]),
-              html.span([attribute.class("badge")], [
-                text("External keypair"),
-              ]),
-            ]),
-            html.li([], [
-              // html.p([], [
-              text(
-                " Or you may be a thinkerer! Not afraid to leave the browser to use keys stored locally on one of the
-		    devices you have full control over. This also allows you to use for example Yubikeys for message signing! ",
-              ),
-              html.span([attribute.class("badge")], [
-                text("External keypair"),
-              ]),
-              // ]),
-              html.blockquote(
-                [
-                  attribute.styles([
-                    #("font-size", ".9rem"),
-                    #("margin-top", "0"),
-                  ]),
-                ],
-                [
-                  text(
-                    "(You may also sign a second key into your account after making
-		    it for Yubikey signing support, a Yubikey could get lost!)",
-                  ),
-                ],
-              ),
-            ]),
-          ]),
-          // Here should be a form, either a user can store their existing keypair on the instance (with a warning), or
-        // can upload their public key, and sign messages using their private key locally. This does mean they have to
-        // either store it on their browser, or manually go back and forth to their CLI each time. Optionally,
-        // supporting a hardware passkey could be the solution.
-        ],
+        view_register_key(),
       )
     }
   }
@@ -760,6 +677,97 @@ fn view_index(
       ]),
     ],
   )
+}
+
+fn view_register_key() -> List(Element(Message)) {
+  let badge_external_keypair =
+    html.span(
+      [attribute.class("badge"), attribute.data("variant", "secondary")],
+      [
+        text("External keypair"),
+      ],
+    )
+  let badge_imported_keypair =
+    html.span([attribute.class("badge outline")], [
+      text("Imported keypair"),
+    ])
+  let badge_local_keypair =
+    html.span([attribute.class("badge"), attribute.data("variant", "primary")], [
+      text("Local keypair"),
+    ])
+
+  [
+    html.h1([], [text("Signing up from an existing keypair")]),
+    html.div([attribute.data("variant", "warning"), attribute.role("alert")], [
+      html.strong([], [text("Advanced")]),
+      text(" This is mainly meant for use by advanced users! "),
+    ]),
+    html.br([]),
+    html.p([], [
+      text(" A Lumina account is built on top of an "),
+      html.a([attribute.href("https://ed25519.cr.yp.to")], [
+        text("ED25519 keypair"),
+      ]),
+      text(
+        ", the public key being the identity and the
+		  private key being the verification that the
+		  instance can use to sign a message in your account's
+		  name. Verifiable for other instances anywhere,
+		  as long as they have your identity (public key). ",
+      ),
+    ]),
+    paragraph(
+      " This keypair is normally made on the instance itself, providing the easiest user experience, and
+		trusting the user's choice of instance. However, a few cases may ask for keypairs that are generated
+		elsewhere.",
+    ),
+    paragraph(" Some of these cases include: "),
+    html.ul([], [
+      html.li([], [
+        text(
+          " You may have a previously generated keypair already known, this
+		also works for migrating accounts! Migrating an account this way will however mean losing data. ",
+        ),
+        badge_imported_keypair,
+      ]),
+      html.li([], [
+        text(" The account you're setting up is a "),
+        html.em([], [text("high profile target")]),
+        text(
+          " (for example a political
+		account), for forgery or compromise, and so wants to sign actions and messages from a trusted device. ",
+        ),
+        badge_local_keypair,
+        badge_external_keypair,
+      ]),
+      html.li([], [
+        text(
+          " Or you may be a thinkerer! Not afraid to leave the browser to use keys stored locally on one of the
+		    devices you have full control over. This also allows you to use for example Yubikeys for message signing! ",
+        ),
+        badge_external_keypair,
+        html.blockquote(
+          [
+            attribute.styles([
+              #("font-size", ".9rem"),
+              #("margin-top", "0"),
+            ]),
+          ],
+          [
+            text(
+              "(You may also sign a second key into your account after making
+		    it for Yubikey signing support, a Yubikey could get lost!)",
+            ),
+          ],
+        ),
+      ]),
+    ]),
+    html.hr([]),
+    // Here should be a form, either a user can store their existing keypair on the instance (with a warning), or
+  // can upload their public key, and sign messages using their private key locally. This does mean they have to
+  // either store it on their browser, or manually go back and forth to their CLI each time. Optionally,
+  // supporting a hardware passkey could be the solution.
+  ]
 }
 
 fn view_default_sidebar(model: Model) -> List(Element(Message)) {
