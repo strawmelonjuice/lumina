@@ -43,6 +43,7 @@ prepare-build:
 	# And Lumina's own.
 	echo -en "\n\n/* Lumina's own styles */\n" >> "./lumina/backend/priv/lumina.css"
 	cat ./lumina/backend/priv/static/lumina-base.css >> "./lumina/backend/priv/lumina.css"
+	cat ./lumina/backend/priv/static/lumina-extended.css >> "./lumina/backend/priv/lumina.css"
 
 	# Minify the css bundle
 	deno x minifier lumina/backend/priv/lumina.css --output lumina/backend/priv/lumina.min.css
@@ -127,4 +128,163 @@ update-elp:
 		deps: $deps
 	}' > .elp.build_info
 	echo "wrote .elp.build_info for app \"$app_name\""
+
+
+[group("Docs")]
+[doc('Builts and assembles the documentation files for Lumina. This is quite experimental at the moment.')]
+build-docs:
+	rm -fr ./dist/documentation/
+
+	cd ./lumina/backend/ && gleam docs build
+	cd ./lumina/web/initialiser/ && gleam docs build && mkdir -p ./build/dev/docs/lumina_spa/lumina_spa
+
+	mkdir -p ./dist/documentation/development/
+	mkdir -p ./docgentemp
+
+
+	mv ./lumina/backend/build/dev/docs/lumina_server -T ./dist/documentation/development
+	# List the module links in both the client and the instance packages
+	grep "module-link" ./lumina/web/initialiser/build/dev/docs/lumina_spa/index.html | tr '\n' '\r' | sed 's,/,SCHUINE-STREEP,g'  > ./docgentemp/client-modules.esc.html
+	# Insert the client modules into the instance' docs
+	find "./dist/documentation/development" -name "*.html" -type f -exec just insert-client-mods {} \;
+	cat ./dist/documentation/development/index.html
+	grep "module-link" ./dist/documentation/development/index.html | tr '\n' '\r'  | sed 's,/,SCHUINE-STREEP,g' > ./docgentemp/modules.esc.html
+
+	# Move the Gleam-generated documentation files into the output directory
+	mkdir ./dist/documentation/development/client/
+	mv ./dist/documentation/development/lumina_server ./dist/documentation/development/instance && mv ./dist/documentation/development/lumina_server.html ./dist/documentation/development/instance.html
+	# Prepare client HTML files for mingling with server HTML files.
+	find "./lumina/web/initialiser/build/dev/docs/lumina_spa" -name "*.html" -type f -exec just insert-mods-client {} \;
+	mv ./lumina/web/initialiser/build/dev/docs/lumina_spa/lumina_spa ./dist/documentation/development/client
+	mv ./lumina/web/initialiser/build/dev/docs/lumina_spa/lumina_spa.html ./dist/documentation/development/client.html
+
+	# Some CSS alterations
+	(cat ./vendor/oat/oat.min.css && cat "./dist/documentation/development/css/index.css" && cat "./lumina/backend/priv/static/lumina-base.css" &&  echo "{{devdocs-css}}") >./dist/documentation/development/css/index.css.tmp
+	mv ./dist/documentation/development/css/index.css.tmp ./dist/documentation/development/css/index.css
+	sed -i 's/\.theme-dark/\.disabled-theme-dark/g' ./dist/documentation/development/css/index.css
+
+	# Merge the search data
+	sed 's/{"items":\[{"type":"page","parentTitle":"lumina_spa","title":"lumina_spa","doc":"","ref":"index.html"}//g' ./lumina/web/initialiser/build/dev/docs/lumina_spa/search-data.json > ./docgentemp/search-data-client.part.json
+	sed -i "s/\],\"proglang\":\"gleam\"}//g" ./dist/documentation/development/search-data.json
+	cat ./docgentemp/search-data-client.part.json >> ./dist/documentation/development/search-data.json
+	just dev-docs-finalise-html ./dist/documentation/development/search-data.json
+
+	# The index page differs from any module pages. It needs to be populated freshly with content.
+	sed 's,/,SCHUINE-STREEP,g' ./dist/documentation/development/index.html > ./docgentemp/development-index.html.tmp
+	sed -i "/.*<main.*/a <!-- start of converted djot --> \
+		$(deno x -y --allow-all npm:@djot/djot ./docs-new/development/readme.dj -t html | \
+		sed "s,/,SCHUINE-STREEP,g;s,’,\\'," | tr '\n' '\r' )\
+		<!-- end of converted djot -->" ./docgentemp/development-index.html.tmp
+	just dev-docs-finalise-html ./docgentemp/development-index.html.tmp
+	mv ./docgentemp/development-index.html.tmp ./dist/documentation/development/index.html
+
+	# Remove temporary files
+	rm -fr ./docgentemp
+	find "./dist" -name "*.tmp" -type f -exec rm {} \;
+
+
+devdocs-css:="""
+	:root {
+		color-scheme: light;
+		--bg: var(--muted);
+		--fg-shade-1: var(--muted-foreground);
+	}
+	body,.page {
+		background-color: var(--bg);
+	}
+	.page-header {
+		background-color: var(--accent);
+		color: var(--accent-foreground);
+	}
+	main.content {
+		margin-left: calc(var(--sidebar-width) * 1.5);
+		background-color: var(--bg);
+		color: var(--fg-shade-1);
+		width: calc(100VW - var(--sidebar-width));
+	}
+	.sidebar {
+		background-color: var(--background);
+	    	color: var(--foreground);
+		height: calc(100VH - var(--header-height));
+		h2 {
+			font-size:1.2rem;
+		}
+	}
+	.module-name, .icon-gleam-chasse, .icon-gleam-chasse-2, #project-version,.display-controls {
+		display: none !important;
+	}
+ 	.module-name +p {
+		>strong {
+			font-size: 1rem;
+			margin-top: 2.5rem;
+			margin-right: 0px;
+			margin-left: 0px;
+			margin-bottom: 0;
+		}
+		+h1 {
+			margin-top: 0;
+			margin-right: 0px;
+			margin-left: 0px;
+			margin-bottom: 1.5rem;
+			font-size: 3rem;
+			text-decoration: underline dotted 8px;
+			text-underline-position: under;
+        		text-underline-offset: 3px;
+		}
+	}
+	code.hljs {
+
+	}
+
+	blockquote {
+		background-color: var(--card);
+		color: var(--card-foreground);
+	}
+"""
+
+[private]
+insert-client-mods filename:
+	sed 's,/,SCHUINE-STREEP,g' {{filename}} > {{filename}}.tmp
+	sed -i "/$(grep 'module-link' {{filename}}.tmp | tail -n 1 | tr -d '\n' )/a $(cat ./docgentemp/client-modules.esc.html)" {{filename}}.tmp
+	just dev-docs-finalise-html {{filename}}.tmp
+	# difft {{filename}} {{filename}}.tmp
+	mv {{filename}}.tmp {{filename}}
+[private]
+dev-docs-finalise-html filename:
+	sed \
+	's,SCHUINE-STREEP,/,g;\
+	s,syntax-theme,,g;\
+	s,module-link">lumina_server,module-link">instance,g;\
+	s,module-link">lumina_spa,module-link">web client,g;\
+	s,.*docs_config\.js".*,\t<!-- It has been removed for Lumina -->,;\
+	s,>README</a>,>Development documentation</a><!-- Other doc branches may grow here\, like users -->,g;\
+	s,href=".*./index\.html",href="/documentation/development/",g;\
+	s,href=".*./css/,href="/documentation/development/css/,g;s,".*\./lumina_,"\./lumina_,g;\
+	s,\./lumina_spa,/documentation/development/client,g;\
+	s,\./lumina_server,/documentation/development/instance,g;\
+	s,href=".*/">lumina_.*</a>,href="/documentation/development/index\.html">Lumina dev docs</a>,;\
+	s,lumina_spa\.html,client\.html,g;\
+	s/"ref":"lumina_server/"ref":"instance/g;\
+	s/"ref":"lumina_spa/"ref":"client/g' {{filename}} \
+	| tr '\r' '\n' > {{filename}}.2
+	mv {{filename}}.2 {{filename}}
+
+
+[private]
+insert-mods-client filename:
+	sed 's,/,SCHUINE-STREEP,g' {{filename}} > {{filename}}.tmp
+	sed -i '0,/module-link/s//linked-module/' {{filename}}.tmp
+	sed -i 's/.*module-link.*//' {{filename}}.tmp
+	sed -i "s/.*linked-module.*/ $(cat ./docgentemp/modules.esc.html) /" {{filename}}.tmp
+	just dev-docs-finalise-html {{filename}}.tmp
+	# difft {{filename}} {{filename}}.tmp
+	mv {{filename}}.tmp {{filename}}
+
+[group("Docs")]
+[doc('Builds and deploys Lumina documentation to <https://sites.wisp.place/strawmelonjuice.com/lumina-documentation>. This is quite experimental at the moment.')]
+deploy-docs: build-docs
+	find "./dist/documentation/" -name "*.html" -type f -exec sed -i 's,"/documentation,"https://sites.wisp.place/strawmelonjuice.com/lumina-documentation,g' {} \;
+	deno x -y --allow-all npm:wispctl deploy strawmelonjuice.com \
+			--path ./dist/documentation \
+			--site lumina-documentation
 
