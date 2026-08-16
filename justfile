@@ -202,6 +202,15 @@ devdocs-css:="""
 		background-color: var(--bg);
 		color: var(--fg-shade-1);
 		width: calc(100VW - var(--sidebar-width));
+		max-width: 100vw;
+	}
+	body.drawer-closed {
+		@media only screen and (max-width: 600px) {
+			main.content {
+				width:unset;
+				margin-left:unset;
+			}
+		}
 	}
 	.sidebar {
 		background-color: var(--background);
