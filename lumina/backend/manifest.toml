@@ -44,6 +44,7 @@ packages = [
   { name = "logging", version = "1.5.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "logging", source = "hex", outer_checksum = "BC5F18CE5DD9686100229FE5409BDC3DD5C46D5A7DF2F804AD2D8F0DD6C5060E" },
   { name = "lustre", version = "5.7.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_json", "gleam_otp", "gleam_stdlib", "houdini"], otp_app = "lustre", source = "hex", outer_checksum = "38C6FCBD7B7BACE994D5BF643202BB69B02576D44250B4C5DCE738387C0E8F87" },
   { name = "mala", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib"], otp_app = "mala", source = "hex", outer_checksum = "494B19B31733EC4051297B373F04EC263DEE73CE92612CDD809CB69D149DF74C" },
+  { name = "marceau", version = "1.3.0", build_tools = ["gleam"], requirements = [], otp_app = "marceau", source = "hex", outer_checksum = "2D1C27504BEF45005F5DFB18591F8610FB4BFA91744878210BDC464412EC44E9" },
   { name = "mug", version = "3.1.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib"], otp_app = "mug", source = "hex", outer_checksum = "C01279D98E40371DA23461774B63F0E3581B8F1396049D881B0C7EB32799D93F" },
   { name = "non_empty_list", version = "2.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "non_empty_list", source = "hex", outer_checksum = "06F9D3AC751CF7853AD5D24B8139CEB30E42D8799DE8D49F966A6197DF0B01CC" },
   { name = "opentelemetry_api", version = "1.5.0", build_tools = ["rebar3", "mix"], requirements = [], otp_app = "opentelemetry_api", source = "hex", outer_checksum = "F53EC8A1337AE4A487D43AC89DA4BD3A3C99DDF576655D071DEED8B56A2D5DDA" },
@@ -84,6 +85,7 @@ iv = { version = ">= 1.4.4 and < 2.0.0" }
 logging = { version = ">= 1.5.0 and < 2.0.0" }
 lustre = { version = ">= 5.7.0 and < 6.0.0" }
 mala = { version = ">= 1.2.0 and < 2.0.0" }
+marceau = { version = ">= 1.3.0 and < 2.0.0" }
 pog = { version = ">= 4.1.0 and < 5.0.0" }
 rasa = { version = ">= 2.0.1 and < 3.0.0" }
 shellout = { version = ">= 1.8.0 and < 2.0.0" }

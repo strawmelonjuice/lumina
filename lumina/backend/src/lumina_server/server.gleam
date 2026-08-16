@@ -42,6 +42,7 @@ import lumina_server/server/components/shared
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import marceau
 import witness
 import youid/uuid
 
@@ -68,35 +69,35 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/static/lumina.svg",
-        mime: "image/svg+xml; charset=utf-8",
+        with_mime: Some("image/svg+xml; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
         _,
         global_context: globals,
         application: "lumina_server",
         path: "/lumina.min.css",
-        mime: "text/css; charset=utf-8",
+        with_mime: Some("text/css; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
         _,
         global_context: globals,
         application: "lumina_server",
         path: "/lumina.css",
-        mime: "text/css; charset=utf-8",
+        with_mime: Some("text/css; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
         _,
         global_context: globals,
         application: "lumina_server",
         path: "/client.min.js",
-        mime: "application/javascript; charset=utf-8",
+        with_mime: Some("application/javascript; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
         _,
         global_context: globals,
         application: "lumina_server",
         path: "/client.js",
-        mime: "application/javascript; charset=utf-8",
+        with_mime: Some("application/javascript; charset=utf-8"),
       )
       http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
         _,
@@ -124,8 +125,9 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         globals,
         application: "lumina_server",
         path: "/licence",
-        mime: "text/plain",
+        with_mime: Some("text/plain"),
       )
+
       _, _ -> not_found
     }
   })
@@ -207,7 +209,7 @@ fn serves_priv_file(
   global_context global_context: data.Globals,
   application application: String,
   path path: String,
-  mime mime: String,
+  with_mime mime: option.Option(String),
 ) -> Response {
   use _ <- with_session(request:, global_context:)
   use dir <- try_404(application.priv_directory(application))
@@ -221,7 +223,15 @@ fn serves_priv_file(
         witness.string("File", resolved),
       ])
       response.new(200)
-      |> response.set_header("content-type", mime)
+      |> response.set_header(
+        "content-type",
+        mime
+          |> option.lazy_unwrap(fn() {
+            marceau.extension_to_mime_type(
+              string.split(resolved, ".") |> list.last |> result.unwrap(""),
+            )
+          }),
+      )
       |> response.set_body(file)
     }
     False -> not_found(request)
