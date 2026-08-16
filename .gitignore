@@ -4,7 +4,7 @@ lumina/backend/priv/client.min.js
 lumina/backend/priv/lumina.css
 lumina/backend/priv/lumina.min.css
 lumina/backend/priv/licence
-lumina/backend/priv/generated-documentation
+lumina/backend/priv/static/documentation
 build/
 vendor/
 lumina/web/initialiser/prelude.mts

@@ -43,6 +43,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 import marceau
+import simplifile
 import witness
 import youid/uuid
 
@@ -69,6 +70,7 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/static/lumina.svg",
+        or_path: [],
         with_mime: Some("image/svg+xml; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
@@ -76,6 +78,7 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/lumina.min.css",
+        or_path: [],
         with_mime: Some("text/css; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
@@ -83,6 +86,7 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/lumina.css",
+        or_path: [],
         with_mime: Some("text/css; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
@@ -90,6 +94,7 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/client.min.js",
+        or_path: [],
         with_mime: Some("application/javascript; charset=utf-8"),
       )
       http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
@@ -97,6 +102,7 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         global_context: globals,
         application: "lumina_server",
         path: "/client.js",
+        or_path: [],
         with_mime: Some("application/javascript; charset=utf-8"),
       )
       http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
@@ -125,7 +131,24 @@ pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
         globals,
         application: "lumina_server",
         path: "/licence",
+        or_path: [],
         with_mime: Some("text/plain"),
+      )
+
+      // Documentation
+      http.Get, ["documentation", ..] -> serves_priv_file(
+        _,
+        globals,
+        application: "lumina_server",
+        path: {
+          "static/"
+          <> case req.path |> string.contains(".") {
+            True -> req.path
+            False -> req.path <> ".html"
+          }
+        },
+        or_path: ["static/" <> req.path <> "/index.html"],
+        with_mime: None,
       )
 
       _, _ -> not_found
@@ -209,18 +232,35 @@ fn serves_priv_file(
   global_context global_context: data.Globals,
   application application: String,
   path path: String,
+  or_path or_path: List(String),
   with_mime mime: option.Option(String),
 ) -> Response {
   use _ <- with_session(request:, global_context:)
   use dir <- try_404(application.priv_directory(application))
-  let resolved = absname_join(dir, string.remove_prefix(path, "/"))
+  let resolved = case
+    or_path,
+    absname_join(dir, string.remove_prefix(path, "/"))
+  {
+    [], defined -> defined
+    paths, defined ->
+      list.find(
+        [
+          defined,
+          ..list.map(paths, fn(path) {
+            absname_join(dir, string.remove_prefix(path, "/"))
+          })
+        ],
+        fn(path) { simplifile.is_file(path) == Ok(True) |> echo as path },
+      )
+      |> result.unwrap(defined)
+  }
+  witness.add_process_fields([witness.string("File", resolved)])
   case string.starts_with(resolved, dir <> "/") {
     True -> {
       use file <- try_404(ewe.file(resolved, offset: None, limit: None))
 
       witness.this(witness.Info, "Request answered with file", [
         witness.int("HTTP CODE", 200),
-        witness.string("File", resolved),
       ])
       response.new(200)
       |> response.set_header(
@@ -228,7 +268,12 @@ fn serves_priv_file(
         mime
           |> option.lazy_unwrap(fn() {
             marceau.extension_to_mime_type(
-              string.split(resolved, ".") |> list.last |> result.unwrap(""),
+              string.split(resolved, ".")
+              |> list.last
+              |> result.lazy_or(fn() {
+                string.split(request.path, ".") |> list.last
+              })
+              |> result.unwrap(""),
             )
           }),
       )

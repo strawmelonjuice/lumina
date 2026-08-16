@@ -50,6 +50,7 @@ prepare-build:
 
 	# Also copy over other files, such as licence file.
 	cp ./LICENCE ./lumina/backend/priv/licence
+	@just embed-docs
 
 [doc('Migrate or initialise database and update Squirrel with it. This requires the database, so either run it from just
 dev or start the database by hand.')]
@@ -283,8 +284,14 @@ insert-mods-client filename:
 [group("Docs")]
 [doc('Builds and deploys Lumina documentation to <https://sites.wisp.place/strawmelonjuice.com/lumina-documentation>. This is quite experimental at the moment.')]
 deploy-docs: build-docs
-	find "./dist/documentation/" -name "*.html" -type f -exec sed -i 's,"/documentation,"https://sites.wisp.place/strawmelonjuice.com/lumina-documentation,g' {} \;
+	rm -fr  ./dist/documentation-site
+	cp -r ./dist/documentation ./dist/documentation-site
+	find "./dist/documentation-site/" -name "*.html" -type f -exec sed -i 's,"/documentation,"https://sites.wisp.place/strawmelonjuice.com/lumina-documentation,g' {} \;
 	deno x -y --allow-all npm:wispctl deploy strawmelonjuice.com \
-			--path ./dist/documentation \
+			--path ./dist/documentation-site/ \
 			--site lumina-documentation
-
+[doc('Embeds the docs from `dist/documentation` into the server files. Only builds once (if directory is not found), run build-docs to process changes.')]
+embed-docs:
+	@[ ! -d "./dist/documentation/" ] && just build-docs || echo "Documentation was generated before, run just build-docs to regenerate."
+	rm -fr ./lumina/backend/priv/static/documentation
+	cp -r ./dist/documentation ./lumina/backend/priv/static/documentation
