@@ -251,6 +251,57 @@ SELECT invite_code
   |> pog.execute(db)
 }
 
+/// Writes a new user account, does not check for invites, does not create a session.
+///
+/// This query has a lot of parameters! So here's a short list:
+/// 1. The new user's generated ID (public key)
+/// 2. The new user's email
+/// 3. The new user's displayname
+/// 4. The new user's username
+/// 5. The new user's password
+/// 6. The new user's generated private key
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn insert_user(
+  db: pog.Connection,
+  arg_1: BitArray,
+  arg_2: String,
+  arg_3: String,
+  arg_4: String,
+  arg_5: String,
+  arg_6: BitArray,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "-- Writes a new user account, does not check for invites, does not create a session.
+--
+-- This query has a lot of parameters! So here's a short list:
+-- 1. The new user's generated ID (public key)
+-- 2. The new user's email
+-- 3. The new user's displayname
+-- 4. The new user's username
+-- 5. The new user's password
+-- 6. The new user's generated private key
+
+INSERT
+	INTO users
+		(id, private_key, instance_id, email, displayname, username, password)
+	VALUES
+		($1, $6, uuid_nil(), $2, $3, $4, $5);
+"
+  |> pog.query
+  |> pog.parameter(pog.bytea(arg_1))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_3))
+  |> pog.parameter(pog.text(arg_4))
+  |> pog.parameter(pog.text(arg_5))
+  |> pog.parameter(pog.bytea(arg_6))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `local_user_id_by_email` query
 /// defined in `./src/lumina_server/data/sql/local_user_id_by_email.sql`.
 ///

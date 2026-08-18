@@ -232,6 +232,82 @@ pub fn manager(
       }
     }
 
+    let debug_accounts_inserted = {
+      use <- bool.guard(!config.application_debug(), Ok(Nil))
+
+      witness.this(
+        witness.Notice,
+        "Debug is active, creating development user accounts.",
+        [],
+      )
+
+      let username = "testuser1"
+      let password = "MyTestPassw9292!"
+      let email = "test@lumina123.co"
+      use _ <- result.try(
+        exec_insert_user(
+          conn,
+          email:,
+          display_name: "Test User 1",
+          username:,
+          password:,
+        )
+        |> result.map(fn(created) {
+          witness.this(
+            witness.Notice,
+            "Made development account " <> created.0,
+            [
+              witness.string(
+                "did:key",
+                pk_ldid_key_encode(created.1.public_key),
+              ),
+              witness.string("did:lumina", pk_ldid_encode(created.1.public_key)),
+              witness.string("debug password", password),
+            ],
+          )
+          created
+        }),
+      )
+
+      let username = "testuser2"
+      let password = "MyTestPassw9292!"
+      let email = "test@lumina234.co"
+      use _ <- result.try(
+        exec_insert_user(
+          conn,
+          email:,
+          display_name: "Test User 2",
+          username:,
+          password:,
+        )
+        |> result.map(fn(created) {
+          witness.this(
+            witness.Notice,
+            "Made development account " <> created.0,
+            [
+              witness.string(
+                "did:key",
+                pk_ldid_key_encode(created.1.public_key),
+              ),
+              witness.string("did:lumina", pk_ldid_encode(created.1.public_key)),
+              witness.string("debug password", password),
+            ],
+          )
+          created
+        }),
+      )
+      Ok(Nil)
+    }
+
+    let _ =
+      result.map_error(debug_accounts_inserted, fn(_) {
+        witness.this(
+          witness.Warning,
+          "Database could not be properly initialised for development mode.",
+          [],
+        )
+      })
+
     use _ <- result.map(
       db_init_result
       |> result.replace_error("Database could not be properly initialised"),
@@ -630,4 +706,30 @@ pub fn log_file(name name: String) {
 fn data_dir() -> String {
   envoy.get("LUMINA_DATA_DIR")
   |> result.unwrap("/data/data")
+}
+
+fn exec_insert_user(
+  conn,
+  email email: String,
+  display_name display_name: String,
+  username username: String,
+  password password: String,
+) {
+  let keypair = async_crypto.generate_keypair()
+  use password <- result.try(
+    password
+    |> user_password_hash_gen
+    |> result.replace_error(Nil),
+  )
+  sql.insert_user(
+    conn,
+    keypair.public_key,
+    email,
+    display_name,
+    username,
+    password,
+    keypair.private_key,
+  )
+  |> result.replace(#(username, keypair))
+  |> result.replace_error(Nil)
 }
