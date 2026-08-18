@@ -102,7 +102,7 @@ pub fn login(
       ),
     ) {
       case message {
-        ewe.Text(json) -> {
+        ewe.TextFrame(json) -> {
           case json.parse(json, server_component.runtime_message_decoder()) {
             Ok(runtime_message) -> lustre.send(state.1, runtime_message)
             Error(_) -> Nil
@@ -111,11 +111,11 @@ pub fn login(
           ewe.websocket_continue(state)
         }
 
-        ewe.Binary(_) -> {
+        ewe.BinaryFrame(_) -> {
           ewe.websocket_continue(state)
         }
 
-        ewe.User(client_message) -> {
+        ewe.UserMessage(client_message) -> {
           let json = server_component.client_message_to_json(client_message)
           let assert Ok(_) =
             ewe.send_text_frame(connection, json.to_string(json))
@@ -212,7 +212,7 @@ pub fn signup(
       ),
     ) {
       case message {
-        ewe.Text(json) -> {
+        ewe.TextFrame(json) -> {
           case json.parse(json, server_component.runtime_message_decoder()) {
             Ok(runtime_message) -> lustre.send(state.1, runtime_message)
             Error(_) -> Nil
@@ -221,11 +221,11 @@ pub fn signup(
           ewe.websocket_continue(state)
         }
 
-        ewe.Binary(_) -> {
+        ewe.BinaryFrame(_) -> {
           ewe.websocket_continue(state)
         }
 
-        ewe.User(client_message) -> {
+        ewe.UserMessage(client_message) -> {
           let json = server_component.client_message_to_json(client_message)
           let assert Ok(_) =
             ewe.send_text_frame(connection, json.to_string(json))

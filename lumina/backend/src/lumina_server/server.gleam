@@ -19,7 +19,7 @@
 // See the Licence for the specific language governing permissions and limitations.
 
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-import ewe.{type Request, type Response}
+import ewe
 import gleam/bytes_tree
 import gleam/crypto
 import gleam/erlang/application
@@ -48,140 +48,142 @@ import witness
 import youid/uuid
 
 // Router ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pub fn child(globals globals: data.Globals, name name: process.Name(_)) {
-  ewe.new(fn(req: Request) -> Response {
-    witness.set_process_fields([
-      witness.string("process", "Webserver / request handler"),
-      witness.string("path", req.path),
-      witness.string("method", req.method |> http.method_to_string),
-    ])
-    witness.this(level: witness.Info, message: "New request", fields: [])
-    req
-    |> case req.method, request.path_segments(req) {
-      http.Get, [] | http.Get, ["app"] | http.Get, ["app", ..] -> serves_spa(
-        _,
-        global_context: globals,
-      )
-      http.Get, ["static", "lumina", "lumina.svg"]
-      | http.Get, ["favicon.ico"]
-      | http.Get, ["lumina.svg"]
-      -> serves_priv_file(
-        _,
-        global_context: globals,
-        application: "lumina_server",
-        path: "/static/lumina.svg",
-        or_path: [],
-        with_mime: Some("image/svg+xml; charset=utf-8"),
-      )
-      http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
-        _,
-        global_context: globals,
-        application: "lumina_server",
-        path: "/lumina.min.css",
-        or_path: [],
-        with_mime: Some("text/css; charset=utf-8"),
-      )
-      http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
-        _,
-        global_context: globals,
-        application: "lumina_server",
-        path: "/lumina.css",
-        or_path: [],
-        with_mime: Some("text/css; charset=utf-8"),
-      )
-      http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
-        _,
-        global_context: globals,
-        application: "lumina_server",
-        path: "/client.min.js",
-        or_path: [],
-        with_mime: Some("application/javascript; charset=utf-8"),
-      )
-      http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
-        _,
-        global_context: globals,
-        application: "lumina_server",
-        path: "/client.js",
-        or_path: [],
-        with_mime: Some("application/javascript; charset=utf-8"),
-      )
-      http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
-        _,
-        globals,
-      )
-      http.Get, ["ws", "web", "login"] -> serve_component(
-        _,
-        globals,
-        components.login,
-      )
+pub fn child(
+  globals globals: data.Globals,
+  listener_name listener_name: process.Name(_),
+  connection_factory_name connection_factory_name: process.Name(_),
+) {
+  ewe.new(
+    handler: fn(req: request.Request(ewe.Connection)) -> response.Response(
+      ewe.Body,
+    ) {
+      witness.set_process_fields([
+        witness.string("process", "Webserver / request handler"),
+        witness.string("path", req.path),
+        witness.string("method", req.method |> http.method_to_string),
+      ])
+      witness.this(level: witness.Info, message: "New request", fields: [])
+      req
+      |> case req.method, request.path_segments(req) {
+        http.Get, [] | http.Get, ["app"] | http.Get, ["app", ..] -> serves_spa(
+          _,
+          global_context: globals,
+        )
+        http.Get, ["static", "lumina", "lumina.svg"]
+        | http.Get, ["favicon.ico"]
+        | http.Get, ["lumina.svg"]
+        -> serves_priv_file(
+          _,
+          global_context: globals,
+          application: "lumina_server",
+          path: "/static/lumina.svg",
+          or_path: [],
+          with_mime: Some("image/svg+xml; charset=utf-8"),
+        )
+        http.Get, ["static", "lumina", "lumina.min.css"] -> serves_priv_file(
+          _,
+          global_context: globals,
+          application: "lumina_server",
+          path: "/lumina.min.css",
+          or_path: [],
+          with_mime: Some("text/css; charset=utf-8"),
+        )
+        http.Get, ["static", "lumina", "lumina.css"] -> serves_priv_file(
+          _,
+          global_context: globals,
+          application: "lumina_server",
+          path: "/lumina.css",
+          or_path: [],
+          with_mime: Some("text/css; charset=utf-8"),
+        )
+        http.Get, ["static", "lumina", "client.min.js"] -> serves_priv_file(
+          _,
+          global_context: globals,
+          application: "lumina_server",
+          path: "/client.min.js",
+          or_path: [],
+          with_mime: Some("application/javascript; charset=utf-8"),
+        )
+        http.Get, ["static", "lumina", "client.js"] -> serves_priv_file(
+          _,
+          global_context: globals,
+          application: "lumina_server",
+          path: "/client.js",
+          or_path: [],
+          with_mime: Some("application/javascript; charset=utf-8"),
+        )
+        http.Get, ["api", "3.1", "session", "auth-status"] -> api_auth_status(
+          _,
+          globals,
+        )
+        http.Get, ["ws", "web", "login"] -> serve_component(
+          _,
+          globals,
+          components.login,
+        )
 
-      http.Get, ["ws", "web", "register"] -> serve_component(
-        _,
-        globals,
-        components.signup,
-      )
-      // Legals
-      _, ["robots.txt"] -> serves_robots_txt
-      _, ["licence.txt"]
-      | _, ["license.txt"]
-      | _, ["licence"]
-      | _, ["license"]
-      -> serves_priv_file(
-        _,
-        globals,
-        application: "lumina_server",
-        path: "/licence",
-        or_path: [],
-        with_mime: Some("text/plain"),
-      )
+        http.Get, ["ws", "web", "register"] -> serve_component(
+          _,
+          globals,
+          components.signup,
+        )
+        // Legals
+        _, ["robots.txt"] -> serves_robots_txt
+        _, ["licence.txt"]
+        | _, ["license.txt"]
+        | _, ["licence"]
+        | _, ["license"]
+        -> serves_priv_file(
+          _,
+          globals,
+          application: "lumina_server",
+          path: "/licence",
+          or_path: [],
+          with_mime: Some("text/plain"),
+        )
 
-      // Documentation
-      http.Get, ["documentation", ..] -> serves_priv_file(
-        _,
-        globals,
-        application: "lumina_server",
-        path: {
-          "static/"
-          <> case req.path |> string.contains(".") {
-            True -> req.path
-            False -> req.path <> ".html"
-          }
-        },
-        or_path: ["static/" <> req.path <> "/index.html"],
-        with_mime: None,
-      )
+        // Documentation
+        http.Get, ["documentation", ..] -> serves_priv_file(
+          _,
+          globals,
+          application: "lumina_server",
+          path: {
+            "static/"
+            <> case req.path |> string.contains(".") {
+              True -> req.path
+              False -> req.path <> ".html"
+            }
+          },
+          or_path: ["static/" <> req.path <> "/index.html"],
+          with_mime: None,
+        )
 
-      _, _ -> not_found
-    }
-  })
+        _, _ -> not_found
+      }
+    },
+    listener_name:,
+    connection_factory_name:,
+  )
   |> ewe.bind(config.application_web_host())
-  |> ewe.listening(port: config.application_web_port())
+  |> ewe.listening(on: config.application_web_port())
   |> ewe.on_start(fn(scheme, addr) {
-    let address = case addr.ip {
-      ewe.IpV6(..) -> "[" <> ewe.ip_address_to_string(addr.ip) <> "]"
-      ewe.IpV4(..) -> ewe.ip_address_to_string(addr.ip)
+    let address = case addr {
+      ewe.TcpSocketAddress(ip_address: ewe.IpV4(..) as ip, port:) ->
+        ewe.ip_address_to_string(ip) <> ":" <> int.to_string(port)
+      ewe.TcpSocketAddress(ip_address: ewe.IpV6(..) as ip, port:) ->
+        "[" <> ewe.ip_address_to_string(ip) <> "]" <> ":" <> int.to_string(port)
+      ewe.UnixSocketAddress(path:) -> path
     }
 
     witness.this(
       witness.Info,
       "Web server started on "
-        <> {
-        http.scheme_to_string(scheme)
-        <> "://"
-        <> address
-        <> ":"
-        <> int.to_string(addr.port)
-      },
+        <> { http.scheme_to_string(scheme) <> "://" <> address },
       [
-        // witness.string("Scheme", scheme |> http.scheme_to_string()),
-        witness.string("Address", ewe.ip_address_to_string(addr.ip)),
-        witness.int("Port", addr.port),
         witness.string("process", "Webserver / main"),
       ],
     )
   })
-  |> ewe.idle_timeout(20_000)
-  |> ewe.with_name(name)
   |> ewe.supervised()
 }
 
@@ -198,28 +200,28 @@ fn serve_component(
       fn(ewe.WebsocketConnection, b, ewe.WebsocketMessage(a)) ->
         ewe.WebsocketNext(b, a),
       fn(ewe.WebsocketConnection, b) -> Nil,
-    ) -> response.Response(ewe.ResponseBody),
-  ) -> response.Response(ewe.ResponseBody),
-) -> response.Response(ewe.ResponseBody) {
+    ) -> response.Response(ewe.Body),
+  ) -> response.Response(ewe.Body),
+) -> response.Response(ewe.Body) {
   use session_id <- with_session(request:, global_context: global)
   let consumption =
     shared.ComponentInitialisation(session_id:, global_context: global)
   component(consumption, fn(value, value_2, value_3) {
-    ewe.upgrade_websocket(request, value, value_2, value_3)
+    ewe.websocket(request, value, value_2, value_3)
   })
 }
 
 fn api_auth_status(
   request: request.Request(ewe.Connection),
   global_context: data.Globals,
-) -> response.Response(ewe.ResponseBody) {
+) -> response.Response(ewe.Body) {
   use _session <- with_session(request:, global_context:)
   // witness.this(witness.Info, "Request answered with hardcoded answer", [
   //   witness.int("HTTP CODE", 200),
   // ])
   response.new(200)
   |> response.set_header("content-type", "text/plain; charset=utf-8")
-  |> response.set_body(ewe.BytesData(
+  |> response.set_body(ewe.Bytes(
     // This is hardcoded, because for now, this is always false.
     json.object([#("authenticated", json.bool(False))])
     |> json.to_string_tree()
@@ -228,13 +230,13 @@ fn api_auth_status(
 }
 
 fn serves_priv_file(
-  request: Request,
+  request: request.Request(ewe.Connection),
   global_context global_context: data.Globals,
   application application: String,
   path path: String,
   or_path or_path: List(String),
   with_mime mime: option.Option(String),
-) -> Response {
+) -> response.Response(ewe.Body) {
   use _ <- with_session(request:, global_context:)
   use dir <- try_404(application.priv_directory(application))
   let resolved = case
@@ -257,7 +259,12 @@ fn serves_priv_file(
   witness.add_process_fields([witness.string("File", resolved)])
   case string.starts_with(resolved, dir <> "/") {
     True -> {
-      use file <- try_404(ewe.file(resolved, offset: None, limit: None))
+      use file <- try_404(ewe.file(
+        request.body,
+        resolved,
+        offset: None,
+        limit: None,
+      ))
 
       witness.this(witness.Info, "Request answered with file", [
         witness.int("HTTP CODE", 200),
@@ -283,19 +290,19 @@ fn serves_priv_file(
   }
 }
 
-fn not_found(_) -> Response {
+fn not_found(_) {
   witness.this(witness.Warning, "Not found", [
     witness.int("HTTP CODE", 404),
   ])
   response.new(404)
   |> response.set_header("content-type", "text/plain; charset=utf-8")
-  |> response.set_body(ewe.TextData("Could not find that!"))
+  |> response.set_body(ewe.Text("Could not find that!"))
 }
 
 fn serves_spa(
-  request: Request,
+  request: request.Request(ewe.Connection),
   global_context global_context: data.Globals,
-) -> Response {
+) {
   use session_id <- with_session(request:, global_context:)
   let csrf_token = csrf_token(session_id, globals: global_context)
   let html =
@@ -447,14 +454,14 @@ fn serves_spa(
       "content-type",
       "text/html; charset=utf-8",
     ),
-    ewe.BytesData(html),
+    ewe.Bytes(html),
   )
 }
 
-fn serves_robots_txt(_) -> response.Response(ewe.ResponseBody) {
+fn serves_robots_txt(_) -> response.Response(ewe.Body) {
   response.new(200)
   |> response.set_header("content-type", "text/plain; charset=utf-8")
-  |> response.set_body(ewe.TextData(
+  |> response.set_body(ewe.Text(
     "User-agent: *
 Disallow: /
 
@@ -477,9 +484,9 @@ Disallow: /
 // Helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 fn with_session(
-  request req: Request,
+  request req: request.Request(ewe.Connection),
   global_context globals: data.Globals,
-  then then: fn(String) -> Response,
+  then then: fn(String) -> response.Response(ewe.Body),
 ) {
   let session =
     request.get_cookies(req)
@@ -549,7 +556,7 @@ fn csrf_token(session_id: String, globals globals: data.Globals) {
 @external(erlang, "filename", "absname_join")
 fn absname_join(dir: String, file: String) -> String
 
-fn try_404(over: Result(a, _), body: fn(a) -> Response) {
+fn try_404(over: Result(a, _), body: fn(a) -> response.Response(ewe.Body)) {
   case over {
     Ok(a) -> body(a)
     Error(_) -> not_found(Nil)

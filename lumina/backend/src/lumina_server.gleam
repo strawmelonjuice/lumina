@@ -113,7 +113,8 @@ pub fn start_supervisor() -> Result(
     process.new_name("App message registry: Intersession")
   let session_app_registry_name =
     process.new_name("App message registry: Globally")
-  let webserver_name = process.new_name("Webserver")
+  let connection_factory_name = process.new_name("Webserver process factory")
+  let listener_name = process.new_name("Webserver listener")
 
   let globals: data.Globals =
     data.establish_globals(
@@ -132,6 +133,10 @@ pub fn start_supervisor() -> Result(
   })
   |> supervisor.add(group_registry.supervised(session_app_registry_name))
   |> supervisor.add(group_registry.supervised(global_app_registry_name))
-  |> supervisor.add(server.child(globals:, name: webserver_name))
+  |> supervisor.add(server.child(
+    globals:,
+    listener_name:,
+    connection_factory_name:,
+  ))
   |> supervisor.start
 }
