@@ -14,6 +14,7 @@ packages = [
   { name = "collie", version = "1.0.0", build_tools = ["gleam"], requirements = ["exception", "gleam_crypto", "gleam_erlang", "gleam_http", "gleam_otp", "gleam_stdlib", "logging", "websocks"], otp_app = "collie", source = "hex", outer_checksum = "5796F28859B0CF0AF7E7B409775C291995B432B48BA2E2CDCA0D4B018B8162B5" },
   { name = "compresso", version = "0.1.0", build_tools = ["gleam"], requirements = ["exception", "gleam_erlang", "gleam_stdlib", "gleam_yielder", "logging"], otp_app = "compresso", source = "hex", outer_checksum = "8BE29A1EDA42F70826ED148EAE40C46BB3FC18E78FE472663DB01DD4A38172D4" },
   { name = "envoy", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "envoy", source = "hex", outer_checksum = "9C6FBB6BFA02A52798BEEC5977A738CAD6E4A057F4B67FD0C8061AD2502C191A" },
+  { name = "erl_base58", version = "0.0.1", build_tools = ["rebar3"], requirements = [], otp_app = "erl_base58", source = "hex", outer_checksum = "41E8EC356C5C5558A45682F61F80725789AE9A11BD1CC7D5C73CDE1E3B546DD2" },
   { name = "eval", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "eval", source = "hex", outer_checksum = "264DAF4B49DF807F303CA4A4E4EBC012070429E40BE384C58FE094C4958F9BDA" },
   { name = "ewe", version = "4.0.1", build_tools = ["gleam"], requirements = ["compresso", "exception", "gleam_erlang", "gleam_http", "gleam_otp", "gleam_stdlib", "glisten", "logging", "websocks"], otp_app = "ewe", source = "hex", outer_checksum = "1A6CBE2E07B7E784F9B9503C94C0F23CDD644AC5EA4E1B957F3A5550541699DB" },
   { name = "exception", version = "2.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "exception", source = "hex", outer_checksum = "329D269D5C2A314F7364BD2711372B6F2C58FA6F39981572E5CA68624D291F8C" },
@@ -69,6 +70,7 @@ argus = { version = ">= 1.0.4 and < 2.0.0" }
 booklet = { version = ">= 1.1.0 and < 2.0.0" }
 collie = { version = ">= 1.0.0 and < 2.0.0" }
 envoy = { version = ">= 1.2.0 and < 2.0.0" }
+erl_base58 = { version = ">= 0.0.1 and < 1.0.0" }
 ewe = { version = ">= 4.0.1 and < 5.0.0" }
 friendly_id = { version = ">= 2.1.0 and < 3.0.0" }
 gleam_crypto = { version = ">= 1.6.0 and < 2.0.0" }

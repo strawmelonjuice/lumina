@@ -24,6 +24,7 @@ import envoy
 import gleam/bit_array
 import gleam/bool
 import gleam/crypto
+import gleam/erlang/charlist
 import gleam/erlang/process.{type Timer}
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
@@ -352,13 +353,62 @@ pub fn pk_ldid_encode(pubkey pk: BitArray) -> String {
   "did:lumina:" <> bit_array.base64_url_encode(pk, False)
 }
 
+pub fn pk_ldid_key_encode(pubkey pk: BitArray) -> String {
+  let encoded =
+    bit_array.concat([<<0xed01:16>>, pk])
+    |> base58_encode
+  "did:key:z" <> encoded
+}
+
+const did_key_prefix_ed25519 = <<0xed01:16>>
+
+pub type DidDecodeError {
+  ///Unsupported did type. Currently supported are `did:lumina` or `did:key`, both are based on ed25519.
+  DidUnsupported
+  DidInvalidBase64
+  DidKeyInvalidBase58
+  DidKeyUnknownPrefix
+}
+
 /// Decodes a `did:lumina: ...` DID to the public key used to create it.
-pub fn pk_ldid_decode(lumina_did ldid: String) -> Result(BitArray, Nil) {
+/// Though `did:key` is also supported for decoding, encoding needs to be done with a different function.
+/// `did:lumina:` is a laxer implementation of the same key, so even though two strings may not match, they may be the
+/// same DID upon closer inspection.
+pub fn pk_ldid_decode(
+  lumina_did ldid: String,
+) -> Result(BitArray, DidDecodeError) {
   case ldid {
     "did:lumina:" <> base64_url -> {
       bit_array.base64_url_decode(base64_url)
+      |> result.replace_error(DidInvalidBase64)
     }
-    _ -> Error(Nil)
+    "did:key:z" <> base58btcmulticodec -> {
+      use bits <- result.try(
+        result.try_recover(
+          result.replace_error(
+            base58_decode(base58btcmulticodec),
+            DidKeyInvalidBase58,
+          ),
+          fn(original_error) {
+            bit_array.base64_url_decode(base58btcmulticodec)
+            |> result.replace_error(original_error)
+          },
+        ),
+      )
+      let slicing = case bits {
+        <<prefix:size(16), others:bits>>
+          if <<prefix:16>> == did_key_prefix_ed25519
+        -> {
+          others
+          |> Ok
+        }
+        _ -> Error(DidKeyUnknownPrefix)
+      }
+      use sliced <- result.try(slicing)
+      Ok(sliced)
+    }
+    "did:key:" <> _ -> Error(DidKeyUnknownPrefix)
+    _ -> Error(DidUnsupported)
   }
 }
 
@@ -542,6 +592,29 @@ pub fn random_string(length: Int) -> String {
   |> bit_array.base64_url_encode(False)
   |> string.slice(0, length)
 }
+
+pub fn base58_encode(bits: BitArray) -> String {
+  let out = charlist.to_string(erl_base58_encode(bits))
+
+  assert base58_decode(out) == Ok(bits)
+    as "The base58 produced should decode back to the same bits."
+  out
+}
+
+pub fn base58_decode(from: String) -> Result(BitArray, Nil) {
+  let chars = charlist.from_string(from)
+  use <- bool.guard(!erl_base58_check(chars), Error(Nil))
+  erl_base58_decode(chars) |> Ok
+}
+
+@external(erlang, "base58", "binary_to_base58")
+fn erl_base58_encode(from: BitArray) -> charlist.Charlist
+
+@external(erlang, "base58", "base58_to_binary")
+fn erl_base58_decode(from: charlist.Charlist) -> BitArray
+
+@external(erlang, "base58", "check_base58")
+fn erl_base58_check(from: charlist.Charlist) -> Bool
 
 @external(erlang, "filename", "absname_join")
 fn absname_join(dir: String, file: String) -> String
