@@ -56,7 +56,7 @@ prepare-build:
 dev or start the database by hand.')]
 migrate $DATABASE_URL=`echo "$LUMINA_DB_URL"`:
 	dbmate up
-	cd ./lumina/backend/ && (gleam run -m squirrel check || gleam run -m squirrel)
+	cd ./lumina/backend/ && (gleam run --no-print-progress -m squirrel check || gleam run --no-print-progress -m squirrel)
 
 [doc('Manually start the postgres database.')]
 start-db:

@@ -97,7 +97,18 @@ fn application_config_init() -> json.Json {
         #("register", json.object([#("on-invite-only", json.bool(False))])),
       ]),
     ),
-    #("instance", json.object([#("name", json.string(""))])),
+    #(
+      "instance",
+      json.object([
+        #(
+          "name",
+          json.string(case envoy.get("LUMINA_DEBUG") {
+            Ok("1") -> "localhost"
+            _ -> ""
+          }),
+        ),
+      ]),
+    ),
   ])
 }
 

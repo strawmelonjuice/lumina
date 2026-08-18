@@ -21,17 +21,13 @@
 // Imports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 import envoy
-import gleam/bit_array
 import gleam/erlang/atom
-import gleam/erlang/charlist
 import gleam/erlang/process
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
 import gleam/result
-import gleam/string
 import group_registry
 import logging
-import lumina_server/async_crypto
 import lumina_server/config
 import lumina_server/data
 import lumina_server/server
@@ -49,13 +45,11 @@ pub fn main() {
   process.sleep_forever()
 }
 
-type ErlangResult
-
 @external(erlang, "observer", "start")
-fn observer_start() -> ErlangResult
+fn observer_start() -> Nil
 
 /// This callback is ran by the OTP runtime when Lumina is loaded into the BEAM, it
-/// starts the application as an OTP application, which means the supervision tree is actually utilised!
+/// starts the application as an OTP application
 pub fn start(
   _app: atom.Atom,
   _type: a,
