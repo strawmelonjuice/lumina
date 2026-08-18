@@ -1,0 +1,25 @@
+when:
+  - event: ["push", "pull_request"]
+    branch: ["main"]
+
+engine: microvm
+image: nixos
+
+registry:
+  nixpkgs: "github:nixos/nixpkgs/nixos-unstable"
+
+dependencies:
+  - gleam
+  - just
+  - deno
+
+
+steps:
+  - name: "Check format of SPA code"
+    command: |
+      cd ./lumina/web/initialiser/
+      gleam format --check
+
+  - name: "Run SPA unit tests"
+    command: |
+      just test-spa

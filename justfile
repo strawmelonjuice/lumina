@@ -63,9 +63,23 @@ start-db:
 	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
 	@echo "Be sure to run pg_ctl stop when done!"
 
-[doc('Build and run Lumina.')]
+[doc('Build and run Lumina, this does not start the database.')]
 run: prepare-build
 	cd ./lumina/backend && gleam run
+
+[doc("Build and test Lumina instance, including database.")]
+test-instance: prepare-build
+	if ! pg_ctl status >/dev/null 2>&1 ; then pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start; fi
+	just migrate || echo "Something went wrong running 'just migrate'."
+	trap 'pg_ctl stop' EXIT; (cd ./lumina/backend && gleam test)
+
+[doc("Build and test Lumina SPA.")]
+test-spa:
+	cd ./lumina/web/initialiser/ && gleam test --target javascript --runtime deno
+
+[doc("Build and test both SPA and instance.")]
+[parallel]
+test: test-spa test-instance
 
 [doc('Build Lumina.')]
 build: prepare-build
@@ -81,6 +95,7 @@ dev:
 clean:
 	cd ./lumina/backend/ && gleam clean
 	cd ./lumina/web/initialiser/ && gleam clean
+
 update-elp:
 	#!/usr/bin/env bash
 	set -euo pipefail

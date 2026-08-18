@@ -2,6 +2,8 @@ name = "lumina_spa"
 version = "1.0.0"
 target = "javascript"
 licences = ["EUPL-1.2"]
+[javascript.deno]
+allow_all = true
 
 [dependencies]
 gleam_stdlib = ">= 1.0.0 and < 2.0.0"

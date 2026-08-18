@@ -1,0 +1,43 @@
+when:
+  - event: ["push", "pull_request"]
+    branch: ["main"]
+
+engine: microvm
+image: nixos
+
+registry:
+  nixpkgs: "github:nixos/nixpkgs/nixos-unstable"
+
+dependencies:
+  - beamMinimal29Packages.erlang
+  - beamMinimal29Packages.rebar3
+  - gleam
+  - just
+  - deno
+  - erlang-language-platform
+  - clang
+  - postgresql_18
+  - dbmate
+
+
+steps:
+  - name: "Prepare database"
+    command: |
+      export PGDATA="$(pwd)/lumina/backend/build/data/data/.postgres"
+      export PGHOST="/tmp"
+      export LOG_PATH="$PGDATA/server.log"
+      initdb --auth=trust -U postgres
+      echo "listen_addresses = '127.0.0.1'" >> "$PGDATA/postgresql.conf"
+      echo "port = 5432" >> "$PGDATA/postgresql.conf"
+      echo "unix_socket_directories = '$PGHOST'" >> "$PGDATA/postgresql.conf"
+      pg_ctl -D "$PGDATA" -l "$LOG_PATH" -o "-c listen_addresses=\"127.0.0.1\"" start
+      just migrate
+
+  - name: "Check format of instance code"
+    command: |
+      cd ./lumina/backend/
+      gleam format --check
+
+  - name: "Run instance unit tests"
+    command: |
+      cd ./lumina/backend && gleam test
