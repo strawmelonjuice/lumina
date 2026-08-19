@@ -2,5 +2,5 @@
 
 SELECT username, email, displayname
 	FROM users
-	AND id = $1
+	WHERE id = $1
 	LIMIT 1;
