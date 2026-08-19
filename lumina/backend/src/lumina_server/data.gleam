@@ -232,81 +232,132 @@ pub fn manager(
       }
     }
 
-    let debug_accounts_inserted = {
-      use <- bool.guard(!config.application_debug(), Ok(Nil))
-
-      witness.this(
-        witness.Notice,
-        "Debug is active, creating development user accounts.",
-        [],
-      )
-
-      let username = "testuser1"
-      let password = "MyTestPassw9292!"
-      let email = "test@lumina123.co"
-      use _ <- result.try(
-        exec_insert_user(
-          conn,
-          email:,
-          display_name: "Test User 1",
-          username:,
-          password:,
-        )
-        |> result.map(fn(created) {
-          witness.this(
-            witness.Notice,
-            "Made development account " <> created.0,
-            [
-              witness.string(
-                "did:key",
-                pk_ldid_key_encode(created.1.public_key),
-              ),
-              witness.string("did:lumina", pk_ldid_encode(created.1.public_key)),
-              witness.string("debug password", password),
-            ],
-          )
-          created
-        }),
-      )
-
-      let username = "testuser2"
-      let password = "MyTestPassw9292!"
-      let email = "test@lumina234.co"
-      use _ <- result.try(
-        exec_insert_user(
-          conn,
-          email:,
-          display_name: "Test User 2",
-          username:,
-          password:,
-        )
-        |> result.map(fn(created) {
-          witness.this(
-            witness.Notice,
-            "Made development account " <> created.0,
-            [
-              witness.string(
-                "did:key",
-                pk_ldid_key_encode(created.1.public_key),
-              ),
-              witness.string("did:lumina", pk_ldid_encode(created.1.public_key)),
-              witness.string("debug password", password),
-            ],
-          )
-          created
-        }),
-      )
-      Ok(Nil)
-    }
-
     let _ =
-      result.map_error(debug_accounts_inserted, fn(_) {
-        witness.this(
-          witness.Warning,
-          "Database could not be properly initialised for development mode.",
-          [],
-        )
-      })
+      result.map_error(
+        {
+          use <- bool.guard(!config.application_debug(), Ok(Nil))
+
+          witness.this(
+            witness.Notice,
+            "Debug is active, creating development user accounts.",
+            [],
+          )
+
+          let username = "testuser1"
+          let password = "MyTestPassw9292!"
+          let email = "test@lumina123.co"
+
+          use _ <- result.try(
+            case sql.local_user_id_by_username(conn, username) {
+              Ok(pog.Returned(
+                count: 1,
+                rows: [sql.LocalUserIdByUsernameRow(id)],
+              )) -> {
+                witness.this(
+                  witness.Notice,
+                  "Previously-made development account "
+                    <> username
+                    <> " exists.",
+                  [
+                    witness.string("did:key", pk_ldid_key_encode(id)),
+                    witness.string("did:lumina", pk_ldid_encode(id)),
+                    witness.string("debug password", password),
+                  ],
+                )
+                Ok(#(username, id))
+              }
+              _ -> {
+                exec_insert_user(
+                  conn,
+                  email:,
+                  display_name: "Test User 1",
+                  username:,
+                  password:,
+                )
+                |> result.map(fn(created) {
+                  witness.this(
+                    witness.Notice,
+                    "Made development account " <> created.0,
+                    [
+                      witness.string(
+                        "did:key",
+                        pk_ldid_key_encode(created.1.public_key),
+                      ),
+                      witness.string(
+                        "did:lumina",
+                        pk_ldid_encode(created.1.public_key),
+                      ),
+                      witness.string("debug password", password),
+                    ],
+                  )
+                  #(created.0, created.1.public_key)
+                })
+              }
+            },
+          )
+
+          let username = "testuser2"
+          let password = "MyTestPassw9292!"
+          let email = "test@lumina234.co"
+          use _ <- result.try(
+            case sql.local_user_id_by_username(conn, username) {
+              Ok(pog.Returned(
+                count: 1,
+                rows: [sql.LocalUserIdByUsernameRow(id)],
+              )) -> {
+                witness.this(
+                  witness.Notice,
+                  "Previously-made development account "
+                    <> username
+                    <> " exists.",
+                  [
+                    witness.string("did:key", pk_ldid_key_encode(id)),
+                    witness.string("did:lumina", pk_ldid_encode(id)),
+                    witness.string("debug password", password),
+                  ],
+                )
+                Ok(#(username, id))
+              }
+              _ -> {
+                exec_insert_user(
+                  conn,
+                  email:,
+                  display_name: "Test User 2",
+                  username:,
+                  password:,
+                )
+                |> result.map(fn(created) {
+                  witness.this(
+                    witness.Notice,
+                    "Made development account " <> created.0,
+                    [
+                      witness.string(
+                        "did:key",
+                        pk_ldid_key_encode(created.1.public_key),
+                      ),
+                      witness.string(
+                        "did:lumina",
+                        pk_ldid_encode(created.1.public_key),
+                      ),
+                      witness.string("debug password", password),
+                    ],
+                  )
+                  #(created.0, created.1.public_key)
+                })
+              }
+            },
+          )
+
+          Ok(Nil)
+        },
+        fn(_) {
+          witness.this(
+            witness.Warning,
+            "Database could not be properly initialised for development mode.",
+            [],
+          )
+        },
+      )
 
     use _ <- result.map(
       db_init_result
@@ -530,6 +581,7 @@ pub fn user_session_authorise(
           |> Ok
         Ok(pog.Returned(count: 0, rows: [])) -> Error(UserSessionAuthNotExists)
         Ok(pog.Returned(count: _, rows: _)) -> Error(UserSessionAuthDBError)
+
         Error(_) -> Error(UserSessionAuthDBError)
       }
     }

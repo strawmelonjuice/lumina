@@ -585,7 +585,7 @@ fn view(model: Model) -> element.Element(Message) {
                   attribute.value(model.field_displayname.value),
                   event.on_input(UserChangedInputDisplayName)
                     |> server_component.include(["target.value"]),
-                  attribute.autocomplete("off"),
+                  attribute.autocomplete("nickname"),
                   attribute.placeholder({
                     model.placeholder_friendly_id
                     |> string.split("-")
@@ -642,7 +642,7 @@ fn view(model: Model) -> element.Element(Message) {
                   attribute.value(model.field_email.value),
                   event.on_input(UserChangedInputEmail)
                     |> server_component.include(["target.value"]),
-                  attribute.autocomplete("off"),
+                  attribute.autocomplete("email"),
                   attribute.placeholder(
                     model.placeholder_friendly_id <> "@example.com",
                   ),
@@ -696,7 +696,7 @@ fn view(model: Model) -> element.Element(Message) {
                   attribute.value(model.field_username.value),
                   event.on_input(UserChangedInputUsername)
                     |> server_component.include(["target.value"]),
-                  attribute.autocomplete("off"),
+                  attribute.autocomplete("username"),
                   attribute.placeholder(model.placeholder_friendly_id),
                   attribute.id("field-id"),
                   attribute.aria_describedby("field-id-status"),
@@ -747,6 +747,7 @@ fn view(model: Model) -> element.Element(Message) {
                       attribute.disabled(!may_proceed),
                       attribute.aria_disabled(!may_proceed),
                       attribute.value(model.field_password.value),
+                      attribute.autocomplete("new-password"),
                       event.on_input(UserChangedInputPassword)
                         |> server_component.include(["target.value"]),
                       attribute.placeholder("•••••••••••••••"),
@@ -808,6 +809,7 @@ fn view(model: Model) -> element.Element(Message) {
                       attribute.disabled(!may_proceed),
                       attribute.aria_disabled(!may_proceed),
                       attribute.value(model.field_password_re.value),
+                      attribute.autocomplete("new-password"),
                       event.on_input(UserChangedInputPasswordRetype)
                         |> server_component.include(["target.value"]),
                       attribute.placeholder("•••••••••••••••"),

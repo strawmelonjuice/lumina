@@ -289,7 +289,8 @@ INSERT
 	INTO users
 		(id, private_key, instance_id, email, displayname, username, password)
 	VALUES
-		($1, $6, uuid_nil(), $2, $3, $4, $5);
+		($1, $6, uuid_nil(), $2, $3, $4, $5)
+	ON CONFLICT DO NOTHING;
 "
   |> pog.query
   |> pog.parameter(pog.bytea(arg_1))

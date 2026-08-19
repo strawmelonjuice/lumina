@@ -326,7 +326,7 @@ fn view(model: Model) -> element.Element(Message) {
                   attribute.value(model.field_username.value),
                   event.on_input(UserChangedInputUsername)
                     |> server_component.include(["target.value"]),
-                  attribute.autocomplete("off"),
+                  attribute.autocomplete("username"),
                   attribute.placeholder("me@mymail.com"),
                   attribute.id("field-id"),
                   attribute.aria_describedby("field-id-status"),
@@ -380,6 +380,7 @@ fn view(model: Model) -> element.Element(Message) {
                     event.on_input(UserChangedInputPassword)
                       |> server_component.include(["target.value"]),
                     attribute.placeholder("•••••••••••••••"),
+                    attribute.autocomplete("current-password"),
                     attribute.aria_describedby("field-password-status"),
                     attribute.id("field-password"),
                     attribute.aria_invalid({
