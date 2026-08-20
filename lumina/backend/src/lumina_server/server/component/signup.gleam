@@ -60,9 +60,13 @@ pub opaque type Model {
     field_email: ControlledInput(String),
     field_password: ControlledInput(String),
     field_password_re: ControlledInput(String),
-    // This depends on config we haven't specified well enough yet!
     field_invite_code: Option(#(ControlledInput(String), List(String))),
     placeholder_friendly_id: String,
+    // This may be abolished, since having multiple users with the same name is not per se a problem. But until then, we
+    // follow other platforms' approach and keep usernames per instance unique. In the future this may be
+    // switched out for giving logins autocomplete and then logging in by DID.
+    usernames_checked_in_use: List(String),
+    emails_checked_in_use: List(String),
   )
 }
 
@@ -103,6 +107,8 @@ fn init(initialisationdata: ComponentInitialisation) {
       page_status: Ok(False),
       session_id:,
       placeholder_friendly_id: "",
+      usernames_checked_in_use: [],
+      emails_checked_in_use: [],
     )
   #(
     model,
@@ -155,6 +161,8 @@ pub opaque type Message {
   ConfigFetchedInviteOnly(Result(List(String), Nil))
   RandomFriendlyIDGenerated(String)
   ConfigFetchError
+  UsernameTaken(String)
+  EmailTaken(String)
 }
 
 fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
@@ -202,10 +210,32 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
             string.starts_with(now, "@"),
             Error("Not a valid email address."),
           )
+
+          use <- bool.guard(
+            when: list.contains(model.emails_checked_in_use, now),
+            return: Error(
+              "That email address is already in use on this instance!",
+            ),
+          )
           Ok(Nil)
         })
       }),
-      effect.none(),
+      effect.from(fn(dispatch) {
+        use <- bool.guard(
+          when: list.contains(model.emails_checked_in_use, now),
+          return: Nil,
+        )
+        let conn = pog.named_connection(model.global_context.postgres_pool_name)
+        use <- bool.guard(
+          when: case sql.local_user_id_by_email(conn, now) {
+            Ok(pog.Returned(count: 0, rows: _)) -> True
+            Error(_) -> True
+            Ok(pog.Returned(count: _, rows: _)) -> False
+          },
+          return: Nil,
+        )
+        dispatch(EmailTaken(now))
+      }),
     )
 
     UserChangedInputInviteCode(now:) ->
@@ -262,10 +292,29 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
               <> " characters more!",
             ),
           )
+          use <- bool.guard(
+            when: list.contains(model.usernames_checked_in_use, now),
+            return: Error("That username is already in use on this instance!"),
+          )
           Ok(Nil)
         })
       }),
-      effect.none(),
+      effect.from(fn(dispatch) {
+        use <- bool.guard(
+          when: list.contains(model.usernames_checked_in_use, now),
+          return: Nil,
+        )
+        let conn = pog.named_connection(model.global_context.postgres_pool_name)
+        use <- bool.guard(
+          when: case sql.local_user_id_by_username(conn, now) {
+            Ok(pog.Returned(count: 0, rows: _)) -> True
+            Error(_) -> True
+            Ok(pog.Returned(count: _, rows: _)) -> False
+          },
+          return: Nil,
+        )
+        dispatch(UsernameTaken(now))
+      }),
     )
 
     UserChangedInputPassword(now:) -> #(
@@ -461,6 +510,24 @@ fn update(model: Model, message: Message) -> #(Model, effect.Effect(Message)) {
       effect.none(),
     )
     RegistrationAttemptResult(Error(data.UserRegistrationDBError)) -> todo
+    UsernameTaken(username) -> #(
+      Model(..model, usernames_checked_in_use: [
+        username,
+        ..model.usernames_checked_in_use
+      ]),
+      effect.from(fn(dispatch) {
+        dispatch(UserChangedInputUsername(now: model.field_username.value))
+      }),
+    )
+    EmailTaken(email) -> #(
+      Model(..model, emails_checked_in_use: [
+        email,
+        ..model.emails_checked_in_use
+      ]),
+      effect.from(fn(dispatch) {
+        dispatch(UserChangedInputEmail(now: model.field_email.value))
+      }),
+    )
   }
 }
 

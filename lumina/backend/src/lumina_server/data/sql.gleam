@@ -217,6 +217,49 @@ SELECT name
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_user_by_id` query
+/// defined in `./src/lumina_server/data/sql/get_user_by_id.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetUserByIdRow {
+  GetUserByIdRow(
+    username: String,
+    email: Option(String),
+    displayname: Option(String),
+  )
+}
+
+/// Gets a local user's data from the database for their id (publickey).
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_user_by_id(
+  db: pog.Connection,
+  id: BitArray,
+) -> Result(pog.Returned(GetUserByIdRow), pog.QueryError) {
+  let decoder = {
+    use username <- decode.field(0, decode.string)
+    use email <- decode.field(1, decode.optional(decode.string))
+    use displayname <- decode.field(2, decode.optional(decode.string))
+    decode.success(GetUserByIdRow(username:, email:, displayname:))
+  }
+
+  "-- Gets a local user's data from the database for their id (publickey).
+
+SELECT username, email, displayname
+	FROM users
+	WHERE id = $1
+	LIMIT 1;
+"
+  |> pog.query
+  |> pog.parameter(pog.bytea(id))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `get_valid_invites` query
 /// defined in `./src/lumina_server/data/sql/get_valid_invites.sql`.
 ///
@@ -437,6 +480,41 @@ INSERT
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `users_local` query
+/// defined in `./src/lumina_server/data/sql/users_local.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.7.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UsersLocalRow {
+  UsersLocalRow(count: Int)
+}
+
+/// Returns the count of users on this local instance.
+///
+/// > 🐿️ This function was generated automatically using v4.7.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn users_local(
+  db: pog.Connection,
+) -> Result(pog.Returned(UsersLocalRow), pog.QueryError) {
+  let decoder = {
+    use count <- decode.field(0, decode.int)
+    decode.success(UsersLocalRow(count:))
+  }
+
+  "-- Returns the count of users on this local instance.
+
+SELECT
+	COUNT(DISTINCT id)
+	FROM users
+	WHERE instance_id = '00000000-0000-0000-0000-000000000000';
+"
+  |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
