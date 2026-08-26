@@ -51,7 +51,7 @@ pub fn login(
       ),
       ewe.WebsocketMessage(server_component.ClientMessage(login.Message)),
     ) ->
-      ewe.WebsocketNext(
+      ewe.Next(
         #(
           Subject(server_component.ClientMessage(login.Message)),
           lustre.Runtime(login.Message),
@@ -108,11 +108,11 @@ pub fn login(
             Error(_) -> Nil
           }
 
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
 
         ewe.BinaryFrame(_) -> {
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
 
         ewe.UserMessage(client_message) -> {
@@ -120,7 +120,7 @@ pub fn login(
           let assert Ok(_) =
             ewe.send_text_frame(connection, json.to_string(json))
 
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
       }
     },
@@ -160,7 +160,7 @@ pub fn signup(
       ),
       ewe.WebsocketMessage(server_component.ClientMessage(signup.Message)),
     ) ->
-      ewe.WebsocketNext(
+      ewe.Next(
         #(
           Subject(server_component.ClientMessage(signup.Message)),
           lustre.Runtime(signup.Message),
@@ -218,11 +218,11 @@ pub fn signup(
             Error(_) -> Nil
           }
 
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
 
         ewe.BinaryFrame(_) -> {
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
 
         ewe.UserMessage(client_message) -> {
@@ -230,7 +230,7 @@ pub fn signup(
           let assert Ok(_) =
             ewe.send_text_frame(connection, json.to_string(json))
 
-          ewe.websocket_continue(state)
+          ewe.continue(state)
         }
       }
     },

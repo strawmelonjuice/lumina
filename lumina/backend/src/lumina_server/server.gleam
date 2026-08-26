@@ -197,8 +197,7 @@ fn serve_component(
     fn(
       fn(ewe.WebsocketConnection, process.Selector(a)) ->
         #(b, process.Selector(a)),
-      fn(ewe.WebsocketConnection, b, ewe.WebsocketMessage(a)) ->
-        ewe.WebsocketNext(b, a),
+      fn(ewe.WebsocketConnection, b, ewe.WebsocketMessage(a)) -> ewe.Next(b, a),
       fn(ewe.WebsocketConnection, b) -> Nil,
     ) -> response.Response(ewe.Body),
   ) -> response.Response(ewe.Body),
