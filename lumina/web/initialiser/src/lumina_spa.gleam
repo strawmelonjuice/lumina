@@ -671,7 +671,9 @@ fn view_index(
         leading("It's ... running?"),
         paragraph("There is not much going on at the moment still yet though!"),
         link(
-          External("https://tangled.org/strawmelonjuice.com/Lumina"),
+          External(
+            "https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/",
+          ),
           "Visit Lumina's source code",
         ),
       ]),
@@ -826,7 +828,9 @@ fn view_about(
           view_menu_link(
             current: model.route,
             show_on: [],
-            to: External("https://tangled.org/strawmelonjuice.com/Lumina"),
+            to: External(
+              "https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/",
+            ),
             label: "View source code",
           ),
         ],

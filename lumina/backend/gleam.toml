@@ -2,6 +2,21 @@ name = "lumina_server"
 version = "1.0.0"
 target = "erlang"
 licences = ["EUPL-1.2"]
+
+# Documentation is published to https://sites.wisp.place/strawmelonjuice.com/lumina-documentation/development
+
+[documentation]
+links = [
+	{ title = "Licence: EUPL-1.2 with special note", href = "https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/tree/LICENCE" },
+]
+
+# during the building of those docs, files from ../../docs-new/ are available in ./build/docs-temp/
+[[documentation.pages]]
+title = "Official mirrors"
+path = "mirrors.html"
+source = "./build/docs-temp/development/mirrors.dj"
+
+
 [erlang]
 application_start_module = "lumina_server"
 

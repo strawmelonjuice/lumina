@@ -1,6 +1,6 @@
 # AI training and TDM are expressly reserved.
 # See LICENCE file for full legal terms, you can visit this file in the public repository at
-# https://tangled.org/strawmelonjuice.com/Lumina
+# https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/tree/LICENCE
 
 User-agent: *
 Disallow: /

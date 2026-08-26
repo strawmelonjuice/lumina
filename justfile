@@ -151,6 +151,7 @@ update-elp:
 build-docs:
 	rm -fr ./dist/documentation/
 
+	rm -fr ./lumina/backend/build/docs-temp; cp -r ./docs-new ./lumina/backend/build/docs-temp
 	cd ./lumina/backend/ && gleam docs build
 	cd ./lumina/web/initialiser/ && gleam docs build && mkdir -p ./build/dev/docs/lumina_spa/lumina_spa
 
@@ -284,6 +285,7 @@ dev-docs-finalise-html filename:
 	s,.*docs_config\.js".*,\t<!-- It has been removed for Lumina -->,;\
 	s,>README</a>,>Development documentation</a><!-- Other doc branches may grow here\, like users -->,g;\
 	s,href=".*./index\.html",href="/documentation/development/",g;\
+	s,href="\./\(.*\).html",href="/documentation/development/\1.html",;\
 	s,href=".*./css/,href="/documentation/development/css/,g;s,".*\./lumina_,"\./lumina_,g;\
 	s,\./lumina_spa,/documentation/development/client,g;\
 	s,\./lumina_server,/documentation/development/instance,g;\

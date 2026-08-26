@@ -15,7 +15,9 @@ If you are going to contribute in the form of changes to code or other files, he
 ### 1. Forking
 
 You start off by forking the repository from
-[https://tangled.org/strawmelonjuice.com/Lumina](https://tangled.org/did:plc:dlfsjwtiq5zklprcrmhjxlsq).
+[Lumina (rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA)](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/).
+
+(Or [Tangled](https://tangled.org/did:plc:dlfsjwtiq5zklprcrmhjxlsq), [Codeberg](https://codeberg.org/strawmelonjuice/Lumina))
 
 ### 2. Branches
 
@@ -24,6 +26,8 @@ changes to a feature branch. If your commit is a planned one in any other way, o
 development work (ongoing development work means core contributors, strawmelonjuice, committing to the development
 branch directly), your fork should just be rebased onto the development branch and you won't have to create any branches
 on your fork.
+
+(Or [Radicle](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/issues), [Codeberg](https://codeberg.org/strawmelonjuice/Lumina/issues))
 
 ### 3. Committing changes
 
@@ -50,7 +54,7 @@ reference](https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13) (par
 | DevOps, infrastructure, or backups?		 | `ops:`			|
 | Anything else						 | `chore:`			|
 
-Where applicable and preferred, you can use scopes like (examples) `ci(test): Created an action to test for x` 
+Where applicable and preferred, you can use scopes like (examples) `ci(test): Created an action to test for x`
 or `style(database): Scheme now includes a whitespace before SELECT`.
 
 While following this can make commits easier to categorise, for bigger groups of changes (usually branched changes in
@@ -72,11 +76,11 @@ contribution.
 Also, make sure that if your tool includes telemetry, it doesn't accidentally violate our [licence](./LICENCE).
 
 > Note:
-> 
-> You may not have English as your first language or may not be good at spelling. Using a translation tool or a spellchecker 
+>
+> You may not have English as your first language or may not be good at spelling. Using a translation tool or a spellchecker
 > is NEVER a bad thing! But please, if you use any non-LLM based tool that significantly modifies your text, also let a reviewer know.
 > This will help your contribution get appreciated as much as it should be.
-> 
+>
 > LLM/AI based tools should always be disclosed.
 
 We understand if you need some tooling, especially spellcheckers or translation tooling are important and necessary beneficial
@@ -92,20 +96,23 @@ Yes, you could say, everyone who's gotten their hands on the Lumina codebase is 
 
 ### 4. Making it a pull request
 
-This goes as you would expect it! Turn your fork into a PR from the Tangled web UI, properly describe the changes made 
-and await review from a maintainer with write access. They may tell you to review some things, ask you to change things 
+This goes as you would expect it! Turn your fork into a PR from the Tangled web UI, properly describe the changes made
+and await review from a maintainer with write access. They may tell you to review some things, ask you to change things
 or may or may not merge the PR. Congratulations if they do merge! **You've now contributed to Lumina.**
 
 
 ## Filing an issue
 
-Feel like something should be changed, even if it's just documentation, or a piece of text, a bug, or maybe an architectural design or... 
+Feel like something should be changed, even if it's just documentation, or a piece of text, a bug, or maybe an architectural design or...
 anything really! [File an issue](https://tangled.org/did:plc:dlfsjwtiq5zklprcrmhjxlsq/issues) for it!
 
-For proposing any changes, it is of course best to state what is currently going on and how this is 
-possibly wrong (or right, but could be improved!). 
+This can also be done on [Radicle](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/issues) or on [Codeberg](https://codeberg.org/strawmelonjuice/Lumina/issues), though
+for issues, in contrast to code contributions, Tangled is preferred over Radicle. Most in-progress issues will be carried over to the other mirrors.
 
-Furthermore, [the above mention of 'souls'](#souls) is not strongly checked nor ever enforced for issues, but you may still find 
+For proposing any changes, it is of course best to state what is currently going on and how this is
+possibly wrong (or right, but could be improved!).
+
+Furthermore, [the above mention of 'souls'](#souls) is not strongly checked nor ever enforced for issues, but you may still find
 that hand-writing your issue and having a few spelling mistakes will be received with more kindness than you might expect.
 
 Try and stay positive in your approach, after all, your ideas, observations and reports are always valued to maintainers, but maintainers

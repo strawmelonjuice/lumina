@@ -1,0 +1,32 @@
+# Known Lumina codebase mirrors
+
+In the pursuit of independence, Lumina attempts to be as well
+balanced over baskets as can be. It's **current** (as of August, 2026)
+main mirror (mirror that others are following) is the Radicle repository
+at [`rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA`](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/).
+
+### Official mirrors
+
+Official repositories that are welcoming your contributions in code or comment:
+
+- [Radicle](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/)
+- [Tangled (`knot.ollie.earth` knot)](https://tangled.org/did:plc:dlfsjwtiq5zklprcrmhjxlsq)
+- [Codeberg](https://codeberg.org/strawmelonjuice/Lumina)
+
+### Personal mirrors
+
+Other, more personal mirrors are probably mostly for their respective owners, but may help you find the code even if
+other options may fail.
+
+- [Forgejo `forge.strawmelonjuice.com`](https://forge.strawmelonjuice.com/strawmelonjuice/Lumina) (you can request an
+  account, but using official mirrors is preferred)
+
+[Add your own](https://radicle.network/nodes/rosa.radicle.network/rad:z3KozhW4C7ykQoe65DX8yUUGEHcdA/tree/docs-new/development/mirrors.dj)
+
+## Where to contribute
+
+Any of the official mirrors above accept pull requests or patches, with of course a slight preference to Radicle, for
+ease of gitting, but use whichever you prefer!
+
+For issues, remains the preferred mirror, though issues on Codeberg are just as welcome, and issues on Radicle too (the
+reason is that creating issues on Radicle takes some more effort than you might find it to be worth)
