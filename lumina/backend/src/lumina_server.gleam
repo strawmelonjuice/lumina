@@ -66,6 +66,11 @@ pub fn start(
   }
 }
 
+/// This callback is ran by the OTP runtime when Lumina is fully closing down.
+pub fn stop(_state: a) -> atom.Atom {
+  atom.create("ok")
+}
+
 pub fn start_supervisor() -> Result(
   actor.Started(supervisor.Supervisor),
   actor.StartError,
