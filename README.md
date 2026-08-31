@@ -9,7 +9,8 @@
 Lumina is a project in development, as the short description says "Just trying out an old concept.". It is not in any
 way ready for you to try. However, you are encouraged to contribute in any way!
 
-Currently, as no stable is produced yet, code lives mainly in the `development` branch.
+Currently, as no stable is produced yet, code in the `main` branch can move fast, for bigger changes, feature branches
+and forks are still prefered.
 
 
 ## Developing info
