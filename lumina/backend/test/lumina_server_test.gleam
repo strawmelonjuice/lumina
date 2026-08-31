@@ -1,6 +1,4 @@
-import gleam/bit_array
 import gleeunit
-import gleeunit/should
 import lumina_server/data
 
 // Imported to test
@@ -19,28 +17,25 @@ pub fn async_crypto_1_test() {
       private_key: keys.private_key,
     )
   // Correct contents
-  async_crypto.verify(
+  assert async_crypto.verify(
     message: <<"Hello, Joe!":utf8>>,
     signature:,
     pub_key: keys.public_key,
   )
-  |> should.be_true()
   // Forged contents
-  async_crypto.verify(
+  assert !async_crypto.verify(
     message: <<"Bye, Joe?":utf8>>,
     signature:,
     pub_key: keys.public_key,
   )
-  |> should.be_false()
 }
 
 /// Parses the did found in https://w3c-ccg.github.io/did-key-spec/#example-a-simple-ed25519-did-key-value
 /// and matches it against what in my belief should be the original public key.
 pub fn did_key_ref_decode_test() {
   let ref = "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
-  data.pk_ldid_decode(ref)
-  |> should.equal(
-    Ok(<<
+  assert data.pk_ldid_decode(ref)
+    == Ok(<<
       46,
       111,
       204,
@@ -73,8 +68,7 @@ pub fn did_key_ref_decode_test() {
       9,
       112,
       230,
-    >>),
-  )
+    >>)
 }
 
 pub fn did_key_did_lumina_match_test() {
@@ -87,5 +81,5 @@ pub fn did_key_did_lumina_match_test() {
     data.pk_ldid_decode(lumdid),
     data.pk_ldid_decode(keydid),
   )
-  should.equal(decoded_lum, decoded_key)
+  assert decoded_lum == decoded_key
 }
