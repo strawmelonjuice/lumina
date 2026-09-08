@@ -308,12 +308,12 @@ insert-mods-client filename:
 	mv {{filename}}.tmp {{filename}}
 
 [group("Docs")]
-[doc('Builds and deploys Lumina documentation to <https://sites.wisp.place/strawmelonjuice.com/lumina-documentation>. This is quite experimental at the moment.')]
+[doc('Builds and deploys Lumina documentation to <https://sites.wisp.place/did:plc:jgtfsmv25thfs4zmydtbccnn/lumina-documentation>. This is quite experimental at the moment.')]
 deploy-docs: build-docs
 	rm -fr  ./dist/documentation-site
 	cp -r ./dist/documentation ./dist/documentation-site
-	find "./dist/documentation-site/" -name "*.html" -type f -exec sed -i 's,"/documentation,"https://sites.wisp.place/strawmelonjuice.com/lumina-documentation,g' {} \;
-	deno x -y --allow-all npm:wispctl deploy strawmelonjuice.com \
+	find "./dist/documentation-site/" -name "*.html" -type f -exec sed -i 's,"/documentation,"https://sites.wisp.place/did:plc:jgtfsmv25thfs4zmydtbccnn/lumina-documentation,g' {} \;
+	deno x -y --allow-all npm:wispctl deploy did:plc:jgtfsmv25thfs4zmydtbccnn \
 			--path ./dist/documentation-site/ \
 			--site lumina-documentation
 [doc('Embeds the docs from `dist/documentation` into the server files. Only builds once (if directory is not found), run build-docs to process changes.')]
