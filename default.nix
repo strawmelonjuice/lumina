@@ -11,7 +11,7 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "gleam-lang";
       repo = "gleam";
-      rev = "4a83802ca33a8a96227a1b332768725f232f9779";
+      rev = "19bf207ebb7d953ea1391f041da48c214ee1440a";
       hash = "sha256-974B+22Lvd7KB9M0yuuxkolLtRmg42NrAX5CIrIc3Ac=";
     };
 
